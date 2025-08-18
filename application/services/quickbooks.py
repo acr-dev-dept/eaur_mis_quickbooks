@@ -23,7 +23,7 @@ class QuickBooks:
         Args:
             company_id (str): The ID of the company to connect to.
         """
-        from app.models.central import Company
+        from application.models.central_models import Company
         from flask import current_app
 
         current_app.logger.info(f"Initializing QuickBooks client for company ID: {company_id}")
@@ -164,7 +164,7 @@ class QuickBooks:
                 if result:
                     current_app.logger.info("Company data updated successfully with new tokens.")
                     # Verify the update by retrieving the company again
-                    from app.models.central import Company
+                    from application.models.central_models import Company
                     updated_company = Company.query.get(self.company.company_id)
                     if updated_company:
                         current_app.logger.info(f"Verified company update. New refresh token in DB: {updated_company.quickbooks_refresh_token}")
