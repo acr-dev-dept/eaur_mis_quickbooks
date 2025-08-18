@@ -19,72 +19,85 @@ class BaseModel(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-class Company(BaseModel):
-    """Company configuration and QuickBooks integration settings"""
-    __tablename__ = 'companies'
-    
-    company_name = Column(String(255), nullable=False)
-    database_name = Column(String(100), nullable=False)  # MIS database name
-    
+class QuickBooksConfig(BaseModel):
+    """QuickBooks integration configuration for single-tenant EAUR system"""
+    __tablename__ = 'quickbooks_config'
+
     # QuickBooks Integration Fields
-    quickbooks_access_token = Column(Text, nullable=True)  # Encrypted
-    quickbooks_refresh_token = Column(Text, nullable=True)  # Encrypted
-    quickbooks_authorization_code = Column(Text, nullable=True)  # Encrypted
-    quickbooks_realm_id = Column(String(50), nullable=True)
-    quickbooks_connected_at = Column(DateTime, nullable=True)
-    
+    access_token = Column(Text, nullable=True)  # Encrypted
+    refresh_token = Column(Text, nullable=True)  # Encrypted
+    authorization_code = Column(Text, nullable=True)  # Encrypted
+    realm_id = Column(String(50), nullable=True)
+    connected_at = Column(DateTime, nullable=True)
+    last_sync_at = Column(DateTime, nullable=True)
+
     # Configuration
     is_active = Column(Boolean, default=True, nullable=False)
-    configuration = Column(JSON, nullable=True)  # Store additional config as JSON
-    
+    configuration = Column(JSON, nullable=True)  # Store additional QB config as JSON
+
     def __repr__(self):
-        return f'<Company {self.company_name}>'
-    
+        return f'<QuickBooksConfig realm_id={self.realm_id}>'
+
     @classmethod
-    def update_company_data(cls, company_id, **kwargs):
-        """Update company data"""
+    def get_config(cls):
+        """Get the QuickBooks configuration (single row)"""
+        return cls.query.first()
+
+    @classmethod
+    def update_config(cls, **kwargs):
+        """Update QuickBooks configuration"""
         try:
-            company = cls.query.get(company_id)
-            if company:
+            config = cls.get_config()
+            if not config:
+                # Create new config if none exists
+                config = cls(**kwargs)
+                db.session.add(config)
+            else:
+                # Update existing config
                 for key, value in kwargs.items():
-                    if hasattr(company, key):
-                        setattr(company, key, value)
-                db.session.commit()
-                return True
-            return False
+                    if hasattr(config, key):
+                        setattr(config, key, value)
+
+            db.session.commit()
+            return config
         except Exception as e:
             db.session.rollback()
             raise e
 
+    @classmethod
+    def is_connected(cls):
+        """Check if QuickBooks is connected and active"""
+        config = cls.get_config()
+        return config and config.is_active and config.access_token and config.refresh_token
+
 class QuickbooksAuditLog(BaseModel):
     """Audit logs for QuickBooks operations"""
     __tablename__ = 'quickbooks_audit_logs'
-    
-    company_id = Column(Integer, db.ForeignKey('companies.id'), nullable=False)
+
     action_type = Column(String(100), nullable=False)  # e.g., 'Post Journal Entry', 'Create Customer'
     operation_status = Column(String(20), nullable=False)  # 'Success', 'Failure'
     error_message = Column(Text, nullable=True)
-    
+
     # Request/Response Data
     request_payload = Column(JSON, nullable=True)
     response_payload = Column(JSON, nullable=True)
-    
+
     # User tracking
-    user_id = Column(Integer, nullable=True)  # From session
-    
+    user_id = Column(Integer, nullable=True)  # From session or system user
+
     def __repr__(self):
         return f'<QuickbooksAuditLog {self.action_type} - {self.operation_status}>'
-    
+
     @classmethod
-    def add_quickbooks_audit_log(cls, session, **kwargs):
+    def add_audit_log(cls, **kwargs):
         """Add audit log entry"""
         try:
             log_entry = cls(**kwargs)
-            session.add(log_entry)
-            session.commit()
+            db.session.add(log_entry)
+            db.session.commit()
             return log_entry
         except Exception as e:
-            session.rollback()
+            db.session.rollback()
             raise e
 
 class SystemConfiguration(BaseModel):
