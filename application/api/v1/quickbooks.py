@@ -13,7 +13,6 @@ load_dotenv()
 quickbooks_bp = Blueprint('quickbooks', __name__)
 
 @quickbooks_bp.route('/create_account', methods=['POST'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def create_account():
     """Create an account."""
     # TODO: Implement after forms are created
@@ -23,7 +22,6 @@ def create_account():
     }), 501
 
 @quickbooks_bp.route('/post_journal_entry', methods=['GET', 'POST'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def post_journal_entry():
     """Post a journal entry by mapping totals to QuickBooks accounts."""
     # TODO: Implement after auxiliary helpers and forms are created
@@ -35,7 +33,6 @@ def post_journal_entry():
 
 
 @quickbooks_bp.route('/get_company_info', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def get_company_info():
     """Get company info."""
     try:
@@ -53,7 +50,6 @@ def get_company_info():
         return jsonify({'error': 'Error getting company info'}), 500
 
 @quickbooks_bp.route('/get_accounts', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def get_accounts():
     """Get accounts."""
     try:
@@ -71,7 +67,6 @@ def get_accounts():
         return jsonify({'error': 'Error getting accounts'}), 500
 
 @quickbooks_bp.route('/get_vendors', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def get_vendors():
     """Get vendors."""
     try:
@@ -89,7 +84,6 @@ def get_vendors():
         return jsonify({'error': 'Error getting vendors'}), 500
 
 @quickbooks_bp.route('/get_auth_url', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def get_auth_url():
     """Get the QuickBooks OAuth2 authorization URL."""
     try:
@@ -107,7 +101,6 @@ def get_auth_url():
         return jsonify({'error': 'Error getting authorization URL'}), 400
 
 @quickbooks_bp.route('/disconnect', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def disconnect():
     """Disconnect from QuickBooks."""
     try:
@@ -127,7 +120,6 @@ def disconnect():
         return jsonify({'success': False, 'message': message}), 500
 
 @quickbooks_bp.route('/webhook', methods=['GET'])
-# @role_required(['hr', 'company_hr', 'accountant', 'manager'])  # TODO: Implement role decorator
 def webhook():
     """Callback route for QuickBooks OAuth2."""
     try:
