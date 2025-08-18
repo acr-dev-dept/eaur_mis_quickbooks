@@ -9,6 +9,7 @@ Werkzeug==2.3.7
 # Database Drivers
 PyMySQL==1.1.0
 SQLAlchemy==2.0.21
+alembic==1.16.4
 
 # Environment and Configuration
 python-dotenv==1.0.0
