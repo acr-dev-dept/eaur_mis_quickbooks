@@ -118,8 +118,6 @@ FERNET_KEY=your-encryption-key
 ### Health Check
 - `GET /health/` - Basic health check
 - `GET /health/detailed` - Detailed system status
-- `GET /health/ready` - Kubernetes readiness probe
-- `GET /health/live` - Kubernetes liveness probe
 
 ### QuickBooks Integration
 - `GET /api/v1/quickbooks/get_auth_url` - Get OAuth authorization URL
@@ -137,7 +135,7 @@ FERNET_KEY=your-encryption-key
 ## Database Schema
 
 ### Central Application Database
-- `companies` - Company configurations and QuickBooks settings
+- `quickbooks_config` - QuickBooks integration configuration and settings
 - `quickbooks_audit_logs` - Audit trail for QuickBooks operations
 - `system_configurations` - System-wide settings
 - `integration_logs` - General integration logs
@@ -150,13 +148,16 @@ Models will be auto-generated from the existing MIS database schema using the da
 ### 1. Database Changes
 ```bash
 # Create new migration
-flask db migrate -m "Description of changes"
+./scripts/run_migrations.sh --create-migration
 
 # Apply migration
 ./scripts/run_migrations.sh
 
 # Rollback if needed
 ./scripts/run_migrations.sh --downgrade
+
+# Check migration status
+./scripts/run_migrations.sh --status
 ```
 
 ### 2. Adding New Features

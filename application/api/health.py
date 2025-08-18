@@ -69,24 +69,4 @@ def detailed_health_check():
     status_code = 200 if health_status['status'] == 'healthy' else 503
     return jsonify(health_status), status_code
 
-@health_bp.route('/ready', methods=['GET'])
-def readiness_check():
-    """Readiness check for Kubernetes/container orchestration"""
-    try:
-        # Check if all critical components are ready
-        db_manager = current_app.config.get('db_manager')
-        if not db_manager:
-            return jsonify({'status': 'not ready', 'reason': 'Database manager not initialized'}), 503
-        
-        # Test database connectivity
-        if not db_manager.test_mis_connection():
-            return jsonify({'status': 'not ready', 'reason': 'MIS database not accessible'}), 503
-        
-        return jsonify({'status': 'ready'})
-    except Exception as e:
-        return jsonify({'status': 'not ready', 'reason': str(e)}), 503
 
-@health_bp.route('/live', methods=['GET'])
-def liveness_check():
-    """Liveness check for Kubernetes/container orchestration"""
-    return jsonify({'status': 'alive'})
