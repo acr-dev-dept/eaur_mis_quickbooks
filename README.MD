@@ -188,14 +188,7 @@ pytest tests/test_quickbooks.py
 4. Configure reverse proxy (nginx)
 5. Use production WSGI server (gunicorn)
 
-### Docker Deployment
-```bash
-# Build image
-docker build -t eaur-mis-quickbooks .
 
-# Run container
-docker run -p 5000:5000 --env-file .env eaur-mis-quickbooks
-```
 
 ## Security Considerations
 
