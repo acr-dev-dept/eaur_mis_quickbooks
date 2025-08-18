@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app, session, flash, redirect, url_for
 from application.services.quickbooks import QuickBooks
 from application.helpers.quickbooks_helpers import QuickBooksHelper
-from application.models.central_models import Company, QuickbooksAuditLog
+from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 import os
 import logging
 import traceback
@@ -39,11 +39,11 @@ def post_journal_entry():
 def get_company_info():
     """Get company info."""
     try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return jsonify({'error': 'No company ID in session'}), 400
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({'error': 'QuickBooks not connected'}), 400
 
-        qb = QuickBooks(company_id=company_id)
+        qb = QuickBooks()
         current_app.logger.info('Getting company info')
         company_info = qb.get_company_info(qb.realm_id)
         current_app.logger.info(f"Company info: {company_info}")
@@ -57,11 +57,11 @@ def get_company_info():
 def get_accounts():
     """Get accounts."""
     try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return jsonify({'error': 'No company ID in session'}), 400
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({'error': 'QuickBooks not connected'}), 400
 
-        qb = QuickBooks(company_id=company_id)
+        qb = QuickBooks()
         current_app.logger.info('Getting accounts')
         accounts = qb.get_accounts(qb.realm_id)
         current_app.logger.info(f"Accounts retrieved successfully")
@@ -75,11 +75,11 @@ def get_accounts():
 def get_vendors():
     """Get vendors."""
     try:
-        company_id = session.get('company_id')
-        if not company_id:
-            return jsonify({'error': 'No company ID in session'}), 400
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({'error': 'QuickBooks not connected'}), 400
 
-        qb = QuickBooks(company_id=company_id)
+        qb = QuickBooks()
         current_app.logger.info('Getting vendors')
         vendors = qb.get_vendors(qb.realm_id)
         current_app.logger.info(f"Vendors retrieved successfully")
@@ -93,13 +93,8 @@ def get_vendors():
 def get_auth_url():
     """Get the QuickBooks OAuth2 authorization URL."""
     try:
-        company_id = session.get('company_id')
-        if not company_id:
-            current_app.logger.error("No company ID found in session")
-            return jsonify({'error': 'No company ID found in session'}), 400
-
-        qb = QuickBooks(company_id=company_id)
-        current_app.logger.info(f"QuickBooks client initialized")
+        qb = QuickBooks()
+        current_app.logger.info("QuickBooks client initialized")
 
         auth_url = qb.get_authorization_url()
         current_app.logger.info(f"Authorization URL generated")
@@ -116,13 +111,12 @@ def get_auth_url():
 def disconnect():
     """Disconnect from QuickBooks."""
     try:
-        company_id = session.get('company_id')
-        if not company_id:
-            current_app.logger.error("No company ID found in session")
-            return jsonify({'error': 'No company ID found in session'}), 400
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({'error': 'QuickBooks not connected'}), 400
 
-        qb = QuickBooks(company_id=company_id)
-        current_app.logger.info(f"QuickBooks client initialized")
+        qb = QuickBooks()
+        current_app.logger.info("QuickBooks client initialized")
 
         qb.disconnect_app()
         message = "QuickBooks integration disconnected successfully!"
@@ -156,31 +150,25 @@ def webhook():
             current_app.logger.error("No realm ID provided in callback")
             return jsonify({'error': 'No realm ID provided'}), 400
 
-        company_id = session.get('company_id')
-        if not company_id:
-            current_app.logger.error("No company ID found in session")
-            return jsonify({'error': 'No company ID found in session'}), 400
-
-        qb = QuickBooks(company_id=company_id)
+        qb = QuickBooks()
         tokens = qb.get_quickbooks_access_token(code)
 
         current_app.logger.info("Access tokens retrieved successfully")
 
-        # Update company data
-        result = Company.update_company_data(
-            company_id,
-            quickbooks_access_token=QuickBooksHelper.encrypt(tokens['access_token']),
-            quickbooks_refresh_token=QuickBooksHelper.encrypt(tokens['refresh_token']),
-            quickbooks_authorization_code=QuickBooksHelper.encrypt(code),
-            quickbooks_realm_id=realm_id
-        )
-
-        if result:
-            current_app.logger.info(f"Updated QuickBooks tokens for company ID {company_id}")
+        # Update QuickBooks configuration
+        try:
+            config = QuickBooksConfig.update_config(
+                access_token=QuickBooksHelper.encrypt(tokens['access_token']),
+                refresh_token=QuickBooksHelper.encrypt(tokens['refresh_token']),
+                authorization_code=QuickBooksHelper.encrypt(code),
+                realm_id=realm_id,
+                is_active=True
+            )
+            current_app.logger.info("Updated QuickBooks configuration successfully")
             return jsonify({'success': True, 'message': 'QuickBooks integration successful'}), 200
-        else:
-            current_app.logger.error(f"Failed to update QuickBooks tokens for company ID {company_id}")
-            return jsonify({'error': 'Failed to update QuickBooks tokens'}), 400
+        except Exception as e:
+            current_app.logger.error(f"Failed to update QuickBooks configuration: {e}")
+            return jsonify({'error': 'Failed to update QuickBooks configuration'}), 400
 
     except Exception as e:
         current_app.logger.error(f"Error in webhook: {e}")
