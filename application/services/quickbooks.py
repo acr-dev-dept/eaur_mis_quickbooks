@@ -17,59 +17,58 @@ class QuickBooks:
     A class to interact with the QuickBooks Online API, including methods for authentication
     and accessing various endpoints.
     """
-    def __init__(self, company_id):
+    def __init__(self):
         """
-        Initialize the QuickBooks client with the company ID.
-        Args:
-            company_id (str): The ID of the company to connect to.
+        Initialize the QuickBooks client for single-tenant EAUR system.
         """
-        from application.models.central_models import Company
+        from application.models.central_models import QuickBooksConfig
         from flask import current_app
 
-        current_app.logger.info(f"Initializing QuickBooks client for company ID: {company_id}")
+        current_app.logger.info("Initializing QuickBooks client for EAUR")
 
-        self.company = Company.query.get(company_id)
-        if not self.company:
-            current_app.logger.error(f"Company with ID {company_id} not found")
-            raise ValueError("Company not found")
+        # Load QuickBooks configuration
+        self.config = QuickBooksConfig.get_config()
 
+        # QuickBooks API configuration
         self.client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
         self.client_secret = os.getenv("QUICK_BOOKS_SECRET")
         self.redirect_uri = os.getenv("QUICK_BOOKS_REDIRECT_URI")
         self.api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
-
-        # Log the encrypted tokens from the database
-        current_app.logger.info(f"Encrypted refresh token from DB: {self.company.quickbooks_refresh_token}")
-        current_app.logger.info(f"Encrypted access token from DB: {self.company.quickbooks_access_token}")
-
-        # Decrypt and store tokens
-        try:
-            if self.company.quickbooks_refresh_token:
-                self.refresh_token = QuickBooksHelper.decrypt(self.company.quickbooks_refresh_token)
-                current_app.logger.info(f"Decrypted refresh token: {self.refresh_token}")
-            else:
-                current_app.logger.warning("No refresh token found in database")
-                self.refresh_token = None
-
-            if self.company.quickbooks_access_token:
-                self.access_token = QuickBooksHelper.decrypt(self.company.quickbooks_access_token)
-                current_app.logger.info(f"Decrypted access token (first 10 chars): {self.access_token[:10] if self.access_token else None}...")
-            else:
-                current_app.logger.warning("No access token found in database")
-                self.access_token = None
-        except Exception as e:
-            current_app.logger.error(f"Error decrypting tokens: {str(e)}")
-            current_app.logger.error(f"Error details: {str(e)}")
-            self.refresh_token = None
-            self.access_token = None
-
-        self.realm_id = self.company.quickbooks_realm_id
-        current_app.logger.info(f"Realm ID: {self.realm_id}")
-
         self.token_url = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-        self.database_name = self.company.database_name
 
-        current_app.logger.info(f"QuickBooks client initialized successfully for company: {self.company.company_name}")
+        # Initialize tokens
+        self.access_token = None
+        self.refresh_token = None
+        self.realm_id = None
+
+        if self.config:
+            current_app.logger.info("QuickBooks configuration found in database")
+
+            # Decrypt and store tokens
+            try:
+                if self.config.refresh_token:
+                    self.refresh_token = QuickBooksHelper.decrypt(self.config.refresh_token)
+                    current_app.logger.info("Refresh token decrypted successfully")
+                else:
+                    current_app.logger.warning("No refresh token found in database")
+
+                if self.config.access_token:
+                    self.access_token = QuickBooksHelper.decrypt(self.config.access_token)
+                    current_app.logger.info("Access token decrypted successfully")
+                else:
+                    current_app.logger.warning("No access token found in database")
+
+                self.realm_id = self.config.realm_id
+                current_app.logger.info(f"Realm ID: {self.realm_id}")
+
+            except Exception as e:
+                current_app.logger.error(f"Error decrypting tokens: {str(e)}")
+                self.refresh_token = None
+                self.access_token = None
+        else:
+            current_app.logger.info("No QuickBooks configuration found - first time setup")
+
+        current_app.logger.info("QuickBooks client initialized successfully")
 
     def _get_auth_header(self):
         """Generate the Basic Auth header required for token requests."""
@@ -101,19 +100,16 @@ class QuickBooks:
             tokens = response.json()
             self.access_token = tokens['access_token']
             self.refresh_token = tokens['refresh_token']
-            # Update the company's access and refresh tokens in the database
+            # Update QuickBooks configuration in the database
             try:
-                result = self.company.update_company_data(
-                    self.company.company_id,
-                    quickbooks_access_token=QuickBooksHelper.encrypt(self.access_token),
-                    quickbooks_refresh_token=QuickBooksHelper.encrypt(self.refresh_token)
+                from application.models.central_models import QuickBooksConfig
+                QuickBooksConfig.update_config(
+                    access_token=QuickBooksHelper.encrypt(self.access_token),
+                    refresh_token=QuickBooksHelper.encrypt(self.refresh_token)
                 )
-                if result:
-                    current_app.logger.info("Company data updated successfully.")
-                else:
-                    current_app.logger.error("Failed to update company data.")
+                current_app.logger.info("QuickBooks configuration updated successfully.")
             except Exception as e:
-                current_app.logger.error(f"Error updating company data: {e}")
+                current_app.logger.error(f"Error updating QuickBooks configuration: {e}")
             return tokens
         else:
             raise Exception(f"Failed to get access token: {response.status_code} {response.text}")
@@ -146,34 +142,27 @@ class QuickBooks:
             self.access_token = tokens['access_token']
             self.refresh_token = tokens['refresh_token']  # Update refresh token
 
-            # Update the company's access and refresh tokens in the database
+            # Update QuickBooks configuration in the database
             try:
                 encrypted_access_token = QuickBooksHelper.encrypt(self.access_token)
                 encrypted_refresh_token = QuickBooksHelper.encrypt(self.refresh_token)
 
-                current_app.logger.info(f"Encrypted access token: {encrypted_access_token[:10]}...")
-                current_app.logger.info(f"Encrypted refresh token: {encrypted_refresh_token}")
-                current_app.logger.info(f"Updating company ID: {self.company.company_id}")
+                current_app.logger.info("Updating QuickBooks configuration with new tokens")
 
-                result = self.company.update_company_data(
-                    self.company.company_id,
-                    quickbooks_access_token=encrypted_access_token,
-                    quickbooks_refresh_token=encrypted_refresh_token
+                from application.models.central_models import QuickBooksConfig
+                config = QuickBooksConfig.update_config(
+                    access_token=encrypted_access_token,
+                    refresh_token=encrypted_refresh_token
                 )
 
-                if result:
-                    current_app.logger.info("Company data updated successfully with new tokens.")
-                    # Verify the update by retrieving the company again
-                    from application.models.central_models import Company
-                    updated_company = Company.query.get(self.company.company_id)
-                    if updated_company:
-                        current_app.logger.info(f"Verified company update. New refresh token in DB: {updated_company.quickbooks_refresh_token}")
-                    else:
-                        current_app.logger.error("Could not verify company update - company not found")
+                if config:
+                    current_app.logger.info("QuickBooks configuration updated successfully with new tokens.")
+                    # Update local config reference
+                    self.config = config
                 else:
-                    current_app.logger.error("Failed to update company data with new tokens.")
+                    current_app.logger.error("Failed to update QuickBooks configuration with new tokens.")
             except Exception as e:
-                current_app.logger.error(f"Error updating company data: {e}")
+                current_app.logger.error(f"Error updating QuickBooks configuration: {e}")
                 current_app.logger.error(f"Error details: {str(e)}")
             return tokens
         else:
@@ -557,7 +546,6 @@ class QuickBooks:
         If no tokens are available, it will still clear any remaining data from the database.
         """
         current_app.logger.info("Starting QuickBooks disconnect process...")
-        current_app.logger.info(f"Company ID: {self.company.company_id}")
         current_app.logger.info(f"Access token available: {bool(self.access_token)}")
         current_app.logger.info(f"Refresh token available: {bool(self.refresh_token)}")
 
@@ -566,19 +554,19 @@ class QuickBooks:
         # If no tokens are available, just clear the database and return success
         if not token_to_revoke:
             current_app.logger.info("No tokens available to revoke. Clearing database records only.")
-            result = self.company.update_company_data(
-                self.company.company_id,
-                quickbooks_access_token=None,
-                quickbooks_refresh_token=None,
-                quickbooks_authorization_code=None,
-                quickbooks_realm_id=None
-            )
-
-            if result:
+            try:
+                from application.models.central_models import QuickBooksConfig
+                QuickBooksConfig.update_config(
+                    access_token=None,
+                    refresh_token=None,
+                    authorization_code=None,
+                    realm_id=None,
+                    is_active=False
+                )
                 current_app.logger.info("Successfully cleared QuickBooks data from database (no tokens to revoke).")
                 return True
-            else:
-                current_app.logger.error("Failed to clear QuickBooks data from database.")
+            except Exception as e:
+                current_app.logger.error(f"Failed to clear QuickBooks data from database: {e}")
                 raise Exception("Failed to clear QuickBooks data from database.")
 
         # If we have tokens, attempt to revoke them with QuickBooks
@@ -589,19 +577,19 @@ class QuickBooks:
         except Exception as e:
             current_app.logger.warning(f"Failed to get auth header for token revocation: {e}. Proceeding with database cleanup only.")
             # If we can't get auth header, just clear the database
-            result = self.company.update_company_data(
-                self.company.company_id,
-                quickbooks_access_token=None,
-                quickbooks_refresh_token=None,
-                quickbooks_authorization_code=None,
-                quickbooks_realm_id=None
-            )
-
-            if result:
+            try:
+                from application.models.central_models import QuickBooksConfig
+                QuickBooksConfig.update_config(
+                    access_token=None,
+                    refresh_token=None,
+                    authorization_code=None,
+                    realm_id=None,
+                    is_active=False
+                )
                 current_app.logger.info("Successfully cleared QuickBooks data from database (auth header failed).")
                 return True
-            else:
-                current_app.logger.error("Failed to clear QuickBooks data from database.")
+            except Exception as e:
+                current_app.logger.error(f"Failed to clear QuickBooks data from database: {e}")
                 raise Exception("Failed to clear QuickBooks data from database.")
 
         headers = {
@@ -632,19 +620,19 @@ class QuickBooks:
             current_app.logger.warning(f"Exception during token revocation: {e}. Proceeding with database cleanup.")
 
         # Regardless of token revocation success/failure, clear the database
-        result = self.company.update_company_data(
-            self.company.company_id,
-            quickbooks_access_token=None,
-            quickbooks_refresh_token=None,
-            quickbooks_authorization_code=None,
-            quickbooks_realm_id=None
-        )
-
-        if result:
+        try:
+            from application.models.central_models import QuickBooksConfig
+            QuickBooksConfig.update_config(
+                access_token=None,
+                refresh_token=None,
+                authorization_code=None,
+                realm_id=None,
+                is_active=False
+            )
             current_app.logger.info("Successfully disconnected QuickBooks and cleared all tokens and authorization data.")
             return True
-        else:
-            current_app.logger.error("Failed to clear QuickBooks data from database after token revocation.")
+        except Exception as e:
+            current_app.logger.error(f"Failed to clear QuickBooks data from database after token revocation: {e}")
             raise Exception("Failed to clear QuickBooks data from database.")
 
 if __name__ == "__main__":
