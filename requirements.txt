@@ -40,12 +40,11 @@ python-dateutil==2.8.2
 structlog==23.1.0
 
 # Development and Testing Dependencies
-pytest==7.4.0
-pytest-flask==1.2.0
-pytest-cov==4.1.0
+# unittest is built-in to Python, no additional dependencies needed
 black==23.7.0
 flake8==6.0.0
 isort==5.12.0
+coverage==7.3.0
 
 # Production Dependencies
 gunicorn==21.2.0
