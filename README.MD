@@ -169,14 +169,20 @@ Models will be auto-generated from the existing MIS database schema using the da
 
 ### 3. Testing
 ```bash
-# Run tests
-pytest
+# Run all tests
+python run_tests.py
 
-# Run with coverage
-pytest --cov=application
+# Run with coverage reporting
+python run_tests.py --coverage
 
 # Run specific test file
-pytest tests/test_quickbooks.py
+python run_tests.py --specific health
+
+# Run with different verbosity
+python run_tests.py --verbosity 1
+
+# Run using unittest directly
+python -m unittest discover tests -v
 ```
 
 ## Deployment
@@ -198,6 +204,47 @@ pytest tests/test_quickbooks.py
 - Comprehensive audit logging
 - Input validation and sanitization
 - CORS configuration for production
+
+## Testing
+
+### Test Framework
+The project uses Python's built-in `unittest` framework for testing, providing:
+- 25 comprehensive tests covering models, APIs, and health endpoints
+- 56% code coverage with detailed reporting
+- Mock-based testing for external services
+- Database transaction isolation for clean tests
+
+### Test Structure
+```
+tests/
+├── __init__.py
+├── base_test.py           # Base test class with utilities
+├── test_health.py         # Health endpoint tests (5 tests)
+├── test_models.py         # Database model tests (14 tests)
+└── test_quickbooks_api.py # QuickBooks API tests (6 tests)
+```
+
+### Running Tests
+```bash
+# Run all tests with summary
+python run_tests.py
+
+# Generate coverage report
+python run_tests.py --coverage
+
+# Run specific test category
+python run_tests.py --specific models
+python run_tests.py --specific health
+python run_tests.py --specific quickbooks_api
+
+# Adjust verbosity (0=quiet, 1=normal, 2=verbose)
+python run_tests.py --verbosity 2
+```
+
+### Coverage Reports
+- Console coverage report shows line-by-line coverage
+- HTML coverage report generated in `htmlcov/` directory
+- Current coverage: 56% overall, 88% on models
 
 ## Monitoring and Logging
 
