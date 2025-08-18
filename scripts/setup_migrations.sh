@@ -45,7 +45,7 @@ if [ -z "$VIRTUAL_ENV" ]; then
     fi
 fi
 
-print_status "Setting up Flask-Migrate for EAUR MIS-QuickBooks Integration..."
+print_status "Setting up Alembic for EAUR MIS-QuickBooks Integration..."
 
 # Create logs directory if it doesn't exist
 if [ ! -d "logs" ]; then
@@ -54,25 +54,21 @@ if [ ! -d "logs" ]; then
     print_success "Logs directory created"
 fi
 
-# Create migrations directory if it doesn't exist
-if [ ! -d "migrations" ]; then
-    print_status "Initializing Flask-Migrate..."
-    
-    # Set Flask app environment variable
-    export FLASK_APP=app.py
-    export FLASK_ENV=development
-    
-    # Initialize migrations
-    flask db init
-    
+# Check if Alembic is already initialized
+if [ ! -d "alembic" ]; then
+    print_status "Initializing Alembic..."
+
+    # Initialize Alembic
+    alembic init alembic
+
     if [ $? -eq 0 ]; then
-        print_success "Flask-Migrate initialized successfully"
+        print_success "Alembic initialized successfully"
     else
-        print_error "Failed to initialize Flask-Migrate"
+        print_error "Failed to initialize Alembic"
         exit 1
     fi
 else
-    print_warning "Migrations directory already exists. Skipping initialization."
+    print_warning "Alembic directory already exists. Skipping initialization."
 fi
 
 # Check if .env file exists
@@ -91,11 +87,8 @@ fi
 # Create initial migration for central models
 print_status "Creating initial migration for central application models..."
 
-export FLASK_APP=app.py
-export FLASK_ENV=development
-
-# Generate initial migration
-flask db migrate -m "Initial migration: central application models"
+# Generate initial migration with Alembic
+alembic revision --autogenerate -m "Initial migration: central application models"
 
 if [ $? -eq 0 ]; then
     print_success "Initial migration created successfully"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# EAUR MIS-QuickBooks Integration - Migration Runner Script
-# This script applies database migrations and handles database operations
+# EAUR MIS-QuickBooks Integration - Alembic Migration Runner Script
+# This script applies database migrations using Alembic and handles database operations
 
 set -e  # Exit on any error
 
@@ -48,6 +48,7 @@ show_usage() {
     echo "  $0 --downgrade          # Downgrade one revision"
     echo "  $0 --downgrade abc123   # Downgrade to specific revision"
     echo "  $0 --reset              # Reset database (with confirmation)"
+    echo "  $0 --create-migration   # Create new migration file"
 }
 
 # Default action
@@ -86,6 +87,10 @@ while [[ $# -gt 0 ]]; do
             ACTION="reset"
             shift
             ;;
+        --create-migration)
+            ACTION="create"
+            shift
+            ;;
         --dry-run)
             DRY_RUN=true
             shift
@@ -104,9 +109,9 @@ if [ ! -f "app.py" ]; then
     exit 1
 fi
 
-# Check if migrations directory exists
-if [ ! -d "migrations" ]; then
-    print_error "Migrations directory not found. Run './scripts/setup_migrations.sh' first"
+# Check if alembic directory exists
+if [ ! -d "alembic" ]; then
+    print_error "Alembic directory not found. Run './scripts/setup_migrations.sh' first"
     exit 1
 fi
 
@@ -117,7 +122,6 @@ if [ ! -f ".env" ]; then
 fi
 
 # Set environment variables
-export FLASK_APP=app.py
 export FLASK_ENV=development
 
 # Load environment variables from .env file
@@ -165,19 +169,19 @@ else:
     fi
 }
 
-# Function to execute Flask-Migrate commands
+# Function to execute Alembic commands
 execute_migration() {
     local cmd="$1"
     local description="$2"
-    
+
     if [ "$DRY_RUN" = true ]; then
-        print_status "[DRY RUN] Would execute: flask db $cmd"
+        print_status "[DRY RUN] Would execute: alembic $cmd"
         return 0
     fi
-    
+
     print_status "$description"
-    flask db $cmd
-    
+    alembic $cmd
+
     if [ $? -eq 0 ]; then
         print_success "$description completed"
     else
@@ -190,14 +194,14 @@ execute_migration() {
 case $ACTION in
     "upgrade")
         check_database
-        execute_migration "upgrade" "Applying database migrations"
+        execute_migration "upgrade head" "Applying database migrations"
         ;;
     "downgrade")
         check_database
         if [ -n "$REVISION" ]; then
             execute_migration "downgrade $REVISION" "Downgrading to revision $REVISION"
         else
-            execute_migration "downgrade" "Downgrading one revision"
+            execute_migration "downgrade -1" "Downgrading one revision"
         fi
         ;;
     "current")
@@ -208,19 +212,29 @@ case $ACTION in
         echo ""
         execute_migration "current" "Current revision"
         ;;
+    "create")
+        print_status "Creating new migration..."
+        read -p "Enter migration message: " -r migration_message
+        if [ -n "$migration_message" ]; then
+            execute_migration "revision --autogenerate -m \"$migration_message\"" "Creating new migration: $migration_message"
+        else
+            print_error "Migration message is required"
+            exit 1
+        fi
+        ;;
     "reset")
         if [ "$DRY_RUN" = true ]; then
             print_status "[DRY RUN] Would reset database (destroy all data)"
             exit 0
         fi
-        
+
         print_warning "This will destroy ALL data in the database!"
         read -p "Are you sure you want to reset the database? Type 'yes' to confirm: " -r
         echo
         if [[ $REPLY == "yes" ]]; then
             check_database
             execute_migration "downgrade base" "Downgrading to base (empty database)"
-            execute_migration "upgrade" "Applying all migrations"
+            execute_migration "upgrade head" "Applying all migrations"
             print_success "Database reset completed"
         else
             print_status "Database reset cancelled"
