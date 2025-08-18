@@ -139,3 +139,6 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+#flask session should be ignored also
+flask_session/
