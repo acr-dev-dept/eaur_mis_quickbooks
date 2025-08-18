@@ -4,7 +4,14 @@ from flask import current_app
 
 # Load key from environment or secure location
 fernet_key = os.environ.get("FERNET_KEY")
-fernet = Fernet(fernet_key)
+fernet = None
+
+if fernet_key:
+    try:
+        fernet = Fernet(fernet_key)
+    except Exception as e:
+        print(f"Warning: Could not initialize Fernet encryption: {e}")
+        fernet = None
 
 class QuickBooksHelper:
     """
@@ -56,6 +63,10 @@ class QuickBooksHelper:
                 current_app.logger.warning("Attempting to encrypt None or empty string")
                 return None
 
+            if not fernet:
+                current_app.logger.warning("Fernet encryption not available - returning value as-is")
+                return value
+
             encrypted = fernet.encrypt(value.encode()).decode()
             current_app.logger.info(f"Successfully encrypted value. Original length: {len(value)}, Encrypted length: {len(encrypted)}")
             return encrypted
@@ -70,6 +81,10 @@ class QuickBooksHelper:
             if not encrypted_value:
                 current_app.logger.warning("Attempting to decrypt None or empty string")
                 return None
+
+            if not fernet:
+                current_app.logger.warning("Fernet encryption not available - returning value as-is")
+                return encrypted_value
 
             decrypted = fernet.decrypt(encrypted_value.encode()).decode()
             current_app.logger.info(f"Successfully decrypted value. Encrypted length: {len(encrypted_value)}, Decrypted length: {len(decrypted)}")
