@@ -71,6 +71,10 @@ class Config:
             f"?charset=utf8mb4"
         )
 
+    def get_mis_database_url(self):
+        """Get MIS database URL (method version for compatibility)"""
+        return self.MIS_DATABASE_URL
+
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
