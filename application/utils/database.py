@@ -10,6 +10,10 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.exc import DisconnectionError
 from flask import current_app
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +39,13 @@ class DatabaseManager:
         Args:
             config: Flask configuration object
         """
-        if not config.MIS_DATABASE_URL:
+        if not config.SQLALCHEMY_DATABASE_URI:
             logger.warning("MIS database URL not configured")
             return
         
         try:
             engine = create_engine(
-                config.MIS_DATABASE_URL,
+                config.SQLALCHEMY_DATABASE_URI,
                 poolclass=QueuePool,
                 pool_size=10,
                 max_overflow=20,
