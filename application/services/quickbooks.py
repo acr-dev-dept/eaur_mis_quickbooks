@@ -831,9 +831,355 @@ class QuickBooks:
                 }
             }
 
-    def send_invoice_to_a_given_email(self, realm_id, invoice_id):
+    def send_invoice_to_a_given_email(self, realm_id, invoice_id, email):
+        """ send an invoice to the given email address.
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to send.
+            email (str): The email address to send the invoice to.
+        Returns:
+            dict: The response from the QuickBooks API.
         """
+        endpoint = f"{realm_id}/invoice/{invoice_id}/send?sendto={email}"
+        try:
+            current_app.logger.info(f"Sending invoice {invoice_id} to email: {email}")
+            response = self.make_request(endpoint, method="POST")
+            if response.status_code == 200:
+                current_app.logger.info("Invoice sent successfully")
+                return response.json()
+            else:
+                current_app.logger.error(f"Failed to send invoice: {response.status_code} {response.text}")
+                raise Exception(f"Failed to send invoice: {response.status_code} {response.text}")
+        except Exception as e:
+            current_app.logger.error(f"Error sending invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error sending invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
 
+    def sparse_invoice_update(self, realm_id, invoice_id, update_data):
+        """
+        Update an invoice with sparse data in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to update.
+            update_data (dict): The sparse data to update in the invoice.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}"
+        try:
+            current_app.logger.info(f"Updating invoice {invoice_id} with data: {update_data}")
+            response = self.make_request(endpoint, method="POST", data=update_data)
+            current_app.logger.info(f"Invoice updated successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error updating invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def full_update_invoice(self, realm_id, invoice_id, full_data):
+        """
+        Update an invoice with full data in QuickBooks.
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to update.
+            full_data (dict): The full data to update in the invoice.
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}"
+        try:
+            current_app.logger.info(f"Updating invoice {invoice_id} with full data: {full_data}")
+            response = self.make_request(endpoint, method="POST", data=full_data)
+            current_app.logger.info(f"Invoice updated successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error updating invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    def create_payment(self, realm_id, payment_data):
+        """
+        Create a payment in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_data (dict): The data for the payment.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment"
+        try:
+            current_app.logger.info(f"Creating payment with data: {payment_data}")
+            response = self.make_request(endpoint, method="POST", data=payment_data)
+            current_app.logger.info(f"Payment created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    def delete_payment(self, realm_id, payment_id):
+        """
+        Delete a payment by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to delete.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}"
+        try:
+            current_app.logger.info(f"Deleting payment with ID: {payment_id}")
+            response = self.make_request(endpoint, method="DELETE")
+            current_app.logger.info(f"Payment deleted successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error deleting payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error deleting payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    def get_payment(self, realm_id, payment_id):
+        """
+        Retrieve a payment by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to retrieve.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}"
+        try:
+            current_app.logger.info(f"Retrieving payment with ID: {payment_id}")
+            response = self.make_request(endpoint, method="GET")
+            current_app.logger.info(f"Payment retrieved successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error retrieving payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def void_payment(self, realm_id, payment_id):
+        """
+        Void a payment by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to void.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}/void"
+        try:
+            current_app.logger.info(f"Voiding payment with ID: {payment_id}")
+            response = self.make_request(endpoint, method="POST")
+            current_app.logger.info(f"Payment voided successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error voiding payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error voiding payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def get_payment_as_pdf(self, realm_id, payment_id):
+        """
+        Retrieve a payment as a PDF file from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to retrieve as PDF.
+
+        Returns:
+            bytes: The PDF content of the payment.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}/pdf"
+        try:
+            current_app.logger.info(f"Retrieving payment {payment_id} as PDF")
+            response = self.make_request(endpoint, method="GET")
+            if response.status_code == 200:
+                current_app.logger.info("Payment PDF retrieved successfully")
+                return response.content  # Return the raw PDF content
+            else:
+                current_app.logger.error(f"Failed to retrieve payment PDF: {response.status_code} {response.text}")
+                raise Exception(f"Failed to retrieve payment PDF: {response.status_code} {response.text}")
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving payment PDF: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error retrieving payment PDF: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def read_payment_details(self, realm_id, payment_id):
+        """
+        Read the details of a payment by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to read.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}"
+        try:
+            current_app.logger.info(f"Reading payment details with ID: {payment_id}")
+            response = self.make_request(endpoint, method="GET")
+            current_app.logger.info(f"Payment details retrieved successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error reading payment details: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error reading payment details: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def send_payment(self, realm_id, payment_id, email):
+        """
+        Send a payment via email in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to send.
+            email (str): The email address to send the payment to.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}/send?sendto={email}"
+        try:
+            current_app.logger.info(f"Sending payment {payment_id} to email: {email}")
+            response = self.make_request(endpoint, method="POST")
+            if response.status_code == 200:
+                current_app.logger.info("Payment sent successfully")
+                return response.json()
+            else:
+                current_app.logger.error(f"Failed to send payment: {response.status_code} {response.text}")
+                raise Exception(f"Failed to send payment: {response.status_code} {response.text}")
+        except Exception as e:
+            current_app.logger.error(f"Error sending payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error sending payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def update_payment(self, realm_id, payment_id, update_data):
+        """
+        Update a payment with sparse data in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to update.
+            update_data (dict): The sparse data to update in the payment.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment/{payment_id}"
+        try:
+            current_app.logger.info(f"Updating payment {payment_id} with data: {update_data}")
+            response = self.make_request(endpoint, method="POST", data=update_data)
+            current_app.logger.info(f"Payment updated successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error updating payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            } 
 
         
 
