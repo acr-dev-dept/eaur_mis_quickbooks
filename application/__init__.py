@@ -35,7 +35,7 @@ def create_app(config_name=None):
 
     # Initialize extensions with app
     db.init_app(app)
-    migrate.init_app(app, db)
+    #migrate.init_app(app, db)
     jwt.init_app(app)
     session.init_app(app)
 
@@ -108,11 +108,16 @@ def register_blueprints(app):
     """Register application blueprints"""
     # API v1 blueprint
     from application.api.v1 import api_v1_bp
-    app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
-
-    # Health check blueprint
     from application.api.health import health_bp
+    from application.api.v1.urubuto import urubuto_bp
+    from application.api.v1.quickbooks import quickbooks_bp
+    
+
+    # Register blueprints
+    app.register_blueprint(api_v1_bp, url_prefix='/api/v1')   
     app.register_blueprint(health_bp, url_prefix='/health')
+    app.register_blueprint(urubuto_bp, url_prefix='/api/v1/urubuto')
+    app.register_blueprint(quickbooks_bp, url_prefix='/api/v1/quickbooks')
 
 def register_error_handlers(app):
     """Register application error handlers"""
