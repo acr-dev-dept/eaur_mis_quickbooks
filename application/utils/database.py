@@ -39,19 +39,19 @@ class DatabaseManager:
         Args:
             config: Flask configuration object
         """
-        if not config.SQLALCHEMY_DATABASE_URI:
+        if not config.get('SQLALCHEMY_DATABASE_URI'):
             logger.warning("MIS database URL not configured")
             return
         
         try:
             engine = create_engine(
-                config.SQLALCHEMY_DATABASE_URI,
+                config.get('SQLALCHEMY_DATABASE_URI'),
                 poolclass=QueuePool,
                 pool_size=10,
                 max_overflow=20,
                 pool_pre_ping=True,  # Verify connections before use
                 pool_recycle=3600,   # Recycle connections every hour
-                echo=config.DEBUG,   # Log SQL queries in debug mode
+                echo=config.get('DEBUG'),   # Log SQL queries in debug mode
                 connect_args={
                     "charset": "utf8mb4",
                     "use_unicode": True,
