@@ -645,6 +645,199 @@ class QuickBooks:
             current_app.logger.error(f"Failed to clear QuickBooks data from database after token revocation: {e}")
             raise Exception("Failed to clear QuickBooks data from database.")
 
+    def create_invoice(self, realm_id, invoice_data):
+        """
+        Create an invoice in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_data (dict): The data for the invoice.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice"
+        try:
+            current_app.logger.info(f"Creating invoice with data: {invoice_data}")
+            response = self.make_request(endpoint, method="POST", data=invoice_data)
+            current_app.logger.info(f"Invoice created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    def get_invoice(self, realm_id, invoice_id):
+        """
+        Retrieve an invoice by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to retrieve.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}"
+        try:
+            current_app.logger.info(f"Retrieving invoice with ID: {invoice_id}")
+            response = self.make_request(endpoint, method="GET")
+            current_app.logger.info(f"Invoice retrieved successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error retrieving invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+        def get_invoice_as_pdf(self, realm_id, invoice_id):
+        """
+        Retrieve an invoice as a PDF file from QuickBooks.
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to retrieve as PDF.
+        Returns:
+            bytes: The PDF content of the invoice.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}/pdf"
+        try:
+            current_app.logger.info(f"Retrieving invoice {invoice_id} as PDF")
+            response = self.make_request(endpoint, method="GET")
+            if response.status_code == 200:
+                current_app.logger.info("Invoice PDF retrieved successfully")
+                return response.content  # Return the raw PDF content
+            else:
+                current_app.logger.error(f"Failed to retrieve invoice PDF: {response.status_code} {response.text}")
+                raise Exception(f"Failed to retrieve invoice PDF: {response.status_code} {response.text}")
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving invoice PDF: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error retrieving invoice PDF: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def delete_invoice(self, realm_id, invoice_id):
+        """
+        Delete an invoice by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to delete.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}"
+        try:
+            current_app.logger.info(f"Deleting invoice with ID: {invoice_id}")
+            response = self.make_request(endpoint, method="DELETE")
+            current_app.logger.info(f"Invoice deleted successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error deleting invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error deleting invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def void_invoice(self, realm_id, invoice_id):
+        """
+        Void an invoice by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_id (str): The ID of the invoice to void.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/invoice/{invoice_id}/void"
+        try:
+            current_app.logger.info(f"Voiding invoice with ID: {invoice_id}")
+            response = self.make_request(endpoint, method="POST")
+            current_app.logger.info(f"Invoice voided successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error voiding invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error voiding invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    
+    def send_invoice_to_supplied_email(self, realm_id, invoice_id):
+        """
+        Send an invoice via email in QuickBooks supplied in the invoice.
+        
+        description: 
+        This endpoint will send an invoice to email specified in the invoice object.
+
+        args:
+        realm_id(str): The realID of the company.
+        invoice_id: The invoice ID.
+        """
+        endpoint = f"{realId}/invoice/{invoiceId}/send"
+        try:
+            current_app.logger.info(f"Voiding invoice with ID: {invoice_id}")
+            response = self.make_request(endpoint, method="POST")
+            current_app.logger.info(f"Invoice voided successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error voiding invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error voiding invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+    def send_invoice_to_a_given_email(self, realm_id, invoice_id):
+        """
+
+
+        
+
+
 if __name__ == "__main__":
     client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
     client_secret = os.getenv("QUICK_BOOKS_SECRET")
