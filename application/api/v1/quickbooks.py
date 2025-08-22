@@ -685,3 +685,69 @@ def get_payment(payment_id):
             'error': 'Error getting payment',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/payments', methods=['POST'])
+def create_payment():
+    """Create a new payment."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide payment data in JSON format'
+            }), 400
+
+        payment_data = request.json
+
+        # Basic validation for required fields
+        if 'CustomerRef' not in payment_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: CustomerRef',
+                'message': 'Payment must have a customer reference'
+            }), 400
+
+        if 'TotalAmt' not in payment_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: TotalAmt',
+                'message': 'Payment must have a total amount'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new payment')
+
+        result = qb.create_payment(qb.realm_id, payment_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create payment',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Payment created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Payment created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating payment: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating payment',
+            'details': str(e)
+        }), 500
