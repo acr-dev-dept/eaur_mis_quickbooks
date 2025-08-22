@@ -197,3 +197,51 @@ def get_invoices():
             'error': 'Error getting invoices',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>', methods=['GET'])
+def get_invoice(invoice_id):
+    """Get a specific invoice by ID."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting invoice with ID: {invoice_id}')
+
+        invoice = qb.get_invoice(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in invoice:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice not found or error occurred',
+                'details': invoice['Fault']['Error'][0]['Message'] if invoice['Fault']['Error'] else 'Unknown error'
+            }), 404
+
+        current_app.logger.info("Invoice retrieved successfully")
+        return jsonify({
+            'success': True,
+            'data': invoice,
+            'message': 'Invoice retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting invoice',
+            'details': str(e)
+        }), 500
