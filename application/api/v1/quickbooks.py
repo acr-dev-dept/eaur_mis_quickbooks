@@ -12,25 +12,6 @@ load_dotenv()
 
 quickbooks_bp = Blueprint('quickbooks', __name__)
 
-@quickbooks_bp.route('/create_account', methods=['POST'])
-def create_account():
-    """Create an account."""
-    # TODO: Implement after forms are created
-    return jsonify({
-        'message': 'Account creation endpoint will be implemented after forms are created',
-        'status': 'not_implemented'
-    }), 501
-
-@quickbooks_bp.route('/post_journal_entry', methods=['GET', 'POST'])
-def post_journal_entry():
-    """Post a journal entry by mapping totals to QuickBooks accounts."""
-    # TODO: Implement after auxiliary helpers and forms are created
-    return jsonify({
-        'message': 'Journal entry posting will be implemented after auxiliary helpers are created',
-        'status': 'not_implemented'
-    }), 501
-
-
 
 @quickbooks_bp.route('/get_company_info', methods=['GET'])
 def get_company_info():
