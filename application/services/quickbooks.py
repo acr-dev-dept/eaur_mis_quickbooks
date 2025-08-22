@@ -292,6 +292,73 @@ class QuickBooks:
         endpoint = f"{realm_id}/customer/{customer_id}"
         return self.make_request(endpoint, method="GET")
 
+    def get_invoices(self, realm_id, params=None):
+        """
+        Retrieve a list of invoices from QuickBooks.
+
+        Args:
+            realm_id (str): The QuickBooks company ID.
+            params (dict): Additional query parameters for filtering.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        query = "SELECT * FROM Invoice MAXRESULTS 1000"
+        if params:
+            conditions = []
+            for key, value in params.items():
+                if key.lower() == 'customerref':
+                    conditions.append(f"CustomerRef = '{value}'")
+                elif key.lower() == 'docnumber':
+                    conditions.append(f"DocNumber = '{value}'")
+                elif key.lower() == 'active':
+                    conditions.append(f"Active = {str(value).lower()}")
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+        endpoint = f"{realm_id}/query"
+        try:
+            current_app.logger.info(f"Getting invoices with query: {query}")
+            response = self.make_request(endpoint, method="GET", params={"query": query})
+            current_app.logger.info("Invoices retrieved successfully")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error getting invoices: {str(e)}")
+            return {"error": "Error getting invoices", "details": str(e)}
+
+    def get_payments(self, realm_id, params=None):
+        """
+        Retrieve a list of payments from QuickBooks.
+
+        Args:
+            realm_id (str): The QuickBooks company ID.
+            params (dict): Additional query parameters for filtering.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        query = "SELECT * FROM Payment MAXRESULTS 1000"
+        if params:
+            conditions = []
+            for key, value in params.items():
+                if key.lower() == 'customerref':
+                    conditions.append(f"CustomerRef = '{value}'")
+                elif key.lower() == 'txndate':
+                    conditions.append(f"TxnDate = '{value}'")
+                elif key.lower() == 'active':
+                    conditions.append(f"Active = {str(value).lower()}")
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+        endpoint = f"{realm_id}/query"
+        try:
+            current_app.logger.info(f"Getting payments with query: {query}")
+            response = self.make_request(endpoint, method="GET", params={"query": query})
+            current_app.logger.info("Payments retrieved successfully")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error getting payments: {str(e)}")
+            return {"error": "Error getting payments", "details": str(e)}
 
     def get_accounts(self, realm_id):
         """

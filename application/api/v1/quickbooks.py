@@ -146,3 +146,54 @@ def webhook():
     except Exception as e:
         current_app.logger.error(f"Error in webhook: {e}")
         return jsonify({'error': 'Error processing callback'}), 500
+
+
+# Invoice Endpoints
+@quickbooks_bp.route('/invoices', methods=['GET'])
+def get_invoices():
+    """Get all invoices with optional filtering."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting invoices')
+
+        # Get query parameters for filtering
+        params = {}
+        if request.args.get('customer_id'):
+            params['customerref'] = request.args.get('customer_id')
+        if request.args.get('doc_number'):
+            params['docnumber'] = request.args.get('doc_number')
+        if request.args.get('active'):
+            params['active'] = request.args.get('active').lower() == 'true'
+
+        invoices = qb.get_invoices(qb.realm_id, params if params else None)
+        current_app.logger.info("Invoices retrieved successfully")
+
+        # Check for errors in the response
+        if 'error' in invoices:
+            return jsonify({
+                'success': False,
+                'error': invoices['error'],
+                'details': invoices.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'data': invoices,
+            'message': 'Invoices retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting invoices: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting invoices',
+            'details': str(e)
+        }), 500
