@@ -751,3 +751,61 @@ def create_payment():
             'error': 'Error creating payment',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/payments/<payment_id>', methods=['PUT'])
+def update_payment(payment_id):
+    """Update an existing payment."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not payment_id:
+            return jsonify({
+                'success': False,
+                'error': 'Payment ID is required',
+                'message': 'Please provide a valid payment ID'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide payment data in JSON format'
+            }), 400
+
+        update_data = request.json
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Updating payment {payment_id}')
+
+        result = qb.update_payment(qb.realm_id, payment_id, update_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to update payment',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Payment updated successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Payment updated successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating payment: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error updating payment',
+            'details': str(e)
+        }), 500
