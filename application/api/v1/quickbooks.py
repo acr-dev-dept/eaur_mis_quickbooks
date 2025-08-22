@@ -586,3 +586,54 @@ def send_invoice(invoice_id):
             'error': 'Error sending invoice',
             'details': str(e)
         }), 500
+
+
+# Payment Endpoints
+@quickbooks_bp.route('/payments', methods=['GET'])
+def get_payments():
+    """Get all payments with optional filtering."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting payments')
+
+        # Get query parameters for filtering
+        params = {}
+        if request.args.get('customer_id'):
+            params['customerref'] = request.args.get('customer_id')
+        if request.args.get('txn_date'):
+            params['txndate'] = request.args.get('txn_date')
+        if request.args.get('active'):
+            params['active'] = request.args.get('active').lower() == 'true'
+
+        payments = qb.get_payments(qb.realm_id, params if params else None)
+        current_app.logger.info("Payments retrieved successfully")
+
+        # Check for errors in the response
+        if 'error' in payments:
+            return jsonify({
+                'success': False,
+                'error': payments['error'],
+                'details': payments.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'data': payments,
+            'message': 'Payments retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting payments: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting payments',
+            'details': str(e)
+        }), 500
