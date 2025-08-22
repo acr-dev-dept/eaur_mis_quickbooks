@@ -469,3 +469,120 @@ def void_invoice(invoice_id):
             'error': 'Error voiding invoice',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>/pdf', methods=['GET'])
+def get_invoice_pdf(invoice_id):
+    """Get invoice as PDF."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting PDF for invoice with ID: {invoice_id}')
+
+        result = qb.get_invoice_as_pdf(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if isinstance(result, dict) and 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get invoice PDF',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice PDF retrieved successfully")
+        # For PDF content, we should return the binary data with appropriate headers
+        from flask import Response
+        return Response(
+            result,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=invoice_{invoice_id}.pdf',
+                'Content-Type': 'application/pdf'
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting invoice PDF: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting invoice PDF',
+            'details': str(e)
+        }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>/send', methods=['POST'])
+def send_invoice(invoice_id):
+    """Send invoice via email."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        # Check if email is provided in request body
+        email = None
+        if request.json and 'email' in request.json:
+            email = request.json['email']
+            if not email or '@' not in email:
+                return jsonify({
+                    'success': False,
+                    'error': 'Invalid email address',
+                    'message': 'Please provide a valid email address'
+                }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Sending invoice {invoice_id} via email')
+
+        if email:
+            # Send to specific email
+            result = qb.send_invoice_to_a_given_email(qb.realm_id, invoice_id, email)
+        else:
+            # Send to email in invoice
+            result = qb.send_invoice_to_supplied_email(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to send invoice',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice sent successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': f'Invoice sent successfully{" to " + email if email else ""}'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error sending invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error sending invoice',
+            'details': str(e)
+        }), 500
