@@ -373,3 +373,51 @@ def update_invoice(invoice_id):
             'error': 'Error updating invoice',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>', methods=['DELETE'])
+def delete_invoice(invoice_id):
+    """Delete an invoice."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Deleting invoice with ID: {invoice_id}')
+
+        result = qb.delete_invoice(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to delete invoice',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice deleted successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Invoice deleted successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error deleting invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error deleting invoice',
+            'details': str(e)
+        }), 500
