@@ -421,3 +421,51 @@ def delete_invoice(invoice_id):
             'error': 'Error deleting invoice',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>/void', methods=['POST'])
+def void_invoice(invoice_id):
+    """Void an invoice."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Voiding invoice with ID: {invoice_id}')
+
+        result = qb.void_invoice(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to void invoice',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice voided successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Invoice voided successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error voiding invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error voiding invoice',
+            'details': str(e)
+        }), 500
