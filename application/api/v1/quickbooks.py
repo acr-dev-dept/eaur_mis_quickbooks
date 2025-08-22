@@ -637,3 +637,51 @@ def get_payments():
             'error': 'Error getting payments',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/payments/<payment_id>', methods=['GET'])
+def get_payment(payment_id):
+    """Get a specific payment by ID."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not payment_id:
+            return jsonify({
+                'success': False,
+                'error': 'Payment ID is required',
+                'message': 'Please provide a valid payment ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting payment with ID: {payment_id}')
+
+        payment = qb.get_payment(qb.realm_id, payment_id)
+
+        # Check for errors in the response
+        if 'Fault' in payment:
+            return jsonify({
+                'success': False,
+                'error': 'Payment not found or error occurred',
+                'details': payment['Fault']['Error'][0]['Message'] if payment['Fault']['Error'] else 'Unknown error'
+            }), 404
+
+        current_app.logger.info("Payment retrieved successfully")
+        return jsonify({
+            'success': True,
+            'data': payment,
+            'message': 'Payment retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting payment: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting payment',
+            'details': str(e)
+        }), 500
