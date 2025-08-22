@@ -245,3 +245,69 @@ def get_invoice(invoice_id):
             'error': 'Error getting invoice',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices', methods=['POST'])
+def create_invoice():
+    """Create a new invoice."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide invoice data in JSON format'
+            }), 400
+
+        invoice_data = request.json
+
+        # Basic validation for required fields
+        if 'Line' not in invoice_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: Line',
+                'message': 'Invoice must contain at least one line item'
+            }), 400
+
+        if 'CustomerRef' not in invoice_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: CustomerRef',
+                'message': 'Invoice must have a customer reference'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new invoice')
+
+        result = qb.create_invoice(qb.realm_id, invoice_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create invoice',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Invoice created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating invoice',
+            'details': str(e)
+        }), 500
