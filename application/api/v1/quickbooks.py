@@ -311,3 +311,65 @@ def create_invoice():
             'error': 'Error creating invoice',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/invoices/<invoice_id>', methods=['PUT'])
+def update_invoice(invoice_id):
+    """Update an existing invoice."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not invoice_id:
+            return jsonify({
+                'success': False,
+                'error': 'Invoice ID is required',
+                'message': 'Please provide a valid invoice ID'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide invoice data in JSON format'
+            }), 400
+
+        update_data = request.json
+        update_type = request.args.get('type', 'sparse')  # sparse or full
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Updating invoice {invoice_id} with {update_type} update')
+
+        if update_type.lower() == 'full':
+            result = qb.full_update_invoice(qb.realm_id, invoice_id, update_data)
+        else:
+            result = qb.sparse_invoice_update(qb.realm_id, invoice_id, update_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to update invoice',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Invoice updated successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Invoice updated successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating invoice: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error updating invoice',
+            'details': str(e)
+        }), 500
