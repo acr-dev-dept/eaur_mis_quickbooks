@@ -857,3 +857,168 @@ def delete_payment(payment_id):
             'error': 'Error deleting payment',
             'details': str(e)
         }), 500
+
+
+@quickbooks_bp.route('/payments/<payment_id>/void', methods=['POST'])
+def void_payment(payment_id):
+    """Void a payment."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not payment_id:
+            return jsonify({
+                'success': False,
+                'error': 'Payment ID is required',
+                'message': 'Please provide a valid payment ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Voiding payment with ID: {payment_id}')
+
+        result = qb.void_payment(qb.realm_id, payment_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to void payment',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Payment voided successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Payment voided successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error voiding payment: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error voiding payment',
+            'details': str(e)
+        }), 500
+
+
+@quickbooks_bp.route('/payments/<payment_id>/pdf', methods=['GET'])
+def get_payment_pdf(payment_id):
+    """Get payment as PDF."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not payment_id:
+            return jsonify({
+                'success': False,
+                'error': 'Payment ID is required',
+                'message': 'Please provide a valid payment ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting PDF for payment with ID: {payment_id}')
+
+        result = qb.get_payment_as_pdf(qb.realm_id, payment_id)
+
+        # Check for errors in the response
+        if isinstance(result, dict) and 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to get payment PDF',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Payment PDF retrieved successfully")
+        # For PDF content, we should return the binary data with appropriate headers
+        from flask import Response
+        return Response(
+            result,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=payment_{payment_id}.pdf',
+                'Content-Type': 'application/pdf'
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting payment PDF: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting payment PDF',
+            'details': str(e)
+        }), 500
+
+
+@quickbooks_bp.route('/payments/<payment_id>/send', methods=['POST'])
+def send_payment(payment_id):
+    """Send payment via email."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not payment_id:
+            return jsonify({
+                'success': False,
+                'error': 'Payment ID is required',
+                'message': 'Please provide a valid payment ID'
+            }), 400
+
+        # Email is required for payment sending
+        if not request.json or 'email' not in request.json:
+            return jsonify({
+                'success': False,
+                'error': 'Email address is required',
+                'message': 'Please provide an email address in the request body'
+            }), 400
+
+        email = request.json['email']
+        if not email or '@' not in email:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email address',
+                'message': 'Please provide a valid email address'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Sending payment {payment_id} to email: {email}')
+
+        result = qb.send_payment(qb.realm_id, payment_id, email)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to send payment',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Payment sent successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': f'Payment sent successfully to {email}'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error sending payment: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error sending payment',
+            'details': str(e)
+        }), 500
