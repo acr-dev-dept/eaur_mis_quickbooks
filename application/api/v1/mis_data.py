@@ -49,17 +49,10 @@ def get_bank(bank_id):
     """Get bank details by ID"""
     try:
         bank = TblBank.get_bank_details(bank_id)
+        current_app.logger.debug(f"Fetched bank details: {bank}")
         if bank:
-            return jsonify({
-                'bank_id': bank.bank_id,
-                'bank_name': bank.bank_name,
-                'bank_code': bank.bank_code,
-                'branch_name': bank.bank_branch,
-                'currency': bank.currency,
-                'account_number': bank.account_no,
-                'status': bank.status
-
-            }), 200
+            # since the bank object is a dictionary, we can directly return it
+            return jsonify({'bank_details': bank}), 200
         else:
             return jsonify({'message': 'Bank not found'}), 404
     except Exception as e:
