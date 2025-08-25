@@ -4,7 +4,7 @@ These endpoints will be implemented after database models are generated
 """
 
 from flask import Blueprint, jsonify, current_app
-from application.models.mis_models import TblBank, TblCampus
+from application.models.mis_models import TblBank, TblCampus, TblRegisterProgramUg, TblIntake
 
 mis_data_bp = Blueprint('mis_data', __name__)
 
@@ -30,11 +30,21 @@ def get_campus(campus_id):
 @mis_data_bp.route('/intake/<int:intake_id>', methods=['GET'])
 def get_intake(intake_id):
     """Get intake details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'intake_id': intake_id
-    }), 501
+    try:
+        intake = TblIntake.get_by_id(intake_id)
+        current_app.logger.debug(f"Fetched intake details: {intake}")
+        if intake:
+            # check if it is a dictionary
+            if isinstance(intake, dict):
+                return jsonify({'intake_details': intake}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'intake_details': intake.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Intake not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching intake details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/specialisation/<int:specialisation_id>', methods=['GET'])
 def get_specialisation(specialisation_id):
@@ -73,11 +83,21 @@ def get_bank(bank_id):
 @mis_data_bp.route('/register_program/<int:program_id>', methods=['GET'])
 def get_register_program(program_id):
     """Get program details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'program_id': program_id
-    }), 501
+    try:
+        program = TblRegisterProgramUg.get_by_id(program_id)
+        current_app.logger.debug(f"Fetched program details: {program}")
+        if program:
+            # check if it is a dictionary
+            if isinstance(program, dict):
+                return jsonify({'program_details': program}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'program_details': program.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Program not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching program details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/sponsor/<int:sponsor_id>', methods=['GET'])
 def get_sponsor(sponsor_id):
