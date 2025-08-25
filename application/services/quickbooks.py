@@ -772,7 +772,7 @@ class QuickBooks:
                     ]
                 }
             }
-        def get_invoice_as_pdf(self, realm_id, invoice_id):
+    def get_invoice_as_pdf(self, realm_id, invoice_id):
         """
         Retrieve an invoice as a PDF file from QuickBooks.
         Args:
