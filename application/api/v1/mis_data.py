@@ -219,3 +219,27 @@ def get_student(student_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching student details: {e}")
         return jsonify({'message': 'Internal server error'}), 500
+
+@mis_data_bp.route('/get_student_by_regno', methods=['GET'])
+def get_student_by_regno():
+    """Get student details by registration number"""
+    # get reg_no from query parameters
+    from flask import request
+    reg_no = request.args.get('reg_no')
+    if not reg_no:
+        return jsonify({'message': 'reg_no query parameter is required'}), 400
+    try:
+        student = TblPersonalUg.get_student_details(reg_no)
+        current_app.logger.debug(f"Fetched student details by reg no: {student}")
+        if student:
+            # check if it is a dictionary
+            if isinstance(student, dict):
+                return jsonify({'student_details': student}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'student_details': student.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Student not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching student details by reg no: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
