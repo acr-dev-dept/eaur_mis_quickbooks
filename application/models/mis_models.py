@@ -982,3 +982,15 @@ class TblSpecialization(MISBaseModel):
     def __repr__(self):
         """String representation of the TblSpecialization model"""
         return f'<TblSpecialization {self.splz_id}>'
+
+       
+class TblProgramMode(MISBaseModel):
+    """Model for tbl_program_mode table"""
+    __tablename__ = 'tbl_program_mode'    
+    prg_mode_id = Column(String, nullable=False)
+    prg_mode_full_name = Column(String(30), nullable=False)
+    prg_mode_short_name = Column(String(10), nullable=False)
+
+    def __repr__(self):
+        """String representation of the TblProgramMode model"""
+        return f'<TblProgramMode {self.prg_mode_id}>'
