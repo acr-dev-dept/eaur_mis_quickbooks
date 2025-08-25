@@ -90,8 +90,7 @@ class MISBaseModel(MISBase):
 
 class Modules(MISBaseModel):
     """Model for modules table"""
-    __tablename__ = 'modules'
-    
+    __tablename__ = 'modules'    
     module_id = Column(String, nullable=False, primary_key=True)
     moduleType_Id = Column(String, nullable=False)
     module_categoryId = Column(String, nullable=False)
@@ -239,6 +238,37 @@ class TblBank(MISBaseModel):
             'status': self.status,
             'quickbook': self.quickbook
         }
+
+    @classmethod
+    def get_bank_details(cls, bank_id):
+        """
+        Get detailed bank information for QuickBooks custom fields
+
+        Args:
+            bank_id (str): Bank ID
+
+        Returns:
+            dict: Bank details or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                bank = session.query(cls).filter(cls.bank_id == bank_id).first()
+                if bank:
+                    return {
+                        'id': bank.bank_id,
+                        'code': bank.bank_code,
+                        'name': bank.bank_name,
+                        'branch': bank.bank_branch,
+                        'account_no': bank.account_no,
+                        'currency': bank.currency,
+                        'is_active': bank.status.lower() == 'active',
+                        'display_name': f"{bank.bank_name} - {bank.bank_branch}"
+                    }
+                return None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting bank details for ID {bank_id}: {str(e)}")
+            return None
 
 class TblCampus(MISBaseModel):
     """Model for tbl_campus table"""
