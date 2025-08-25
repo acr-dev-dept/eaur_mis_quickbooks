@@ -987,7 +987,7 @@ class TblSpecialization(MISBaseModel):
 class TblProgramMode(MISBaseModel):
     """Model for tbl_program_mode table"""
     __tablename__ = 'tbl_program_mode'    
-    prg_mode_id = Column(String, nullable=False)
+    prg_mode_id = Column(Integer, nullable=False, primary_key=True)
     prg_mode_full_name = Column(String(30), nullable=False)
     prg_mode_short_name = Column(String(10), nullable=False)
 
