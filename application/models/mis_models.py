@@ -45,7 +45,7 @@ class MISBaseModel(MISBase):
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting {cls.__name__} by ID {id_value}: {str(e)}")
-            return None
+            return []
 
     def to_dict(self):
         """
@@ -995,20 +995,3 @@ class TblProgramMode(MISBaseModel):
         """String representation of the TblProgramMode model"""
         return f'<TblProgramMode {self.prg_mode_id}>'
 
- 
-class TblLevel(MISBaseModel):
-    """Model for tbl_level table"""
-    __tablename__ = 'tbl_level'
-    
-    level_id = Column(Integer, nullable=False)
-    level_no = Column(String(20), nullable=False)
-    level_full_name = Column(String(50), nullable=False)
-    level_short_name = Column(String(10), nullable=False)
-    amount = Column(String(20), nullable=False)
-    level_exit_award = Column(String, nullable=False)
-    status = Column(Integer, nullable=False)
-
-    def __repr__(self):
-        """String representation of the TblLevel model"""
-        return f'<TblLevel {self.level_id}>'
-    
