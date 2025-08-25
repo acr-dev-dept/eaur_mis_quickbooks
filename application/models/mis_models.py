@@ -91,7 +91,7 @@ class MISBaseModel(MISBase):
 class Modules(MISBaseModel):
     """Model for modules table"""
     __tablename__ = 'modules'    
-    module_id = Column(String, nullable=False, primary_key=True)
+    module_id = Column(Integer, nullable=False, primary_key=True)
     moduleType_Id = Column(String, nullable=False)
     module_categoryId = Column(String, nullable=False)
     acad_cycle_id = Column(String)
@@ -143,7 +143,7 @@ class Payment(MISBaseModel):
     """Model for payment table"""
     __tablename__ = 'payment'
     
-    id = Column(String, nullable=False, primary_key=True)
+    id = Column(Integer, nullable=False, primary_key=True)
     trans_code = Column(String(200))
     reg_no = Column(String(200))
     level_id = Column(String)
@@ -207,7 +207,7 @@ class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
     __tablename__ = 'tbl_bank'
     
-    bank_id = Column(String, nullable=False, primary_key=True)
+    bank_id = Column(Integer, nullable=False, primary_key=True)
     bank_code = Column(String(10), nullable=False)
     bank_name = Column(String(100), nullable=False)
     bank_branch = Column(String(100), nullable=False)
@@ -263,7 +263,7 @@ class TblCampus(MISBaseModel):
     """Model for tbl_campus table"""
     __tablename__ = 'tbl_campus'
     
-    camp_id = Column(String, nullable=False, primary_key=True)
+    camp_id = Column(Integer, nullable=False, primary_key=True)
     camp_full_name = Column(String(50), nullable=False)
     camp_short_name = Column(String(20), nullable=False)
     camp_city = Column(String(30), nullable=False)
@@ -361,7 +361,7 @@ class TblImvoice(MISBaseModel):
     """Model for tbl_imvoice table"""
     __tablename__ = 'tbl_imvoice'
 
-    id = Column(String, nullable=False, primary_key=True)
+    id = Column(Integer, nullable=False, primary_key=True)
     reg_no = Column(String(200))
     level_id = Column(String)
     fee_category = Column(String)
@@ -415,7 +415,7 @@ class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
 
-    id = Column(String, nullable=False, primary_key=True)
+    id = Column(Integer, nullable=False, primary_key=True)
     invTypeId = Column(String, nullable=False)
     camp_id = Column(String, nullable=False)
     prg_type = Column(String, nullable=False)
@@ -461,7 +461,7 @@ class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
     __tablename__ = 'tbl_level'
     
-    level_id = Column(String, nullable=False, primary_key=True)
+    level_id = Column(Integer, nullable=False, primary_key=True)
     level_no = Column(String(20), nullable=False)
     level_full_name = Column(String(50), nullable=False)
     level_short_name = Column(String(10), nullable=False)
@@ -495,7 +495,7 @@ class TblOnlineApplication(MISBaseModel):
     """Model for tbl_online_application table"""
     __tablename__ = 'tbl_online_application'
     
-    appl_Id = Column(String, nullable=False, primary_key=True)
+    appl_Id = Column(Integer, nullable=False, primary_key=True)
     tracking_id = Column(String(200))
     reg_no = Column(String(200))
     first_name = Column(String(200))
@@ -617,7 +617,7 @@ class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
     __tablename__ = 'tbl_personal_ug'
     
-    per_id_ug = Column(String, nullable=False, primary_key=True)
+    per_id_ug = Column(Integer, nullable=False, primary_key=True)
     reg_no = Column(String(200), nullable=False)
     prg_type = Column(String, nullable=False)
     sex = Column(String(6))
@@ -733,7 +733,7 @@ class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'
     
-    reg_prg_id = Column(String, nullable=False, primary_key=True)
+    reg_prg_id = Column(Integer, nullable=False, primary_key=True)
     reg_no = Column(String(200), nullable=False)
     intake_id = Column(String, nullable=False)
     prg_id = Column(String, nullable=False)
@@ -807,7 +807,7 @@ class TblSponsor(MISBaseModel):
     """Model for tbl_sponsor table"""
     __tablename__ = 'tbl_sponsor'
     
-    spon_id = Column(String, nullable=False, primary_key=True)
+    spon_id = Column(Integer, nullable=False, primary_key=True)
     spon_cat_id = Column(String, nullable=False)
     spon_full_name = Column(String(50), nullable=False)
     spon_short_name = Column(String(20), nullable=False)
