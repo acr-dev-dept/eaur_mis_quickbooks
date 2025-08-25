@@ -4,6 +4,7 @@ These endpoints will be implemented after database models are generated
 """
 
 from flask import Blueprint, jsonify, current_app
+from application.models.mis_models import TblBank
 
 mis_data_bp = Blueprint('mis_data', __name__)
 
@@ -46,11 +47,25 @@ def get_program_mode(mode_id):
 @mis_data_bp.route('/bank/<int:bank_id>', methods=['GET'])
 def get_bank(bank_id):
     """Get bank details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'bank_id': bank_id
-    }), 501
+    try:
+        bank = TblBank.get_bank_details(bank_id)
+        if bank:
+            return jsonify({
+                'bank_id': bank.bank_id,
+                'bank_name': bank.bank_name,
+                'bank_code': bank.bank_code,
+                'branch_name': bank.bank_branch,
+                'currency': bank.currency,
+                'account_number': bank.account_no,
+                'status': bank.status
+
+            }), 200
+        else:
+            return jsonify({'message': 'Bank not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching bank details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
+   
 
 @mis_data_bp.route('/register_program/<int:program_id>', methods=['GET'])
 def get_register_program(program_id):
