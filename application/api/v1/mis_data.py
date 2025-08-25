@@ -4,7 +4,11 @@ These endpoints will be implemented after database models are generated
 """
 
 from flask import Blueprint, jsonify, current_app
-from application.models.mis_models import TblBank, TblCampus, TblRegisterProgramUg, TblIntake
+from application.models.mis_models import (
+    TblBank, TblCampus,TblRegisterProgramUg,
+    TblIntake, TblSpecialization
+)
+
 
 mis_data_bp = Blueprint('mis_data', __name__)
 
@@ -49,11 +53,21 @@ def get_intake(intake_id):
 @mis_data_bp.route('/specialisation/<int:specialisation_id>', methods=['GET'])
 def get_specialisation(specialisation_id):
     """Get specialisation details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'specialisation_id': specialisation_id
-    }), 501
+    try:
+        specialisation = TblSpecialization.get_by_id(specialisation_id)
+        current_app.logger.debug(f"Fetched specialisation details: {specialisation}")
+        if specialisation:
+            # check if it is a dictionary
+            if isinstance(specialisation, dict):
+                return jsonify({'specialisation_details': specialisation}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'specialisation_details': specialisation.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Specialisation not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching specialisation details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/program_mode/<int:mode_id>', methods=['GET'])
 def get_program_mode(mode_id):
