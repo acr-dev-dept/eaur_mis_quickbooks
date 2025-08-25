@@ -729,6 +729,28 @@ class TblPersonalUg(MISBaseModel):
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
         }
 
+    @classmethod
+    def get_student_details(cls, reg_no):
+        """
+        Get detailed student information for QuickBooks custom fields
+
+        Args:
+            reg_no (str): Student registration number
+
+        Returns:
+            dict: Student details or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                student = session.query(cls).filter(cls.reg_no == reg_no).first()
+                if student:
+                    return student.to_dict()
+                return []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting student details for reg_no {reg_no}: {str(e)}")
+            return []
+
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'
