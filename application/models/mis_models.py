@@ -253,22 +253,11 @@ class TblBank(MISBaseModel):
         try:
             with cls.get_session() as session:
                 bank = session.query(cls).filter(cls.bank_id == bank_id).first()
-                if bank:
-                    return {
-                        'id': bank.bank_id,
-                        'code': bank.bank_code,
-                        'name': bank.bank_name,
-                        'branch': bank.bank_branch,
-                        'account_no': bank.account_no,
-                        'currency': bank.currency,
-                        'is_active': bank.status.lower() == 'active',
-                        'display_name': f"{bank.bank_name} - {bank.bank_branch}"
-                    }
-                return None
+                return bank.to_dict() if bank else []
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting bank details for ID {bank_id}: {str(e)}")
-            return None
+            return []
 
 class TblCampus(MISBaseModel):
     """Model for tbl_campus table"""
