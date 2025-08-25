@@ -940,4 +940,26 @@ class TblSponsor(MISBaseModel):
             'SponsorCode': self.spon_short_name,
             'SponsorValue': f"{self.sponsor_value}%" if self.sponsor_value else "0%"
         }
+    
+class TblIntake(MISBaseModel):
+    """Model for tbl_intake table"""
+    __tablename__ = 'tbl_intake'  
 
+    intake_id = Column(Integer, nullable=False, primary_key=True)
+    prg_type = Column(String, nullable=False)
+    acad_cycle_id = Column(String, nullable=False)
+    intake_no = Column(Integer, nullable=False)
+    intake_month = Column(String(30), nullable=False)
+    intake_start = Column(DateTime, nullable=False)
+    intake_end = Column(DateTime, nullable=False)
+    app_start = Column(DateTime, nullable=False)
+    app_end = Column(DateTime, nullable=False)
+    reg_start = Column(DateTime, nullable=False)
+    reg_end = Column(DateTime, nullable=False)
+    late_reg_end = Column(DateTime, nullable=False)
+    late_reg_fee = Column(Integer, nullable=False)
+    status = Column(Integer, nullable=False, default='1')
+
+    def __repr__(self):
+        """String representation of the TblIntake model"""
+        return f'<TblIntake {self.intake_id}>'
