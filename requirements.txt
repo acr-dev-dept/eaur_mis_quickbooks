@@ -27,7 +27,7 @@ redis==4.6.0
 
 # Data Processing
 pandas==2.0.3
-numpy==1.24.3
+numpy>=1.24.3
 
 # Validation and Forms
 WTForms==3.0.1
