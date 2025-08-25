@@ -963,3 +963,22 @@ class TblIntake(MISBaseModel):
     def __repr__(self):
         """String representation of the TblIntake model"""
         return f'<TblIntake {self.intake_id}>'
+
+class TblSpecialization(MISBaseModel):
+    """Model for tbl_specialization table"""
+    __tablename__ = 'tbl_specialization'
+    
+    splz_id = Column(Integer, nullable=False, primary_key=True)
+    prg_id = Column(String, nullable=False)
+    prg_type = Column(String, nullable=False)
+    splz_full_name = Column(String(100), nullable=False)
+    splz_short_name = Column(String(50), nullable=False)
+    splz_start_level = Column(String, nullable=False)
+    degree_name = Column(String(100), nullable=False)
+    diploma_name = Column(String(255), nullable=False)
+    splz_comments = Column(String(255), nullable=False)
+    status = Column(Integer)
+
+    def __repr__(self):
+        """String representation of the TblSpecialization model"""
+        return f'<TblSpecialization {self.splz_id}>'
