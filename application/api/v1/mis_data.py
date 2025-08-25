@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, current_app
 from application.models.mis_models import (
     TblBank, TblCampus,TblRegisterProgramUg,
     TblIntake, TblSpecialization, TblProgramMode,
-    TblSponsor
+    TblSponsor, TblLevel
 )
 
 
@@ -146,11 +146,21 @@ def get_sponsor(sponsor_id):
 @mis_data_bp.route('/level/<int:level_id>', methods=['GET'])
 def get_level(level_id):
     """Get level details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'level_id': level_id
-    }), 501
+    try:
+        level = TblLevel.get_by_id(level_id)
+        current_app.logger.debug(f"Fetched level details: {level}")
+        if level:
+            # check if it is a dictionary
+            if isinstance(level, dict):
+                return jsonify({'level_details': level}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'level_details': level.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Level not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching level details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/module/<int:module_id>', methods=['GET'])
 def get_module(module_id):
