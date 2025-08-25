@@ -6,7 +6,8 @@ These endpoints will be implemented after database models are generated
 from flask import Blueprint, jsonify, current_app
 from application.models.mis_models import (
     TblBank, TblCampus,TblRegisterProgramUg,
-    TblIntake, TblSpecialization, TblProgramMode
+    TblIntake, TblSpecialization, TblProgramMode,
+    TblSponsor
 )
 
 
@@ -126,11 +127,21 @@ def get_register_program(program_id):
 @mis_data_bp.route('/sponsor/<int:sponsor_id>', methods=['GET'])
 def get_sponsor(sponsor_id):
     """Get sponsor details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'sponsor_id': sponsor_id
-    }), 501
+    try:
+        sponsor = TblSponsor.get_by_id(sponsor_id)
+        current_app.logger.debug(f"Fetched sponsor details: {sponsor}")
+        if sponsor:
+            # check if it is a dictionary
+            if isinstance(sponsor, dict):
+                return jsonify({'sponsor_details': sponsor}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'sponsor_details': sponsor.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Sponsor not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching sponsor details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/level/<int:level_id>', methods=['GET'])
 def get_level(level_id):
