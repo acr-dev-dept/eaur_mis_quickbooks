@@ -4,18 +4,28 @@ These endpoints will be implemented after database models are generated
 """
 
 from flask import Blueprint, jsonify, current_app
-from application.models.mis_models import TblBank
+from application.models.mis_models import TblBank, TblCampus
 
 mis_data_bp = Blueprint('mis_data', __name__)
 
 @mis_data_bp.route('/campus/<int:campus_id>', methods=['GET'])
 def get_campus(campus_id):
     """Get campus details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'campus_id': campus_id
-    }), 501
+    try:
+        campus = TblCampus.get_by_id(campus_id)
+        current_app.logger.debug(f"Fetched campus details: {campus}")
+        if campus:
+            # check if it is a dictionary
+            if isinstance(campus, dict):
+                return jsonify({'campus_details': campus}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'campus_details': campus.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Campus not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching campus details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/intake/<int:intake_id>', methods=['GET'])
 def get_intake(intake_id):
