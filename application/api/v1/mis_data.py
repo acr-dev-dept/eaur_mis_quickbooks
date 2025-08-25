@@ -201,11 +201,21 @@ def get_income_category(category_id):
         current_app.logger.error(f"Error fetching income category details: {e}")
         return jsonify({'message': 'Internal server error'}), 500
 
-@mis_data_bp.route('/personal_ug/<int:student_id>', methods=['GET'])
+@mis_data_bp.route('/student_details/<int:student_id>', methods=['GET'])
 def get_student(student_id):
     """Get student details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'student_id': student_id
-    }), 501
+    try:
+        student = TblPersonalUg.get_by_id(student_id)
+        current_app.logger.debug(f"Fetched student details: {student}")
+        if student:
+            # check if it is a dictionary
+            if isinstance(student, dict):
+                return jsonify({'student_details': student}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'student_details': student.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Student not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching student details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
