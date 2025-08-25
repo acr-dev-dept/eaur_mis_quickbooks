@@ -7,7 +7,8 @@ from flask import Blueprint, jsonify, current_app
 from application.models.mis_models import (
     TblBank, TblCampus,TblRegisterProgramUg,
     TblIntake, TblSpecialization, TblProgramMode,
-    TblSponsor, TblLevel, Modules
+    TblSponsor, TblLevel, Modules, TblIncomeCategory, 
+    TblPersonalUg
 )
 
 
@@ -184,11 +185,21 @@ def get_module(module_id):
 @mis_data_bp.route('/income_category/<int:category_id>', methods=['GET'])
 def get_income_category(category_id):
     """Get income category details by ID"""
-    # TODO: Implement after models are generated
-    return jsonify({
-        'message': 'Endpoint will be implemented after database models are generated',
-        'category_id': category_id
-    }), 501
+    try:
+        category = TblIncomeCategory.get_by_id(category_id)
+        current_app.logger.debug(f"Fetched income category details: {category}")
+        if category:
+            # check if it is a dictionary
+            if isinstance(category, dict):
+                return jsonify({'income_category_details': category}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'income_category_details': category.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Income category not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching income category details: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/personal_ug/<int:student_id>', methods=['GET'])
 def get_student(student_id):
