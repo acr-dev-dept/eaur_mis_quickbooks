@@ -111,6 +111,7 @@ def register_blueprints(app):
     from application.api.health import health_bp
     from application.api.v1.urubuto import urubuto_bp
     from application.api.v1.quickbooks import quickbooks_bp
+    from application.api.v1.mis_data import mis_data_bp
     
 
     # Register blueprints
@@ -118,6 +119,7 @@ def register_blueprints(app):
     app.register_blueprint(health_bp, url_prefix='/health')
     app.register_blueprint(urubuto_bp, url_prefix='/api/v1/urubuto')
     app.register_blueprint(quickbooks_bp, url_prefix='/api/v1/quickbooks')
+    app.register_blueprint(mis_data_bp, url_prefix='/api/v1/mis_data')
 
 def register_error_handlers(app):
     """Register application error handlers"""
