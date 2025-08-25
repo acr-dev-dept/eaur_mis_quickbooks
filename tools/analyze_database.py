@@ -205,7 +205,7 @@ class DatabaseAnalyzer:
     
     def _generate_mis_models_file(self, output_dir: str) -> None:
         """Generate the main MIS models file"""
-        file_path = os.path.join(output_dir, "mis_models.py")
+        file_path = os.path.join(output_dir, "mis_models1.py")
         
         with open(file_path, 'w') as f:
             f.write(self._get_file_header())
@@ -257,29 +257,97 @@ MISBase = declarative_base()
 '''
     
     def _generate_model_class(self, table_info: TableInfo) -> str:
-        """Generate SQLAlchemy model class for a table"""
+        """Generate SQLAlchemy model class for a table, including foreign keys and relationships"""
         class_name = self._to_pascal_case(table_info.name)
         
         model = f'''class {class_name}(MISBaseModel):
-    """Model for {table_info.name} table"""
-    __tablename__ = '{table_info.name}'
-    
-'''
+        """Model for {table_info.name} table"""
+        __tablename__ = '{table_info.name}'
         
+    '''
+
+        # Determine primary key column (for __repr__)
+        pk_column = next((c.name for c in table_info.columns if c.primary_key), None)
+
         # Add columns
         for col in table_info.columns:
-            model += f"    {self._generate_column_definition(col)}\n"
-        
-        # Add relationships (placeholder for now)
-        model += "\n    # Relationships will be added after analyzing foreign keys\n"
-        
-        model += f'''
-    def __repr__(self):
-        return f'<{class_name} {{self.id if hasattr(self, "id") else "unknown"}}>'
+            col_def = f"{col.name} = Column("
+            
+            # SQLAlchemy type
+            type_mapping = {
+                'int': 'Integer',
+                'bigint': 'Integer',
+                'smallint': 'Integer',
+                'tinyint': 'Integer',
+                'varchar': 'String',
+                'char': 'String',
+                'text': 'Text',
+                'longtext': 'Text',
+                'decimal': 'Decimal',
+                'float': 'Float',
+                'double': 'Float',
+                'datetime': 'DateTime',
+                'date': 'DateTime',
+                'timestamp': 'DateTime',
+                'boolean': 'Boolean',
+                'tinyint(1)': 'Boolean'
+            }
+            base_type = col.type.lower().split('(')[0]
+            sqlalchemy_type = type_mapping.get(base_type, 'String')
 
-'''
-        
+            # Handle string length
+            if 'varchar' in col.type.lower() or 'char' in col.type.lower():
+                length_match = re.search(r'\((\d+)\)', col.type)
+                if length_match:
+                    sqlalchemy_type = f"String({length_match.group(1)})"
+            
+            # Handle decimal precision
+            elif 'decimal' in col.type.lower():
+                precision_match = re.search(r'\((\d+),(\d+)\)', col.type)
+                if precision_match:
+                    sqlalchemy_type = f"Decimal({precision_match.group(1)}, {precision_match.group(2)})"
+            
+            col_def += sqlalchemy_type
+
+            # Add ForeignKey if available
+            if col.foreign_key:
+                col_def += f", ForeignKey('{col.foreign_key}')"
+            
+            # Constraints
+            if col.primary_key:
+                col_def += ", primary_key=True"
+            if not col.nullable:
+                col_def += ", nullable=False"
+            if col.default is not None:
+                if col.default.upper() == 'CURRENT_TIMESTAMP':
+                    col_def += ", default=datetime.utcnow"
+                else:
+                    col_def += f", default='{col.default}'"
+
+            col_def += ")"
+            model += f"    {col_def}\n"
+
+        # Add relationships
+        for fk in table_info.foreign_keys:
+            related_class = self._to_pascal_case(fk['referred_table'])
+            rel_name = fk['column'] + "_rel"
+            model += f"    {rel_name} = relationship('{related_class}', backref='{table_info.name}s')\n"
+
+        # __repr__ method
+        if pk_column:
+            model += f'''
+        def __repr__(self):
+            return f'<{class_name} {{{{self.{pk_column}}}}}>'
+    '''
+        else:
+            model += f'''
+        def __repr__(self):
+            return f'<{class_name} (no primary key)>'
+    '''
+
+        model += "\n"
         return model
+
     
     def _generate_column_definition(self, col: ColumnInfo) -> str:
         """Generate SQLAlchemy column definition"""
