@@ -49,15 +49,13 @@ class DatabaseManager:
                 poolclass=QueuePool,
                 pool_size=10,
                 max_overflow=20,
-                pool_pre_ping=True,  # Verify connections before use
-                pool_recycle=3600,   # Recycle connections every hour
-                echo=config.get('DEBUG'),   # Log SQL queries in debug mode
-                connect_args={
-                    "charset": "utf8mb4",
-                    "use_unicode": True,
-                    "autocommit": False
-                }
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                echo=config.get('DEBUG')
             )
+            from application.models.mis_models import MISBase
+            # Bind MISBase metadata to this engine
+            MISBase.metadata.bind = engine  
             
             # Add connection event listeners
             self._add_connection_listeners(engine)
