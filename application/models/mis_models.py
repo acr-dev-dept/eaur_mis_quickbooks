@@ -1055,7 +1055,12 @@ class TblAcadCycle(MISBaseModel):
     status = Column(Integer, nullable=False)
 
     # Relationship with TblCurriculum
-    curriculum = relationship("TblCurriculum", backref="acad_cycles", lazy='joined')
+    curriculum = relationship(
+        "TblCurriculum",
+        backref="acad_cycles",
+        lazy='joined',
+        foreign_keys=[curculum_Id]  # <-- explicitly specify FK
+    )
 
     def __repr__(self):
         """String representation of the TblAcadCycle model"""
@@ -1094,7 +1099,12 @@ class TblCurriculum(MISBaseModel):
     graduation_status = Column(String(15), nullable=False)
 
     # Relationship with TblAcadCycle
-    acad_cycle = relationship("TblAcadCycle", backref="curriculums", lazy='joined')
+    acad_cycle = relationship(
+        "TblAcadCycle",
+        backref="curriculums",
+        lazy='joined',
+        foreign_keys=[acad_cycle_id]  # <-- explicitly specify FK
+    )
 
 
     def __repr__(self):
