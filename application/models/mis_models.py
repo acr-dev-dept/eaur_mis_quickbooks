@@ -146,13 +146,13 @@ class Payment(MISBaseModel):
     id = Column(Integer, nullable=False, primary_key=True)
     trans_code = Column(String(200))
     reg_no = Column(String(200))
-    level_id = Column(Integer)
-    bank_id = Column(Integer)
+    level_id = Column(Integer, ForeignKey("tbl_level.level_id"))
+    bank_id = Column(Integer, ForeignKey("tbl_bank.bank_id"))
     slip_no = Column(String(200))
     user = Column(String(20))
     acad_cycle_id = Column(String(100))
     date = Column(String(50))
-    fee_category = Column(String(50))
+    fee_category = Column(Integer, ForeignKey("tbl_income_category.id"))
     amount = Column(Float)
     description = Column(Text)
     recorded_date = Column(DateTime, default='current_timestamp()')
@@ -166,7 +166,11 @@ class Payment(MISBaseModel):
     pushed_by = Column(String(200))
     pushed_date = Column(DateTime)
 
-    # Relationships will be added after analyzing foreign keys
+    # Relationships
+    level = relationship("TblLevel", backref="payments", lazy='joined')
+    bank = relationship("TblBank", backref="payments", lazy='joined')
+    fee_category_rel = relationship("TblIncomeCategory", backref="payments", lazy='joined')
+
 
     def __repr__(self):
         return f'<Payment {self.id if hasattr(self, "id") else "unknown"}>'
@@ -183,12 +187,15 @@ class Payment(MISBaseModel):
             'trans_code': self.trans_code,
             'reg_no': self.reg_no,
             'level_id': self.level_id,
+            'level_details': self.level.to_dict() if self.level else [],
             'bank_id': self.bank_id,
+            'bank_details': self.bank.to_dict() if self.bank else [],
             'slip_no': self.slip_no,
             'user': self.user,
             'acad_cycle_id': self.acad_cycle_id,
             'date': self.date,
             'fee_category': self.fee_category,
+            'fee_category_details': self.fee_category_rel.to_dict() if self.fee_category_rel else [],
             'amount': self.amount,
             'description': self.description,
             'recorded_date': self.recorded_date.isoformat() if self.recorded_date else None,
