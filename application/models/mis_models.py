@@ -1093,6 +1093,28 @@ class TblCurriculum(MISBaseModel):
     status_Id = Column(Integer, nullable=False)
     graduation_status = Column(String(15), nullable=False)
 
+    # Relationship with TblAcadCycle
+    acad_cycle = relationship("TblAcadCycle", backref="curriculums", lazy='joined')
+
+
     def __repr__(self):
         """String representation of the TblCurriculum model"""
         return f'<TblCurriculum {self.curculum_Id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'curculum_Id': self.curculum_Id,
+            'acad_cycle_id': self.acad_cycle_id,
+            'acad_cycle_details': self.acad_cycle.to_dict() if self.acad_cycle else [],
+            'recorded_date': self.recorded_date.isoformat() if self.recorded_date else None,
+            'recorded_by': self.recorded_by,
+            'status_Id': self.status_Id,
+            'graduation_status': self.graduation_status
+        }
+
