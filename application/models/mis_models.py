@@ -1039,3 +1039,60 @@ class TblProgramMode(MISBaseModel):
         """String representation of the TblProgramMode model"""
         return f'<TblProgramMode {self.prg_mode_id}>'
 
+
+class TblAcadCycle(MISBaseModel):
+    """Model for tbl_acad_cycle table"""
+    __tablename__ = 'tbl_acad_cycle'
+    
+    acad_cycle_id = Column(Integer, nullable=False, primary_key=True)
+    curculum_Id = Column(Integer, ForeignKey("tbl_curriculum.curculum_Id"))
+    no_of_intakes = Column(Integer, nullable=False)
+    intakes_months = Column(String(255), nullable=False)
+    no_of_cohorts = Column(Integer, nullable=False)
+    cohort_months = Column(String(255), nullable=False)
+    acad_year = Column(String(9), nullable=False)
+    active = Column(Integer, nullable=False)
+    status = Column(Integer, nullable=False)
+
+    # Relationship with TblCurriculum
+    curriculum = relationship("TblCurriculum", backref="acad_cycles", lazy='joined')
+
+    def __repr__(self):
+        """String representation of the TblAcadCycle model"""
+        return f'<TblAcadCycle {self.acad_cycle_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'acad_cycle_id': self.acad_cycle_id,
+            'curculum_Id': self.curculum_Id,
+            'curriculum_details': self.curriculum.to_dict() if self.curriculum else [],
+            'no_of_intakes': self.no_of_intakes,
+            'intakes_months': self.intakes_months,
+            'no_of_cohorts': self.no_of_cohorts,
+            'cohort_months': self.cohort_months,
+            'acad_year': self.acad_year,
+            'active': self.active,
+            'status': self.status
+        }
+
+  
+class TblCurriculum(MISBaseModel):
+    """Model for tbl_curriculum table"""
+    __tablename__ = 'tbl_curriculum'
+    
+    curculum_Id = Column(Integer, nullable=False, primary_key=True)
+    acad_cycle_id = Column(Integer,ForeignKey("tbl_acad_cycle.acad_cycle_id"))
+    recorded_date = Column(DateTime, nullable=False)
+    recorded_by = Column(String(200), nullable=False)
+    status_Id = Column(Integer, nullable=False)
+    graduation_status = Column(String(15), nullable=False)
+
+    def __repr__(self):
+        """String representation of the TblCurriculum model"""
+        return f'<TblCurriculum {self.curculum_Id}>'
