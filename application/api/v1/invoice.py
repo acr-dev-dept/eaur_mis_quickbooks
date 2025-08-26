@@ -354,3 +354,52 @@ def delete_invoice(invoice_id):
             details=str(e),
             status_code=500
         )
+
+
+@invoices_bp.route('/<invoice_id>/void', methods=['POST'])
+def void_invoice(invoice_id):
+    """Void an invoice."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        if not invoice_id:
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Voiding invoice with ID: {invoice_id}')
+
+        result = qb.void_invoice(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return create_response(
+                success=False,
+                error='Failed to void invoice',
+                details=result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error',
+                status_code=400
+            )
+
+        current_app.logger.info("Invoice voided successfully")
+        return create_response(
+            success=True,
+            data=result,
+            message='Invoice voided successfully'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error voiding invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error voiding invoice',
+            details=str(e),
+            status_code=500
+        )
