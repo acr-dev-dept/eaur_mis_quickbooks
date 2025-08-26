@@ -8,7 +8,7 @@ from application.models.mis_models import (
     TblBank, TblCampus,TblRegisterProgramUg,
     TblIntake, TblSpecialization, TblProgramMode,
     TblSponsor, TblLevel, Modules, TblIncomeCategory, 
-    TblPersonalUg
+    TblPersonalUg, Payment
 )
 
 
@@ -242,4 +242,23 @@ def get_student_by_regno():
             return jsonify({'message': 'Student not found'}), 404
     except Exception as e:
         current_app.logger.error(f"Error fetching student details by reg no: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
+
+@mis_data_bp.route('/payment/<int:payment_id>', methods=['GET'])
+def get_payment(payment_id):
+    """Get payment details by ID"""
+    try:
+        payment = Payment.get_by_id(payment_id)
+        current_app.logger.debug(f"Fetched payment details: {payment}")
+        if payment:
+            # check if it is a dictionary
+            if isinstance(payment, dict):
+                return jsonify({'payment_details': payment}), 200
+            else:
+                # call the to_dict method if it's a model instance
+                return jsonify({'payment_details': payment.to_dict()}), 200
+        else:
+            return jsonify({'message': 'Payment not found'}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error fetching payment details: {e}")
         return jsonify({'message': 'Internal server error'}), 500
