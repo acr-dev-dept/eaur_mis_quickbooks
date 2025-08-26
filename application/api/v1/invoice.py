@@ -403,3 +403,56 @@ def void_invoice(invoice_id):
             details=str(e),
             status_code=500
         )
+
+
+@invoices_bp.route('/<invoice_id>/pdf', methods=['GET'])
+def get_invoice_pdf(invoice_id):
+    """Get invoice as PDF."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        if not invoice_id:
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting PDF for invoice with ID: {invoice_id}')
+
+        result = qb.get_invoice_as_pdf(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if isinstance(result, dict) and 'Fault' in result:
+            return create_response(
+                success=False,
+                error='Failed to get invoice PDF',
+                details=result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error',
+                status_code=400
+            )
+
+        current_app.logger.info("Invoice PDF retrieved successfully")
+        # For PDF content, return binary data with appropriate headers
+        return Response(
+            result,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=invoice_{invoice_id}.pdf',
+                'Content-Type': 'application/pdf'
+            }
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting invoice PDF: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error getting invoice PDF',
+            details=str(e),
+            status_code=500
+        )
