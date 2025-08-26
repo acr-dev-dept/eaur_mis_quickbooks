@@ -8,7 +8,7 @@ from application.models.mis_models import (
     TblBank, TblCampus,TblRegisterProgramUg,
     TblIntake, TblSpecialization, TblProgramMode,
     TblSponsor, TblLevel, Modules, TblIncomeCategory, 
-    TblPersonalUg, Payment, TblInvoice
+    TblPersonalUg, Payment, TblImvoice
 )
 
 
@@ -267,7 +267,7 @@ def get_payment(payment_id):
 def get_invoice(invoice_id):
     """Get invoice details by ID"""
     try:
-        invoice = TblInvoice.get_by_id(invoice_id)
+        invoice = TblImvoice.get_by_id(invoice_id)
         current_app.logger.debug(f"Fetched invoice details: {invoice}")
         if invoice:
             # check if it is a dictionary
