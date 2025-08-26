@@ -363,9 +363,9 @@ class TblImvoice(MISBaseModel):
 
     id = Column(Integer, nullable=False, primary_key=True)
     reg_no = Column(String(200))
-    level_id = Column(Integer)
-    fee_category = Column(String)
-    module_id = Column(Integer)
+    level_id = Column(Integer, ForeignKey("tbl_level.level_id"))
+    fee_category = Column(Integer, ForeignKey("tbl_income_category.id"))
+    module_id = Column(Integer, ForeignKey("modules.module_id"))
     Rpt_Id = Column(Integer)
     dept = Column(Float)
     credit = Column(Float)
@@ -374,12 +374,18 @@ class TblImvoice(MISBaseModel):
     comment = Column(String(900))
     user = Column(String(20))
     date = Column(DateTime)
-    intake_id = Column(Integer)
+    intake_id = Column(Integer, ForeignKey("tbl_intake.intake_id"))
     QuickBk_Status = Column(Integer, default='0')
     pushed_by = Column(String(200))
     pushed_date = Column(DateTime)
 
-    # Relationships will be added after analyzing foreign keys
+    # Define relationships between levels, modules, and intakes
+    # This is not implemented on database level, we need them for joins
+    level = relationship("TblLevel", backref="invoices", lazy='joined')
+    module = relationship("Modules", backref="invoices", lazy='joined')
+    intake = relationship("TblIntake", backref="invoices", lazy='joined')
+    fee_category_rel = relationship("TblIncomeCategory", backref="invoices", lazy='joined')
+
 
     def __repr__(self):
         return f'<TblImvoice {self.id if hasattr(self, "id") else "unknown"}>'
@@ -395,8 +401,11 @@ class TblImvoice(MISBaseModel):
             'id': self.id,
             'reg_no': self.reg_no,
             'level_id': self.level_id,
+            'level_details': self.level.to_dict() if self.level else [],
             'fee_category': self.fee_category,
+            'fee_category_details': self.fee_category_rel.to_dict() if self.fee_category_rel else [],
             'module_id': self.module_id,
+            'module_details': self.module.to_dict() if self.module else [],
             'Rpt_Id': self.Rpt_Id,
             'dept': self.dept,
             'credit': self.credit,
@@ -406,6 +415,7 @@ class TblImvoice(MISBaseModel):
             'user': self.user,
             'date': self.date.isoformat() if self.date else None,
             'intake_id': self.intake_id,
+            'intake_details': self.intake.to_dict() if self.intake else [],
             'QuickBk_Status': self.QuickBk_Status,
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
@@ -417,9 +427,9 @@ class TblIncomeCategory(MISBaseModel):
 
     id = Column(Integer, nullable=False, primary_key=True)
     invTypeId = Column(String, nullable=False)
-    camp_id = Column(String, nullable=False)
+    camp_id = Column(Integer, ForeignKey("tbl_campus.camp_id"))
     prg_type = Column(String, nullable=False)
-    splz_id = Column(String, nullable=False)
+    splz_id = Column(Integer, ForeignKey("tbl_specialization.splz_id"))
     name = Column(String(100), nullable=False)
     amount = Column(String, nullable=False)
     description = Column(String, nullable=False)
@@ -429,7 +439,10 @@ class TblIncomeCategory(MISBaseModel):
     category = Column(String(200), nullable=False)
     QuickBk_ctgId = Column(Integer)
 
-    # Relationships will be added after analyzing foreign keys
+    # Relationships 
+    camp = relationship("TblCampus", backref="income_categories", lazy='joined')
+    splz = relationship("TblSpecialization", backref="income_categories", lazy='joined')
+
 
     def __repr__(self):
         return f'<TblIncomeCategory {self.id if hasattr(self, "id") else "unknown"}>'
@@ -445,8 +458,10 @@ class TblIncomeCategory(MISBaseModel):
             'id': self.id,
             'invTypeId': self.invTypeId,
             'camp_id': self.camp_id,
+            'camp_details': self.camp.to_dict() if self.camp else [],
             'prg_type': self.prg_type,
             'splz_id': self.splz_id,
+            'splz_details': self.splz.to_dict() if self.splz else [],
             'name': self.name,
             'amount': self.amount,
             'description': self.description,
