@@ -104,3 +104,51 @@ def get_invoices():
             details=str(e),
             status_code=500
         )
+
+@invoices_bp.route('/<invoice_id>', methods=['GET'])
+def get_invoice(invoice_id):
+    """Get a specific invoice by ID."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        if not invoice_id:
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting invoice with ID: {invoice_id}')
+        
+        invoice = qb.get_invoice(qb.realm_id, invoice_id)
+        
+        # Check for errors in the response
+        if 'Fault' in invoice:
+            return create_response(
+                success=False,
+                error='Invoice not found or error occurred',
+                details=invoice['Fault']['Error'][0]['Message'] if invoice['Fault']['Error'] else 'Unknown error',
+                status_code=404
+            )
+        
+        current_app.logger.info("Invoice retrieved successfully")
+        return create_response(
+            success=True,
+            data=invoice,
+            message='Invoice retrieved successfully'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error getting invoice',
+            details=str(e),
+            status_code=500
+        )
