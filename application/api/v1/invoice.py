@@ -152,3 +152,83 @@ def get_invoice(invoice_id):
             details=str(e),
             status_code=500
         )
+
+
+@invoices_bp.route('/', methods=['POST'])
+def create_invoice():
+    """Create a new invoice."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Validate request data
+        try:
+            request_data = request.get_json()
+        except Exception:
+            return create_response(
+                success=False,
+                error='Invalid JSON data',
+                message='Please provide valid JSON data',
+                status_code=400
+            )
+
+        if not request_data:
+            return create_response(
+                success=False,
+                error='No data provided',
+                message='Please provide invoice data in JSON format',
+                status_code=400
+            )
+
+        invoice_data = request_data
+        
+        # Basic validation for required fields
+        if 'Line' not in invoice_data:
+            return create_response(
+                success=False,
+                error='Missing required field: Line',
+                message='Invoice must contain at least one line item',
+                status_code=400
+            )
+
+        if 'CustomerRef' not in invoice_data:
+            return create_response(
+                success=False,
+                error='Missing required field: CustomerRef',
+                message='Invoice must have a customer reference',
+                status_code=400
+            )
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new invoice')
+        
+        result = qb.create_invoice(qb.realm_id, invoice_data)
+        
+        # Check for errors in the response
+        if 'Fault' in result:
+            return create_response(
+                success=False,
+                error='Failed to create invoice',
+                details=result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error',
+                status_code=400
+            )
+        
+        current_app.logger.info("Invoice created successfully")
+        return create_response(
+            success=True,
+            data=result,
+            message='Invoice created successfully',
+            status_code=201
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error creating invoice',
+            details=str(e),
+            status_code=500
+        )
