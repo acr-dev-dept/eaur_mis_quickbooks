@@ -306,3 +306,51 @@ def update_invoice(invoice_id):
             details=str(e),
             status_code=500
         )
+
+@invoices_bp.route('/<invoice_id>', methods=['DELETE'])
+def delete_invoice(invoice_id):
+    """Delete an invoice."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        if not invoice_id:
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Deleting invoice with ID: {invoice_id}')
+        
+        result = qb.delete_invoice(qb.realm_id, invoice_id)
+        
+        # Check for errors in the response
+        if 'Fault' in result:
+            return create_response(
+                success=False,
+                error='Failed to delete invoice',
+                details=result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error',
+                status_code=400
+            )
+        
+        current_app.logger.info("Invoice deleted successfully")
+        return create_response(
+            success=True,
+            data=result,
+            message='Invoice deleted successfully'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error deleting invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error deleting invoice',
+            details=str(e),
+            status_code=500
+        )
