@@ -456,3 +456,73 @@ def get_invoice_pdf(invoice_id):
             details=str(e),
             status_code=500
         )
+
+@invoices_bp.route('/<invoice_id>/send', methods=['POST'])
+def send_invoice(invoice_id):
+    """Send invoice via email."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        if not invoice_id:
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        # Check if email is provided in request body
+        email = None
+        try:
+            request_data = request.get_json()
+            if request_data and 'email' in request_data:
+                email = request_data['email']
+        except Exception:
+            # If JSON parsing fails, continue without email
+            pass
+            if not email or '@' not in email:
+                return create_response(
+                    success=False,
+                    error='Invalid email address',
+                    message='Please provide a valid email address',
+                    status_code=400
+                )
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Sending invoice {invoice_id} via email')
+
+        if email:
+            # Send to specific email
+            result = qb.send_invoice_to_a_given_email(qb.realm_id, invoice_id, email)
+        else:
+            # Send to email in invoice
+            result = qb.send_invoice_to_supplied_email(qb.realm_id, invoice_id)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return create_response(
+                success=False,
+                error='Failed to send invoice',
+                details=result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error',
+                status_code=400
+            )
+
+        current_app.logger.info("Invoice sent successfully")
+        return create_response(
+            success=True,
+            data=result,
+            message=f'Invoice sent successfully{" to " + email if email else ""}'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error sending invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error sending invoice',
+            details=str(e),
+            status_code=500
+        )
