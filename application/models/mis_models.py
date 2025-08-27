@@ -8,16 +8,15 @@ DO NOT MODIFY THIS FILE MANUALLY - it will be regenerated when the database sche
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Float
+from sqlalchemy import  DateTime, ForeignKey, Text, Boolean, Float
 from sqlalchemy.types import Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from application.utils.database import db_manager
+from application import db
 
-# Base class for MIS models
-MISBase = declarative_base()
 
-class MISBaseModel(MISBase):
+class MISBaseModel(db.Model):
     """Base model for MIS database tables"""
     __abstract__ = True
 
@@ -28,24 +27,17 @@ class MISBaseModel(MISBase):
 
     @classmethod
     def get_by_id(cls, id_value):
-        """
-        Get record by ID with error handling
-
-        Args:
-            id_value: The ID to search for
-
-        Returns:
-            Model instance or None if not found
-        """
+        """Get record by primary key"""
         try:
             with cls.get_session() as session:
-                # Get the primary key column name
-                primary_key = cls.__table__.primary_key.columns.keys()[0]
-                return session.query(cls).filter(getattr(cls, primary_key) == id_value).first()
+                pk_col = list(cls.__table__.primary_key.columns)[0]
+                return session.query(cls).filter(pk_col == id_value).first()
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(f"Error getting {cls.__name__} by ID {id_value}: {str(e)}")
-            return []
+            current_app.logger.error(
+                f"Error getting {cls.__name__} by ID {id_value}: {str(e)}"
+            )
+            return None
 
     def to_dict(self):
         """
@@ -55,13 +47,13 @@ class MISBaseModel(MISBase):
             dict: Model data as dictionary
         """
         result = {}
-        for column in self.__table__.columns:
-            value = getattr(self, column.name)
+        for Column in self.__table__Columns:
+            value = getattr(self, Column.name)
             # Handle datetime objects
             if isinstance(value, datetime):
-                result[column.name] = value.isoformat()
+                result[Column.name] = value.isoformat()
             else:
-                result[column.name] = value
+                result[Column.name] = value
         return result
 
     @classmethod
@@ -91,22 +83,22 @@ class MISBaseModel(MISBase):
 class Modules(MISBaseModel):
     """Model for modules table"""
     __tablename__ = 'modules'    
-    module_id = Column(Integer, nullable=False, primary_key=True)
-    moduleType_Id = Column(String, nullable=False)
-    module_categoryId = Column(String, nullable=False)
-    acad_cycle_id = Column(String)
-    curculum_Id = Column(String, nullable=False)
-    level_id = Column(String, nullable=False)
-    splz_id = Column(String, nullable=False)
-    module_code = Column(String(15), nullable=False)
-    module_name = Column(String(70), nullable=False)
-    module_credits = Column(String, nullable=False)
-    module_hours = Column(String)
-    time = Column(String)
-    recorded_date = Column(DateTime)
-    user_id = Column(String(20), nullable=False)
-    status_Id = Column(Integer, nullable=False)
-    Situation = Column(String(50))
+    module_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    moduleType_Id = db.Column(db.String, nullable=False)
+    module_categoryId = db.Column(db.String, nullable=False)
+    acad_cycle_id = db.Column(db.String)
+    curculum_Id = db.Column(db.String, nullable=False)
+    level_id = db.Column(db.String, nullable=False)
+    splz_id = db.Column(db.String, nullable=False)
+    module_code = db.Column(db.String(15), nullable=False)
+    module_name = db.Column(db.String(70), nullable=False)
+    module_credits = db.Column(db.String, nullable=False)
+    module_hours = db.Column(db.String)
+    time = db.Column(db.String)
+    recorded_date = db.Column(DateTime)
+    user_id = db.Column(db.String(20), nullable=False)
+    status_Id = db.Column(db.Integer, nullable=False)
+    Situation = db.Column(db.String(50))
 
     # Relationships will be added after analyzing foreign keys
 
@@ -143,28 +135,28 @@ class Payment(MISBaseModel):
     """Model for payment table"""
     __tablename__ = 'payment'
     
-    id = Column(Integer, nullable=False, primary_key=True)
-    trans_code = Column(String(200))
-    reg_no = Column(String(200))
-    level_id = Column(Integer, ForeignKey("tbl_level.level_id"))
-    bank_id = Column(Integer, ForeignKey("tbl_bank.bank_id"))
-    slip_no = Column(String(200))
-    user = Column(String(20))
-    acad_cycle_id = Column(String(100))
-    date = Column(String(50))
-    fee_category = Column(Integer, ForeignKey("tbl_income_category.id"))
-    amount = Column(Float)
-    description = Column(Text)
-    recorded_date = Column(DateTime, default='current_timestamp()')
-    Remark = Column(String(200))
-    action = Column(String(100))
-    external_transaction_id = Column(Text)
-    payment_chanel = Column(String(100))
-    payment_notifi = Column(String(100))
-    invoi_ref = Column(String)
-    QuickBk_Status = Column(Integer, default='0')
-    pushed_by = Column(String(200))
-    pushed_date = Column(DateTime)
+    id = db.Column(db.Integer, nullable=False, primary_key=True)
+    trans_code = db.Column(db.String(200))
+    reg_no = db.Column(db.String(200))
+    level_id = db.Column(db.Integer, ForeignKey("tbl_level.level_id"))
+    bank_id = db.Column(db.Integer, ForeignKey("tbl_bank.bank_id"))
+    slip_no = db.Column(db.String(200))
+    user = db.Column(db.String(20))
+    acad_cycle_id = db.Column(db.String(100))
+    date = db.Column(db.String(50))
+    fee_category = db.Column(db.Integer, ForeignKey("tbl_income_category.id"))
+    amount = db.Column(Float)
+    description = db.Column(Text)
+    recorded_date = db.Column(DateTime, default='current_timestamp()')
+    Remark = db.Column(db.String(200))
+    action = db.Column(db.String(100))
+    external_transaction_id = db.Column(Text)
+    payment_chanel = db.Column(db.String(100))
+    payment_notifi = db.Column(db.String(100))
+    invoi_ref = db.Column(db.String)
+    QuickBk_Status = db.Column(db.Integer, default='0')
+    pushed_by = db.Column(db.String(200))
+    pushed_date = db.Column(DateTime)
 
     # Relationships
     level = relationship("TblLevel", backref="payments", lazy='joined')
@@ -214,14 +206,14 @@ class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
     __tablename__ = 'tbl_bank'
     
-    bank_id = Column(Integer, nullable=False, primary_key=True)
-    bank_code = Column(String(10), nullable=False)
-    bank_name = Column(String(100), nullable=False)
-    bank_branch = Column(String(100), nullable=False)
-    account_no = Column(String(30))
-    currency = Column(String(10), nullable=False)
-    status = Column(String, nullable=False)
-    quickbook = Column(String)
+    bank_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    bank_code = db.Column(db.String(10), nullable=False)
+    bank_name = db.Column(db.String(100), nullable=False)
+    bank_branch = db.Column(db.String(100), nullable=False)
+    account_no = db.Column(db.String(30))
+    currency = db.Column(db.String(10), nullable=False)
+    status = db.Column(db.String, nullable=False)
+    quickbook = db.Column(db.String)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -270,13 +262,13 @@ class TblCampus(MISBaseModel):
     """Model for tbl_campus table"""
     __tablename__ = 'tbl_campus'
     
-    camp_id = Column(Integer, nullable=False, primary_key=True)
-    camp_full_name = Column(String(50), nullable=False)
-    camp_short_name = Column(String(20), nullable=False)
-    camp_city = Column(String(30), nullable=False)
-    camp_yor = Column(DateTime, nullable=False)
-    camp_active = Column(Integer, nullable=False)
-    camp_comments = Column(String(255), nullable=False)
+    camp_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    camp_full_name = db.Column(db.String(50), nullable=False)
+    camp_short_name = db.Column(db.String(20), nullable=False)
+    camp_city = db.Column(db.String(30), nullable=False)
+    camp_yor = db.Column(DateTime, nullable=False)
+    camp_active = db.Column(db.Integer, nullable=False)
+    camp_comments = db.Column(db.String(255), nullable=False)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -368,23 +360,23 @@ class TblImvoice(MISBaseModel):
     """Model for tbl_imvoice table"""
     __tablename__ = 'tbl_imvoice'
 
-    id = Column(Integer, nullable=False, primary_key=True)
-    reg_no = Column(String(200))
-    level_id = Column(Integer, ForeignKey("tbl_level.level_id"))
-    fee_category = Column(Integer, ForeignKey("tbl_income_category.id"))
-    module_id = Column(Integer, ForeignKey("modules.module_id"))
-    Rpt_Id = Column(Integer)
-    dept = Column(Float)
-    credit = Column(Float)
-    balance = Column(String(200))
-    invoice_date = Column(DateTime)
-    comment = Column(String(900))
-    user = Column(String(20))
-    date = Column(DateTime)
-    intake_id = Column(Integer, ForeignKey("tbl_intake.intake_id"))
-    QuickBk_Status = Column(Integer, default='0')
-    pushed_by = Column(String(200))
-    pushed_date = Column(DateTime)
+    id = db.Column(db.Integer, nullable=False, primary_key=True)
+    reg_no = db.Column(db.String(200))
+    level_id = db.Column(db.Integer, ForeignKey("tbl_level.level_id"))
+    fee_category = db.Column(db.Integer, ForeignKey("tbl_income_category.id"))
+    module_id = db.Column(db.Integer, ForeignKey("modules.module_id"))
+    Rpt_Id = db.Column(db.Integer)
+    dept = db.Column(Float)
+    credit = db.Column(Float)
+    balance = db.Column(db.String(200))
+    invoice_date = db.Column(DateTime)
+    comment = db.Column(db.String(900))
+    user = db.Column(db.String(20))
+    date = db.Column(DateTime)
+    intake_id = db.Column(db.Integer, ForeignKey("tbl_intake.intake_id"))
+    QuickBk_Status = db.Column(db.Integer, default='0')
+    pushed_by = db.Column(db.String(200))
+    pushed_date = db.Column(DateTime)
 
     # Define relationships between levels, modules, and intakes
     # This is not implemented on database level, we need them for joins
@@ -432,19 +424,19 @@ class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
 
-    id = Column(Integer, nullable=False, primary_key=True)
-    invTypeId = Column(String, nullable=False)
-    camp_id = Column(Integer, ForeignKey("tbl_campus.camp_id"))
-    prg_type = Column(String, nullable=False)
-    splz_id = Column(Integer, ForeignKey("tbl_specialization.splz_id"))
-    name = Column(String(100), nullable=False)
-    amount = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    recorded_date = Column(DateTime)
-    recorded_by = Column(String(100), nullable=False)
-    status_Id = Column(Integer, nullable=False)
-    category = Column(String(200), nullable=False)
-    QuickBk_ctgId = Column(Integer)
+    id = db.Column(db.Integer, nullable=False, primary_key=True)
+    invTypeId = db.Column(db.String, nullable=False)
+    camp_id = db.Column(db.Integer, ForeignKey("tbl_campus.camp_id"))
+    prg_type = db.Column(db.String, nullable=False)
+    splz_id = db.Column(db.Integer, ForeignKey("tbl_specialization.splz_id"))
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=False)
+    recorded_date = db.Column(DateTime)
+    recorded_by = db.Column(db.String(100), nullable=False)
+    status_Id = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(200), nullable=False)
+    QuickBk_ctgId = db.Column(db.Integer)
 
     # Relationships 
     camp = relationship("TblCampus", backref="income_categories", lazy='joined')
@@ -483,13 +475,13 @@ class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
     __tablename__ = 'tbl_level'
     
-    level_id = Column(Integer, nullable=False, primary_key=True)
-    level_no = Column(String(20), nullable=False)
-    level_full_name = Column(String(50), nullable=False)
-    level_short_name = Column(String(10), nullable=False)
-    amount = Column(String(20), nullable=False)
-    level_exit_award = Column(String, nullable=False)
-    status = Column(Integer, nullable=False)
+    level_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    level_no = db.Column(db.String(20), nullable=False)
+    level_full_name = db.Column(db.String(50), nullable=False)
+    level_short_name = db.Column(db.String(10), nullable=False)
+    amount = db.Column(db.String(20), nullable=False)
+    level_exit_award = db.Column(db.String, nullable=False)
+    status = db.Column(db.Integer, nullable=False)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -517,57 +509,57 @@ class TblOnlineApplication(MISBaseModel):
     """Model for tbl_online_application table"""
     __tablename__ = 'tbl_online_application'
     
-    appl_Id = Column(Integer, nullable=False, primary_key=True)
-    tracking_id = Column(String(200))
-    reg_no = Column(String(200))
-    first_name = Column(String(200))
-    middlename = Column(String(200))
-    family_name = Column(String(200))
-    dob = Column(DateTime)
-    sex = Column(String(6))
-    phone1 = Column(String(50))
-    email1 = Column(String(100))
-    country_of_birth = Column(String)
-    nation_Id_passPort_no = Column(String(200))
-    present_nationality = Column(String)
-    sector = Column(String)
-    father_name = Column(String(500))
-    mother_name = Column(String(500))
-    guardian_phone = Column(String(50))
-    serious_illness = Column(String(20))
-    serious_illness_comment = Column(Text)
-    blood_pressure = Column(String(20))
-    diabetes = Column(String(20))
-    high_school_name = Column(String(500))
-    combination = Column(String(500))
-    completed_year = Column(String)
-    school_categ_Id = Column(String)
-    index_number = Column(String(200))
-    grade_marks = Column(String(200))
-    principle_passes = Column(String(300))
-    n_principle_passes = Column(String)
-    camp_id = Column(String)
-    opt_1 = Column(String)
-    opt_2 = Column(String)
-    opt_3 = Column(String)
-    opt_oriented = Column(String)
-    intake_id = Column(String)
-    level_id = Column(String)
-    prg_mode_id = Column(String)
-    spon_id = Column(String)
-    StdentTrnsfr = Column(String(20))
-    about_Id = Column(String)
-    appl_date = Column(DateTime)
-    NID_doc = Column(String(1000))
-    highSchool_doc = Column(String(1000))
-    transcript_doc = Column(String(1000))
-    HoD_comment = Column(Text)
-    HoD_user = Column(String(200))
-    HoD_resp_date = Column(DateTime)
-    respont_by = Column(String(100))
-    response_date = Column(DateTime)
-    response_comment = Column(Text)
-    status = Column(Integer)
+    appl_Id = db.Column(db.Integer, nullable=False, primary_key=True)
+    tracking_id = db.Column(db.String(200))
+    reg_no = db.Column(db.String(200))
+    first_name = db.Column(db.String(200))
+    middlename = db.Column(db.String(200))
+    family_name = db.Column(db.String(200))
+    dob = db.Column(DateTime)
+    sex = db.Column(db.String(6))
+    phone1 = db.Column(db.String(50))
+    email1 = db.Column(db.String(100))
+    country_of_birth = db.Column(db.String)
+    nation_Id_passPort_no = db.Column(db.String(200))
+    present_nationality = db.Column(db.String)
+    sector = db.Column(db.String)
+    father_name = db.Column(db.String(500))
+    mother_name = db.Column(db.String(500))
+    guardian_phone = db.Column(db.String(50))
+    serious_illness = db.Column(db.String(20))
+    serious_illness_comment = db.Column(Text)
+    blood_pressure = db.Column(db.String(20))
+    diabetes = db.Column(db.String(20))
+    high_school_name = db.Column(db.String(500))
+    combination = db.Column(db.String(500))
+    completed_year = db.Column(db.String)
+    school_categ_Id = db.Column(db.String)
+    index_number = db.Column(db.String(200))
+    grade_marks = db.Column(db.String(200))
+    principle_passes = db.Column(db.String(300))
+    n_principle_passes = db.Column(db.String)
+    camp_id = db.Column(db.String)
+    opt_1 = db.Column(db.String)
+    opt_2 = db.Column(db.String)
+    opt_3 = db.Column(db.String)
+    opt_oriented = db.Column(db.String)
+    intake_id = db.Column(db.String)
+    level_id = db.Column(db.String)
+    prg_mode_id = db.Column(db.String)
+    spon_id = db.Column(db.String)
+    StdentTrnsfr = db.Column(db.String(20))
+    about_Id = db.Column(db.String)
+    appl_date = db.Column(DateTime)
+    NID_doc = db.Column(db.String(1000))
+    highSchool_doc = db.Column(db.String(1000))
+    transcript_doc = db.Column(db.String(1000))
+    HoD_comment = db.Column(Text)
+    HoD_user = db.Column(db.String(200))
+    HoD_resp_date = db.Column(DateTime)
+    respont_by = db.Column(db.String(100))
+    response_date = db.Column(DateTime)
+    response_comment = db.Column(Text)
+    status = db.Column(db.Integer)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -639,54 +631,54 @@ class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
     __tablename__ = 'tbl_personal_ug'
     
-    per_id_ug = Column(Integer, nullable=False, primary_key=True)
-    reg_no = Column(String(200), nullable=False)
-    prg_type = Column(String, nullable=False)
-    sex = Column(String(6))
-    fname = Column(String(250))
-    middlename = Column(String(200))
-    lname = Column(String(100))
-    dob = Column(DateTime)
-    marital_status = Column(String(7))
-    father_name = Column(String(50))
-    mother_name = Column(String(50))
-    national_id = Column(String(20))
-    cntr_id = Column(String, nullable=False)
-    VISA_Expiration_date = Column(DateTime)
-    b_province = Column(String(50), nullable=False)
-    b_district = Column(String(20), nullable=False)
-    b_sector = Column(String(50), nullable=False)
-    b_cell = Column(String(50), nullable=False)
-    b_village = Column(String(50), nullable=False)
-    district = Column(String(50))
-    sector = Column(String(50))
-    cell = Column(String(200))
-    village = Column(String(200))
-    province = Column(String(50))
-    nationality = Column(String(50))
-    phone1 = Column(String(100))
-    phone2 = Column(String(20))
-    email1 = Column(String(50))
-    email2 = Column(String(50))
-    combination = Column(String(100))
-    principle_passes = Column(String(500))
-    no_principle_passes = Column(String, nullable=False)
-    year_of_compleshed = Column(String)
-    max_or_grad = Column(Float, nullable=False)
-    reg_date = Column(DateTime)
-    secondary_notes = Column(Text, nullable=False)
-    secondary_school = Column(String(50), nullable=False)
-    student_updating = Column(String(10))
-    registered_by = Column(String(100))
-    updated_date = Column(DateTime)
-    updated_by = Column(String(100))
-    transf_status = Column(String(50))
-    about_Id = Column(String)
-    certificate_doc = Column(String(150))
-    auth_ccs_nnc = Column(String, nullable=False, default='0')
-    qk_id = Column(String)
-    pushed_by = Column(String(200))
-    pushed_date = Column(DateTime)
+    per_id_ug = db.Column(db.Integer, nullable=False, primary_key=True)
+    reg_no = db.Column(db.String(200), nullable=False)
+    prg_type = db.Column(db.String, nullable=False)
+    sex = db.Column(db.String(6))
+    fname = db.Column(db.String(250))
+    middlename = db.Column(db.String(200))
+    lname = db.Column(db.String(100))
+    dob = db.Column(DateTime)
+    marital_status = db.Column(db.String(7))
+    father_name = db.Column(db.String(50))
+    mother_name = db.Column(db.String(50))
+    national_id = db.Column(db.String(20))
+    cntr_id = db.Column(db.String, nullable=False)
+    VISA_Expiration_date = db.Column(DateTime)
+    b_province = db.Column(db.String(50), nullable=False)
+    b_district = db.Column(db.String(20), nullable=False)
+    b_sector = db.Column(db.String(50), nullable=False)
+    b_cell = db.Column(db.String(50), nullable=False)
+    b_village = db.Column(db.String(50), nullable=False)
+    district = db.Column(db.String(50))
+    sector = db.Column(db.String(50))
+    cell = db.Column(db.String(200))
+    village = db.Column(db.String(200))
+    province = db.Column(db.String(50))
+    nationality = db.Column(db.String(50))
+    phone1 = db.Column(db.String(100))
+    phone2 = db.Column(db.String(20))
+    email1 = db.Column(db.String(50))
+    email2 = db.Column(db.String(50))
+    combination = db.Column(db.String(100))
+    principle_passes = db.Column(db.String(500))
+    no_principle_passes = db.Column(db.String, nullable=False)
+    year_of_compleshed = db.Column(db.String)
+    max_or_grad = db.Column(Float, nullable=False)
+    reg_date = db.Column(DateTime)
+    secondary_notes = db.Column(Text, nullable=False)
+    secondary_school = db.Column(db.String(50), nullable=False)
+    student_updating = db.Column(db.String(10))
+    registered_by = db.Column(db.String(100))
+    updated_date = db.Column(DateTime)
+    updated_by = db.Column(db.String(100))
+    transf_status = db.Column(db.String(50))
+    about_Id = db.Column(db.String)
+    certificate_doc = db.Column(db.String(150))
+    auth_ccs_nnc = db.Column(db.String, nullable=False, default='0')
+    qk_id = db.Column(db.String)
+    pushed_by = db.Column(db.String(200))
+    pushed_date = db.Column(DateTime)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -777,33 +769,33 @@ class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'
     
-    reg_prg_id = Column(Integer, nullable=False, primary_key=True)
-    reg_no = Column(String(200), nullable=False)
-    intake_id = Column(String, nullable=False)
-    prg_id = Column(String, nullable=False)
-    splz_id = Column(String, nullable=False)
-    level_id = Column(String, nullable=False)
-    prg_mode_id = Column(String, nullable=False)
-    prg_type = Column(String, nullable=False)
-    year_id = Column(String)
-    sem1 = Column(String)
-    sem2 = Column(String)
-    sem3 = Column(String)
-    camp_id = Column(String, nullable=False)
-    reg_date = Column(DateTime)
-    reg_comments = Column(String(255))
-    spon_id = Column(String)
-    reg_active = Column(Integer)
-    status_comment = Column(String(400), nullable=False)
-    Availability = Column(String, nullable=False)
-    pasted_bk = Column(String(11))
-    registered_by = Column(String(100))
-    updated_date = Column(DateTime)
-    updated_by = Column(String(100))
-    suspension_date = Column(DateTime)
-    suspended_by = Column(String(100))
-    auth_ccs_nnc = Column(String)
-    qk_id = Column(String)
+    reg_prg_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    reg_no = db.Column(db.String(200), nullable=False)
+    intake_id = db.Column(db.String, nullable=False)
+    prg_id = db.Column(db.String, nullable=False)
+    splz_id = db.Column(db.String, nullable=False)
+    level_id = db.Column(db.String, nullable=False)
+    prg_mode_id = db.Column(db.String, nullable=False)
+    prg_type = db.Column(db.String, nullable=False)
+    year_id = db.Column(db.String)
+    sem1 = db.Column(db.String)
+    sem2 = db.Column(db.String)
+    sem3 = db.Column(db.String)
+    camp_id = db.Column(db.String, nullable=False)
+    reg_date = db.Column(DateTime)
+    reg_comments = db.Column(db.String(255))
+    spon_id = db.Column(db.String)
+    reg_active = db.Column(db.Integer)
+    status_comment = db.Column(db.String(400), nullable=False)
+    Availability = db.Column(db.String, nullable=False)
+    pasted_bk = db.Column(db.String(11))
+    registered_by = db.Column(db.String(100))
+    updated_date = db.Column(DateTime)
+    updated_by = db.Column(db.String(100))
+    suspension_date = db.Column(DateTime)
+    suspended_by = db.Column(db.String(100))
+    auth_ccs_nnc = db.Column(db.String)
+    qk_id = db.Column(db.String)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -851,22 +843,22 @@ class TblSponsor(MISBaseModel):
     """Model for tbl_sponsor table"""
     __tablename__ = 'tbl_sponsor'
     
-    spon_id = Column(Integer, nullable=False, primary_key=True)
-    spon_cat_id = Column(String, nullable=False)
-    spon_full_name = Column(String(50), nullable=False)
-    spon_short_name = Column(String(20), nullable=False)
-    sponsor_value = Column(Float)
-    reg_fee = Column(Integer)
-    tut_fee = Column(Integer)
-    indus_fee = Column(Integer)
-    tour_fee = Column(Integer)
-    thesis_fee = Column(Integer)
-    grad_fee = Column(Integer)
-    degree_fee = Column(Integer)
-    testimony_fee = Column(Integer)
-    recorded_date = Column(DateTime)
-    user_id = Column(String(100), nullable=False)
-    statusId = Column(Integer, nullable=False)
+    spon_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    spon_cat_id = db.Column(db.String, nullable=False)
+    spon_full_name = db.Column(db.String(50), nullable=False)
+    spon_short_name = db.Column(db.String(20), nullable=False)
+    sponsor_value = db.Column(Float)
+    reg_fee = db.Column(db.Integer)
+    tut_fee = db.Column(db.Integer)
+    indus_fee = db.Column(db.Integer)
+    tour_fee = db.Column(db.Integer)
+    thesis_fee = db.Column(db.Integer)
+    grad_fee = db.Column(db.Integer)
+    degree_fee = db.Column(db.Integer)
+    testimony_fee = db.Column(db.Integer)
+    recorded_date = db.Column(DateTime)
+    user_id = db.Column(db.String(100), nullable=False)
+    statusId = db.Column(db.Integer, nullable=False)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -989,54 +981,54 @@ class TblIntake(MISBaseModel):
     """Model for tbl_intake table"""
     __tablename__ = 'tbl_intake'  
 
-    intake_id = Column(Integer, nullable=False, primary_key=True)
-    prg_type = Column(String, nullable=False)
-    acad_cycle_id = Column(String, nullable=False)
-    intake_no = Column(Integer, nullable=False)
-    intake_month = Column(String(30), nullable=False)
-    intake_start = Column(DateTime, nullable=False)
-    intake_end = Column(DateTime, nullable=False)
-    app_start = Column(DateTime, nullable=False)
-    app_end = Column(DateTime, nullable=False)
-    reg_start = Column(DateTime, nullable=False)
-    reg_end = Column(DateTime, nullable=False)
-    late_reg_end = Column(DateTime, nullable=False)
-    late_reg_fee = Column(Integer, nullable=False)
-    status = Column(Integer, nullable=False, default='1')
+    intake_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    prg_type = db.Column(db.String, nullable=False)
+    acad_cycle_id = db.Column(db.String, nullable=False)
+    intake_no = db.Column(db.Integer, nullable=False)
+    intake_month = db.Column(db.String(30), nullable=False)
+    intake_start = db.Column(DateTime, nullable=False)
+    intake_end = db.Column(DateTime, nullable=False)
+    app_start = db.Column(DateTime, nullable=False)
+    app_end = db.Column(DateTime, nullable=False)
+    reg_start = db.Column(DateTime, nullable=False)
+    reg_end = db.Column(DateTime, nullable=False)
+    late_reg_end = db.Column(DateTime, nullable=False)
+    late_reg_fee = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, nullable=False, default='1')
 
     def __repr__(self):
-        """String representation of the TblIntake model"""
+        """db.String representation of the TblIntake model"""
         return f'<TblIntake {self.intake_id}>'
 
 class TblSpecialization(MISBaseModel):
     """Model for tbl_specialization table"""
     __tablename__ = 'tbl_specialization'
     
-    splz_id = Column(Integer, nullable=False, primary_key=True)
-    prg_id = Column(String, nullable=False)
-    prg_type = Column(String, nullable=False)
-    splz_full_name = Column(String(100), nullable=False)
-    splz_short_name = Column(String(50), nullable=False)
-    splz_start_level = Column(String, nullable=False)
-    degree_name = Column(String(100), nullable=False)
-    diploma_name = Column(String(255), nullable=False)
-    splz_comments = Column(String(255), nullable=False)
-    status = Column(Integer)
+    splz_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    prg_id = db.Column(db.String, nullable=False)
+    prg_type = db.Column(db.String, nullable=False)
+    splz_full_name = db.Column(db.String(100), nullable=False)
+    splz_short_name = db.Column(db.String(50), nullable=False)
+    splz_start_level = db.Column(db.String, nullable=False)
+    degree_name = db.Column(db.String(100), nullable=False)
+    diploma_name = db.Column(db.String(255), nullable=False)
+    splz_comments = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.Integer)
 
     def __repr__(self):
-        """String representation of the TblSpecialization model"""
+        """db.String representation of the TblSpecialization model"""
         return f'<TblSpecialization {self.splz_id}>'
 
        
 class TblProgramMode(MISBaseModel):
     """Model for tbl_program_mode table"""
     __tablename__ = 'tbl_program_mode'    
-    prg_mode_id = Column(Integer, nullable=False, primary_key=True)
-    prg_mode_full_name = Column(String(30), nullable=False)
-    prg_mode_short_name = Column(String(10), nullable=False)
+    prg_mode_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    prg_mode_full_name = db.Column(db.String(30), nullable=False)
+    prg_mode_short_name = db.Column(db.String(10), nullable=False)
 
     def __repr__(self):
-        """String representation of the TblProgramMode model"""
+        """db.String representation of the TblProgramMode model"""
         return f'<TblProgramMode {self.prg_mode_id}>'
 
 
@@ -1044,15 +1036,15 @@ class TblAcadCycle(MISBaseModel):
     """Model for tbl_acad_cycle table"""
     __tablename__ = 'tbl_acad_cycle'
     
-    acad_cycle_id = Column(Integer, nullable=False, primary_key=True)
-    curculum_Id = Column(Integer, ForeignKey("tbl_curriculum.curculum_Id"))
-    no_of_intakes = Column(Integer, nullable=False)
-    intakes_months = Column(String(255), nullable=False)
-    no_of_cohorts = Column(Integer, nullable=False)
-    cohort_months = Column(String(255), nullable=False)
-    acad_year = Column(String(9), nullable=False)
-    active = Column(Integer, nullable=False)
-    status = Column(Integer, nullable=False)
+    acad_cycle_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    curculum_Id = db.Column(db.Integer, ForeignKey("tbl_curriculum.curculum_Id"))
+    no_of_intakes = db.Column(db.Integer, nullable=False)
+    intakes_months = db.Column(db.String(255), nullable=False)
+    no_of_cohorts = db.Column(db.Integer, nullable=False)
+    cohort_months = db.Column(db.String(255), nullable=False)
+    acad_year = db.Column(db.String(9), nullable=False)
+    active = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, nullable=False)
 
     # Relationship with TblCurriculum
     curriculum = relationship(
@@ -1063,7 +1055,7 @@ class TblAcadCycle(MISBaseModel):
     )
 
     def __repr__(self):
-        """String representation of the TblAcadCycle model"""
+        """db.String representation of the TblAcadCycle model"""
         return f'<TblAcadCycle {self.acad_cycle_id}>'
 
     def to_dict(self):
@@ -1091,12 +1083,12 @@ class TblCurriculum(MISBaseModel):
     """Model for tbl_curriculum table"""
     __tablename__ = 'tbl_curriculum'
     
-    curculum_Id = Column(Integer, nullable=False, primary_key=True)
-    acad_cycle_id = Column(Integer,ForeignKey("tbl_acad_cycle.acad_cycle_id"))
-    recorded_date = Column(DateTime, nullable=False)
-    recorded_by = Column(String(200), nullable=False)
-    status_Id = Column(Integer, nullable=False)
-    graduation_status = Column(String(15), nullable=False)
+    curculum_Id = db.Column(db.Integer, nullable=False, primary_key=True)
+    acad_cycle_id = db.Column(db.Integer,ForeignKey("tbl_acad_cycle.acad_cycle_id"))
+    recorded_date = db.Column(DateTime, nullable=False)
+    recorded_by = db.Column(db.String(200), nullable=False)
+    status_Id = db.Column(db.Integer, nullable=False)
+    graduation_status = db.Column(db.String(15), nullable=False)
 
     # Relationship with TblAcadCycle
     acad_cycle = relationship(
@@ -1108,7 +1100,7 @@ class TblCurriculum(MISBaseModel):
 
 
     def __repr__(self):
-        """String representation of the TblCurriculum model"""
+        """db.String representation of the TblCurriculum model"""
         return f'<TblCurriculum {self.curculum_Id}>'
 
     def to_dict(self):
