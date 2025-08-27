@@ -42,19 +42,16 @@ class MISBaseModel(db.Model):
     def to_dict(self):
         """
         Convert model to dictionary for JSON responses
-
-        Returns:
-            dict: Model data as dictionary
         """
         result = {}
-        for Column in self.__table__Columns:
-            value = getattr(self, Column.name)
-            # Handle datetime objects
+        for column in self.__table__.columns:
+            value = getattr(self, column.name)
             if isinstance(value, datetime):
-                result[Column.name] = value.isoformat()
+                result[column.name] = value.isoformat()
             else:
-                result[Column.name] = value
+                result[column.name] = value
         return result
+
 
     @classmethod
     def get_active_records(cls):
