@@ -53,9 +53,10 @@ class DatabaseManager:
                 pool_recycle=3600,
                 echo=config.get('DEBUG')
             )
-            from application.models.mis_models import MISBase
-            # Bind MISBase metadata to this engine
-            MISBase.metadata.bind = engine  
+            from application import db
+            # Bind db to the new engine
+            db.Model.metadata.bind = engine
+            #MISBase.metadata.bind = engine  
             
             # Add connection event listeners
             self._add_connection_listeners(engine)
