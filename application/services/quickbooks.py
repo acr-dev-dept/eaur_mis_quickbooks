@@ -1263,19 +1263,37 @@ if __name__ == "__main__":
     app = create_app('development')
 
     with app.app_context():
+        # Load all QuickBooks configuration from .env
         client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
         client_secret = os.getenv("QUICK_BOOKS_SECRET")
-        redirect_uri = "https://www.netpipo.com"
+        redirect_uri = os.getenv("QUICK_BOOKS_REDIRECT_URI", "https://www.netpipo.com")
+        access_token = os.getenv("QUICK_BOOKS_ACCESS_TOKEN")
         refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
+        authorization_code = os.getenv("QUICK_BOOKS_AUTHORIZATION_CODE")
         realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
         api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
 
+        print("📋 QuickBooks Configuration from .env:")
         print(f"client_id: {client_id}")
         print(f"client_secret: {client_secret}")
         print(f"redirect_uri: {redirect_uri}")
-        print(f"refresh_token: {refresh_token}")
+        print(f"access_token: {access_token[:10] + '...' if access_token else 'None'}")
+        print(f"refresh_token: {refresh_token[:10] + '...' if refresh_token else 'None'}")
+        print(f"authorization_code: {authorization_code[:10] + '...' if authorization_code else 'None'}")
         print(f"realm_id: {realm_id}")
         print(f"api_base_url: {api_base_url}")
+
+        # Validate required environment variables
+        required_vars = {
+            'QUICK_BOOKS_CLIENT_ID': client_id,
+            'QUICK_BOOKS_SECRET': client_secret,
+            'QUICK_BOOKS_REALM_ID': realm_id
+        }
+
+        missing_vars = [var for var, value in required_vars.items() if not value]
+        if missing_vars:
+            print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+            return
 
         # Generate Fernet key if not provided
         fernet_key = os.getenv("FERNET_KEY")
@@ -1285,68 +1303,86 @@ if __name__ == "__main__":
             print(f"⚠️  Generated Fernet key (add to .env): FERNET_KEY={fernet_key}")
             os.environ["FERNET_KEY"] = fernet_key
 
+        # Populate database with .env configuration
+        print("\n🔄 Populating database with .env configuration...")
         try:
-            # Initialize QuickBooks client
+            from application.models.central_models import QuickBooksConfig
+            from application.helpers.quickbooks_helpers import QuickBooksHelper
+            from application import db
+
+            # Get or create config
+            config = QuickBooksConfig.get_config()
+            if not config:
+                config = QuickBooksConfig()
+                print("📝 Creating new QuickBooks configuration...")
+            else:
+                print("� Updating existing QuickBooks configuration...")
+
+            # Encrypt and store tokens if provided
+            if access_token:
+                config.access_token = QuickBooksHelper.encrypt(access_token)
+                print("✅ Access token encrypted and stored")
+
+            if refresh_token:
+                config.refresh_token = QuickBooksHelper.encrypt(refresh_token)
+                print("✅ Refresh token encrypted and stored")
+
+            if authorization_code:
+                config.authorization_code = QuickBooksHelper.encrypt(authorization_code)
+                print("✅ Authorization code encrypted and stored")
+
+            # Store realm_id and set active
+            config.realm_id = realm_id
+            config.is_active = True
+
+            # Save to database
+            db.session.add(config)
+            db.session.commit()
+            print("✅ Database updated successfully!")
+
+        except Exception as e:
+            print(f"❌ Error populating database: {e}")
+            return
+
+        # Initialize QuickBooks client (will now load from database)
+        try:
             qb = QuickBooks()
-            print(f"✅ QuickBooks client created: {qb}")
+            print(f"✅ QuickBooks client created and loaded from database")
+            print(f"   - Realm ID: {qb.realm_id}")
+            print(f"   - Has access token: {bool(qb.access_token)}")
+            print(f"   - Has refresh token: {bool(qb.refresh_token)}")
         except Exception as e:
             print(f"❌ Error creating QuickBooks client: {e}")
-            qb = None
+            return
 
-        if qb:
-            # Check if we need to do OAuth flow
-            if not qb.refresh_token:
-                print("\n🔐 No refresh token found. Starting OAuth flow...")
-                print("📋 Step 1: Get authorization URL")
+        # Test the configuration
+        print("\n🧪 Testing QuickBooks API connection...")
+        try:
+            # If we have an access token, try a direct API call
+            if qb.access_token:
+                print("� Testing with existing access token...")
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
 
-                try:
-                    auth_url = qb.get_authorization_url()
-                    print(f"🌐 Authorization URL: {auth_url}")
-                    print("\n📝 Instructions:")
-                    print("1. Copy the URL above and open it in your browser")
-                    print("2. Complete the QuickBooks authorization")
-                    print("3. Copy the 'code' parameter from the callback URL")
-                    print("4. Run this script again with: QUICK_BOOKS_AUTH_CODE=your_code")
+            # If we only have refresh token, try to refresh first
+            elif qb.refresh_token:
+                print("🔄 No access token found, attempting token refresh...")
+                tokens = qb.refresh_access_token()
+                print("✅ Token refresh successful!")
 
-                    # Check if authorization code is provided
-                    auth_code = os.getenv("QUICK_BOOKS_AUTH_CODE")
-                    if auth_code:
-                        print(f"\n🔑 Found authorization code: {auth_code[:10]}...")
-                        try:
-                            tokens = qb.get_quickbooks_access_token(auth_code)
-                            print("✅ Successfully exchanged code for tokens!")
-                            print(f"🔄 Access token: {tokens['access_token'][:10]}...")
-                            print(f"🔄 Refresh token: {tokens['refresh_token'][:10]}...")
-
-                            # Now try to get account types
-                            print("\n📊 Testing API with new tokens...")
-                            accounts = qb.get_account_types(qb.realm_id)
-                            print(f"✅ Account types retrieved: {len(accounts) if accounts else 0} types")
-
-                        except Exception as e:
-                            print(f"❌ Error exchanging code for tokens: {e}")
-
-                except Exception as e:
-                    print(f"❌ Error generating authorization URL: {e}")
+                # Now test API
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
 
             else:
-                print(f"✅ Refresh token found: {qb.refresh_token[:10]}...")
-                try:
-                    # Try to refresh the token
-                    tokens = qb.refresh_access_token()
-                    print("✅ Token refresh successful!")
+                print("⚠️  No tokens available for testing")
 
-                    # Test API call
-                    print("\n📊 Testing API call...")
-                    accounts = qb.get_account_types(qb.realm_id)
-                    print(f"✅ Account types retrieved: {len(accounts) if accounts else 0} types")
+        except Exception as e:
+            print(f"❌ API test failed: {e}")
+            if "401" in str(e) or "authentication" in str(e).lower():
+                print("💡 Tokens may be expired. Please update your .env with fresh tokens.")
 
-                except Exception as e:
-                    print(f"❌ Error refreshing token: {e}")
-                    print("💡 You may need to re-authorize. Delete the database and run OAuth flow again.")
-
-        else:
-            print("❌ Cannot proceed without QuickBooks client")
+        print("\n🎉 Script completed!")
 
         """try:
             # Get company info
