@@ -1252,289 +1252,154 @@ class QuickBooks:
 
 
 if __name__ == "__main__":
-    client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
-    client_secret = os.getenv("QUICK_BOOKS_SECRET")
-    redirect_uri = "https://www.netpipo.com"
-    refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
-    realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
-    api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
-    print(f"client_id: {client_id}")
-    print(f"client_secret: {client_secret}")
-    print(f"redirect_uri: {redirect_uri}")
-    print(f"refresh_token: {refresh_token}")
-    print(f"realm_id: {realm_id}")
-    print(f"api_base_url: {api_base_url}")
+    # Import Flask app factory to create application context
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    try:
-        qb = QuickBooks(client_id, client_secret, redirect_uri, api_base_url, refresh_token)
-        print(f"QuickBooks client created: {qb}")
-    except Exception as e:
-        print("Error:", str(e))
+    from application import create_app
 
-    try:
-        # Refresh the token
-        tokens = qb.refresh_access_token()
-        print("tokens:", tokens)
-    except Exception as e:
-        print("Error:", str(e))
+    # Create Flask app context for standalone testing
+    app = create_app('development')
 
-    try:
-        # Get company info
-        company_info = qb.get_company_info(realm_id)
-        print(f"Company Info: {company_info}")
-        company_name = company_info["CompanyInfo"]["CompanyName"]
-        print(f"Company Name: {company_name}")
-        address = company_info["CompanyInfo"]["CompanyAddr"]
-        print(f"Company Address: {address}")
-    except Exception as e:
-        print("Error:", str(e))
-    
+    with app.app_context():
+        # Load all QuickBooks configuration from .env
+        client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
+        client_secret = os.getenv("QUICK_BOOKS_SECRET")
+        redirect_uri = os.getenv("QUICK_BOOKS_REDIRECT_URI", "https://www.netpipo.com")
+        access_token = os.getenv("QUICK_BOOKS_ACCESS_TOKEN")
+        refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
+        authorization_code = os.getenv("QUICK_BOOKS_AUTHORIZATION_CODE")
+        realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
+        api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
 
-    # Get account types
+        print("📋 QuickBooks Configuration from .env:")
+        print(f"client_id: {client_id}")
+        print(f"client_secret: {client_secret}")
+        print(f"redirect_uri: {redirect_uri}")
+        print(f"access_token: {access_token[:10] + '...' if access_token else 'None'}")
+        print(f"refresh_token: {refresh_token[:10] + '...' if refresh_token else 'None'}")
+        print(f"authorization_code: {authorization_code[:10] + '...' if authorization_code else 'None'}")
+        print(f"realm_id: {realm_id}")
+        print(f"api_base_url: {api_base_url}")
 
-    try:
-        accounts = qb.get_account_types(realm_id)
-        print(f"Account types: {accounts}")
-    except Exception as e:
-        print("Error:", str(e))
-
-
-
-    # Create an account
-    """
-    data = {
-        "Name": "Net Salary Payable",
-        "AccountType": "Accounts Payable",
-        "AccountSubType": "AccountsPayable",
-        "AcctNum": "1150040002",
-        "CurrencyRef": {
-            "value": "USD"
+        # Validate required environment variables
+        required_vars = {
+            'QUICK_BOOKS_CLIENT_ID': client_id,
+            'QUICK_BOOKS_SECRET': client_secret,
+            'QUICK_BOOKS_REALM_ID': realm_id
         }
-    }
-    """
 
-    print("Creating account...")
-    """
-    try:
-        account = qb.create_account(realm_id, data)
-        print(f"Account: {account}")
-    except Exception as e:
-        print("Error:", str(e))
+        missing_vars = [var for var, value in required_vars.items() if not value]
+        if missing_vars:
+            print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+            exit(1)
 
+        # Generate Fernet key if not provided
+        fernet_key = os.getenv("FERNET_KEY")
+        if not fernet_key:
+            from cryptography.fernet import Fernet
+            fernet_key = Fernet.generate_key().decode()
+            print(f"⚠️  Generated Fernet key (add to .env): FERNET_KEY={fernet_key}")
+            os.environ["FERNET_KEY"] = fernet_key
+
+        # Populate database with .env configuration
+        print("\n🔄 Populating database with .env configuration...")
+        try:
+            from application.models.central_models import QuickBooksConfig
+            from application.helpers.quickbooks_helpers import QuickBooksHelper
+            from application import db
+
+            # Get or create config
+            config = QuickBooksConfig.get_config()
+            if not config:
+                config = QuickBooksConfig()
+                print("📝 Creating new QuickBooks configuration...")
+            else:
+                print("� Updating existing QuickBooks configuration...")
+
+            # Encrypt and store tokens if provided
+            if access_token:
+                config.access_token = QuickBooksHelper.encrypt(access_token)
+                print("✅ Access token encrypted and stored")
+
+            if refresh_token:
+                config.refresh_token = QuickBooksHelper.encrypt(refresh_token)
+                print("✅ Refresh token encrypted and stored")
+
+            if authorization_code:
+                config.authorization_code = QuickBooksHelper.encrypt(authorization_code)
+                print("✅ Authorization code encrypted and stored")
+
+            # Store realm_id and set active
+            config.realm_id = realm_id
+            config.is_active = True
+
+            # Save to database
+            db.session.add(config)
+            db.session.commit()
+            print("✅ Database updated successfully!")
+
+        except Exception as e:
+            print(f"❌ Error populating database: {e}")
+            exit(1)
+
+        # Initialize QuickBooks client (will now load from database)
+        try:
+            qb = QuickBooks()
+            print(f"✅ QuickBooks client created and loaded from database")
+            print(f"   - Realm ID: {qb.realm_id}")
+            print(f"   - Has access token: {bool(qb.access_token)}")
+            print(f"   - Has refresh token: {bool(qb.refresh_token)}")
+        except Exception as e:
+            print(f"❌ Error creating QuickBooks client: {e}")
+            exit(1)
+
+        # Test the configuration
+        print("\n🧪 Testing QuickBooks API connection...")
+        try:
+            # If we have an access token, try a direct API call
+            if qb.access_token:
+                print("� Testing with existing access token...")
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
+
+            # If we only have refresh token, try to refresh first
+            elif qb.refresh_token:
+                print("🔄 No access token found, attempting token refresh...")
+                tokens = qb.refresh_access_token()
+                print("✅ Token refresh successful!")
+
+                # Now test API
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
+
+            else:
+                print("⚠️  No tokens available for testing")
+
+        except Exception as e:
+            print(f"❌ API test failed: {e}")
+            if "401" in str(e) or "authentication" in str(e).lower():
+                print("💡 Tokens may be expired. Please update your .env with fresh tokens.")
+
+        print("\n🎉 Script completed!")
+
+        """try:
+            # Get company info
+            company_info = qb.get_company_info(realm_id)
+            print(f"Company Info: {company_info}")
+            company_name = company_info["CompanyInfo"]["CompanyName"]
+            print(f"Company Name: {company_name}")
+            address = company_info["CompanyInfo"]["CompanyAddr"]
+            print(f"Company Address: {address}")
+        except Exception as e:
+            print("Error:", str(e))
         """
 
-
-
-    # Create a journal entry
-    data = {
-    "Line": [
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Debit",
-                "AccountRef": {
-                    "name": "gross salary",
-                    "value": "1150040000"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 6577450,
-            "Description": "Gross Salary"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Debit",
-                "AccountRef": {
-                    "name": "Pension  (5%)",
-                    "value": "1150040001"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 265971,
-            "Description": "Pension Expense"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Debit",
-                "AccountRef": {
-                    "name": "Maternity Expense (0.3%)",
-                    "value": "1150040003"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 15958,
-            "Description": "Maternity Expense"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Salary advance",
-                    "value": "1150040011"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 0,
-            "Description": "Salary advance"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Net Salary Payable",
-                    "value": "1150040012"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 4773169,
-            "Description": "Net Salary Payable"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Pension Payable (8%)",
-                    "value": "1150040012"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 425553,
-            "Description": "Pension Payable"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Medical Contribution Payable",
-                    "value": "1150040015"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 0,
-            "Description": "1150040006"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Maternity Payable (0.6%)",
-                    "value": "1150040017"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 31916,
-            "Description": "Maternity Payable"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "PAYE Payable",
-                    "value": "1150040014"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 1200905,
-            "Description": "PAYE Payable"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Other Deductions",
-                    "value": "1150040014"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 401831,
-            "Description": "Other Deductions"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "CBHI Payable (0.5%)",
-                    "value": "1150040016"
-                },
-                "Entity": {
-                    "Type": "Vendor",
-                    "EntityRef": {
-                        "name": "Remmittance LLC",
-                        "value": "59"
-                    }
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 26005,
-            "Description": "CBHI Payable"
-        },
-        {
-            "JournalEntryLineDetail": {
-                "PostingType": "Credit",
-                "AccountRef": {
-                    "name": "Net Salary Payable",
-                    "value": "1150040012"
-                }
-            },
-            "DetailType": "JournalEntryLineDetail",
-            "Amount": 0,
-            "Description": "Net Salary Payable"
-        }
-    ]
-}
-
-    print("Creating journal entry...")
-
-    try:
-            journal_entry = qb.create_journal_entry(realm_id, data)
-            print(f"Journal Entry: {journal_entry}")
-            # Read existing entries, if any
+        if qb:
+            # Get account types
             try:
-                with open("journal_entry.json", "r") as f:
-                    entries = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                entries = []
-
-            # Add the new entry
-            entries.append(journal_entry)
-
-            # Save back to the file
-            with open("journal_entry.json", "w") as f:
-                json.dump(entries, f, indent=4)
-
-    except Exception as e:
-        print("Error:", str(e))
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"Account types: {accounts}")
+            except Exception as e:
+                print("Error:", str(e))
