@@ -1278,7 +1278,7 @@ if __name__ == "__main__":
     except Exception as e:
         print("Error:", str(e))
 
-    """try:
+    try:
         # Get company info
         company_info = qb.get_company_info(realm_id)
         print(f"Company Info: {company_info}")
@@ -1288,7 +1288,7 @@ if __name__ == "__main__":
         print(f"Company Address: {address}")
     except Exception as e:
         print("Error:", str(e))
-    """
+    
 
     # Get account types
 
