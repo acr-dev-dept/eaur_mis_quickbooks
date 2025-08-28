@@ -1277,21 +1277,76 @@ if __name__ == "__main__":
         print(f"realm_id: {realm_id}")
         print(f"api_base_url: {api_base_url}")
 
+        # Generate Fernet key if not provided
+        fernet_key = os.getenv("FERNET_KEY")
+        if not fernet_key:
+            from cryptography.fernet import Fernet
+            fernet_key = Fernet.generate_key().decode()
+            print(f"⚠️  Generated Fernet key (add to .env): FERNET_KEY={fernet_key}")
+            os.environ["FERNET_KEY"] = fernet_key
+
         try:
-            # Correct constructor call - no parameters needed
+            # Initialize QuickBooks client
             qb = QuickBooks()
-            print(f"QuickBooks client created: {qb}")
+            print(f"✅ QuickBooks client created: {qb}")
         except Exception as e:
-            print("Error:", str(e))
+            print(f"❌ Error creating QuickBooks client: {e}")
             qb = None
 
         if qb:
-            try:
-                # Refresh the token
-                tokens = qb.refresh_access_token()
-                print("tokens:", tokens)
-            except Exception as e:
-                print("Error:", str(e))
+            # Check if we need to do OAuth flow
+            if not qb.refresh_token:
+                print("\n🔐 No refresh token found. Starting OAuth flow...")
+                print("📋 Step 1: Get authorization URL")
+
+                try:
+                    auth_url = qb.get_authorization_url()
+                    print(f"🌐 Authorization URL: {auth_url}")
+                    print("\n📝 Instructions:")
+                    print("1. Copy the URL above and open it in your browser")
+                    print("2. Complete the QuickBooks authorization")
+                    print("3. Copy the 'code' parameter from the callback URL")
+                    print("4. Run this script again with: QUICK_BOOKS_AUTH_CODE=your_code")
+
+                    # Check if authorization code is provided
+                    auth_code = os.getenv("QUICK_BOOKS_AUTH_CODE")
+                    if auth_code:
+                        print(f"\n🔑 Found authorization code: {auth_code[:10]}...")
+                        try:
+                            tokens = qb.get_quickbooks_access_token(auth_code)
+                            print("✅ Successfully exchanged code for tokens!")
+                            print(f"🔄 Access token: {tokens['access_token'][:10]}...")
+                            print(f"🔄 Refresh token: {tokens['refresh_token'][:10]}...")
+
+                            # Now try to get account types
+                            print("\n📊 Testing API with new tokens...")
+                            accounts = qb.get_account_types(qb.realm_id)
+                            print(f"✅ Account types retrieved: {len(accounts) if accounts else 0} types")
+
+                        except Exception as e:
+                            print(f"❌ Error exchanging code for tokens: {e}")
+
+                except Exception as e:
+                    print(f"❌ Error generating authorization URL: {e}")
+
+            else:
+                print(f"✅ Refresh token found: {qb.refresh_token[:10]}...")
+                try:
+                    # Try to refresh the token
+                    tokens = qb.refresh_access_token()
+                    print("✅ Token refresh successful!")
+
+                    # Test API call
+                    print("\n📊 Testing API call...")
+                    accounts = qb.get_account_types(qb.realm_id)
+                    print(f"✅ Account types retrieved: {len(accounts) if accounts else 0} types")
+
+                except Exception as e:
+                    print(f"❌ Error refreshing token: {e}")
+                    print("💡 You may need to re-authorize. Delete the database and run OAuth flow again.")
+
+        else:
+            print("❌ Cannot proceed without QuickBooks client")
 
         """try:
             # Get company info
