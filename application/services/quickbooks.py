@@ -1252,75 +1252,88 @@ class QuickBooks:
 
 
 if __name__ == "__main__":
-    client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
-    client_secret = os.getenv("QUICK_BOOKS_SECRET")
-    redirect_uri = "https://www.netpipo.com"
-    refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
-    realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
-    api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
-    print(f"client_id: {client_id}")
-    print(f"client_secret: {client_secret}")
-    print(f"redirect_uri: {redirect_uri}")
-    print(f"refresh_token: {refresh_token}")
-    print(f"realm_id: {realm_id}")
-    print(f"api_base_url: {api_base_url}")
+    # Import Flask app factory to create application context
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    try:
-        qb = QuickBooks(client_id, client_secret, redirect_uri, api_base_url, refresh_token)
-        print(f"QuickBooks client created: {qb}")
-    except Exception as e:
-        print("Error:", str(e))
+    from application import create_app
 
-    try:
-        # Refresh the token
-        tokens = qb.refresh_access_token()
-        print("tokens:", tokens)
-    except Exception as e:
-        print("Error:", str(e))
+    # Create Flask app context for standalone testing
+    app = create_app('development')
 
-    """try:
-        # Get company info
-        company_info = qb.get_company_info(realm_id)
-        print(f"Company Info: {company_info}")
-        company_name = company_info["CompanyInfo"]["CompanyName"]
-        print(f"Company Name: {company_name}")
-        address = company_info["CompanyInfo"]["CompanyAddr"]
-        print(f"Company Address: {address}")
-    except Exception as e:
-        print("Error:", str(e))
-    """
+    with app.app_context():
+        client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
+        client_secret = os.getenv("QUICK_BOOKS_SECRET")
+        redirect_uri = "https://www.netpipo.com"
+        refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
+        realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
+        api_base_url = os.getenv("QUICK_BOOKS_BASEURL_SANDBOX")
 
-    # Get account types
+        print(f"client_id: {client_id}")
+        print(f"client_secret: {client_secret}")
+        print(f"redirect_uri: {redirect_uri}")
+        print(f"refresh_token: {refresh_token}")
+        print(f"realm_id: {realm_id}")
+        print(f"api_base_url: {api_base_url}")
 
-    try:
-        accounts = qb.get_account_types(realm_id)
-        print(f"Account types: {accounts}")
-    except Exception as e:
-        print("Error:", str(e))
+        try:
+            # Correct constructor call - no parameters needed
+            qb = QuickBooks()
+            print(f"QuickBooks client created: {qb}")
+        except Exception as e:
+            print("Error:", str(e))
+            qb = None
 
+        if qb:
+            try:
+                # Refresh the token
+                tokens = qb.refresh_access_token()
+                print("tokens:", tokens)
+            except Exception as e:
+                print("Error:", str(e))
 
+        """try:
+            # Get company info
+            company_info = qb.get_company_info(realm_id)
+            print(f"Company Info: {company_info}")
+            company_name = company_info["CompanyInfo"]["CompanyName"]
+            print(f"Company Name: {company_name}")
+            address = company_info["CompanyInfo"]["CompanyAddr"]
+            print(f"Company Address: {address}")
+        except Exception as e:
+            print("Error:", str(e))
+        """
 
-    # Create an account
-    """
-    data = {
-        "Name": "Net Salary Payable",
-        "AccountType": "Accounts Payable",
-        "AccountSubType": "AccountsPayable",
-        "AcctNum": "1150040002",
-        "CurrencyRef": {
-            "value": "USD"
+        if qb:
+            # Get account types
+            try:
+                accounts = qb.get_account_types(qb.realm_id)
+                print(f"Account types: {accounts}")
+            except Exception as e:
+                print("Error:", str(e))
+
+        # Create an account
+        """
+        data = {
+            "Name": "Net Salary Payable",
+            "AccountType": "Accounts Payable",
+            "AccountSubType": "AccountsPayable",
+            "AcctNum": "1150040002",
+            "CurrencyRef": {
+                "value": "USD"
+            }
         }
-    }
-    """
+        """
 
-    print("Creating account...")
-    """
-    try:
-        account = qb.create_account(realm_id, data)
-        print(f"Account: {account}")
-    except Exception as e:
-        print("Error:", str(e))
-
+        print("Creating account...")
+        """
+        if qb:
+            try:
+                account = qb.create_account(qb.realm_id, data)
+                print(f"Account: {account}")
+            except Exception as e:
+                print("Error:", str(e))
         """
 
 
@@ -1517,24 +1530,27 @@ if __name__ == "__main__":
     ]
 }
 
-    print("Creating journal entry...")
+        print("Creating journal entry...")
 
-    try:
-            journal_entry = qb.create_journal_entry(realm_id, data)
-            print(f"Journal Entry: {journal_entry}")
-            # Read existing entries, if any
+        if qb:
             try:
-                with open("journal_entry.json", "r") as f:
-                    entries = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                entries = []
+                journal_entry = qb.create_journal_entry(qb.realm_id, data)
+                print(f"Journal Entry: {journal_entry}")
+                # Read existing entries, if any
+                try:
+                    with open("journal_entry.json", "r") as f:
+                        entries = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    entries = []
 
-            # Add the new entry
-            entries.append(journal_entry)
+                # Add the new entry
+                entries.append(journal_entry)
 
-            # Save back to the file
-            with open("journal_entry.json", "w") as f:
-                json.dump(entries, f, indent=4)
+                # Save back to the file
+                with open("journal_entry.json", "w") as f:
+                    json.dump(entries, f, indent=4)
 
-    except Exception as e:
-        print("Error:", str(e))
+            except Exception as e:
+                print("Error:", str(e))
+        else:
+            print("QuickBooks client not initialized - skipping journal entry creation")
