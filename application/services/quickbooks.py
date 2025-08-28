@@ -1293,7 +1293,7 @@ if __name__ == "__main__":
         missing_vars = [var for var, value in required_vars.items() if not value]
         if missing_vars:
             print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
-            return
+            exit(1)
 
         # Generate Fernet key if not provided
         fernet_key = os.getenv("FERNET_KEY")
@@ -1342,7 +1342,7 @@ if __name__ == "__main__":
 
         except Exception as e:
             print(f"❌ Error populating database: {e}")
-            return
+            exit(1)
 
         # Initialize QuickBooks client (will now load from database)
         try:
@@ -1353,7 +1353,7 @@ if __name__ == "__main__":
             print(f"   - Has refresh token: {bool(qb.refresh_token)}")
         except Exception as e:
             print(f"❌ Error creating QuickBooks client: {e}")
-            return
+            exit(1)
 
         # Test the configuration
         print("\n🧪 Testing QuickBooks API connection...")
