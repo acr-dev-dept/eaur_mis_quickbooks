@@ -9,6 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_session import Session
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -59,24 +62,47 @@ def create_app(config_name=None):
     # Register error handlers
     register_error_handlers(app)
 
+    # create a home page route
+    @app.route('/')
+    def home():
+        #add a simple formatted home page message with inline html and some style
+        message = """
+        <html>
+        <head>
+            <title>EAUR MIS-QuickBooks Integration</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                h1 { color: #2c3e50; }
+                p { font-size: 18px; }
+            </style>
+        </head>
+        <body>
+            <h1>Welcome to the EAUR MIS-QuickBooks Integration Service</h1>
+            <p>This service facilitates integration between the EAUR Management Information System (MIS) and QuickBooks.</p>
+            <p>Use the API endpoints to interact with the service.</p>
+            <p>The services are being developed and improved continuously.</p>
+            
+        </body>
+        </html>
+        """
+        return message
+
     # Setup application context
     with app.app_context():
         # Import central models to ensure they're registered with SQLAlchemy
         try:
             from application.models import central_models
             app.logger.info("Central models imported successfully")
+            #check imported models
+            # --- Get central models registered in metadata ---
+            central_models_list = list(db.metadata.tables.keys())
+            app.logger.info(f"Central models registered for db.create_all(): {central_models_list}")
         except ImportError as e:
             app.logger.warning(f"Could not import central models: {e}")
 
-        # Import MIS models if they exist
-        try:
-            from application.models import mis_models
-            app.logger.info("MIS models imported successfully")
-        except ImportError:
-            app.logger.info("MIS models not found - will be generated after database analysis")
-
+        flask_environment = os.getenv('FLASK_ENV', 'development')
         # Create tables if they don't exist (development only)
-        if app.config.get('FLASK_ENV') == 'development':
+        if flask_environment == 'development':
             try:
                 db.create_all()
                 app.logger.info("Database tables created/verified")
