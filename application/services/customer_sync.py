@@ -170,21 +170,21 @@ class CustomerSyncService:
             List of unsynchronized applicant objects
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
             
-            query = session.query(TblOnlineApplication).filter(
-                or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
-            ).order_by(TblOnlineApplication.appl_date.desc())
-            
-            if limit:
-                query = query.limit(limit)
-            if offset:
-                query = query.offset(offset)
+                query = session.query(TblOnlineApplication).filter(
+                    or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
+                    ).order_by(TblOnlineApplication.appl_date.desc())
                 
-            applicants = query.all()
-            logger.info(f"Retrieved {len(applicants)} unsynchronized applicants")
-            return applicants
-            
+                if limit:
+                    query = query.limit(limit)
+                if offset:
+                    query = query.offset(offset)
+                    
+                applicants = query.all()
+                logger.info(f"Retrieved {len(applicants)} unsynchronized applicants")
+                return applicants
+                
         except Exception as e:
             logger.error(f"Error getting unsynchronized applicants: {e}")
             raise
@@ -204,21 +204,21 @@ class CustomerSyncService:
             List of unsynchronized student objects
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
             
-            query = session.query(TblPersonalUg).filter(
-                or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
-            ).order_by(TblPersonalUg.reg_date.desc())
-            
-            if limit:
-                query = query.limit(limit)
-            if offset:
-                query = query.offset(offset)
+                query = session.query(TblPersonalUg).filter(
+                    or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
+                    ).order_by(TblPersonalUg.reg_date.desc())
                 
-            students = query.all()
-            logger.info(f"Retrieved {len(students)} unsynchronized students")
-            return students
-            
+                if limit:
+                    query = query.limit(limit)
+                if offset:
+                    query = query.offset(offset)
+                    
+                students = query.all()
+                logger.info(f"Retrieved {len(students)} unsynchronized students")
+                return students
+                
         except Exception as e:
             logger.error(f"Error getting unsynchronized students: {e}")
             raise
