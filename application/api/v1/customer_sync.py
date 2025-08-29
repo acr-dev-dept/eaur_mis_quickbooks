@@ -1,0 +1,557 @@
+"""
+Customer Synchronization API endpoints for EAUR MIS-QuickBooks Integration
+Handles synchronization of applicants and students from MIS to QuickBooks as customers
+"""
+
+from flask import Blueprint, request, jsonify, current_app
+from application.services.customer_sync import CustomerSyncService
+from application.models.central_models import QuickBooksConfig
+import traceback
+from datetime import datetime
+
+customer_sync_bp = Blueprint('customer_sync', __name__)
+
+# Standard response format
+def create_response(success=True, data=None, message="", error=None, details=None, status_code=200):
+    """Create standardized API response"""
+    response = {
+        'success': success,
+        'message': message,
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    if success:
+        response['data'] = data
+    else:
+        response['error'] = error
+        if details:
+            response['details'] = details
+    
+    return jsonify(response), status_code
+
+def validate_quickbooks_connection():
+    """Validate QuickBooks connection"""
+    if not QuickBooksConfig.is_connected():
+        return False, create_response(
+            success=False,
+            error='QuickBooks not connected',
+            message='Please authenticate with QuickBooks first',
+            status_code=400
+        )
+    return True, None
+
+@customer_sync_bp.route('/analyze', methods=['GET'])
+def analyze_customer_sync_requirements():
+    """
+    Analyze current customer synchronization requirements
+    
+    Returns statistics about applicants and students that need to be synchronized
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sync_service = CustomerSyncService()
+        stats = sync_service.analyze_customer_sync_requirements()
+        
+        current_app.logger.info(f"Customer sync analysis completed: {stats.to_dict()}")
+        
+        return create_response(
+            success=True,
+            data=stats.to_dict(),
+            message='Customer synchronization analysis completed successfully'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error analyzing customer sync requirements: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error analyzing customer synchronization requirements',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/preview/applicants', methods=['GET'])
+def preview_unsynchronized_applicants():
+    """
+    Preview applicants that will be synchronized
+    
+    Query parameters:
+    - limit: Number of applicants to preview (default: 10)
+    - offset: Number of applicants to skip (default: 0)
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Get query parameters
+        limit = int(request.args.get('limit', 10))
+        offset = int(request.args.get('offset', 0))
+        
+        # Validate parameters
+        if limit > 100:
+            return create_response(
+                success=False,
+                error='Limit cannot exceed 100',
+                status_code=400
+            )
+
+        sync_service = CustomerSyncService()
+        applicants = sync_service.get_unsynchronized_applicants(limit=limit, offset=offset)
+        
+        # Convert to dictionary format for JSON response
+        applicant_data = []
+        for applicant in applicants:
+            try:
+                applicant_dict = applicant.to_dict_for_quickbooks()
+                applicant_data.append(applicant_dict)
+            except Exception as e:
+                current_app.logger.warning(f"Error converting applicant {applicant.appl_Id} to dict: {e}")
+                continue
+        
+        return create_response(
+            success=True,
+            data={
+                'applicants': applicant_data,
+                'count': len(applicant_data),
+                'limit': limit,
+                'offset': offset
+            },
+            message=f'Retrieved {len(applicant_data)} unsynchronized applicants'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error previewing unsynchronized applicants: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error previewing unsynchronized applicants',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/preview/students', methods=['GET'])
+def preview_unsynchronized_students():
+    """
+    Preview students that will be synchronized
+    
+    Query parameters:
+    - limit: Number of students to preview (default: 10)
+    - offset: Number of students to skip (default: 0)
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Get query parameters
+        limit = int(request.args.get('limit', 10))
+        offset = int(request.args.get('offset', 0))
+        
+        # Validate parameters
+        if limit > 100:
+            return create_response(
+                success=False,
+                error='Limit cannot exceed 100',
+                status_code=400
+            )
+
+        sync_service = CustomerSyncService()
+        students = sync_service.get_unsynchronized_students(limit=limit, offset=offset)
+        
+        # Convert to dictionary format for JSON response
+        student_data = []
+        for student in students:
+            try:
+                student_dict = student.to_dict_for_quickbooks()
+                student_data.append(student_dict)
+            except Exception as e:
+                current_app.logger.warning(f"Error converting student {student.reg_no} to dict: {e}")
+                continue
+        
+        return create_response(
+            success=True,
+            data={
+                'students': student_data,
+                'count': len(student_data),
+                'limit': limit,
+                'offset': offset
+            },
+            message=f'Retrieved {len(student_data)} unsynchronized students'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error previewing unsynchronized students: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error previewing unsynchronized students',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/applicants', methods=['POST'])
+def sync_applicants():
+    """
+    Synchronize applicants to QuickBooks customers
+    
+    Request body (JSON):
+    {
+        "batch_size": 50  // Optional, defaults to 50
+    }
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Get request data
+        request_data = request.get_json() or {}
+        batch_size = request_data.get('batch_size', 50)
+        
+        # Validate batch size
+        if batch_size > 100:
+            return create_response(
+                success=False,
+                error='Batch size cannot exceed 100',
+                status_code=400
+            )
+
+        sync_service = CustomerSyncService()
+        
+        current_app.logger.info(f"Starting applicant synchronization with batch size: {batch_size}")
+        
+        # Get unsynchronized applicants
+        applicants = sync_service.get_unsynchronized_applicants(limit=batch_size)
+        
+        if not applicants:
+            return create_response(
+                success=True,
+                data={'total_processed': 0, 'successful': 0, 'failed': 0},
+                message='No unsynchronized applicants found'
+            )
+        
+        # Process applicants
+        results = {
+            'total_processed': 0,
+            'successful': 0,
+            'failed': 0,
+            'errors': [],
+            'success_details': []
+        }
+        
+        for applicant in applicants:
+            try:
+                result = sync_service.sync_single_applicant(applicant)
+                results['total_processed'] += 1
+                
+                if result.success:
+                    results['successful'] += 1
+                    results['success_details'].append({
+                        'applicant_id': result.customer_id,
+                        'quickbooks_id': result.quickbooks_id
+                    })
+                else:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'applicant_id': result.customer_id,
+                        'error': result.error_message
+                    })
+                
+                # Add delay between requests to avoid rate limiting
+                import time
+                time.sleep(0.5)
+                
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'applicant_id': applicant.appl_Id,
+                    'error': str(e)
+                })
+        
+        return create_response(
+            success=True,
+            data=results,
+            message=f'Applicant synchronization completed: {results["successful"]} successful, {results["failed"]} failed'
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in applicant synchronization: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error in applicant synchronization',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/students', methods=['POST'])
+def sync_students():
+    """
+    Synchronize students to QuickBooks customers
+
+    Request body (JSON):
+    {
+        "batch_size": 50  // Optional, defaults to 50
+    }
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Get request data
+        request_data = request.get_json() or {}
+        batch_size = request_data.get('batch_size', 50)
+
+        # Validate batch size
+        if batch_size > 100:
+            return create_response(
+                success=False,
+                error='Batch size cannot exceed 100',
+                status_code=400
+            )
+
+        sync_service = CustomerSyncService()
+
+        current_app.logger.info(f"Starting student synchronization with batch size: {batch_size}")
+
+        # Get unsynchronized students
+        students = sync_service.get_unsynchronized_students(limit=batch_size)
+
+        if not students:
+            return create_response(
+                success=True,
+                data={'total_processed': 0, 'successful': 0, 'failed': 0},
+                message='No unsynchronized students found'
+            )
+
+        # Process students
+        results = {
+            'total_processed': 0,
+            'successful': 0,
+            'failed': 0,
+            'errors': [],
+            'success_details': []
+        }
+
+        for student in students:
+            try:
+                result = sync_service.sync_single_student(student)
+                results['total_processed'] += 1
+
+                if result.success:
+                    results['successful'] += 1
+                    results['success_details'].append({
+                        'student_id': result.customer_id,
+                        'quickbooks_id': result.quickbooks_id
+                    })
+                else:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'student_id': result.customer_id,
+                        'error': result.error_message
+                    })
+
+                # Add delay between requests to avoid rate limiting
+                import time
+                time.sleep(0.5)
+
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'student_id': student.reg_no,
+                    'error': str(e)
+                })
+
+        return create_response(
+            success=True,
+            data=results,
+            message=f'Student synchronization completed: {results["successful"]} successful, {results["failed"]} failed'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error in student synchronization: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error in student synchronization',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/all', methods=['POST'])
+def sync_all_customers():
+    """
+    Synchronize all customers (applicants and students) to QuickBooks
+
+    Request body (JSON):
+    {
+        "batch_size": 50,  // Optional, defaults to 50
+        "sync_applicants": true,  // Optional, defaults to true
+        "sync_students": true     // Optional, defaults to true
+    }
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        # Get request data
+        request_data = request.get_json() or {}
+        batch_size = request_data.get('batch_size', 50)
+        sync_applicants = request_data.get('sync_applicants', True)
+        sync_students = request_data.get('sync_students', True)
+
+        # Validate batch size
+        if batch_size > 100:
+            return create_response(
+                success=False,
+                error='Batch size cannot exceed 100',
+                status_code=400
+            )
+
+        sync_service = CustomerSyncService()
+
+        overall_results = {
+            'applicants': {'total_processed': 0, 'successful': 0, 'failed': 0, 'errors': []},
+            'students': {'total_processed': 0, 'successful': 0, 'failed': 0, 'errors': []},
+            'start_time': datetime.now().isoformat()
+        }
+
+        # Sync applicants if requested
+        if sync_applicants:
+            current_app.logger.info("Starting applicant synchronization...")
+            applicants = sync_service.get_unsynchronized_applicants(limit=batch_size)
+
+            for applicant in applicants:
+                try:
+                    result = sync_service.sync_single_applicant(applicant)
+                    overall_results['applicants']['total_processed'] += 1
+
+                    if result.success:
+                        overall_results['applicants']['successful'] += 1
+                    else:
+                        overall_results['applicants']['failed'] += 1
+                        overall_results['applicants']['errors'].append({
+                            'applicant_id': result.customer_id,
+                            'error': result.error_message
+                        })
+
+                    import time
+                    time.sleep(0.5)
+
+                except Exception as e:
+                    overall_results['applicants']['failed'] += 1
+                    overall_results['applicants']['errors'].append({
+                        'applicant_id': applicant.appl_Id,
+                        'error': str(e)
+                    })
+
+        # Sync students if requested
+        if sync_students:
+            current_app.logger.info("Starting student synchronization...")
+            students = sync_service.get_unsynchronized_students(limit=batch_size)
+
+            for student in students:
+                try:
+                    result = sync_service.sync_single_student(student)
+                    overall_results['students']['total_processed'] += 1
+
+                    if result.success:
+                        overall_results['students']['successful'] += 1
+                    else:
+                        overall_results['students']['failed'] += 1
+                        overall_results['students']['errors'].append({
+                            'student_id': result.customer_id,
+                            'error': result.error_message
+                        })
+
+                    import time
+                    time.sleep(0.5)
+
+                except Exception as e:
+                    overall_results['students']['failed'] += 1
+                    overall_results['students']['errors'].append({
+                        'student_id': student.reg_no,
+                        'error': str(e)
+                    })
+
+        overall_results['end_time'] = datetime.now().isoformat()
+
+        total_successful = overall_results['applicants']['successful'] + overall_results['students']['successful']
+        total_failed = overall_results['applicants']['failed'] + overall_results['students']['failed']
+
+        return create_response(
+            success=True,
+            data=overall_results,
+            message=f'Customer synchronization completed: {total_successful} successful, {total_failed} failed'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error in full customer synchronization: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error in full customer synchronization',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/status', methods=['GET'])
+def get_customer_sync_status():
+    """
+    Get current customer synchronization status and statistics
+    """
+    try:
+        sync_service = CustomerSyncService()
+        stats = sync_service.analyze_customer_sync_requirements()
+
+        # Calculate progress percentages
+        applicant_total = stats.total_applicants
+        applicant_synced = stats.applicants_synced
+        applicant_progress = (applicant_synced / applicant_total * 100) if applicant_total > 0 else 0
+
+        student_total = stats.total_students
+        student_synced = stats.students_synced
+        student_progress = (student_synced / student_total * 100) if student_total > 0 else 0
+
+        overall_total = applicant_total + student_total
+        overall_synced = applicant_synced + student_synced
+        overall_progress = (overall_synced / overall_total * 100) if overall_total > 0 else 0
+
+        status_data = {
+            'statistics': stats.to_dict(),
+            'progress': {
+                'applicants': round(applicant_progress, 2),
+                'students': round(student_progress, 2),
+                'overall': round(overall_progress, 2)
+            },
+            'quickbooks_connected': QuickBooksConfig.is_connected(),
+            'last_updated': datetime.now().isoformat()
+        }
+
+        return create_response(
+            success=True,
+            data=status_data,
+            message='Customer synchronization status retrieved successfully'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting customer sync status: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error getting customer synchronization status',
+            details=str(e),
+            status_code=500
+        )
