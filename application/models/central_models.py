@@ -24,6 +24,7 @@ class QuickBooksConfig(BaseModel):
     __tablename__ = 'quickbooks_config'
 
     # QuickBooks Integration Fields
+    id = Column(Integer, primary_key=True)
     access_token = Column(Text, nullable=True)  # Encrypted
     refresh_token = Column(Text, nullable=True)  # Encrypted
     authorization_code = Column(Text, nullable=True)  # Encrypted
