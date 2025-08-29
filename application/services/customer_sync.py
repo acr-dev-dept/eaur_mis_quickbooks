@@ -103,66 +103,60 @@ class CustomerSyncService:
     def analyze_customer_sync_requirements(self) -> CustomerSyncStats:
         """
         Analyze current customer synchronization status
-        
-        Returns:
-            CustomerSyncStats: Statistics about customers requiring synchronization
         """
         try:
-            session = db_manager.get_mis_session()
-            
-            # Analyze applicants
-            total_applicants = session.query(func.count(TblOnlineApplication.appl_Id)).scalar()
-            applicants_not_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
-            ).scalar()
-            applicants_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                TblOnlineApplication.QuickBk_Status == 1
-            ).scalar()
-            applicants_failed = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                TblOnlineApplication.QuickBk_Status == 2
-            ).scalar()
-            applicants_in_progress = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                TblOnlineApplication.QuickBk_Status == 3
-            ).scalar()
-            
-            # Analyze students
-            total_students = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
-            students_not_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
-            ).scalar()
-            students_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                TblPersonalUg.QuickBk_Status == 1
-            ).scalar()
-            students_failed = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                TblPersonalUg.QuickBk_Status == 2
-            ).scalar()
-            students_in_progress = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                TblPersonalUg.QuickBk_Status == 3
-            ).scalar()
-            
-            stats = CustomerSyncStats(
-                total_applicants=total_applicants,
-                applicants_not_synced=applicants_not_synced,
-                applicants_synced=applicants_synced,
-                applicants_failed=applicants_failed,
-                applicants_in_progress=applicants_in_progress,
-                
-                total_students=total_students,
-                students_not_synced=students_not_synced,
-                students_synced=students_synced,
-                students_failed=students_failed,
-                students_in_progress=students_in_progress
-            )
-            
-            logger.info(f"Customer sync analysis: {stats.to_dict()}")
-            return stats
-            
+            with db_manager.get_mis_session() as session:
+                # Analyze applicants
+                total_applicants = session.query(func.count(TblOnlineApplication.appl_Id)).scalar()
+                applicants_not_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
+                    or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
+                ).scalar()
+                applicants_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
+                    TblOnlineApplication.QuickBk_Status == 1
+                ).scalar()
+                applicants_failed = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
+                    TblOnlineApplication.QuickBk_Status == 2
+                ).scalar()
+                applicants_in_progress = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
+                    TblOnlineApplication.QuickBk_Status == 3
+                ).scalar()
+
+                # Analyze students
+                total_students = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
+                students_not_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
+                    or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
+                ).scalar()
+                students_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
+                    TblPersonalUg.QuickBk_Status == 1
+                ).scalar()
+                students_failed = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
+                    TblPersonalUg.QuickBk_Status == 2
+                ).scalar()
+                students_in_progress = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
+                    TblPersonalUg.QuickBk_Status == 3
+                ).scalar()
+
+                stats = CustomerSyncStats(
+                    total_applicants=total_applicants,
+                    applicants_not_synced=applicants_not_synced,
+                    applicants_synced=applicants_synced,
+                    applicants_failed=applicants_failed,
+                    applicants_in_progress=applicants_in_progress,
+
+                    total_students=total_students,
+                    students_not_synced=students_not_synced,
+                    students_synced=students_synced,
+                    students_failed=students_failed,
+                    students_in_progress=students_in_progress
+                )
+
+                logger.info(f"Customer sync analysis: {stats.to_dict()}")
+                return stats
+
         except Exception as e:
             logger.error(f"Error analyzing customer sync requirements: {e}")
             raise
-        finally:
-            if 'session' in locals():
-                session.close()
+
     
     def get_unsynchronized_applicants(self, limit: Optional[int] = None, offset: int = 0) -> List[TblOnlineApplication]:
         """
