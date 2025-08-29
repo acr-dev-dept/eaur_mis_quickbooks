@@ -505,7 +505,7 @@ class TblLevel(MISBaseModel):
 class TblOnlineApplication(MISBaseModel):
     """Model for tbl_online_application table"""
     __tablename__ = 'tbl_online_application'
-    
+
     appl_Id = db.Column(db.Integer, nullable=False, primary_key=True)
     tracking_id = db.Column(db.String(200))
     reg_no = db.Column(db.String(200))
@@ -525,6 +525,11 @@ class TblOnlineApplication(MISBaseModel):
     guardian_phone = db.Column(db.String(50))
     serious_illness = db.Column(db.String(20))
     serious_illness_comment = db.Column(Text)
+
+    # QuickBooks sync tracking fields
+    QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
+    pushed_by = db.Column(db.String(200), default='System Auto Push', nullable=True)
+    pushed_date = db.Column(DateTime, nullable=True)
     blood_pressure = db.Column(db.String(20))
     diabetes = db.Column(db.String(20))
     high_school_name = db.Column(db.String(500))
@@ -621,8 +626,141 @@ class TblOnlineApplication(MISBaseModel):
             'respont_by': self.respont_by,
             'response_date': self.response_date.isoformat() if self.response_date else None,
             'response_comment': self.response_comment,
-            'status': self.status
+            'status': self.status,
+            'quickbooks_status': self.QuickBk_Status,
+            'pushed_by': self.pushed_by,
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
         }
+
+    def to_dict_for_quickbooks(self):
+        """
+        Enhanced serialization for QuickBooks customer sync with fallback handling
+
+        Returns:
+            dict: QuickBooks-ready applicant data with enriched information
+        """
+        try:
+            # Get enriched data with fallbacks
+            campus_name = self._get_enriched_campus_name()
+            intake_details = self._get_enriched_intake_details()
+            program_name = self._get_enriched_program_name()
+            program_mode = self._get_enriched_program_mode()
+
+            return {
+                # Primary identifiers
+                'appl_Id': self.appl_Id,
+                'tracking_id': self.tracking_id or '',
+                'customer_type': 'Applicant',
+
+                # Display name (real name only)
+                'display_name': f"{self.first_name or ''} {self.family_name or ''}".strip() or f"Applicant {self.appl_Id}",
+                'first_name': self.first_name or '',
+                'family_name': self.family_name or '',
+                'middle_name': self.middlename or '',
+
+                # Contact information
+                'phone': self.phone1 or '',
+                'email': self.email1 or '',
+
+                # Personal information
+                'sex': self.sex or '',
+                'dob': self.dob.isoformat() if self.dob else '',
+                'country_of_birth': self.country_of_birth or '',
+                'national_id': self.nation_Id_passPort_no or '',
+                'present_nationality': self.present_nationality or '',
+
+                # Academic information (enriched with fallbacks)
+                'campus_name': campus_name,
+                'intake_details': intake_details,
+                'program_name': program_name,
+                'program_mode': program_mode,
+
+                # Family information
+                'father_name': self.father_name or '',
+                'mother_name': self.mother_name or '',
+                'guardian_phone': self.guardian_phone or '',
+
+                # Application details
+                'application_date': self.appl_date.isoformat() if self.appl_date else '',
+
+                # Sync tracking
+                'quickbooks_status': self.QuickBk_Status or 0,
+                'pushed_by': self.pushed_by or 'System Auto Push',
+                'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            }
+        except Exception as e:
+            # Fallback to basic data if enrichment fails
+            from flask import current_app
+            if current_app:
+                current_app.logger.warning(f"Error in to_dict_for_quickbooks for applicant {self.appl_Id}: {e}")
+
+            return {
+                'appl_Id': self.appl_Id,
+                'tracking_id': self.tracking_id or '',
+                'customer_type': 'Applicant',
+                'display_name': f"{self.first_name or ''} {self.family_name or ''}".strip() or f"Applicant {self.appl_Id}",
+                'first_name': self.first_name or '',
+                'family_name': self.family_name or '',
+                'phone': self.phone1 or '',
+                'email': self.email1 or '',
+                'sex': self.sex or '',
+                'campus_name': str(self.camp_id) if self.camp_id else '',
+                'intake_details': str(self.intake_id) if self.intake_id else '',
+                'program_name': str(self.opt_1) if self.opt_1 else '',
+                'quickbooks_status': self.QuickBk_Status or 0
+            }
+
+    def _get_enriched_campus_name(self):
+        """Get enriched campus name with fallback"""
+        if not self.camp_id:
+            return ''
+        try:
+            from application.models.mis_models import TblCampus
+            campus = TblCampus.get_by_id(self.camp_id)
+            if campus:
+                return getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(self.camp_id)
+            return str(self.camp_id)
+        except:
+            return str(self.camp_id)
+
+    def _get_enriched_intake_details(self):
+        """Get enriched intake details with fallback"""
+        if not self.intake_id:
+            return ''
+        try:
+            from application.models.mis_models import TblIntake
+            intake = TblIntake.get_by_id(self.intake_id)
+            if intake:
+                return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(self.intake_id)
+            return str(self.intake_id)
+        except:
+            return str(self.intake_id)
+
+    def _get_enriched_program_name(self):
+        """Get enriched program name with fallback"""
+        if not self.opt_1:  # Primary option
+            return ''
+        try:
+            from application.models.mis_models import TblSpecialization
+            program = TblSpecialization.get_by_id(self.opt_1)
+            if program:
+                return getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(self.opt_1)
+            return str(self.opt_1)
+        except:
+            return str(self.opt_1)
+
+    def _get_enriched_program_mode(self):
+        """Get enriched program mode with fallback"""
+        if not self.prg_mode_id:
+            return ''
+        try:
+            from application.models.mis_models import TblProgramMode
+            mode = TblProgramMode.get_by_id(self.prg_mode_id)
+            if mode:
+                return getattr(mode, 'prg_mode_name', '') or getattr(mode, 'mode_name', '') or str(self.prg_mode_id)
+            return str(self.prg_mode_id)
+        except:
+            return str(self.prg_mode_id)
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
@@ -674,8 +812,11 @@ class TblPersonalUg(MISBaseModel):
     certificate_doc = db.Column(db.String(150))
     auth_ccs_nnc = db.Column(db.String, nullable=False, default='0')
     qk_id = db.Column(db.String)
-    pushed_by = db.Column(db.String(200))
+    pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
+
+    # QuickBooks sync tracking field (additional to existing fields)
+    QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
 
     # Relationships will be added after analyzing foreign keys
 
@@ -737,8 +878,155 @@ class TblPersonalUg(MISBaseModel):
             'auth_ccs_nnc': self.auth_ccs_nnc,
             'qk_id': self.qk_id,
             'pushed_by': self.pushed_by,
-            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'quickbooks_status': self.QuickBk_Status
         }
+
+    def to_dict_for_quickbooks(self):
+        """
+        Enhanced serialization for QuickBooks customer sync with fallback handling
+
+        Returns:
+            dict: QuickBooks-ready student data with enriched information
+        """
+        try:
+            # Get enriched data with fallbacks
+            level_name = self._get_enriched_level_name()
+            campus_name = self._get_enriched_campus_name()
+            program_name = self._get_enriched_program_name()
+            intake_details = self._get_enriched_intake_details()
+
+            return {
+                # Primary identifiers
+                'per_id_ug': self.per_id_ug,
+                'reg_no': self.reg_no or '',
+                'customer_type': 'Student',
+
+                # Display name (real name only)
+                'display_name': f"{self.fname or ''} {self.lname or ''}".strip() or f"Student {self.reg_no}",
+                'first_name': self.fname or '',
+                'last_name': self.lname or '',
+                'middle_name': self.middlename or '',
+
+                # Contact information
+                'phone': self.phone1 or self.phone2 or '',
+                'email': self.email1 or self.email2 or '',
+
+                # Personal information
+                'sex': self.sex or '',
+                'dob': self.dob.isoformat() if self.dob else '',
+                'national_id': self.national_id or '',
+                'nationality': self.nationality or '',
+                'marital_status': self.marital_status or '',
+
+                # Academic information (enriched with fallbacks)
+                'level_name': level_name,
+                'campus_name': campus_name,
+                'program_name': program_name,
+                'intake_details': intake_details,
+                'program_type': self.prg_type or '',
+
+                # Family information
+                'father_name': self.father_name or '',
+                'mother_name': self.mother_name or '',
+
+                # Address information
+                'province': self.province or '',
+                'district': self.district or '',
+                'sector': self.sector or '',
+                'cell': self.cell or '',
+                'village': self.village or '',
+
+                # Academic background
+                'secondary_school': self.secondary_school or '',
+                'combination': self.combination or '',
+                'principle_passes': self.principle_passes or '',
+                'year_completed': self.year_of_compleshed or '',
+
+                # Registration details
+                'registration_date': self.reg_date.isoformat() if self.reg_date else '',
+
+                # Sync tracking
+                'quickbooks_status': self.QuickBk_Status or 0,
+                'pushed_by': self.pushed_by or 'System Auto Push',
+                'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+                'qk_id': self.qk_id or ''
+            }
+        except Exception as e:
+            # Fallback to basic data if enrichment fails
+            from flask import current_app
+            if current_app:
+                current_app.logger.warning(f"Error in to_dict_for_quickbooks for student {self.reg_no}: {e}")
+
+            return {
+                'per_id_ug': self.per_id_ug,
+                'reg_no': self.reg_no or '',
+                'customer_type': 'Student',
+                'display_name': f"{self.fname or ''} {self.lname or ''}".strip() or f"Student {self.reg_no}",
+                'first_name': self.fname or '',
+                'last_name': self.lname or '',
+                'phone': self.phone1 or '',
+                'email': self.email1 or '',
+                'sex': self.sex or '',
+                'quickbooks_status': self.QuickBk_Status or 0
+            }
+
+    def _get_enriched_level_name(self):
+        """Get enriched level name with fallback"""
+        # Students don't have direct level_id, need to get from registration program
+        try:
+            from application.models.mis_models import TblRegisterProgramUg, TblLevel
+            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
+            if reg_program and reg_program.level_id:
+                level = TblLevel.get_by_id(reg_program.level_id)
+                if level:
+                    return getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or str(reg_program.level_id)
+                return str(reg_program.level_id)
+            return ''
+        except:
+            return ''
+
+    def _get_enriched_campus_name(self):
+        """Get enriched campus name with fallback"""
+        try:
+            from application.models.mis_models import TblRegisterProgramUg, TblCampus
+            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
+            if reg_program and hasattr(reg_program, 'camp_id') and reg_program.camp_id:
+                campus = TblCampus.get_by_id(reg_program.camp_id)
+                if campus:
+                    return getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(reg_program.camp_id)
+                return str(reg_program.camp_id)
+            return ''
+        except:
+            return ''
+
+    def _get_enriched_program_name(self):
+        """Get enriched program name with fallback"""
+        try:
+            from application.models.mis_models import TblRegisterProgramUg, TblSpecialization
+            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
+            if reg_program and reg_program.splz_id:
+                program = TblSpecialization.get_by_id(reg_program.splz_id)
+                if program:
+                    return getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(reg_program.splz_id)
+                return str(reg_program.splz_id)
+            return ''
+        except:
+            return ''
+
+    def _get_enriched_intake_details(self):
+        """Get enriched intake details with fallback"""
+        try:
+            from application.models.mis_models import TblRegisterProgramUg, TblIntake
+            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
+            if reg_program and reg_program.intake_id:
+                intake = TblIntake.get_by_id(reg_program.intake_id)
+                if intake:
+                    return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(reg_program.intake_id)
+                return str(reg_program.intake_id)
+            return ''
+        except:
+            return ''
 
     @classmethod
     def get_student_details(cls, reg_no):
