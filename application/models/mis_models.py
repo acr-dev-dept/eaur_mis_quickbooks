@@ -563,7 +563,8 @@ class TblOnlineApplication(MISBaseModel):
     response_comment = db.Column(Text)
     status = db.Column(db.Integer)
 
-    # Relationships will be added after analyzing foreign keys
+    # Relationships for performance optimization
+    intake = relationship("TblIntake", backref="applications", lazy='select')
 
     def __repr__(self):
         return f'<TblOnlineApplication {self.id if hasattr(self, "id") else "unknown"}>'
