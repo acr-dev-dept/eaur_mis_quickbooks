@@ -1031,7 +1031,8 @@ class TblPersonalUg(MISBaseModel):
             if reg_program and reg_program.intake_id:
                 intake = TblIntake.get_by_id(reg_program.intake_id)
                 if intake:
-                    return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(reg_program.intake_id)
+                    return intake.to_dict()
+                    #getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(reg_program.intake_id)
                 return str(reg_program.intake_id)
             return ''
         except:
