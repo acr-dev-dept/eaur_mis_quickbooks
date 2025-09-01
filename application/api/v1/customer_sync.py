@@ -715,3 +715,80 @@ def debug_country_enrichment(reg_no):
             details=str(e),
             status_code=500
         )
+
+@customer_sync_bp.route('/debug/applicant/<int:appl_id>', methods=['GET'])
+def debug_applicant_enrichment(appl_id):
+    """
+    Debug endpoint to test applicant enrichment methods
+
+    Args:
+        appl_id: Applicant ID to debug
+    """
+    try:
+        from application.models.mis_models import TblOnlineApplication, TblCountry
+        from application.utils.database import db_manager
+
+        # Get applicant
+        with db_manager.get_mis_session() as session:
+            applicant = session.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
+
+            if not applicant:
+                return create_response(
+                    success=False,
+                    error=f'Applicant with ID {appl_id} not found',
+                    status_code=404
+                )
+
+            # Debug country data
+            debug_info = {
+                'appl_Id': appl_id,
+                'tracking_id': applicant.tracking_id,
+                'raw_data': {
+                    'country_of_birth': applicant.country_of_birth,
+                    'present_nationality': applicant.present_nationality,
+                    'program_mode_id': applicant.prg_mode_id
+                },
+                'enrichment_results': {},
+                'errors': []
+            }
+
+            # Test country enrichment
+            try:
+                country_result = applicant._get_enriched_country_name()
+                debug_info['enrichment_results']['country_name'] = country_result
+            except Exception as e:
+                debug_info['errors'].append(f"Country enrichment error: {e}")
+
+            # Test program mode enrichment
+            try:
+                mode_result = applicant._get_enriched_program_mode()
+                debug_info['enrichment_results']['program_mode'] = mode_result
+            except Exception as e:
+                debug_info['errors'].append(f"Program mode enrichment error: {e}")
+
+            # Test full QuickBooks dict
+            try:
+                full_result = applicant.to_dict_for_quickbooks()
+                debug_info['full_quickbooks_dict'] = {
+                    'country_of_birth': full_result.get('country_of_birth'),
+                    'program_mode': full_result.get('program_mode'),
+                    'display_name': full_result.get('display_name')
+                }
+            except Exception as e:
+                debug_info['full_quickbooks_dict_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_info,
+                message=f'Debug results for applicant {appl_id}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging applicant {appl_id}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging applicant {appl_id}',
+            details=str(e),
+            status_code=500
+        )
