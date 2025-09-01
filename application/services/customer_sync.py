@@ -160,29 +160,74 @@ class CustomerSyncService:
     
     def get_unsynchronized_applicants(self, limit: Optional[int] = None, offset: int = 0) -> List[TblOnlineApplication]:
         """
-        Get applicants that haven't been synchronized to QuickBooks
-        
+        Get applicants that haven't been synchronized to QuickBooks with optimized batch loading
+
         Args:
             limit: Maximum number of applicants to return
             offset: Number of applicants to skip
-            
+
         Returns:
-            List of unsynchronized applicant objects
+            List of unsynchronized applicant objects with pre-loaded enrichment data
         """
         try:
             with db_manager.get_mis_session() as session:
-            
+                # Step 1: Get base applicants
                 query = session.query(TblOnlineApplication).filter(
                     or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
                 ).order_by(TblOnlineApplication.appl_date.desc())
-                
+
                 if limit:
                     query = query.limit(limit)
                 if offset:
                     query = query.offset(offset)
-                    
+
                 applicants = query.all()
                 logger.info(f"Retrieved {len(applicants)} unsynchronized applicants")
+
+                if not applicants:
+                    return applicants
+
+                # Step 2: Batch load countries to avoid N+1 queries
+                country_ids = []
+                for app in applicants:
+                    if app.country_of_birth and str(app.country_of_birth).isdigit():
+                        country_ids.append(int(app.country_of_birth))
+
+                country_map = {}
+                if country_ids:
+                    unique_country_ids = list(set(country_ids))
+                    from application.models.mis_models import TblCountry
+                    countries = session.query(TblCountry).filter(TblCountry.cntr_id.in_(unique_country_ids)).all()
+                    country_map = {c.cntr_id: c for c in countries}
+                    logger.debug(f"Batch loaded {len(countries)} countries for {len(unique_country_ids)} unique IDs")
+
+                # Step 3: Batch load program modes to avoid N+1 queries
+                mode_ids = []
+                for app in applicants:
+                    if app.prg_mode_id:
+                        mode_ids.append(app.prg_mode_id)
+
+                mode_map = {}
+                if mode_ids:
+                    unique_mode_ids = list(set(mode_ids))
+                    from application.models.mis_models import TblProgramMode
+                    modes = session.query(TblProgramMode).filter(TblProgramMode.prg_mode_id.in_(unique_mode_ids)).all()
+                    mode_map = {m.prg_mode_id: m for m in modes}
+                    logger.debug(f"Batch loaded {len(modes)} program modes for {len(unique_mode_ids)} unique IDs")
+
+                # Step 4: Attach pre-loaded data to applicants for efficient access
+                for app in applicants:
+                    # Attach country data
+                    if app.country_of_birth and str(app.country_of_birth).isdigit():
+                        country_id = int(app.country_of_birth)
+                        app._cached_country = country_map.get(country_id)
+                    else:
+                        app._cached_country = None
+
+                    # Attach program mode data
+                    app._cached_program_mode = mode_map.get(app.prg_mode_id) if app.prg_mode_id else None
+
+                logger.info(f"Optimized batch loading completed: {len(applicants)} applicants, {len(country_map)} countries, {len(mode_map)} modes")
                 return applicants
             
         except Exception as e:
