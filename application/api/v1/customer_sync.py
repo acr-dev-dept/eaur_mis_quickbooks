@@ -104,25 +104,58 @@ def preview_unsynchronized_applicants():
         sync_service = CustomerSyncService()
         applicants = sync_service.get_unsynchronized_applicants(limit=limit, offset=offset)
         
-        # Convert to dictionary format for JSON response
+        # Convert to dictionary format for JSON response with enhanced error tracking
         applicant_data = []
+        conversion_errors = []
+
         for applicant in applicants:
             try:
                 applicant_dict = applicant.to_dict_for_quickbooks()
                 applicant_data.append(applicant_dict)
+
+                # Log if enrichment failed
+                if applicant_dict.get('error_occurred'):
+                    conversion_errors.append({
+                        'appl_Id': applicant.appl_Id,
+                        'tracking_id': applicant.tracking_id,
+                        'error': applicant_dict.get('error_message', 'Unknown error')
+                    })
+                    current_app.logger.warning(f"Enrichment failed for applicant {applicant.appl_Id}: {applicant_dict.get('error_message')}")
+
             except Exception as e:
-                current_app.logger.warning(f"Error converting applicant {applicant.appl_Id} to dict: {e}")
+                current_app.logger.error(f"Error converting applicant {applicant.appl_Id} to dict: {e}")
+                conversion_errors.append({
+                    'appl_Id': applicant.appl_Id,
+                    'tracking_id': getattr(applicant, 'tracking_id', 'Unknown'),
+                    'error': str(e)
+                })
                 continue
         
+        # Prepare enhanced response data with performance metrics
+        response_data = {
+            'applicants': applicant_data,
+            'count': len(applicant_data),
+            'limit': limit,
+            'offset': offset,
+            'performance': {
+                'optimized_batch_loading': True,
+                'query_pattern': 'batch_loaded'
+            }
+        }
+
+        # Add error information if any
+        if conversion_errors:
+            response_data['conversion_errors'] = conversion_errors
+            response_data['errors_count'] = len(conversion_errors)
+
+        message = f'Retrieved {len(applicant_data)} unsynchronized applicants'
+        if conversion_errors:
+            message += f' ({len(conversion_errors)} had enrichment errors)'
+
         return create_response(
             success=True,
-            data={
-                'applicants': applicant_data,
-                'count': len(applicant_data),
-                'limit': limit,
-                'offset': offset
-            },
-            message=f'Retrieved {len(applicant_data)} unsynchronized applicants'
+            data=response_data,
+            message=message
         )
         
     except Exception as e:
