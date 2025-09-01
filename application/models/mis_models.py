@@ -820,11 +820,6 @@ class TblPersonalUg(MISBaseModel):
 
     # Relationships will be added after analyzing foreign keys
     country = relationship("TblCountry", backref="personal_ugs", lazy='joined')
-    b_province = relationship("Province", backref="personal_ugs", lazy='joined')
-    b_district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
-    b_sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
-    b_cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
-    b_village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
     district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
     sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
     cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
