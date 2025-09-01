@@ -645,6 +645,7 @@ class TblOnlineApplication(MISBaseModel):
             intake_details = self._get_enriched_intake_details()
             program_name = self._get_enriched_program_name()
             program_mode = self._get_enriched_program_mode()
+            country_name = self._get_enriched_country_name()
 
             return {
                 # Primary identifiers
@@ -665,7 +666,7 @@ class TblOnlineApplication(MISBaseModel):
                 # Personal information
                 'sex': self.sex or '',
                 'dob': self.dob.isoformat() if self.dob else '',
-                'country_of_birth': self.country_of_birth or '',
+                'country_of_birth': country_name,
                 'national_id': self.nation_Id_passPort_no or '',
                 'present_nationality': self.present_nationality or '',
 
