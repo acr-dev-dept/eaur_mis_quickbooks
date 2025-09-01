@@ -826,6 +826,7 @@ class TblPersonalUg(MISBaseModel):
     cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
     village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
     province = relationship("Province", backref="personal_ugs", lazy='joined')
+    prg_type = relationship("TblProgramType", backref="personal_ugs", lazy='joined')
 
 
     def __repr__(self):
@@ -933,7 +934,7 @@ class TblPersonalUg(MISBaseModel):
                 'campus_name': campus_name,
                 'program_name': program_name,
                 'intake_details': intake_details,
-                'program_type': self.prg_type or '',
+                'program_type': self.prg_type.to_dict() or '',
 
                 # Family information
                 'father_name': self.father_name or '',
@@ -1575,3 +1576,28 @@ class TblCountry(MISBaseModel):
     cntr_name = db.Column(db.String(50), nullable=True)
     cntr_nationality = db.Column(db.String(50), nullable=True)
     com_cntr_code = db.Column(db.String(50), nullable=True)
+
+class TblProgramType(MISBaseModel):
+    """Model for tbl_program_type table"""
+    __tablename__ = 'tbl_program_type'
+    
+    prg_type_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    prg_type_full_name = db.Column(db.String(20), nullable=False)
+    prg_type_short_name = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        """db.String representation of the TblProgramType model"""
+        return f'<TblProgramType {self.prg_type_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'prg_type_id': self.prg_type_id,
+            'prg_type_full_name': self.prg_type_full_name,
+            'prg_type_short_name': self.prg_type_short_name
+        }
