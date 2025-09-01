@@ -829,7 +829,7 @@ class TblPersonalUg(MISBaseModel):
     sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
     cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
     village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
-    province = relationship("TblProvince", backref="personal_ugs", lazy='joined')
+    province = relationship("Province", backref="personal_ugs", lazy='joined')
 
 
     def __repr__(self):
