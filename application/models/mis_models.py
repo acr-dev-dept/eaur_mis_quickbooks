@@ -1563,3 +1563,13 @@ class TblVillage(MISBaseModel):
             'cell_id': self.cell_id,    
             'cell_details': self.cell.to_dict() if self.cell else []
         }
+
+class TblCountry(MISBaseModel):
+    """Model for tbl_country table"""
+    __tablename__ = 'tbl_country'
+
+    cntr_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    cntr_code = db.Column(db.String(50), nullable=True)
+    cntr_name = db.Column(db.String(50), nullable=True)
+    cntr_nationality = db.Column(db.String(50), nullable=True)
+    com_cntr_code = db.Column(db.String(50), nullable=True)
