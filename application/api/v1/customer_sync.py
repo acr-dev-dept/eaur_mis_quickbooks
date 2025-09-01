@@ -167,23 +167,50 @@ def preview_unsynchronized_students():
         
         # Convert to dictionary format for JSON response
         student_data = []
+        conversion_errors = []
+
         for student in students:
             try:
                 student_dict = student.to_dict_for_quickbooks()
                 student_data.append(student_dict)
+
+                # Log if enrichment failed
+                if student_dict.get('error_occurred'):
+                    conversion_errors.append({
+                        'reg_no': student.reg_no,
+                        'error': student_dict.get('error_message', 'Unknown error')
+                    })
+                    current_app.logger.warning(f"Enrichment failed for student {student.reg_no}: {student_dict.get('error_message')}")
+
             except Exception as e:
-                current_app.logger.warning(f"Error converting student {student.reg_no} to dict: {e}")
+                current_app.logger.error(f"Error converting student {student.reg_no} to dict: {e}")
+                conversion_errors.append({
+                    'reg_no': student.reg_no,
+                    'error': str(e)
+                })
                 continue
         
+        # Prepare response data
+        response_data = {
+            'students': student_data,
+            'count': len(student_data),
+            'limit': limit,
+            'offset': offset
+        }
+
+        # Add error information if any
+        if conversion_errors:
+            response_data['conversion_errors'] = conversion_errors
+            response_data['errors_count'] = len(conversion_errors)
+
+        message = f'Retrieved {len(student_data)} unsynchronized students'
+        if conversion_errors:
+            message += f' ({len(conversion_errors)} had enrichment errors)'
+
         return create_response(
             success=True,
-            data={
-                'students': student_data,
-                'count': len(student_data),
-                'limit': limit,
-                'offset': offset
-            },
-            message=f'Retrieved {len(student_data)} unsynchronized students'
+            data=response_data,
+            message=message
         )
         
     except Exception as e:
@@ -552,6 +579,55 @@ def get_customer_sync_status():
         return create_response(
             success=False,
             error='Error getting customer synchronization status',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/debug/student/<reg_no>', methods=['GET'])
+def debug_student_enrichment(reg_no):
+    """
+    Debug endpoint to test student enrichment methods
+
+    Args:
+        reg_no: Student registration number to debug
+    """
+    try:
+        from application.models.mis_models import TblPersonalUg
+        from application.utils.database import db_manager
+
+        # Get student
+        with db_manager.get_mis_session() as session:
+            student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+
+            if not student:
+                return create_response(
+                    success=False,
+                    error=f'Student with reg_no {reg_no} not found',
+                    status_code=404
+                )
+
+            # Run debug enrichment
+            debug_results = student.debug_enrichment()
+
+            # Also get the full to_dict_for_quickbooks result
+            try:
+                full_result = student.to_dict_for_quickbooks()
+                debug_results['full_quickbooks_dict'] = full_result
+            except Exception as e:
+                debug_results['full_quickbooks_dict_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_results,
+                message=f'Debug results for student {reg_no}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging student {reg_no}',
             details=str(e),
             status_code=500
         )
