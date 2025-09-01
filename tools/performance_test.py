@@ -183,21 +183,117 @@ def print_performance_summary(results):
         for test in failed_tests:
             print(f"   - {test['test_case']}: {test.get('error', 'Unknown error')}")
 
+def test_student_performance():
+    """Test student preview API performance"""
+    print("🎓 Testing Student Preview API Performance...")
+
+    test_cases = [
+        {'limit': 5, 'name': 'Small batch'},
+        {'limit': 10, 'name': 'Medium batch'},
+        {'limit': 25, 'name': 'Large batch'}
+    ]
+
+    results = []
+
+    for test_case in test_cases:
+        limit = test_case['limit']
+        name = test_case['name']
+
+        print(f"\n📊 Testing {name} (limit={limit})...")
+
+        try:
+            start_time = time.time()
+
+            url = f"https://api.eaur.ac.rw/api/v1/sync/customers/preview/students?limit={limit}"
+            response = requests.get(url, timeout=60)
+
+            end_time = time.time()
+            response_time = end_time - start_time
+
+            if response.status_code == 200:
+                data = response.json()
+                students = data.get('data', {}).get('students', [])
+                actual_count = len(students)
+
+                # Check enrichment quality
+                enriched_count = 0
+                for student in students:
+                    if (student.get('nationality') and not str(student.get('nationality')).isdigit() and
+                        student.get('campus_name') and student.get('program_name')):
+                        enriched_count += 1
+
+                result = {
+                    'test_case': name,
+                    'limit': limit,
+                    'response_time': round(response_time, 2),
+                    'actual_count': actual_count,
+                    'enriched_count': enriched_count,
+                    'enrichment_rate': round((enriched_count / actual_count * 100) if actual_count > 0 else 0, 1),
+                    'status': 'SUCCESS'
+                }
+
+                print(f"   ✅ Response Time: {response_time:.2f}s")
+                print(f"   ✅ Records Retrieved: {actual_count}")
+                print(f"   ✅ Enrichment Rate: {result['enrichment_rate']}%")
+
+                if response_time > 10:
+                    print(f"   ⚠️  Slow response time: {response_time:.2f}s")
+
+            else:
+                result = {
+                    'test_case': name,
+                    'limit': limit,
+                    'response_time': response_time,
+                    'status': 'ERROR',
+                    'error': f"HTTP {response.status_code}"
+                }
+                print(f"   ❌ HTTP Error: {response.status_code}")
+
+            results.append(result)
+
+        except requests.exceptions.Timeout:
+            result = {
+                'test_case': name,
+                'limit': limit,
+                'status': 'TIMEOUT',
+                'error': 'Request timed out after 60 seconds'
+            }
+            print(f"   ❌ TIMEOUT: Request took longer than 60 seconds")
+            results.append(result)
+
+        except Exception as e:
+            result = {
+                'test_case': name,
+                'limit': limit,
+                'status': 'EXCEPTION',
+                'error': str(e)
+            }
+            print(f"   ❌ Exception: {e}")
+            results.append(result)
+
+    return results
+
 def main():
     """Main performance test function"""
     print("=" * 70)
     print("EAUR Customer Sync Performance Test Suite")
     print("=" * 70)
-    
-    # Test 1: Performance across different batch sizes
-    performance_results = test_applicant_performance()
-    
-    # Test 2: Limit parameter functionality
+
+    # Test 1: Applicant performance
+    print("\n🎓 APPLICANT PERFORMANCE TESTS")
+    applicant_results = test_applicant_performance()
+
+    # Test 2: Student performance
+    print("\n🎓 STUDENT PERFORMANCE TESTS")
+    student_results = test_student_performance()
+
+    # Test 3: Limit parameter functionality
     test_limit_functionality()
-    
-    # Test 3: Summary and recommendations
-    print_performance_summary(performance_results)
-    
+
+    # Test 4: Combined summary
+    all_results = applicant_results + student_results
+    print_performance_summary(all_results)
+
     print("\n" + "=" * 70)
     print("Performance Test Complete")
     print("=" * 70)
