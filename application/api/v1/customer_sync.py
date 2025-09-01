@@ -631,3 +631,87 @@ def debug_student_enrichment(reg_no):
             details=str(e),
             status_code=500
         )
+
+@customer_sync_bp.route('/debug/country/<reg_no>', methods=['GET'])
+def debug_country_enrichment(reg_no):
+    """
+    Debug endpoint specifically for country enrichment
+
+    Args:
+        reg_no: Student registration number to debug
+    """
+    try:
+        from application.models.mis_models import TblPersonalUg, TblCountry
+        from application.utils.database import db_manager
+
+        # Get student
+        with db_manager.get_mis_session() as session:
+            student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+
+            if not student:
+                return create_response(
+                    success=False,
+                    error=f'Student with reg_no {reg_no} not found',
+                    status_code=404
+                )
+
+            # Debug country data
+            debug_info = {
+                'reg_no': reg_no,
+                'raw_data': {
+                    'cntr_id': student.cntr_id,
+                    'nationality': student.nationality,
+                    'has_country_relationship': hasattr(student, 'country'),
+                    'country_relationship_value': str(student.country) if hasattr(student, 'country') and student.country else None
+                },
+                'country_lookup_results': {}
+            }
+
+            # Test country lookup by cntr_id
+            if student.cntr_id:
+                country_by_id = session.query(TblCountry).filter_by(cntr_id=student.cntr_id).first()
+                if country_by_id:
+                    debug_info['country_lookup_results']['by_cntr_id'] = {
+                        'found': True,
+                        'cntr_name': country_by_id.cntr_name,
+                        'cntr_nationality': country_by_id.cntr_nationality,
+                        'cntr_code': country_by_id.cntr_code
+                    }
+                else:
+                    debug_info['country_lookup_results']['by_cntr_id'] = {'found': False}
+
+            # Test country lookup by nationality field
+            if student.nationality and student.nationality.isdigit():
+                country_by_nationality = session.query(TblCountry).filter_by(cntr_id=int(student.nationality)).first()
+                if country_by_nationality:
+                    debug_info['country_lookup_results']['by_nationality_field'] = {
+                        'found': True,
+                        'cntr_name': country_by_nationality.cntr_name,
+                        'cntr_nationality': country_by_nationality.cntr_nationality,
+                        'cntr_code': country_by_nationality.cntr_code
+                    }
+                else:
+                    debug_info['country_lookup_results']['by_nationality_field'] = {'found': False}
+
+            # Test enrichment method
+            try:
+                enriched_country = student._get_enriched_country_name()
+                debug_info['enrichment_result'] = enriched_country
+            except Exception as e:
+                debug_info['enrichment_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_info,
+                message=f'Country debug results for student {reg_no}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging country for student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging country for student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
