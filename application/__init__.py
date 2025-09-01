@@ -138,7 +138,7 @@ def register_blueprints(app):
     from application.api.v1.urubuto import urubuto_bp
     from application.api.v1.quickbooks import quickbooks_bp
     from application.api.v1.mis_data import mis_data_bp
-    from application.api.v1.sync import sync_bp
+    #from application.api.v1.sync import sync_bp
     from application.api.v1.customer_sync import customer_sync_bp
     
 
@@ -148,7 +148,7 @@ def register_blueprints(app):
     app.register_blueprint(urubuto_bp, url_prefix='/api/v1/urubuto')
     app.register_blueprint(quickbooks_bp, url_prefix='/api/v1/quickbooks')
     app.register_blueprint(mis_data_bp, url_prefix='/api/v1/mis_data')
-    app.register_blueprint(sync_bp, url_prefix='/api/v1/sync')
+    #app.register_blueprint(sync_bp, url_prefix='/api/v1/sync')
     app.register_blueprint(customer_sync_bp, url_prefix='/api/v1/sync/customers')
 
 def register_error_handlers(app):
