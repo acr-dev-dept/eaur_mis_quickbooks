@@ -757,11 +757,22 @@ class TblOnlineApplication(MISBaseModel):
             return ''
         try:
             from application.models.mis_models import TblProgramMode
+            from flask import current_app
+
             mode = TblProgramMode.get_by_id(self.prg_mode_id)
             if mode:
-                return getattr(mode, 'prg_mode_name', '') or getattr(mode, 'mode_name', '') or str(self.prg_mode_id)
-            return str(self.prg_mode_id)
-        except:
+                mode_name = getattr(mode, 'prg_mode_name', '') or getattr(mode, 'mode_name', '') or str(self.prg_mode_id)
+                if current_app:
+                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id}: {mode_name}")
+                return mode_name
+            else:
+                if current_app:
+                    current_app.logger.warning(f"Program mode {self.prg_mode_id} not found for applicant {self.appl_Id}")
+                return str(self.prg_mode_id)
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched program mode for applicant {self.appl_Id}: {e}")
             return str(self.prg_mode_id)
 
     def _get_enriched_country_name(self):
