@@ -239,29 +239,136 @@ class CustomerSyncService:
     
     def get_unsynchronized_students(self, limit: Optional[int] = None, offset: int = 0) -> List[TblPersonalUg]:
         """
-        Get students that haven't been synchronized to QuickBooks
-        
+        Get students that haven't been synchronized to QuickBooks with optimized batch loading
+
         Args:
             limit: Maximum number of students to return
             offset: Number of students to skip
-            
+
         Returns:
-            List of unsynchronized student objects
+            List of unsynchronized student objects with pre-loaded enrichment data
         """
         try:
             with db_manager.get_mis_session() as session:
-            
+                # Step 1: Get base students
                 query = session.query(TblPersonalUg).filter(
                     or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
                 ).order_by(TblPersonalUg.reg_date.desc())
-                
+
                 if limit:
                     query = query.limit(limit)
                 if offset:
                     query = query.offset(offset)
-                    
+
                 students = query.all()
                 logger.info(f"Retrieved {len(students)} unsynchronized students")
+
+                if not students:
+                    return students
+
+                # Step 2: Batch load countries for nationality enrichment
+                country_ids = []
+                for student in students:
+                    if student.nationality and student.nationality.isdigit():
+                        country_ids.append(int(student.nationality))
+                    if student.cntr_id:
+                        country_ids.append(student.cntr_id)
+
+                country_map = {}
+                if country_ids:
+                    unique_country_ids = list(set(country_ids))
+                    from application.models.mis_models import TblCountry
+                    countries = session.query(TblCountry).filter(TblCountry.cntr_id.in_(unique_country_ids)).all()
+                    country_map = {c.cntr_id: c for c in countries}
+                    logger.debug(f"Batch loaded {len(countries)} countries for {len(unique_country_ids)} unique IDs")
+
+                # Step 3: Batch load registration program data for enrichment
+                reg_nos = [s.reg_no for s in students if s.reg_no]
+                reg_program_map = {}
+                if reg_nos:
+                    from application.models.mis_models import TblRegisterProgramUg
+                    reg_programs = session.query(TblRegisterProgramUg).filter(TblRegisterProgramUg.reg_no.in_(reg_nos)).all()
+                    reg_program_map = {rp.reg_no: rp for rp in reg_programs}
+                    logger.debug(f"Batch loaded {len(reg_programs)} registration programs for {len(reg_nos)} students")
+
+                # Step 4: Batch load related lookup data
+                level_ids = []
+                campus_ids = []
+                specialization_ids = []
+                intake_ids = []
+
+                for reg_program in reg_programs:
+                    if reg_program.level_id:
+                        level_ids.append(reg_program.level_id)
+                    if reg_program.camp_id:
+                        campus_ids.append(reg_program.camp_id)
+                    if reg_program.splz_id:
+                        specialization_ids.append(reg_program.splz_id)
+                    if reg_program.intake_id:
+                        intake_ids.append(reg_program.intake_id)
+
+                # Batch load levels
+                level_map = {}
+                if level_ids:
+                    unique_level_ids = list(set(level_ids))
+                    from application.models.mis_models import TblLevel
+                    levels = session.query(TblLevel).filter(TblLevel.level_id.in_(unique_level_ids)).all()
+                    level_map = {l.level_id: l for l in levels}
+                    logger.debug(f"Batch loaded {len(levels)} levels")
+
+                # Batch load campuses
+                campus_map = {}
+                if campus_ids:
+                    unique_campus_ids = list(set(campus_ids))
+                    from application.models.mis_models import TblCampus
+                    campuses = session.query(TblCampus).filter(TblCampus.camp_id.in_(unique_campus_ids)).all()
+                    campus_map = {c.camp_id: c for c in campuses}
+                    logger.debug(f"Batch loaded {len(campuses)} campuses")
+
+                # Batch load specializations
+                specialization_map = {}
+                if specialization_ids:
+                    unique_spec_ids = list(set(specialization_ids))
+                    from application.models.mis_models import TblSpecialization
+                    specializations = session.query(TblSpecialization).filter(TblSpecialization.splz_id.in_(unique_spec_ids)).all()
+                    specialization_map = {s.splz_id: s for s in specializations}
+                    logger.debug(f"Batch loaded {len(specializations)} specializations")
+
+                # Batch load intakes
+                intake_map = {}
+                if intake_ids:
+                    unique_intake_ids = list(set(intake_ids))
+                    from application.models.mis_models import TblIntake
+                    intakes = session.query(TblIntake).filter(TblIntake.intake_id.in_(unique_intake_ids)).all()
+                    intake_map = {i.intake_id: i for i in intakes}
+                    logger.debug(f"Batch loaded {len(intakes)} intakes")
+
+                # Step 5: Attach cached data to students
+                for student in students:
+                    # Attach country data
+                    student._cached_country = None
+                    if student.cntr_id and student.cntr_id in country_map:
+                        student._cached_country = country_map[student.cntr_id]
+                    elif student.nationality and student.nationality.isdigit():
+                        country_id = int(student.nationality)
+                        student._cached_country = country_map.get(country_id)
+
+                    # Attach registration program data
+                    reg_program = reg_program_map.get(student.reg_no)
+                    student._cached_reg_program = reg_program
+
+                    if reg_program:
+                        student._cached_level = level_map.get(reg_program.level_id)
+                        student._cached_campus = campus_map.get(reg_program.camp_id)
+                        student._cached_specialization = specialization_map.get(reg_program.splz_id)
+                        student._cached_intake = intake_map.get(reg_program.intake_id)
+                    else:
+                        student._cached_level = None
+                        student._cached_campus = None
+                        student._cached_specialization = None
+                        student._cached_intake = None
+
+                logger.info(f"Optimized batch loading completed: {len(students)} students with cached enrichment data")
                 return students
                 
         except Exception as e:
