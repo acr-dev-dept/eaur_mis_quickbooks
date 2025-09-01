@@ -170,20 +170,20 @@ class CustomerSyncService:
             List of unsynchronized applicant objects
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
             
-            query = session.query(TblOnlineApplication).filter(
-                or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
-            ).order_by(TblOnlineApplication.appl_date.desc())
-            
-            if limit:
-                query = query.limit(limit)
-            if offset:
-                query = query.offset(offset)
+                query = session.query(TblOnlineApplication).filter(
+                    or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
+                ).order_by(TblOnlineApplication.appl_date.desc())
                 
-            applicants = query.all()
-            logger.info(f"Retrieved {len(applicants)} unsynchronized applicants")
-            return applicants
+                if limit:
+                    query = query.limit(limit)
+                if offset:
+                    query = query.offset(offset)
+                    
+                applicants = query.all()
+                logger.info(f"Retrieved {len(applicants)} unsynchronized applicants")
+                return applicants
             
         except Exception as e:
             logger.error(f"Error getting unsynchronized applicants: {e}")
