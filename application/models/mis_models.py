@@ -905,6 +905,7 @@ class TblPersonalUg(MISBaseModel):
             campus_name = self._get_enriched_campus_name()
             program_name = self._get_enriched_program_name()
             intake_details = self._get_enriched_intake_details()
+            country_name = self._get_enriched_country_name()
 
             return {
                 # Primary identifiers
@@ -926,7 +927,7 @@ class TblPersonalUg(MISBaseModel):
                 'sex': self.sex or '',
                 'dob': self.dob.isoformat() if self.dob else '',
                 'national_id': self.national_id or '',
-                'nationality': self.nationality or '',
+                'nationality': country_name,
                 'marital_status': self.marital_status or '',
 
                 # Academic information (enriched with fallbacks)
@@ -981,6 +982,7 @@ class TblPersonalUg(MISBaseModel):
                 'email': self.email1 or '',
                 'sex': self.sex or '',
                 'national_id': self.national_id or '',
+                'nationality': self.nationality or '',
                 'level_name': '',
                 'campus_name': '',
                 'program_name': '',
@@ -1113,6 +1115,57 @@ class TblPersonalUg(MISBaseModel):
                 current_app.logger.error(f"Error getting enriched intake details for student {self.reg_no}: {e}")
             return ''
 
+    def _get_enriched_country_name(self):
+        """Get enriched country name with fallback"""
+        try:
+            from application.models.mis_models import TblCountry
+            from flask import current_app
+
+            # Strategy 1: Use existing country relationship if available
+            if hasattr(self, 'country') and self.country:
+                country_name = getattr(self.country, 'cntr_name', '') or getattr(self.country, 'cntr_nationality', '')
+                if country_name:
+                    if current_app:
+                        current_app.logger.debug(f"Enriched country for student {self.reg_no} via relationship: {country_name}")
+                    return country_name
+
+            # Strategy 2: Use cntr_id field directly
+            if self.cntr_id:
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=self.cntr_id).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.cntr_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for student {self.reg_no} via cntr_id: {country_name}")
+                        return country_name
+
+            # Strategy 3: Use nationality field as country ID (fallback)
+            if self.nationality and self.nationality.isdigit():
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=int(self.nationality)).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or self.nationality
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for student {self.reg_no} via nationality field: {country_name}")
+                        return country_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Country ID {self.nationality} not found for student {self.reg_no}")
+                        return f"Country ID: {self.nationality}"
+
+            # Strategy 4: Return nationality as-is if it's already a name
+            if self.nationality and not self.nationality.isdigit():
+                return self.nationality
+
+            # Final fallback
+            return self.nationality or ''
+
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched country name for student {self.reg_no}: {e}")
+            return self.nationality or ''
+
     def debug_enrichment(self):
         """
         Debug method to test enrichment methods individually
@@ -1133,7 +1186,8 @@ class TblPersonalUg(MISBaseModel):
             ('level_name', self._get_enriched_level_name),
             ('campus_name', self._get_enriched_campus_name),
             ('program_name', self._get_enriched_program_name),
-            ('intake_details', self._get_enriched_intake_details)
+            ('intake_details', self._get_enriched_intake_details),
+            ('country_name', self._get_enriched_country_name)
         ]
 
         for method_name, method in enrichment_methods:
