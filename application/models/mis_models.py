@@ -934,7 +934,7 @@ class TblPersonalUg(MISBaseModel):
                 'campus_name': campus_name,
                 'program_name': program_name,
                 'intake_details': intake_details,
-                'program_type': self.prg_type.prg_type_full_name or '',
+                'program_type': self.prgtype.prg_type_full_name if self.prgtype else '',
 
                 # Family information
                 'father_name': self.father_name or '',
@@ -965,8 +965,10 @@ class TblPersonalUg(MISBaseModel):
         except Exception as e:
             # Fallback to basic data if enrichment fails
             from flask import current_app
+            import traceback
             if current_app:
-                current_app.logger.warning(f"Error in to_dict_for_quickbooks for student {self.reg_no}: {e}")
+                current_app.logger.error(f"Error in to_dict_for_quickbooks for student {self.reg_no}: {e}")
+                current_app.logger.error(f"Traceback: {traceback.format_exc()}")
 
             return {
                 'per_id_ug': self.per_id_ug,
@@ -978,7 +980,15 @@ class TblPersonalUg(MISBaseModel):
                 'phone': self.phone1 or '',
                 'email': self.email1 or '',
                 'sex': self.sex or '',
-                'quickbooks_status': self.QuickBk_Status or 0
+                'national_id': self.national_id or '',
+                'level_name': '',
+                'campus_name': '',
+                'program_name': '',
+                'intake_details': '',
+                'program_type': '',
+                'quickbooks_status': self.QuickBk_Status or 0,
+                'error_occurred': True,
+                'error_message': str(e)
             }
 
     def _get_enriched_level_name(self):
@@ -986,58 +996,160 @@ class TblPersonalUg(MISBaseModel):
         # Students don't have direct level_id, need to get from registration program
         try:
             from application.models.mis_models import TblRegisterProgramUg, TblLevel
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.level_id:
-                level = TblLevel.get_by_id(reg_program.level_id)
-                if level:
-                    return getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or str(reg_program.level_id)
-                return str(reg_program.level_id)
-            return ''
-        except:
+            from flask import current_app
+
+            # Use proper session management
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.level_id:
+                    level = session.query(TblLevel).filter_by(level_id=reg_program.level_id).first()
+                    if level:
+                        level_name = getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or str(reg_program.level_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched level for student {self.reg_no}: {level_name}")
+                        return level_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Level {reg_program.level_id} not found for student {self.reg_no}")
+                        return str(reg_program.level_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched level name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_campus_name(self):
         """Get enriched campus name with fallback"""
         try:
             from application.models.mis_models import TblRegisterProgramUg, TblCampus
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and hasattr(reg_program, 'camp_id') and reg_program.camp_id:
-                campus = TblCampus.get_by_id(reg_program.camp_id)
-                if campus:
-                    return getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(reg_program.camp_id)
-                return str(reg_program.camp_id)
-            return ''
-        except:
+            from flask import current_app
+
+            # Use proper session management
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and hasattr(reg_program, 'camp_id') and reg_program.camp_id:
+                    campus = session.query(TblCampus).filter_by(camp_id=reg_program.camp_id).first()
+                    if campus:
+                        campus_name = getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(reg_program.camp_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched campus for student {self.reg_no}: {campus_name}")
+                        return campus_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Campus {reg_program.camp_id} not found for student {self.reg_no}")
+                        return str(reg_program.camp_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or campus ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched campus name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_program_name(self):
         """Get enriched program name with fallback"""
         try:
             from application.models.mis_models import TblRegisterProgramUg, TblSpecialization
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.splz_id:
-                program = TblSpecialization.get_by_id(reg_program.splz_id)
-                if program:
-                    return getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(reg_program.splz_id)
-                return str(reg_program.splz_id)
-            return ''
-        except:
+            from flask import current_app
+
+            # Use proper session management
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.splz_id:
+                    program = session.query(TblSpecialization).filter_by(splz_id=reg_program.splz_id).first()
+                    if program:
+                        program_name = getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(reg_program.splz_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched program for student {self.reg_no}: {program_name}")
+                        return program_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Program {reg_program.splz_id} not found for student {self.reg_no}")
+                        return str(reg_program.splz_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or specialization ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched program name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_intake_details(self):
         """Get enriched intake details with fallback"""
         try:
             from application.models.mis_models import TblRegisterProgramUg, TblIntake
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.intake_id:
-                intake = TblIntake.get_by_id(reg_program.intake_id)
-                if intake:
-                    return intake.to_dict()
-                    #getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(reg_program.intake_id)
-                return str(reg_program.intake_id)
+            from flask import current_app
+
+            # Use proper session management
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.intake_id:
+                    intake = session.query(TblIntake).filter_by(intake_id=reg_program.intake_id).first()
+                    if intake:
+                        # Get intake name/details for display using actual fields
+                        intake_details = f"{intake.intake_month} {intake.intake_no}" if intake.intake_month else str(reg_program.intake_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched intake for student {self.reg_no}: {intake_details}")
+                        return intake_details
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Intake {reg_program.intake_id} not found for student {self.reg_no}")
+                        return str(reg_program.intake_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or intake ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched intake details for student {self.reg_no}: {e}")
             return ''
-        except:
-            return ''
+
+    def debug_enrichment(self):
+        """
+        Debug method to test enrichment methods individually
+
+        Returns:
+            dict: Results of all enrichment methods for debugging
+        """
+        from flask import current_app
+
+        debug_results = {
+            'reg_no': self.reg_no,
+            'enrichment_results': {},
+            'errors': []
+        }
+
+        # Test each enrichment method
+        enrichment_methods = [
+            ('level_name', self._get_enriched_level_name),
+            ('campus_name', self._get_enriched_campus_name),
+            ('program_name', self._get_enriched_program_name),
+            ('intake_details', self._get_enriched_intake_details)
+        ]
+
+        for method_name, method in enrichment_methods:
+            try:
+                result = method()
+                debug_results['enrichment_results'][method_name] = result
+                if current_app:
+                    current_app.logger.info(f"Enrichment {method_name} for {self.reg_no}: '{result}'")
+            except Exception as e:
+                error_msg = f"Error in {method_name}: {e}"
+                debug_results['errors'].append(error_msg)
+                debug_results['enrichment_results'][method_name] = f"ERROR: {e}"
+                if current_app:
+                    current_app.logger.error(f"Enrichment {method_name} failed for {self.reg_no}: {e}")
+
+        return debug_results
 
     @classmethod
     def get_student_details(cls, reg_no):
