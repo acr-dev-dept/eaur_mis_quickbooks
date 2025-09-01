@@ -763,6 +763,39 @@ class TblOnlineApplication(MISBaseModel):
         except:
             return str(self.prg_mode_id)
 
+    def _get_enriched_country_name(self):
+        """Get enriched country name with fallback (adapted from student model)"""
+        try:
+            from application.models.mis_models import TblCountry
+            from flask import current_app
+
+            # Strategy 1: Use country_of_birth field as country ID
+            if self.country_of_birth and str(self.country_of_birth).isdigit():
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=int(self.country_of_birth)).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.country_of_birth)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for applicant {self.appl_Id}: {country_name}")
+                        return country_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Country ID {self.country_of_birth} not found for applicant {self.appl_Id}")
+                        return f"Country ID: {self.country_of_birth}"
+
+            # Strategy 2: Return country_of_birth as-is if it's already a name
+            if self.country_of_birth and not str(self.country_of_birth).isdigit():
+                return str(self.country_of_birth)
+
+            # Final fallback
+            return str(self.country_of_birth) if self.country_of_birth else ''
+
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched country name for applicant {self.appl_Id}: {e}")
+            return str(self.country_of_birth) if self.country_of_birth else ''
+
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
     __tablename__ = 'tbl_personal_ug'
