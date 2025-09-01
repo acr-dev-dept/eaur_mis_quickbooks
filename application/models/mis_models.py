@@ -731,7 +731,8 @@ class TblOnlineApplication(MISBaseModel):
             from application.models.mis_models import TblIntake
             intake = TblIntake.get_by_id(self.intake_id)
             if intake:
-                return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(self.intake_id)
+                return intake.to_dict()
+                 #getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(self.intake_id)
             return str(self.intake_id)
         except:
             return str(self.intake_id)
