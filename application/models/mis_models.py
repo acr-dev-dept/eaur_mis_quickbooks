@@ -753,18 +753,27 @@ class TblOnlineApplication(MISBaseModel):
             return str(self.opt_1)
 
     def _get_enriched_program_mode(self):
-        """Get enriched program mode with fallback"""
+        """Get enriched program mode with fallback - optimized with cached data"""
         if not self.prg_mode_id:
             return ''
         try:
-            from application.models.mis_models import TblProgramMode
             from flask import current_app
 
+            # Strategy 1: Use cached program mode data (from batch loading)
+            if hasattr(self, '_cached_program_mode') and self._cached_program_mode:
+                mode = self._cached_program_mode
+                mode_name = getattr(mode, 'prg_mode_full_name', '') or getattr(mode, 'prg_mode_short_name', '') or str(self.prg_mode_id)
+                if current_app:
+                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id} (cached): {mode_name}")
+                return mode_name
+
+            # Strategy 2: Fallback to database lookup (for non-batch scenarios)
+            from application.models.mis_models import TblProgramMode
             mode = TblProgramMode.get_by_id(self.prg_mode_id)
             if mode:
-                mode_name = getattr(mode, 'prg_mode_name', '') or getattr(mode, 'mode_name', '') or str(self.prg_mode_id)
+                mode_name = getattr(mode, 'prg_mode_full_name', '') or getattr(mode, 'prg_mode_short_name', '') or str(self.prg_mode_id)
                 if current_app:
-                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id}: {mode_name}")
+                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id} (db lookup): {mode_name}")
                 return mode_name
             else:
                 if current_app:
@@ -777,26 +786,34 @@ class TblOnlineApplication(MISBaseModel):
             return str(self.prg_mode_id)
 
     def _get_enriched_country_name(self):
-        """Get enriched country name with fallback (adapted from student model)"""
+        """Get enriched country name with fallback - optimized with cached data"""
         try:
-            from application.models.mis_models import TblCountry
             from flask import current_app
 
-            # Strategy 1: Use country_of_birth field as country ID
+            # Strategy 1: Use cached country data (from batch loading)
+            if hasattr(self, '_cached_country') and self._cached_country:
+                country = self._cached_country
+                country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.country_of_birth)
+                if current_app:
+                    current_app.logger.debug(f"Enriched country for applicant {self.appl_Id} (cached): {country_name}")
+                return country_name
+
+            # Strategy 2: Fallback to database lookup (for non-batch scenarios)
             if self.country_of_birth and str(self.country_of_birth).isdigit():
+                from application.models.mis_models import TblCountry
                 with self.get_session() as session:
                     country = session.query(TblCountry).filter_by(cntr_id=int(self.country_of_birth)).first()
                     if country:
                         country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.country_of_birth)
                         if current_app:
-                            current_app.logger.debug(f"Enriched country for applicant {self.appl_Id}: {country_name}")
+                            current_app.logger.debug(f"Enriched country for applicant {self.appl_Id} (db lookup): {country_name}")
                         return country_name
                     else:
                         if current_app:
                             current_app.logger.warning(f"Country ID {self.country_of_birth} not found for applicant {self.appl_Id}")
                         return f"Country ID: {self.country_of_birth}"
 
-            # Strategy 2: Return country_of_birth as-is if it's already a name
+            # Strategy 3: Return country_of_birth as-is if it's already a name
             if self.country_of_birth and not str(self.country_of_birth).isdigit():
                 return str(self.country_of_birth)
 
