@@ -1418,3 +1418,17 @@ class TblCurriculum(MISBaseModel):
             'graduation_status': self.graduation_status
         }
 
+class Province(MISBaseModel):
+    __tablename__ = 'tbl_province'
+
+    province_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    province_name = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        return f"<Province {self.province_name}>"
+
+    def to_dict(self):
+        return {
+            'province_id': self.province_id,
+            'province_name': self.province_name
+        }
