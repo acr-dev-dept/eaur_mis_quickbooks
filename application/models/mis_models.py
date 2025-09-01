@@ -934,7 +934,7 @@ class TblPersonalUg(MISBaseModel):
                 'campus_name': campus_name,
                 'program_name': program_name,
                 'intake_details': intake_details,
-                'program_type': self.prg_type.to_dict() or '',
+                'program_type': self.prg_type.prg_type_full_name or '',
 
                 # Family information
                 'father_name': self.father_name or '',
