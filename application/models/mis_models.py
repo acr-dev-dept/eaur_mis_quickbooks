@@ -1427,3 +1427,139 @@ class Province(MISBaseModel):
             'province_id': self.province_id,
             'province_name': self.province_name
         }
+
+class TblDistrict(MISBaseModel):
+    """Model for tbl_district table"""
+    __tablename__ = 'tbl_district'
+    
+    district_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    district_name = db.Column(db.String(50), nullable=False)
+    province_id = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
+
+    # Relationship with Province
+    province = relationship(
+        "Province",
+        backref="districts",
+        lazy='joined',
+        foreign_keys=[province_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblDistrict model"""
+        return f'<TblDistrict {self.district_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'district_id': self.district_id,
+            'district_name': self.district_name,
+            'province_id': self.province_id,    
+            'province_details': self.province.to_dict() if self.province else []
+        }
+
+class TblSector(MISBaseModel):
+    """Model for tbl_sector table"""
+    __tablename__ = 'tbl_sector'
+    
+    sector_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    sector_name = db.Column(db.String(50), nullable=False)
+    district_id = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+
+    # Relationship with TblDistrict
+    district = relationship(
+        "TblDistrict",
+        backref="sectors",
+        lazy='joined',
+        foreign_keys=[district_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblSector model"""
+        return f'<TblSector {self.sector_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'sector_id': self.sector_id,
+            'sector_name': self.sector_name,
+            'district_id': self.district_id,    
+            'district_details': self.district.to_dict() if self.district else []
+        }
+
+class TblCell(MISBaseModel):
+    """Model for tbl_cell table"""
+    __tablename__ = 'tbl_cell'
+    
+    cell_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    cell_name = db.Column(db.String(50), nullable=False)
+    sector_id = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+
+    # Relationship with TblSector
+    sector = relationship(
+        "TblSector",
+        backref="cells",
+        lazy='joined',
+        foreign_keys=[sector_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblCell model"""
+        return f'<TblCell {self.cell_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'cell_id': self.cell_id,
+            'cell_name': self.cell_name,
+            'sector_id': self.sector_id,    
+            'sector_details': self.sector.to_dict() if self.sector else []
+        }
+
+class TblVillage(MISBaseModel):
+    """Model for tbl_village table"""
+    __tablename__ = 'tbl_village'
+    
+    village_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    village_name = db.Column(db.String(50), nullable=False)
+    cell_id = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+
+    # Relationship with TblCell 
+    cell = relationship(
+        "TblCell",
+        backref="villages",
+        lazy='joined',
+        foreign_keys=[cell_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblVillage model"""
+        return f'<TblVillage {self.village_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'village_id': self.village_id,
+            'village_name': self.village_name,
+            'cell_id': self.cell_id,    
+            'cell_details': self.cell.to_dict() if self.cell else []
+        }
