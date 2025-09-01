@@ -768,7 +768,7 @@ class TblPersonalUg(MISBaseModel):
     
     per_id_ug = db.Column(db.Integer, nullable=False, primary_key=True)
     reg_no = db.Column(db.String(200), nullable=False)
-    prg_type = db.Column(db.String, nullable=False)
+    prg_type = db.Column(db.Integer, ForeignKey("tbl_program_type.prg_type_id"))
     sex = db.Column(db.String(6))
     fname = db.Column(db.String(250))
     middlename = db.Column(db.String(200))
@@ -778,18 +778,18 @@ class TblPersonalUg(MISBaseModel):
     father_name = db.Column(db.String(50))
     mother_name = db.Column(db.String(50))
     national_id = db.Column(db.String(20))
-    cntr_id = db.Column(db.String(255), nullable=False)
+    cntr_id = db.Column(db.Integer, ForeignKey("tbl_country.cntr_id"))
     VISA_Expiration_date = db.Column(DateTime)
-    b_province = db.Column(db.String(50), nullable=False)
-    b_district = db.Column(db.String(20), nullable=False)
-    b_sector = db.Column(db.String(50), nullable=False)
-    b_cell = db.Column(db.String(50), nullable=False)
-    b_village = db.Column(db.String(50), nullable=False)
-    district = db.Column(db.String(50))
-    sector = db.Column(db.String(50))
-    cell = db.Column(db.String(200))
-    village = db.Column(db.String(200))
-    province = db.Column(db.String(50))
+    b_province = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
+    b_district = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+    b_sector = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+    b_cell = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+    b_village = db.Column(db.Integer, ForeignKey("tbl_village.village_id"))
+    district = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+    sector = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+    cell = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+    village = db.Column(db.Integer, ForeignKey("tbl_village.village_id"))
+    province = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
     nationality = db.Column(db.String(50))
     phone1 = db.Column(db.String(100))
     phone2 = db.Column(db.String(20))
@@ -819,6 +819,18 @@ class TblPersonalUg(MISBaseModel):
     QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
 
     # Relationships will be added after analyzing foreign keys
+    country = relationship("TblCountry", backref="personal_ugs", lazy='joined')
+    b_province = relationship("TblProvince", backref="personal_ugs", lazy='joined')
+    b_district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
+    b_sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
+    b_cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
+    b_village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
+    district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
+    sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
+    cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
+    village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
+    province = relationship("TblProvince", backref="personal_ugs", lazy='joined')
+
 
     def __repr__(self):
         return f'<TblPersonalUg {self.id if hasattr(self, "id") else "unknown"}>'
@@ -833,7 +845,7 @@ class TblPersonalUg(MISBaseModel):
         return {
             'per_id_ug': self.per_id_ug,
             'reg_no': self.reg_no,
-            'prg_type': self.prg_type,
+            'prg_type': self.prg_type.to_dict() if self.prg_type else [],
             'sex': self.sex,
             'fname': self.fname,
             'middlename': self.middlename,
@@ -845,16 +857,17 @@ class TblPersonalUg(MISBaseModel):
             'national_id': self.national_id,
             'cntr_id': self.cntr_id,
             'VISA_Expiration_date': self.VISA_Expiration_date.isoformat() if self.VISA_Expiration_date else None,
-            'b_province': self.b_province,
-            'b_district': self.b_district,
-            'b_sector': self.b_sector,
-            'b_cell': self.b_cell,
-            'b_village': self.b_village,
-            'district': self.district,
-            'sector': self.sector,
-            'cell': self.cell,
-            'village': self.village,
-            'province': self.province,
+            'b_province': self.b_province.to_dict() if self.b_province else [],
+
+            'b_district': self.b_district.to_dict() if self.b_district else [],
+            'b_sector': self.b_sector.to_dict() if self.b_sector else [],
+            'b_cell': self.b_cell.to_dict() if self.b_cell else [],
+            'b_village': self.b_village.to_dict() if self.b_village else [],
+            'district': self.district.to_dict() if self.district else [],
+            'sector': self.sector.to_dict() if self.sector else [],
+            'cell': self.cell.to_dict() if self.cell else [],
+            'village': self.village.to_dict() if self.village else [],
+            'province': self.province.to_dict() if self.province else [],
             'nationality': self.nationality,
             'phone1': self.phone1,
             'phone2': self.phone2,
