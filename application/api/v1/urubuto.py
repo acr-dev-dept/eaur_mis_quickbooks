@@ -482,3 +482,268 @@ def payment_notification():
             "message": "Internal server error",
             "status": 500
         }), 500
+
+@urubuto_bp.route('/payments/initiate', methods=['POST'])
+def initiate_payment():
+    """
+    Payment initiation endpoint for triggering Urubuto Pay transactions.
+
+    This endpoint allows the MIS to initiate payments through Urubuto Pay gateway,
+    triggering USSD popups or card payment flows for students.
+
+    Expected request format:
+    {
+        "payer_code": "12345",
+        "amount": 150000,
+        "channel_name": "MOMO",
+        "phone_number": "0788215324",
+        "payer_names": "John Doe",
+        "payer_email": "john@example.com",
+        "redirection_url": "https://mis.eaur.ac.rw/payment-success"
+    }
+    """
+    try:
+        # Validate Bearer token
+        is_valid, error_response = validate_bearer_token()
+        if not is_valid:
+            return jsonify(error_response), 401
+
+        # Validate request data
+        if not request.is_json:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Content-Type must be application/json",
+                "status": 400
+            }), 400
+
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "No data provided",
+                "status": 400
+            }), 400
+
+        # Extract and validate required fields
+        payer_code = data.get('payer_code')
+        amount = data.get('amount')
+        channel_name = data.get('channel_name')
+
+        if not all([payer_code, amount, channel_name]):
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Missing required parameters: payer_code, amount, channel_name",
+                "status": 400
+            }), 400
+
+        # Validate channel name
+        valid_channels = ['MOMO', 'AIRTEL_MONEY', 'CARD']
+        if channel_name not in valid_channels:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": f"Invalid channel_name. Must be one of: {', '.join(valid_channels)}",
+                "status": 400
+            }), 400
+
+        # For wallet payments, phone number is required
+        if channel_name in ['MOMO', 'AIRTEL_MONEY'] and not data.get('phone_number'):
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "phone_number is required for wallet payments",
+                "status": 400
+            }), 400
+
+        current_app.logger.info(f"Payment initiation request - Payer: {payer_code}, "
+                               f"Amount: {amount}, Channel: {channel_name}")
+
+        # Initialize Urubuto Pay service
+        from application.services.urubuto_pay import UrubutoPay
+        urubuto_service = UrubutoPay()
+
+        # Initiate payment
+        result = urubuto_service.initiate_payment(
+            payer_code=payer_code,
+            amount=amount,
+            channel_name=channel_name,
+            phone_number=data.get('phone_number'),
+            card_type=data.get('card_type'),
+            redirection_url=data.get('redirection_url'),
+            payer_names=data.get('payer_names'),
+            payer_email=data.get('payer_email'),
+            service_code=data.get('service_code', 'school-fees')
+        )
+
+        if result['success']:
+            current_app.logger.info(f"Payment initiation successful for payer: {payer_code}")
+            return jsonify(result['data']), result['status_code']
+        else:
+            current_app.logger.error(f"Payment initiation failed: {result['error']}")
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": result['error'],
+                "status": result['status_code']
+            }), result['status_code']
+
+    except Exception as e:
+        current_app.logger.error(f"Error in payment initiation: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Internal server error",
+            "status": 500
+        }), 500
+
+@urubuto_bp.route('/payments/status/<transaction_id>', methods=['GET'])
+def check_transaction_status(transaction_id):
+    """
+    Transaction status checking endpoint for payment reconciliation.
+
+    This endpoint allows checking the status of Urubuto Pay transactions
+    for reconciliation and delayed payment confirmation.
+
+    Args:
+        transaction_id (str): Urubuto Pay transaction ID
+    """
+    try:
+        # Validate Bearer token
+        is_valid, error_response = validate_bearer_token()
+        if not is_valid:
+            return jsonify(error_response), 401
+
+        if not transaction_id:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Transaction ID is required",
+                "status": 400
+            }), 400
+
+        current_app.logger.info(f"Transaction status check request for: {transaction_id}")
+
+        # Initialize Urubuto Pay service
+        from application.services.urubuto_pay import UrubutoPay
+        urubuto_service = UrubutoPay()
+
+        # Check transaction status
+        result = urubuto_service.check_transaction_status(transaction_id)
+
+        if result['success']:
+            current_app.logger.info(f"Transaction status check successful for: {transaction_id}")
+            return jsonify(result['data']), result['status_code']
+        else:
+            current_app.logger.error(f"Transaction status check failed: {result['error']}")
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": result['error'],
+                "status": result['status_code']
+            }), result['status_code']
+
+    except Exception as e:
+        current_app.logger.error(f"Error checking transaction status: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Internal server error",
+            "status": 500
+        }), 500
+
+@urubuto_bp.route('/payments/status', methods=['POST'])
+def check_payment_status_by_reference():
+    """
+    Check payment status by reference number (payer_code).
+
+    This endpoint allows checking if a payment has been processed
+    for a specific reference number/invoice.
+
+    Expected request format:
+    {
+        "payer_code": "12345"
+    }
+    """
+    try:
+        # Validate Bearer token
+        is_valid, error_response = validate_bearer_token()
+        if not is_valid:
+            return jsonify(error_response), 401
+
+        # Validate request data
+        if not request.is_json:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Content-Type must be application/json",
+                "status": 400
+            }), 400
+
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "No data provided",
+                "status": 400
+            }), 400
+
+        payer_code = data.get('payer_code')
+        if not payer_code:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "payer_code is required",
+                "status": 400
+            }), 400
+
+        current_app.logger.info(f"Payment status check by reference: {payer_code}")
+
+        # Check payment status in local database
+        session = db_manager.get_mis_session()
+        try:
+            from application.models.mis_models import Payment
+            payments = session.query(Payment).filter(
+                Payment.invoi_ref == str(payer_code)
+            ).order_by(Payment.recorded_date.desc()).all()
+
+            if not payments:
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": "No payments found for this reference",
+                    "status": 404,
+                    "data": {
+                        "payer_code": payer_code,
+                        "payment_status": "NOT_FOUND",
+                        "payments": []
+                    }
+                }), 404
+
+            # Format payment data
+            payment_data = []
+            for payment in payments:
+                payment_data.append({
+                    "payment_id": payment.id,
+                    "transaction_id": payment.external_transaction_id,
+                    "amount": payment.amount,
+                    "payment_channel": payment.payment_chanel,
+                    "payment_date": payment.recorded_date.isoformat() if payment.recorded_date else None,
+                    "status": "PROCESSED",
+                    "quickbooks_status": payment.QuickBk_Status
+                })
+
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Payments found",
+                "status": 200,
+                "data": {
+                    "payer_code": payer_code,
+                    "payment_status": "FOUND",
+                    "payment_count": len(payments),
+                    "payments": payment_data
+                }
+            }), 200
+
+        finally:
+            session.close()
+
+    except Exception as e:
+        current_app.logger.error(f"Error checking payment status by reference: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Internal server error",
+            "status": 500
+        }), 500
