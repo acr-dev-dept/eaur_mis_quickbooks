@@ -1,11 +1,104 @@
 from flask import Blueprint, request, jsonify, current_app
-from datetime import datetime
+from datetime import datetime, timedelta
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblOnlineApplication
 from application.utils.database import db_manager
 from sqlalchemy.orm import joinedload
 import traceback
+import jwt
+import os
 
 urubuto_bp = Blueprint('urubuto', __name__)
+
+@urubuto_bp.route('/authentication', methods=['POST'])
+def authentication():
+    """
+    Authentication endpoint for Urubuto Pay integration.
+
+    This endpoint provides Bearer tokens for Urubuto Pay to access protected APIs.
+    Tokens are valid for 24 hours as per Urubuto Pay specification.
+
+    Expected request format:
+    {
+        "user_name": "bkTechPymtGtwy",
+        "password": "myPss@2020"
+    }
+
+    Returns a Bearer token for API authentication.
+    """
+    try:
+        # Validate request data
+        if not request.is_json:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Content-Type must be application/json",
+                "status": 400
+            }), 400
+
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "No data provided",
+                "status": 400
+            }), 400
+
+        # Validate required parameters
+        username = data.get('user_name')
+        password = data.get('password')
+
+        if not username or not password:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Missing required parameters: user_name and password",
+                "status": 400
+            }), 400
+
+        current_app.logger.info(f"Authentication request for user: {username}")
+
+        # Get credentials from environment variables
+        expected_username = os.getenv('URUBUTO_PAY_USERNAME', 'bkTechPymtGtwy')
+        expected_password = os.getenv('URUBUTO_PAY_PASSWORD', 'myPss@2020')
+
+        # Validate credentials
+        if username != expected_username or password != expected_password:
+            current_app.logger.warning(f"Invalid authentication attempt for user: {username}")
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Invalid credentials",
+                "status": 401
+            }), 401
+
+        # Generate JWT token valid for 24 hours
+        secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
+        payload = {
+            'username': username,
+            'exp': datetime.utcnow() + timedelta(hours=24),
+            'iat': datetime.utcnow(),
+            'iss': 'EAUR-MIS-QuickBooks'
+        }
+
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
+        bearer_token = f"Bearer {token}"
+
+        current_app.logger.info(f"Authentication successful for user: {username}")
+
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Successful",
+            "status": 200,
+            "data": {
+                "token": bearer_token
+            }
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error in authentication: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Internal server error",
+            "status": 500
+        }), 500
 
 @urubuto_bp.route('/validation', methods=['POST'])
 def payer_validation():
