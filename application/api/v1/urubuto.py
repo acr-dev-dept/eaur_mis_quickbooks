@@ -106,41 +106,28 @@ def authentication():
 
         current_app.logger.info(f"Authentication request for user: {username}")
 
-        # Get credentials from environment variables
-        expected_username = os.getenv('URUBUTO_PAY_USERNAME', 'bkTechPymtGtwy')
-        expected_password = os.getenv('URUBUTO_PAY_PASSWORD', 'myPss@2020')
+        # Use AuthenticationService for credential validation and token generation
+        from application.models.central_models import AuthenticationService
 
-        # Validate credentials
-        if username != expected_username or password != expected_password:
-            current_app.logger.warning(f"Invalid authentication attempt for user: {username}")
+        success, token_or_error = AuthenticationService.authenticate_and_generate_token(username, password)
+
+        if success:
+            current_app.logger.info(f"Authentication successful for user: {username}")
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Successful",
+                "status": 200,
+                "data": {
+                    "token": token_or_error
+                }
+            }), 200
+        else:
+            current_app.logger.warning(f"Authentication failed for user {username}: {token_or_error}")
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "message": "Invalid credentials",
                 "status": 401
             }), 401
-
-        # Generate JWT token valid for 24 hours
-        secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
-        payload = {
-            'username': username,
-            'exp': datetime.utcnow() + timedelta(hours=24),
-            'iat': datetime.utcnow(),
-            'iss': 'EAUR-MIS-QuickBooks'
-        }
-
-        token = jwt.encode(payload, secret_key, algorithm='HS256')
-        bearer_token = f"Bearer {token}"
-
-        current_app.logger.info(f"Authentication successful for user: {username}")
-
-        return jsonify({
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "Successful",
-            "status": 200,
-            "data": {
-                "token": bearer_token
-            }
-        }), 200
 
     except Exception as e:
         current_app.logger.error(f"Error in authentication: {str(e)}")
