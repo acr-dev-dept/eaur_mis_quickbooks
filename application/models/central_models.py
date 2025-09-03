@@ -347,3 +347,32 @@ class AuthenticationService:
 
         except Exception as e:
             return False, f"Authentication error: {str(e)}"
+
+    @staticmethod
+    def validate_jwt_token(token):
+        """
+        Validate JWT token and extract client information.
+
+        Args:
+            token (str): JWT token string (without 'Bearer ' prefix)
+
+        Returns:
+            tuple: (is_valid: bool, payload_or_error: dict or str)
+        """
+        try:
+            secret_key = current_app.config.get('SECRET_KEY', 'fallback-secret-key')
+            payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+
+            # Verify client still exists and is active
+            client = ApiClient.query.get(payload.get('client_id'))
+            if not client or not client.is_active:
+                return False, "Client no longer active"
+
+            return True, payload
+
+        except jwt.ExpiredSignatureError:
+            return False, "Token has expired"
+        except jwt.InvalidTokenError:
+            return False, "Invalid token"
+        except Exception as e:
+            return False, f"Token validation error: {str(e)}"
