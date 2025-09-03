@@ -5,9 +5,12 @@ These models represent the central application database (not the MIS database)
 Used for storing application-specific data like audit logs, configurations, etc.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+from flask import current_app
 from application import db
 
 # Use Flask-SQLAlchemy's Model base class
@@ -132,3 +135,32 @@ class IntegrationLog(BaseModel):
     
     def __repr__(self):
         return f'<IntegrationLog {self.system_name} - {self.operation}>'
+
+class ApiClient(BaseModel):
+    """
+    API client authentication model for external payment gateways.
+
+    Manages authentication credentials and permissions for external systems
+    like Urubuto Pay and School Gear that need to access MIS APIs.
+    """
+    __tablename__ = 'api_clients'
+
+    # Client identification
+    client_name = Column(String(100), nullable=False, unique=True)
+    username = Column(String(100), nullable=False, unique=True)
+    password_hash = Column(String(255), nullable=False)
+
+    # Client categorization
+    client_type = Column(String(50), nullable=False)  # 'payment_gateway', 'api_client', etc.
+    gateway_name = Column(String(50), nullable=True)  # 'urubuto_pay', 'school_gear'
+
+    # Permissions and access control
+    permissions = Column(JSON, nullable=True)  # ['validation', 'notifications', 'payments']
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    # Activity tracking
+    last_login = Column(DateTime, nullable=True)
+    login_count = Column(Integer, default=0, nullable=False)
+
+    def __repr__(self):
+        return f'<ApiClient {self.client_name} ({self.gateway_name})>'
