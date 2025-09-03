@@ -587,18 +587,20 @@ def initiate_payment():
         except Exception as e:
             current_app.logger.error(f"Error in payment initiation: {str(e)}")
             current_app.logger.error(traceback.format_exc())
+            message = f"Payment initiation error: {str(e)} and traceback: {traceback.format_exc()}"
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Operation failed",
+                "message": message,
                 "status": 405
             }), 405
 
     except Exception as e:
         current_app.logger.error(f"Error in payment initiation: {str(e)}")
         current_app.logger.error(traceback.format_exc())
+        message = f"Payment initiation error: {str(e)} and traceback: {traceback.format_exc()}"
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "Internal server error",
+            "message": message,
             "status": 500
         }), 500
 
