@@ -314,10 +314,10 @@ def payment_notification():
     }
     """
     try:
-        # Validate Bearer token
-        is_valid, error_response = validate_bearer_token()
+        # Validate Bearer token with notifications permission
+        is_valid, error_response, token_payload = validate_bearer_token('notifications')
         if not is_valid:
-            return jsonify(error_response), 401
+            return jsonify(error_response), error_response['status']
 
         # Validate request data
         if not request.is_json:
