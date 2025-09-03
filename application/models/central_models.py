@@ -292,3 +292,26 @@ class ApiClient(BaseModel):
         db.session.commit()
 
         return client
+
+    @classmethod
+    def get_by_gateway(cls, gateway_name):
+        """
+        Get API client by gateway name.
+
+        Args:
+            gateway_name (str): Gateway identifier (e.g., 'urubuto_pay')
+
+        Returns:
+            ApiClient or None: Client instance or None if not found
+        """
+        return cls.query.filter_by(gateway_name=gateway_name, is_active=True).first()
+
+    @classmethod
+    def get_active_clients(cls):
+        """
+        Get all active API clients.
+
+        Returns:
+            list: List of active ApiClient instances
+        """
+        return cls.query.filter_by(is_active=True).all()
