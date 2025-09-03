@@ -85,7 +85,7 @@ class UrubutoPay:
     
     def initiate_payment(self, payer_code, amount, channel_name, phone_number=None, 
                         card_type=None, redirection_url=None, payer_names=None, 
-                        payer_email=None, service_code="school-fees"):
+                        payer_email=None):
         """
         Initiate a payment through Urubuto Pay gateway.
         
@@ -98,7 +98,6 @@ class UrubutoPay:
             redirection_url (str): URL to redirect after payment
             payer_names (str): Payer's full name
             payer_email (str): Payer's email address
-            service_code (str): Service code for the payment
             
         Returns:
             dict: API response with payment initiation result
@@ -111,7 +110,6 @@ class UrubutoPay:
             payment_data = {
                 "merchant_code": self.merchant_code,
                 "payer_code": str(payer_code),
-                "service_code": service_code,
                 "amount": float(amount),
                 "channel_name": channel_name,
                 "card_type_to_be_used": card_type or "NOT_APPLICABLE",
@@ -124,7 +122,7 @@ class UrubutoPay:
             logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
             
             response = self._make_request("payment/initiate", method="POST", data=payment_data)
-            
+            current_app.logger.info(f"Payment initiation response: {response.status_code} - {response.text} and the full response: {response}")
             if response.status_code == 200:
                 result = response.json()
                 logger.info(f"Payment initiation successful: {result.get('message', 'Success')}")
