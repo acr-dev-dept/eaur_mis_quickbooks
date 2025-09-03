@@ -570,9 +570,9 @@ def initiate_payment():
                 card_type=data.get('card_type'),
                 redirection_url=data.get('redirection_url'),
                 payer_names=data.get('payer_names'),
-                payer_email=data.get('payer_email'),
-                service_code=data.get('service_code')
+                payer_email=data.get('payer_email')
             )
+            current_app.logger.info(f"Payment initiation result: {result}")
 
             if result['success']:
                 current_app.logger.info(f"Payment initiation successful for payer: {payer_code}")
