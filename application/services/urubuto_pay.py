@@ -13,6 +13,9 @@ from datetime import datetime
 from flask import current_app
 import os
 import traceback
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +30,11 @@ class UrubutoPay:
     def __init__(self):
         """Initialize Urubuto Pay service with configuration."""
         self.api_base_url = os.getenv('URUBUTO_PAY_API_URL', 'https://staging.urubutopay.rw/api/v2')
-        self.api_token = os.getenv('URUBUTO_PAY_API_TOKEN')
+        self.api_token = os.getenv('URUBUTO_PAY_API_KEY')
         self.merchant_code = os.getenv('URUBUTO_PAY_MERCHANT_CODE')
         
         if not self.api_token:
-            logger.warning("URUBUTO_PAY_API_TOKEN not configured")
+            logger.warning("URUBUTO_PAY_API_KEY not configured")
         if not self.merchant_code:
             logger.warning("URUBUTO_PAY_MERCHANT_CODE not configured")
     
@@ -236,3 +239,19 @@ class UrubutoPay:
         except Exception as e:
             logger.error(f"Error validating webhook data: {str(e)}")
             return False, f"Validation error: {str(e)}"
+
+if __name__ == "__main__":
+    # Example usage
+    urubuto_service = UrubutoPay()
+    try:
+        payment_response = urubuto_service.initiate_payment(
+            payer_code="INV123456",
+            amount=20000,
+            channel_name="MOMO",
+            phone_number="0781049931",
+            payer_names="Alex Rugema",
+            payer_email="alex.rugema@example.com"
+        )
+        print(payment_response)
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
