@@ -240,3 +240,23 @@ class ApiClient(BaseModel):
             return False
 
         return permission in self.permissions
+
+    @classmethod
+    def authenticate(cls, username, password):
+        """
+        Authenticate API client with username and password.
+
+        Args:
+            username (str): Client username
+            password (str): Client password
+
+        Returns:
+            ApiClient or None: Authenticated client instance or None if invalid
+        """
+        client = cls.query.filter_by(username=username, is_active=True).first()
+
+        if client and client.check_password(password):
+            client.record_login()
+            return client
+
+        return None
