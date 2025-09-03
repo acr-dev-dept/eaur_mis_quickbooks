@@ -315,3 +315,35 @@ class ApiClient(BaseModel):
             list: List of active ApiClient instances
         """
         return cls.query.filter_by(is_active=True).all()
+
+class AuthenticationService:
+    """
+    Service class for handling API client authentication operations.
+
+    Provides centralized authentication logic for payment gateway
+    and other external API client authentication workflows.
+    """
+
+    @staticmethod
+    def authenticate_and_generate_token(username, password):
+        """
+        Authenticate client credentials and generate JWT token.
+
+        Args:
+            username (str): Client username
+            password (str): Client password
+
+        Returns:
+            tuple: (success: bool, token_or_error: str)
+        """
+        try:
+            client = ApiClient.authenticate(username, password)
+
+            if client:
+                token = client.generate_jwt_token()
+                return True, token
+            else:
+                return False, "Invalid credentials"
+
+        except Exception as e:
+            return False, f"Authentication error: {str(e)}"
