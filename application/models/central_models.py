@@ -211,3 +211,32 @@ class ApiClient(BaseModel):
         secret_key = current_app.config.get('SECRET_KEY', 'fallback-secret-key')
         token = jwt.encode(payload, secret_key, algorithm='HS256')
         return f"Bearer {token}"
+
+    def record_login(self):
+        """
+        Record successful login activity for the API client.
+
+        Updates last_login timestamp and increments login counter
+        for activity tracking and monitoring purposes.
+        """
+        self.last_login = datetime.utcnow()
+        self.login_count += 1
+        db.session.commit()
+
+    def is_authorized_for(self, permission):
+        """
+        Check if API client has specific permission.
+
+        Args:
+            permission (str): Permission to check (e.g., 'validation', 'notifications')
+
+        Returns:
+            bool: True if client has permission, False otherwise
+        """
+        if not self.is_active:
+            return False
+
+        if not self.permissions:
+            return False
+
+        return permission in self.permissions
