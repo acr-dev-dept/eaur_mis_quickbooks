@@ -563,7 +563,8 @@ class TblOnlineApplication(MISBaseModel):
     response_comment = db.Column(Text)
     status = db.Column(db.Integer)
 
-    # Relationships will be added after analyzing foreign keys
+    # Relationships for performance optimization
+    intake = relationship("TblIntake", backref="applications", lazy='select')
 
     def __repr__(self):
         return f'<TblOnlineApplication {self.id if hasattr(self, "id") else "unknown"}>'
@@ -645,6 +646,7 @@ class TblOnlineApplication(MISBaseModel):
             intake_details = self._get_enriched_intake_details()
             program_name = self._get_enriched_program_name()
             program_mode = self._get_enriched_program_mode()
+            country_name = self._get_enriched_country_name()
 
             return {
                 # Primary identifiers
@@ -665,7 +667,7 @@ class TblOnlineApplication(MISBaseModel):
                 # Personal information
                 'sex': self.sex or '',
                 'dob': self.dob.isoformat() if self.dob else '',
-                'country_of_birth': self.country_of_birth or '',
+                'country_of_birth': country_name,
                 'national_id': self.nation_Id_passPort_no or '',
                 'present_nationality': self.present_nationality or '',
 
@@ -731,7 +733,8 @@ class TblOnlineApplication(MISBaseModel):
             from application.models.mis_models import TblIntake
             intake = TblIntake.get_by_id(self.intake_id)
             if intake:
-                return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(self.intake_id)
+                return intake.to_dict()
+                 #getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(self.intake_id)
             return str(self.intake_id)
         except:
             return str(self.intake_id)
@@ -750,17 +753,78 @@ class TblOnlineApplication(MISBaseModel):
             return str(self.opt_1)
 
     def _get_enriched_program_mode(self):
-        """Get enriched program mode with fallback"""
+        """Get enriched program mode with fallback - optimized with cached data"""
         if not self.prg_mode_id:
             return ''
         try:
+            from flask import current_app
+
+            # Strategy 1: Use cached program mode data (from batch loading)
+            if hasattr(self, '_cached_program_mode') and self._cached_program_mode:
+                mode = self._cached_program_mode
+                mode_name = getattr(mode, 'prg_mode_full_name', '') or getattr(mode, 'prg_mode_short_name', '') or str(self.prg_mode_id)
+                if current_app:
+                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id} (cached): {mode_name}")
+                return mode_name
+
+            # Strategy 2: Fallback to database lookup (for non-batch scenarios)
             from application.models.mis_models import TblProgramMode
             mode = TblProgramMode.get_by_id(self.prg_mode_id)
             if mode:
-                return getattr(mode, 'prg_mode_name', '') or getattr(mode, 'mode_name', '') or str(self.prg_mode_id)
+                mode_name = getattr(mode, 'prg_mode_full_name', '') or getattr(mode, 'prg_mode_short_name', '') or str(self.prg_mode_id)
+                if current_app:
+                    current_app.logger.debug(f"Enriched program mode for applicant {self.appl_Id} (db lookup): {mode_name}")
+                return mode_name
+            else:
+                if current_app:
+                    current_app.logger.warning(f"Program mode {self.prg_mode_id} not found for applicant {self.appl_Id}")
+                return str(self.prg_mode_id)
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched program mode for applicant {self.appl_Id}: {e}")
             return str(self.prg_mode_id)
-        except:
-            return str(self.prg_mode_id)
+
+    def _get_enriched_country_name(self):
+        """Get enriched country name with fallback - optimized with cached data"""
+        try:
+            from flask import current_app
+
+            # Strategy 1: Use cached country data (from batch loading)
+            if hasattr(self, '_cached_country') and self._cached_country:
+                country = self._cached_country
+                country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.country_of_birth)
+                if current_app:
+                    current_app.logger.debug(f"Enriched country for applicant {self.appl_Id} (cached): {country_name}")
+                return country_name
+
+            # Strategy 2: Fallback to database lookup (for non-batch scenarios)
+            if self.country_of_birth and str(self.country_of_birth).isdigit():
+                from application.models.mis_models import TblCountry
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=int(self.country_of_birth)).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.country_of_birth)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for applicant {self.appl_Id} (db lookup): {country_name}")
+                        return country_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Country ID {self.country_of_birth} not found for applicant {self.appl_Id}")
+                        return f"Country ID: {self.country_of_birth}"
+
+            # Strategy 3: Return country_of_birth as-is if it's already a name
+            if self.country_of_birth and not str(self.country_of_birth).isdigit():
+                return str(self.country_of_birth)
+
+            # Final fallback
+            return str(self.country_of_birth) if self.country_of_birth else ''
+
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched country name for applicant {self.appl_Id}: {e}")
+            return str(self.country_of_birth) if self.country_of_birth else ''
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
@@ -768,7 +832,7 @@ class TblPersonalUg(MISBaseModel):
     
     per_id_ug = db.Column(db.Integer, nullable=False, primary_key=True)
     reg_no = db.Column(db.String(200), nullable=False)
-    prg_type = db.Column(db.String, nullable=False)
+    prg_type = db.Column(db.Integer, ForeignKey("tbl_program_type.prg_type_id"))
     sex = db.Column(db.String(6))
     fname = db.Column(db.String(250))
     middlename = db.Column(db.String(200))
@@ -778,18 +842,18 @@ class TblPersonalUg(MISBaseModel):
     father_name = db.Column(db.String(50))
     mother_name = db.Column(db.String(50))
     national_id = db.Column(db.String(20))
-    cntr_id = db.Column(db.String(255), nullable=False)
+    cntr_id = db.Column(db.Integer, ForeignKey("tbl_country.cntr_id"))
     VISA_Expiration_date = db.Column(DateTime)
-    b_province = db.Column(db.String(50), nullable=False)
-    b_district = db.Column(db.String(20), nullable=False)
-    b_sector = db.Column(db.String(50), nullable=False)
-    b_cell = db.Column(db.String(50), nullable=False)
-    b_village = db.Column(db.String(50), nullable=False)
-    district = db.Column(db.String(50))
-    sector = db.Column(db.String(50))
-    cell = db.Column(db.String(200))
-    village = db.Column(db.String(200))
-    province = db.Column(db.String(50))
+    b_province = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
+    b_district = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+    b_sector = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+    b_cell = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+    b_village = db.Column(db.Integer, ForeignKey("tbl_village.village_id"))
+    district = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+    sector = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+    cell = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+    village = db.Column(db.Integer, ForeignKey("tbl_village.village_id"))
+    province = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
     nationality = db.Column(db.String(50))
     phone1 = db.Column(db.String(100))
     phone2 = db.Column(db.String(20))
@@ -819,6 +883,14 @@ class TblPersonalUg(MISBaseModel):
     QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
 
     # Relationships will be added after analyzing foreign keys
+    country = relationship("TblCountry", backref="personal_ugs", lazy='joined')
+    district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
+    sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
+    cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
+    village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
+    province = relationship("Province", backref="personal_ugs", lazy='joined')
+    prgtype = relationship("TblProgramType", backref="personal_ugs", lazy='joined')
+
 
     def __repr__(self):
         return f'<TblPersonalUg {self.id if hasattr(self, "id") else "unknown"}>'
@@ -833,7 +905,7 @@ class TblPersonalUg(MISBaseModel):
         return {
             'per_id_ug': self.per_id_ug,
             'reg_no': self.reg_no,
-            'prg_type': self.prg_type,
+            'prg_type': self.prg_type.to_dict() if self.prg_type else [],
             'sex': self.sex,
             'fname': self.fname,
             'middlename': self.middlename,
@@ -845,16 +917,17 @@ class TblPersonalUg(MISBaseModel):
             'national_id': self.national_id,
             'cntr_id': self.cntr_id,
             'VISA_Expiration_date': self.VISA_Expiration_date.isoformat() if self.VISA_Expiration_date else None,
-            'b_province': self.b_province,
-            'b_district': self.b_district,
-            'b_sector': self.b_sector,
-            'b_cell': self.b_cell,
-            'b_village': self.b_village,
-            'district': self.district,
-            'sector': self.sector,
-            'cell': self.cell,
-            'village': self.village,
-            'province': self.province,
+            'b_province': self.b_province.to_dict() if self.b_province else [],
+
+            'b_district': self.b_district.to_dict() if self.b_district else [],
+            'b_sector': self.b_sector.to_dict() if self.b_sector else [],
+            'b_cell': self.b_cell.to_dict() if self.b_cell else [],
+            'b_village': self.b_village.to_dict() if self.b_village else [],
+            'district': self.district.to_dict() if self.district else [],
+            'sector': self.sector.to_dict() if self.sector else [],
+            'cell': self.cell.to_dict() if self.cell else [],
+            'village': self.village.to_dict() if self.village else [],
+            'province': self.province.to_dict() if self.province else [],
             'nationality': self.nationality,
             'phone1': self.phone1,
             'phone2': self.phone2,
@@ -895,6 +968,7 @@ class TblPersonalUg(MISBaseModel):
             campus_name = self._get_enriched_campus_name()
             program_name = self._get_enriched_program_name()
             intake_details = self._get_enriched_intake_details()
+            country_name = self._get_enriched_country_name()
 
             return {
                 # Primary identifiers
@@ -916,7 +990,7 @@ class TblPersonalUg(MISBaseModel):
                 'sex': self.sex or '',
                 'dob': self.dob.isoformat() if self.dob else '',
                 'national_id': self.national_id or '',
-                'nationality': self.nationality or '',
+                'nationality': country_name,
                 'marital_status': self.marital_status or '',
 
                 # Academic information (enriched with fallbacks)
@@ -924,7 +998,7 @@ class TblPersonalUg(MISBaseModel):
                 'campus_name': campus_name,
                 'program_name': program_name,
                 'intake_details': intake_details,
-                'program_type': self.prg_type or '',
+                'program_type': self.prgtype.prg_type_full_name if self.prgtype else '',
 
                 # Family information
                 'father_name': self.father_name or '',
@@ -955,8 +1029,10 @@ class TblPersonalUg(MISBaseModel):
         except Exception as e:
             # Fallback to basic data if enrichment fails
             from flask import current_app
+            import traceback
             if current_app:
-                current_app.logger.warning(f"Error in to_dict_for_quickbooks for student {self.reg_no}: {e}")
+                current_app.logger.error(f"Error in to_dict_for_quickbooks for student {self.reg_no}: {e}")
+                current_app.logger.error(f"Traceback: {traceback.format_exc()}")
 
             return {
                 'per_id_ug': self.per_id_ug,
@@ -968,65 +1044,301 @@ class TblPersonalUg(MISBaseModel):
                 'phone': self.phone1 or '',
                 'email': self.email1 or '',
                 'sex': self.sex or '',
-                'quickbooks_status': self.QuickBk_Status or 0
+                'national_id': self.national_id or '',
+                'nationality': self.nationality or '',
+                'level_name': '',
+                'campus_name': '',
+                'program_name': '',
+                'intake_details': '',
+                'program_type': '',
+                'quickbooks_status': self.QuickBk_Status or 0,
+                'error_occurred': True,
+                'error_message': str(e)
             }
 
     def _get_enriched_level_name(self):
-        """Get enriched level name with fallback"""
-        # Students don't have direct level_id, need to get from registration program
+        """Get enriched level name with fallback - optimized with cached data"""
         try:
+            from flask import current_app
+
+            # Strategy 1: Use cached level data (from batch loading)
+            if hasattr(self, '_cached_level') and self._cached_level:
+                level = self._cached_level
+                level_name = getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or 'Unknown Level'
+                if current_app:
+                    current_app.logger.debug(f"Enriched level for student {self.reg_no} (cached): {level_name}")
+                return level_name
+
+            # Strategy 2: Use cached registration program data
+            if hasattr(self, '_cached_reg_program') and self._cached_reg_program:
+                reg_program = self._cached_reg_program
+                if reg_program.level_id:
+                    if current_app:
+                        current_app.logger.debug(f"Level ID for student {self.reg_no} (cached reg program): {reg_program.level_id}")
+                    return str(reg_program.level_id)
+
+            # Strategy 3: Fallback to database lookup (for non-batch scenarios)
             from application.models.mis_models import TblRegisterProgramUg, TblLevel
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.level_id:
-                level = TblLevel.get_by_id(reg_program.level_id)
-                if level:
-                    return getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or str(reg_program.level_id)
-                return str(reg_program.level_id)
-            return ''
-        except:
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.level_id:
+                    level = session.query(TblLevel).filter_by(level_id=reg_program.level_id).first()
+                    if level:
+                        level_name = getattr(level, 'level_full_name', '') or getattr(level, 'level_short_name', '') or str(reg_program.level_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched level for student {self.reg_no} (db lookup): {level_name}")
+                        return level_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Level {reg_program.level_id} not found for student {self.reg_no}")
+                        return str(reg_program.level_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched level name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_campus_name(self):
-        """Get enriched campus name with fallback"""
+        """Get enriched campus name with fallback - optimized with cached data"""
         try:
+            from flask import current_app
+
+            # Strategy 1: Use cached campus data (from batch loading)
+            if hasattr(self, '_cached_campus') and self._cached_campus:
+                campus = self._cached_campus
+                campus_name = getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or 'Unknown Campus'
+                if current_app:
+                    current_app.logger.debug(f"Enriched campus for student {self.reg_no} (cached): {campus_name}")
+                return campus_name
+
+            # Strategy 2: Use cached registration program data
+            if hasattr(self, '_cached_reg_program') and self._cached_reg_program:
+                reg_program = self._cached_reg_program
+                if hasattr(reg_program, 'camp_id') and reg_program.camp_id:
+                    if current_app:
+                        current_app.logger.debug(f"Campus ID for student {self.reg_no} (cached reg program): {reg_program.camp_id}")
+                    return str(reg_program.camp_id)
+
+            # Strategy 3: Fallback to database lookup (for non-batch scenarios)
             from application.models.mis_models import TblRegisterProgramUg, TblCampus
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and hasattr(reg_program, 'camp_id') and reg_program.camp_id:
-                campus = TblCampus.get_by_id(reg_program.camp_id)
-                if campus:
-                    return getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(reg_program.camp_id)
-                return str(reg_program.camp_id)
-            return ''
-        except:
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and hasattr(reg_program, 'camp_id') and reg_program.camp_id:
+                    campus = session.query(TblCampus).filter_by(camp_id=reg_program.camp_id).first()
+                    if campus:
+                        campus_name = getattr(campus, 'camp_full_name', '') or getattr(campus, 'camp_short_name', '') or str(reg_program.camp_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched campus for student {self.reg_no} (db lookup): {campus_name}")
+                        return campus_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Campus {reg_program.camp_id} not found for student {self.reg_no}")
+                        return str(reg_program.camp_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or campus ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched campus name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_program_name(self):
-        """Get enriched program name with fallback"""
+        """Get enriched program name with fallback - optimized with cached data"""
         try:
+            from flask import current_app
+
+            # Strategy 1: Use cached specialization data (from batch loading)
+            if hasattr(self, '_cached_specialization') and self._cached_specialization:
+                program = self._cached_specialization
+                program_name = getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or 'Unknown Program'
+                if current_app:
+                    current_app.logger.debug(f"Enriched program for student {self.reg_no} (cached): {program_name}")
+                return program_name
+
+            # Strategy 2: Use cached registration program data
+            if hasattr(self, '_cached_reg_program') and self._cached_reg_program:
+                reg_program = self._cached_reg_program
+                if reg_program.splz_id:
+                    if current_app:
+                        current_app.logger.debug(f"Program ID for student {self.reg_no} (cached reg program): {reg_program.splz_id}")
+                    return str(reg_program.splz_id)
+
+            # Strategy 3: Fallback to database lookup (for non-batch scenarios)
             from application.models.mis_models import TblRegisterProgramUg, TblSpecialization
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.splz_id:
-                program = TblSpecialization.get_by_id(reg_program.splz_id)
-                if program:
-                    return getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(reg_program.splz_id)
-                return str(reg_program.splz_id)
-            return ''
-        except:
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.splz_id:
+                    program = session.query(TblSpecialization).filter_by(splz_id=reg_program.splz_id).first()
+                    if program:
+                        program_name = getattr(program, 'splz_full_name', '') or getattr(program, 'splz_short_name', '') or str(reg_program.splz_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched program for student {self.reg_no} (db lookup): {program_name}")
+                        return program_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Program {reg_program.splz_id} not found for student {self.reg_no}")
+                        return str(reg_program.splz_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or specialization ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched program name for student {self.reg_no}: {e}")
             return ''
 
     def _get_enriched_intake_details(self):
-        """Get enriched intake details with fallback"""
+        """Get enriched intake details with fallback - optimized with cached data"""
         try:
+            from flask import current_app
+
+            # Strategy 1: Use cached intake data (from batch loading)
+            if hasattr(self, '_cached_intake') and self._cached_intake:
+                intake = self._cached_intake
+                intake_details = f"{intake.intake_month} {intake.intake_no}" if intake.intake_month else 'Unknown Intake'
+                if current_app:
+                    current_app.logger.debug(f"Enriched intake for student {self.reg_no} (cached): {intake_details}")
+                return intake_details
+
+            # Strategy 2: Use cached registration program data
+            if hasattr(self, '_cached_reg_program') and self._cached_reg_program:
+                reg_program = self._cached_reg_program
+                if reg_program.intake_id:
+                    if current_app:
+                        current_app.logger.debug(f"Intake ID for student {self.reg_no} (cached reg program): {reg_program.intake_id}")
+                    return str(reg_program.intake_id)
+
+            # Strategy 3: Fallback to database lookup (for non-batch scenarios)
             from application.models.mis_models import TblRegisterProgramUg, TblIntake
-            reg_program = TblRegisterProgramUg.query.filter_by(reg_no=self.reg_no).first()
-            if reg_program and reg_program.intake_id:
-                intake = TblIntake.get_by_id(reg_program.intake_id)
-                if intake:
-                    return getattr(intake, 'intake_name', '') or getattr(intake, 'intake_details', '') or str(reg_program.intake_id)
-                return str(reg_program.intake_id)
+            with self.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter_by(reg_no=self.reg_no).first()
+                if reg_program and reg_program.intake_id:
+                    intake = session.query(TblIntake).filter_by(intake_id=reg_program.intake_id).first()
+                    if intake:
+                        intake_details = f"{intake.intake_month} {intake.intake_no}" if intake.intake_month else str(reg_program.intake_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched intake for student {self.reg_no} (db lookup): {intake_details}")
+                        return intake_details
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Intake {reg_program.intake_id} not found for student {self.reg_no}")
+                        return str(reg_program.intake_id)
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"No registration program or intake ID found for student {self.reg_no}")
+                    return ''
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched intake details for student {self.reg_no}: {e}")
             return ''
-        except:
-            return ''
+
+    def _get_enriched_country_name(self):
+        """Get enriched country name with fallback - optimized with cached data"""
+        try:
+            from flask import current_app
+
+            # Strategy 1: Use cached country data (from batch loading)
+            if hasattr(self, '_cached_country') and self._cached_country:
+                country = self._cached_country
+                country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or 'Unknown Country'
+                if current_app:
+                    current_app.logger.debug(f"Enriched country for student {self.reg_no} (cached): {country_name}")
+                return country_name
+
+            # Strategy 2: Use existing country relationship if available
+            if hasattr(self, 'country') and self.country:
+                country_name = getattr(self.country, 'cntr_name', '') or getattr(self.country, 'cntr_nationality', '')
+                if country_name:
+                    if current_app:
+                        current_app.logger.debug(f"Enriched country for student {self.reg_no} via relationship: {country_name}")
+                    return country_name
+
+            # Strategy 3: Fallback to database lookup (for non-batch scenarios)
+            from application.models.mis_models import TblCountry
+
+            # Try cntr_id field first
+            if self.cntr_id:
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=self.cntr_id).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or str(self.cntr_id)
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for student {self.reg_no} via cntr_id (db lookup): {country_name}")
+                        return country_name
+
+            # Try nationality field as country ID
+            if self.nationality and self.nationality.isdigit():
+                with self.get_session() as session:
+                    country = session.query(TblCountry).filter_by(cntr_id=int(self.nationality)).first()
+                    if country:
+                        country_name = getattr(country, 'cntr_name', '') or getattr(country, 'cntr_nationality', '') or self.nationality
+                        if current_app:
+                            current_app.logger.debug(f"Enriched country for student {self.reg_no} via nationality field (db lookup): {country_name}")
+                        return country_name
+                    else:
+                        if current_app:
+                            current_app.logger.warning(f"Country ID {self.nationality} not found for student {self.reg_no}")
+                        return f"Country ID: {self.nationality}"
+
+            # Return nationality as-is if it's already a name
+            if self.nationality and not self.nationality.isdigit():
+                return self.nationality
+
+            # Final fallback
+            return self.nationality or ''
+
+        except Exception as e:
+            from flask import current_app
+            if current_app:
+                current_app.logger.error(f"Error getting enriched country name for student {self.reg_no}: {e}")
+            return self.nationality or ''
+
+    def debug_enrichment(self):
+        """
+        Debug method to test enrichment methods individually
+
+        Returns:
+            dict: Results of all enrichment methods for debugging
+        """
+        from flask import current_app
+
+        debug_results = {
+            'reg_no': self.reg_no,
+            'enrichment_results': {},
+            'errors': []
+        }
+
+        # Test each enrichment method
+        enrichment_methods = [
+            ('level_name', self._get_enriched_level_name),
+            ('campus_name', self._get_enriched_campus_name),
+            ('program_name', self._get_enriched_program_name),
+            ('intake_details', self._get_enriched_intake_details),
+            ('country_name', self._get_enriched_country_name)
+        ]
+
+        for method_name, method in enrichment_methods:
+            try:
+                result = method()
+                debug_results['enrichment_results'][method_name] = result
+                if current_app:
+                    current_app.logger.info(f"Enrichment {method_name} for {self.reg_no}: '{result}'")
+            except Exception as e:
+                error_msg = f"Error in {method_name}: {e}"
+                debug_results['errors'].append(error_msg)
+                debug_results['enrichment_results'][method_name] = f"ERROR: {e}"
+                if current_app:
+                    current_app.logger.error(f"Enrichment {method_name} failed for {self.reg_no}: {e}")
+
+        return debug_results
 
     @classmethod
     def get_student_details(cls, reg_no):
@@ -1405,3 +1717,188 @@ class TblCurriculum(MISBaseModel):
             'graduation_status': self.graduation_status
         }
 
+class Province(MISBaseModel):
+    __tablename__ = 'tbl_province'
+
+    province_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    province_name = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        return f"<Province {self.province_name}>"
+
+    def to_dict(self):
+        return {
+            'province_id': self.province_id,
+            'province_name': self.province_name
+        }
+
+class TblDistrict(MISBaseModel):
+    """Model for tbl_district table"""
+    __tablename__ = 'tbl_district'
+    
+    district_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    district_name = db.Column(db.String(50), nullable=False)
+    province_id = db.Column(db.Integer, ForeignKey("tbl_province.province_id"))
+
+    # Relationship with Province
+    province = relationship(
+        "Province",
+        backref="districts",
+        lazy='joined',
+        foreign_keys=[province_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblDistrict model"""
+        return f'<TblDistrict {self.district_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'district_id': self.district_id,
+            'district_name': self.district_name,
+            'province_id': self.province_id,    
+            'province_details': self.province.to_dict() if self.province else []
+        }
+
+class TblSector(MISBaseModel):
+    """Model for tbl_sector table"""
+    __tablename__ = 'tbl_sector'
+    
+    sector_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    sector_name = db.Column(db.String(50), nullable=False)
+    district_id = db.Column(db.Integer, ForeignKey("tbl_district.district_id"))
+
+    # Relationship with TblDistrict
+    district = relationship(
+        "TblDistrict",
+        backref="sectors",
+        lazy='joined',
+        foreign_keys=[district_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblSector model"""
+        return f'<TblSector {self.sector_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'sector_id': self.sector_id,
+            'sector_name': self.sector_name,
+            'district_id': self.district_id,    
+            'district_details': self.district.to_dict() if self.district else []
+        }
+
+class TblCell(MISBaseModel):
+    """Model for tbl_cell table"""
+    __tablename__ = 'tbl_cell'
+    
+    cell_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    cell_name = db.Column(db.String(50), nullable=False)
+    sector_id = db.Column(db.Integer, ForeignKey("tbl_sector.sector_id"))
+
+    # Relationship with TblSector
+    sector = relationship(
+        "TblSector",
+        backref="cells",
+        lazy='joined',
+        foreign_keys=[sector_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblCell model"""
+        return f'<TblCell {self.cell_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'cell_id': self.cell_id,
+            'cell_name': self.cell_name,
+            'sector_id': self.sector_id,    
+            'sector_details': self.sector.to_dict() if self.sector else []
+        }
+
+class TblVillage(MISBaseModel):
+    """Model for tbl_village table"""
+    __tablename__ = 'tbl_village'
+    
+    village_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    village_name = db.Column(db.String(50), nullable=False)
+    cell_id = db.Column(db.Integer, ForeignKey("tbl_cell.cell_id"))
+
+    # Relationship with TblCell 
+    cell = relationship(
+        "TblCell",
+        backref="villages",
+        lazy='joined',
+        foreign_keys=[cell_id]  # <-- explicitly specify FK
+    )
+
+    def __repr__(self):
+        """db.String representation of the TblVillage model"""
+        return f'<TblVillage {self.village_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'village_id': self.village_id,
+            'village_name': self.village_name,
+            'cell_id': self.cell_id,    
+            'cell_details': self.cell.to_dict() if self.cell else []
+        }
+
+class TblCountry(MISBaseModel):
+    """Model for tbl_country table"""
+    __tablename__ = 'tbl_country'
+
+    cntr_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    cntr_code = db.Column(db.String(50), nullable=True)
+    cntr_name = db.Column(db.String(50), nullable=True)
+    cntr_nationality = db.Column(db.String(50), nullable=True)
+    com_cntr_code = db.Column(db.String(50), nullable=True)
+
+class TblProgramType(MISBaseModel):
+    """Model for tbl_program_type table"""
+    __tablename__ = 'tbl_program_type'
+    
+    prg_type_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    prg_type_full_name = db.Column(db.String(20), nullable=False)
+    prg_type_short_name = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        """db.String representation of the TblProgramType model"""
+        return f'<TblProgramType {self.prg_type_id}>'
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'prg_type_id': self.prg_type_id,
+            'prg_type_full_name': self.prg_type_full_name,
+            'prg_type_short_name': self.prg_type_short_name
+        }

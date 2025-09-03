@@ -104,25 +104,58 @@ def preview_unsynchronized_applicants():
         sync_service = CustomerSyncService()
         applicants = sync_service.get_unsynchronized_applicants(limit=limit, offset=offset)
         
-        # Convert to dictionary format for JSON response
+        # Convert to dictionary format for JSON response with enhanced error tracking
         applicant_data = []
+        conversion_errors = []
+
         for applicant in applicants:
             try:
                 applicant_dict = applicant.to_dict_for_quickbooks()
                 applicant_data.append(applicant_dict)
+
+                # Log if enrichment failed
+                if applicant_dict.get('error_occurred'):
+                    conversion_errors.append({
+                        'appl_Id': applicant.appl_Id,
+                        'tracking_id': applicant.tracking_id,
+                        'error': applicant_dict.get('error_message', 'Unknown error')
+                    })
+                    current_app.logger.warning(f"Enrichment failed for applicant {applicant.appl_Id}: {applicant_dict.get('error_message')}")
+
             except Exception as e:
-                current_app.logger.warning(f"Error converting applicant {applicant.appl_Id} to dict: {e}")
+                current_app.logger.error(f"Error converting applicant {applicant.appl_Id} to dict: {e}")
+                conversion_errors.append({
+                    'appl_Id': applicant.appl_Id,
+                    'tracking_id': getattr(applicant, 'tracking_id', 'Unknown'),
+                    'error': str(e)
+                })
                 continue
         
+        # Prepare enhanced response data with performance metrics
+        response_data = {
+            'applicants': applicant_data,
+            'count': len(applicant_data),
+            'limit': limit,
+            'offset': offset,
+            'performance': {
+                'optimized_batch_loading': True,
+                'query_pattern': 'batch_loaded'
+            }
+        }
+
+        # Add error information if any
+        if conversion_errors:
+            response_data['conversion_errors'] = conversion_errors
+            response_data['errors_count'] = len(conversion_errors)
+
+        message = f'Retrieved {len(applicant_data)} unsynchronized applicants'
+        if conversion_errors:
+            message += f' ({len(conversion_errors)} had enrichment errors)'
+
         return create_response(
             success=True,
-            data={
-                'applicants': applicant_data,
-                'count': len(applicant_data),
-                'limit': limit,
-                'offset': offset
-            },
-            message=f'Retrieved {len(applicant_data)} unsynchronized applicants'
+            data=response_data,
+            message=message
         )
         
     except Exception as e:
@@ -167,23 +200,50 @@ def preview_unsynchronized_students():
         
         # Convert to dictionary format for JSON response
         student_data = []
+        conversion_errors = []
+
         for student in students:
             try:
                 student_dict = student.to_dict_for_quickbooks()
                 student_data.append(student_dict)
+
+                # Log if enrichment failed
+                if student_dict.get('error_occurred'):
+                    conversion_errors.append({
+                        'reg_no': student.reg_no,
+                        'error': student_dict.get('error_message', 'Unknown error')
+                    })
+                    current_app.logger.warning(f"Enrichment failed for student {student.reg_no}: {student_dict.get('error_message')}")
+
             except Exception as e:
-                current_app.logger.warning(f"Error converting student {student.reg_no} to dict: {e}")
+                current_app.logger.error(f"Error converting student {student.reg_no} to dict: {e}")
+                conversion_errors.append({
+                    'reg_no': student.reg_no,
+                    'error': str(e)
+                })
                 continue
         
+        # Prepare response data
+        response_data = {
+            'students': student_data,
+            'count': len(student_data),
+            'limit': limit,
+            'offset': offset
+        }
+
+        # Add error information if any
+        if conversion_errors:
+            response_data['conversion_errors'] = conversion_errors
+            response_data['errors_count'] = len(conversion_errors)
+
+        message = f'Retrieved {len(student_data)} unsynchronized students'
+        if conversion_errors:
+            message += f' ({len(conversion_errors)} had enrichment errors)'
+
         return create_response(
             success=True,
-            data={
-                'students': student_data,
-                'count': len(student_data),
-                'limit': limit,
-                'offset': offset
-            },
-            message=f'Retrieved {len(student_data)} unsynchronized students'
+            data=response_data,
+            message=message
         )
         
     except Exception as e:
@@ -552,6 +612,216 @@ def get_customer_sync_status():
         return create_response(
             success=False,
             error='Error getting customer synchronization status',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/debug/student/<reg_no>', methods=['GET'])
+def debug_student_enrichment(reg_no):
+    """
+    Debug endpoint to test student enrichment methods
+
+    Args:
+        reg_no: Student registration number to debug
+    """
+    try:
+        from application.models.mis_models import TblPersonalUg
+        from application.utils.database import db_manager
+
+        # Get student
+        with db_manager.get_mis_session() as session:
+            student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+
+            if not student:
+                return create_response(
+                    success=False,
+                    error=f'Student with reg_no {reg_no} not found',
+                    status_code=404
+                )
+
+            # Run debug enrichment
+            debug_results = student.debug_enrichment()
+
+            # Also get the full to_dict_for_quickbooks result
+            try:
+                full_result = student.to_dict_for_quickbooks()
+                debug_results['full_quickbooks_dict'] = full_result
+            except Exception as e:
+                debug_results['full_quickbooks_dict_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_results,
+                message=f'Debug results for student {reg_no}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/debug/country/<reg_no>', methods=['GET'])
+def debug_country_enrichment(reg_no):
+    """
+    Debug endpoint specifically for country enrichment
+
+    Args:
+        reg_no: Student registration number to debug
+    """
+    try:
+        from application.models.mis_models import TblPersonalUg, TblCountry
+        from application.utils.database import db_manager
+
+        # Get student
+        with db_manager.get_mis_session() as session:
+            student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+
+            if not student:
+                return create_response(
+                    success=False,
+                    error=f'Student with reg_no {reg_no} not found',
+                    status_code=404
+                )
+
+            # Debug country data
+            debug_info = {
+                'reg_no': reg_no,
+                'raw_data': {
+                    'cntr_id': student.cntr_id,
+                    'nationality': student.nationality,
+                    'has_country_relationship': hasattr(student, 'country'),
+                    'country_relationship_value': str(student.country) if hasattr(student, 'country') and student.country else None
+                },
+                'country_lookup_results': {}
+            }
+
+            # Test country lookup by cntr_id
+            if student.cntr_id:
+                country_by_id = session.query(TblCountry).filter_by(cntr_id=student.cntr_id).first()
+                if country_by_id:
+                    debug_info['country_lookup_results']['by_cntr_id'] = {
+                        'found': True,
+                        'cntr_name': country_by_id.cntr_name,
+                        'cntr_nationality': country_by_id.cntr_nationality,
+                        'cntr_code': country_by_id.cntr_code
+                    }
+                else:
+                    debug_info['country_lookup_results']['by_cntr_id'] = {'found': False}
+
+            # Test country lookup by nationality field
+            if student.nationality and student.nationality.isdigit():
+                country_by_nationality = session.query(TblCountry).filter_by(cntr_id=int(student.nationality)).first()
+                if country_by_nationality:
+                    debug_info['country_lookup_results']['by_nationality_field'] = {
+                        'found': True,
+                        'cntr_name': country_by_nationality.cntr_name,
+                        'cntr_nationality': country_by_nationality.cntr_nationality,
+                        'cntr_code': country_by_nationality.cntr_code
+                    }
+                else:
+                    debug_info['country_lookup_results']['by_nationality_field'] = {'found': False}
+
+            # Test enrichment method
+            try:
+                enriched_country = student._get_enriched_country_name()
+                debug_info['enrichment_result'] = enriched_country
+            except Exception as e:
+                debug_info['enrichment_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_info,
+                message=f'Country debug results for student {reg_no}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging country for student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging country for student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
+
+@customer_sync_bp.route('/debug/applicant/<int:appl_id>', methods=['GET'])
+def debug_applicant_enrichment(appl_id):
+    """
+    Debug endpoint to test applicant enrichment methods
+
+    Args:
+        appl_id: Applicant ID to debug
+    """
+    try:
+        from application.models.mis_models import TblOnlineApplication, TblCountry
+        from application.utils.database import db_manager
+
+        # Get applicant
+        with db_manager.get_mis_session() as session:
+            applicant = session.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
+
+            if not applicant:
+                return create_response(
+                    success=False,
+                    error=f'Applicant with ID {appl_id} not found',
+                    status_code=404
+                )
+
+            # Debug country data
+            debug_info = {
+                'appl_Id': appl_id,
+                'tracking_id': applicant.tracking_id,
+                'raw_data': {
+                    'country_of_birth': applicant.country_of_birth,
+                    'present_nationality': applicant.present_nationality,
+                    'program_mode_id': applicant.prg_mode_id
+                },
+                'enrichment_results': {},
+                'errors': []
+            }
+
+            # Test country enrichment
+            try:
+                country_result = applicant._get_enriched_country_name()
+                debug_info['enrichment_results']['country_name'] = country_result
+            except Exception as e:
+                debug_info['errors'].append(f"Country enrichment error: {e}")
+
+            # Test program mode enrichment
+            try:
+                mode_result = applicant._get_enriched_program_mode()
+                debug_info['enrichment_results']['program_mode'] = mode_result
+            except Exception as e:
+                debug_info['errors'].append(f"Program mode enrichment error: {e}")
+
+            # Test full QuickBooks dict
+            try:
+                full_result = applicant.to_dict_for_quickbooks()
+                debug_info['full_quickbooks_dict'] = {
+                    'country_of_birth': full_result.get('country_of_birth'),
+                    'program_mode': full_result.get('program_mode'),
+                    'display_name': full_result.get('display_name')
+                }
+            except Exception as e:
+                debug_info['full_quickbooks_dict_error'] = str(e)
+
+            return create_response(
+                success=True,
+                data=debug_info,
+                message=f'Debug results for applicant {appl_id}'
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error debugging applicant {appl_id}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error debugging applicant {appl_id}',
             details=str(e),
             status_code=500
         )
