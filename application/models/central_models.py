@@ -260,3 +260,35 @@ class ApiClient(BaseModel):
             return client
 
         return None
+
+    @classmethod
+    def create_client(cls, client_name, username, password, client_type,
+                     gateway_name=None, permissions=None):
+        """
+        Create new API client with specified credentials and permissions.
+
+        Args:
+            client_name (str): Display name for the client
+            username (str): Unique username for authentication
+            password (str): Plain text password (will be hashed)
+            client_type (str): Type of client (e.g., 'payment_gateway')
+            gateway_name (str): Gateway identifier (e.g., 'urubuto_pay')
+            permissions (list): List of permissions for the client
+
+        Returns:
+            ApiClient: Created client instance
+        """
+        client = cls(
+            client_name=client_name,
+            username=username,
+            client_type=client_type,
+            gateway_name=gateway_name,
+            permissions=permissions or [],
+            is_active=True
+        )
+
+        client.set_password(password)
+        db.session.add(client)
+        db.session.commit()
+
+        return client
