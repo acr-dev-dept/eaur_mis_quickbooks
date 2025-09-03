@@ -376,3 +376,18 @@ class AuthenticationService:
             return False, "Invalid token"
         except Exception as e:
             return False, f"Token validation error: {str(e)}"
+
+    @staticmethod
+    def check_permission(token_payload, required_permission):
+        """
+        Check if token payload contains required permission.
+
+        Args:
+            token_payload (dict): Decoded JWT token payload
+            required_permission (str): Permission to check for
+
+        Returns:
+            bool: True if permission granted, False otherwise
+        """
+        permissions = token_payload.get('permissions', [])
+        return required_permission in permissions
