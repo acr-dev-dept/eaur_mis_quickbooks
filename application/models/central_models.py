@@ -164,3 +164,24 @@ class ApiClient(BaseModel):
 
     def __repr__(self):
         return f'<ApiClient {self.client_name} ({self.gateway_name})>'
+
+    def set_password(self, password):
+        """
+        Set password hash for the API client.
+
+        Args:
+            password (str): Plain text password to hash and store
+        """
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """
+        Verify password against stored hash.
+
+        Args:
+            password (str): Plain text password to verify
+
+        Returns:
+            bool: True if password matches, False otherwise
+        """
+        return check_password_hash(self.password_hash, password)
