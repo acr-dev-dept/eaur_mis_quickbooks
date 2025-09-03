@@ -185,3 +185,29 @@ class ApiClient(BaseModel):
             bool: True if password matches, False otherwise
         """
         return check_password_hash(self.password_hash, password)
+
+    def generate_jwt_token(self):
+        """
+        Generate JWT token for authenticated API client.
+
+        Creates a JWT token valid for 24 hours containing client information
+        and permissions for API access.
+
+        Returns:
+            str: Bearer token string ready for Authorization header
+        """
+        payload = {
+            'client_id': self.id,
+            'client_name': self.client_name,
+            'username': self.username,
+            'client_type': self.client_type,
+            'gateway_name': self.gateway_name,
+            'permissions': self.permissions or [],
+            'exp': datetime.utcnow() + timedelta(hours=24),
+            'iat': datetime.utcnow(),
+            'iss': 'EAUR-MIS-API'
+        }
+
+        secret_key = current_app.config.get('SECRET_KEY', 'fallback-secret-key')
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
+        return f"Bearer {token}"
