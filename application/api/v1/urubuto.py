@@ -468,7 +468,7 @@ def payment_notification():
         }), 500
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
-#@log_api_access('payment_initiation')
+@log_api_access('payment_initiation')
 def initiate_payment():
     """
     Payment initiation endpoint for triggering Urubuto Pay transactions.
