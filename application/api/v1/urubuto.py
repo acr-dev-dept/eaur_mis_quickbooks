@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblOnlineApplication
 from application.utils.database import db_manager
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
 import traceback
 import jwt
@@ -148,6 +149,9 @@ def authentication():
         }), 500
 
 @urubuto_bp.route('/validation', methods=['POST'])
+@require_auth('validation')
+@require_gateway('urubuto_pay')
+@log_api_access('payer_validation')
 def payer_validation():
     """
     Payer validation endpoint for Urubuto Pay integration.
