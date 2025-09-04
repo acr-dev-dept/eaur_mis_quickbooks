@@ -10,65 +10,7 @@ import os
 
 urubuto_bp = Blueprint('urubuto', __name__)
 
-def validate_bearer_token(required_permission=None):
-    """
-    Helper function to validate Bearer token from Authorization header.
 
-    Args:
-        required_permission (str): Optional permission to check for
-
-    Returns:
-        tuple: (is_valid: bool, error_response: dict or None, payload: dict or None)
-    """
-    try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return False, {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Missing Authorization header",
-                "status": 401
-            }, None
-
-        if not auth_header.startswith('Bearer '):
-            return False, {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Invalid Authorization header format. Expected: Bearer <token>",
-                "status": 401
-            }, None
-
-        token = auth_header.split(' ')[1]
-
-        # Use AuthenticationService for token validation
-        from application.models.central_models import AuthenticationService
-
-        is_valid, payload_or_error = AuthenticationService.validate_jwt_token(token)
-
-        if not is_valid:
-            return False, {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": payload_or_error,
-                "status": 401
-            }, None
-
-        # Check permission if required
-        if required_permission:
-            if not AuthenticationService.check_permission(payload_or_error, required_permission):
-                return False, {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "message": f"Insufficient permissions. Required: {required_permission}",
-                    "status": 403
-                }, None
-
-        current_app.logger.info(f"Valid token for client: {payload_or_error.get('client_name')}")
-        return True, None, payload_or_error
-
-    except Exception as e:
-        current_app.logger.error(f"Token validation error: {str(e)}")
-        return False, {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "Token validation failed",
-            "status": 401
-        }, None
 
 @urubuto_bp.route('/authentication', methods=['POST'])
 def authentication():
