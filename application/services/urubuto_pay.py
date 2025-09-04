@@ -120,8 +120,8 @@ class UrubutoPay:
                 "payer_email": payer_email or "",
                 "service_code": self.service_code
             }
-            
-            logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
+            current_app.logger.info(f"Payment data: {payment_data}")
+            current_app.logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
             
             response = self._make_request("payment/initiate", method="POST", data=payment_data)
             current_app.logger.info(f"Payment initiation response: {response.status_code} - {response.text} and the full response: {response.json()}")
