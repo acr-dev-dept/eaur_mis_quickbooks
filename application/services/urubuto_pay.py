@@ -32,6 +32,7 @@ class UrubutoPay:
         self.api_base_url = os.getenv('URUBUTO_PAY_API_URL', 'https://staging.urubutopay.rw/api/v2')
         self.api_token = os.getenv('URUBUTO_PAY_API_KEY')
         self.merchant_code = os.getenv('URUBUTO_PAY_MERCHANT_CODE')
+        self.service_code = os.getenv('URUBUTO_PAY_SERVICE_CODE')
         
         if not self.api_token:
             logger.warning("URUBUTO_PAY_API_KEY not configured")
@@ -117,7 +118,7 @@ class UrubutoPay:
                 "redirection_url": redirection_url or "",
                 "payer_names": payer_names or "",
                 "payer_email": payer_email or "",
-                "service_code": "payment-1936"
+                "service_code": self.service_code
             }
             
             logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
