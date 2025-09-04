@@ -117,7 +117,7 @@ class UrubutoPay:
                 "redirection_url": redirection_url or "",
                 "payer_names": payer_names or "",
                 "payer_email": payer_email or "",
-                "service_code": "purchase"
+                "service_code": "payment-1936"
             }
             
             logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
