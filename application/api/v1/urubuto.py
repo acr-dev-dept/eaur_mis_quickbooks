@@ -295,6 +295,9 @@ def payer_validation():
         }), 500
 
 @urubuto_bp.route('/payments/notification', methods=['POST'])
+@require_auth('notifications')
+@require_gateway('urubuto_pay')
+@log_api_access('payment_notification')
 def payment_notification():
     """
     Payment notification callback endpoint for Urubuto Pay integration.
@@ -318,11 +321,6 @@ def payment_notification():
     }
     """
     try:
-        # Validate Bearer token with notifications permission
-        is_valid, error_response, token_payload = validate_bearer_token('notifications')
-        if not is_valid:
-            return jsonify(error_response), error_response['status']
-
         # Validate request data
         if not request.is_json:
             return jsonify({
