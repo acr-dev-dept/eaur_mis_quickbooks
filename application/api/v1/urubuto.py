@@ -109,6 +109,18 @@ def payer_validation():
 
     Returns student details, invoice amount, and service information.
     """
+    current_app.logger.info("🎯 === PAYER VALIDATION ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
+
+    if hasattr(request, 'token_payload'):
+        current_app.logger.info(f"Authenticated client: {request.token_payload.get('client_name')}")
+        current_app.logger.info(f"Client gateway: {request.token_payload.get('gateway_name')}")
+        current_app.logger.info(f"Client permissions: {request.token_payload.get('permissions')}")
+
     try:
         # Validate request data
         if not request.is_json:
@@ -720,3 +732,22 @@ def check_payment_status_by_reference():
             "message": "Internal server error",
             "status": 500
         }), 500
+
+@urubuto_bp.route('/test-auth', methods=['POST'])
+@require_auth()
+def test_auth():
+    """Test authentication endpoint for debugging token issues."""
+    current_app.logger.info("🧪 === TEST AUTH ENDPOINT REACHED ===")
+    current_app.logger.info("✅ Authentication successful - endpoint reached")
+
+    return jsonify({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message": "Authentication test successful",
+        "status": 200,
+        "data": {
+            "client_name": request.token_payload.get('client_name'),
+            "gateway_name": request.token_payload.get('gateway_name'),
+            "permissions": request.token_payload.get('permissions'),
+            "client_id": request.token_payload.get('client_id')
+        }
+    }), 200

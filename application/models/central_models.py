@@ -360,21 +360,53 @@ class AuthenticationService:
             tuple: (is_valid: bool, payload_or_error: dict or str)
         """
         try:
+            current_app.logger.info("🔍 === JWT VALIDATION START ===")
+            current_app.logger.info(f"Token length: {len(token)}")
+            current_app.logger.info(f"Token starts with: {token[:10]}...")
+            current_app.logger.info(f"Token ends with: ...{token[-10:]}")
+
             secret_key = current_app.config.get('SECRET_KEY', 'fallback-secret-key')
+            current_app.logger.info(f"Using secret key: {secret_key[:10]}... (length: {len(secret_key)})")
+            current_app.logger.info(f"Secret key is fallback: {secret_key == 'fallback-secret-key'}")
+
+            current_app.logger.info("🔍 Attempting JWT decode with HS256")
             payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+            current_app.logger.info("✅ JWT decoded successfully")
+            current_app.logger.info(f"Token payload keys: {list(payload.keys())}")
+            current_app.logger.info(f"Token payload: {payload}")
 
             # Verify client still exists and is active
-            client = ApiClient.query.get(payload.get('client_id'))
+            client_id = payload.get('client_id')
+            current_app.logger.info(f"🔍 Looking up client ID: {client_id}")
+
+            client = ApiClient.query.get(client_id)
+            current_app.logger.info(f"Client found in database: {bool(client)}")
+
+            if client:
+                current_app.logger.info(f"Client details: {client.client_name} ({client.gateway_name})")
+                current_app.logger.info(f"Client active status: {client.is_active}")
+                current_app.logger.info(f"Client permissions: {client.permissions}")
+            else:
+                current_app.logger.warning(f"❌ No client found with ID: {client_id}")
+
             if not client or not client.is_active:
+                current_app.logger.warning("❌ Client no longer active or not found")
                 return False, "Client no longer active"
 
+            current_app.logger.info("✅ JWT validation successful")
+            current_app.logger.info("🔍 === JWT VALIDATION END ===")
             return True, payload
 
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
+            current_app.logger.warning(f"❌ JWT token expired: {str(e)}")
             return False, "Token has expired"
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            current_app.logger.warning(f"❌ Invalid JWT token: {str(e)}")
+            current_app.logger.warning(f"Token that failed: {token[:50]}...")
             return False, "Invalid token"
         except Exception as e:
+            current_app.logger.error(f"💥 JWT validation error: {str(e)}")
+            current_app.logger.error(f"💥 Full traceback: {traceback.format_exc()}")
             return False, f"Token validation error: {str(e)}"
 
     @staticmethod

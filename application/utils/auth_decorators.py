@@ -32,43 +32,69 @@ def require_auth(required_permission=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             try:
+                current_app.logger.info(f"🔐 === AUTH START for {f.__name__} ===")
+                current_app.logger.info(f"Required permission: {required_permission}")
+                current_app.logger.info(f"Request method: {request.method}")
+                current_app.logger.info(f"Request endpoint: {request.endpoint}")
+                current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+
                 # Extract token from Authorization header
                 auth_header = request.headers.get('Authorization')
+                current_app.logger.info(f"Authorization header present: {bool(auth_header)}")
+
+                if auth_header:
+                    current_app.logger.info(f"Auth header length: {len(auth_header)}")
+                    current_app.logger.info(f"Auth header starts with 'Bearer ': {auth_header.startswith('Bearer ')}")
+
                 if not auth_header:
-                    current_app.logger.warning("Missing Authorization header")
+                    current_app.logger.warning("❌ Missing Authorization header")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "message": "Missing Authorization header",
                         "status": 401
                     }), 401
-                
+
                 if not auth_header.startswith('Bearer '):
-                    current_app.logger.warning("Invalid Authorization header format")
+                    current_app.logger.warning(f"❌ Invalid Authorization header format: {auth_header[:50]}...")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "message": "Invalid Authorization header format. Expected: Bearer <token>",
                         "status": 401
                     }), 401
-                
+
                 token = auth_header.split(' ')[1]
+                current_app.logger.info(f"Token extracted successfully")
+                current_app.logger.info(f"Token length: {len(token)}")
+                current_app.logger.info(f"Token preview: {token[:20]}...{token[-10:] if len(token) > 30 else token}")
                 
                 # Validate token using AuthenticationService
                 from application.models.central_models import AuthenticationService
-                
+
+                current_app.logger.info("🔍 Calling AuthenticationService.validate_jwt_token")
                 is_valid, payload_or_error = AuthenticationService.validate_jwt_token(token)
+
+                current_app.logger.info(f"Token validation result: {is_valid}")
                 if not is_valid:
-                    current_app.logger.warning(f"Token validation failed: {payload_or_error}")
+                    current_app.logger.error(f"❌ Token validation failed: {payload_or_error}")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "message": payload_or_error,
                         "status": 401
                     }), 401
+                else:
+                    current_app.logger.info(f"✅ Token valid for client: {payload_or_error.get('client_name')} (ID: {payload_or_error.get('client_id')})")
+                    current_app.logger.info(f"Client gateway: {payload_or_error.get('gateway_name')}")
+                    current_app.logger.info(f"Client permissions: {payload_or_error.get('permissions', [])}")
                 
                 # Check permission if required
                 if required_permission:
-                    if not AuthenticationService.check_permission(payload_or_error, required_permission):
+                    current_app.logger.info(f"🔍 Checking permission: {required_permission}")
+                    has_permission = AuthenticationService.check_permission(payload_or_error, required_permission)
+                    current_app.logger.info(f"Permission check result: {has_permission}")
+
+                    if not has_permission:
                         current_app.logger.warning(
-                            f"Insufficient permissions for client {payload_or_error.get('client_name')}. "
+                            f"❌ Insufficient permissions for client {payload_or_error.get('client_name')}. "
                             f"Required: {required_permission}, Has: {payload_or_error.get('permissions', [])}"
                         )
                         return jsonify({
@@ -76,20 +102,24 @@ def require_auth(required_permission=None):
                             "message": f"Insufficient permissions. Required: {required_permission}",
                             "status": 403
                         }), 403
-                
+                    else:
+                        current_app.logger.info(f"✅ Permission check passed: {required_permission}")
+
                 # Add token payload to request context for use in route
                 request.token_payload = payload_or_error
-                
+                current_app.logger.info("✅ Token payload added to request context")
+
                 current_app.logger.info(
-                    f"Authentication successful for client: {payload_or_error.get('client_name')} "
+                    f"✅ Authentication successful for client: {payload_or_error.get('client_name')} "
                     f"({payload_or_error.get('gateway_name')})"
                 )
-                
+                current_app.logger.info(f"🔐 === AUTH END for {f.__name__} - PROCEEDING ===")
+
                 return f(*args, **kwargs)
                 
             except Exception as e:
-                current_app.logger.error(f"Authentication decorator error: {str(e)}")
-                current_app.logger.error(traceback.format_exc())
+                current_app.logger.error(f"💥 Authentication decorator error in {f.__name__}: {str(e)}")
+                current_app.logger.error(f"💥 Full traceback: {traceback.format_exc()}")
                 return jsonify({
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "message": "Authentication error",
@@ -122,19 +152,25 @@ def require_gateway(gateway_name):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             try:
+                current_app.logger.info(f"🚪 === GATEWAY CHECK for {f.__name__} ===")
+                current_app.logger.info(f"Required gateway: {gateway_name}")
+
                 # Check if token payload exists (should be set by @require_auth)
                 if not hasattr(request, 'token_payload'):
-                    current_app.logger.error("Gateway decorator used without authentication")
+                    current_app.logger.error("❌ Gateway decorator used without authentication")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "message": "Authentication required",
                         "status": 401
                     }), 401
-                
+
                 client_gateway = request.token_payload.get('gateway_name')
+                current_app.logger.info(f"Client gateway: {client_gateway}")
+                current_app.logger.info(f"Gateway match check: {client_gateway} == {gateway_name} = {client_gateway == gateway_name}")
+
                 if client_gateway != gateway_name:
                     current_app.logger.warning(
-                        f"Gateway access denied. Client gateway: {client_gateway}, "
+                        f"❌ Gateway access denied. Client gateway: {client_gateway}, "
                         f"Required: {gateway_name}"
                     )
                     return jsonify({
@@ -142,8 +178,9 @@ def require_gateway(gateway_name):
                         "message": f"Access restricted to {gateway_name} gateway",
                         "status": 403
                     }), 403
-                
-                current_app.logger.info(f"Gateway access granted for {gateway_name}")
+
+                current_app.logger.info(f"✅ Gateway access granted for {gateway_name}")
+                current_app.logger.info(f"🚪 === GATEWAY CHECK END ===")
                 return f(*args, **kwargs)
                 
             except Exception as e:
