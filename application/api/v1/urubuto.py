@@ -482,6 +482,8 @@ def payment_notification():
         }), 500
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
+@require_auth('payments')
+@log_api_access('payment_initiation')
 def initiate_payment():
     """
     Payment initiation endpoint for triggering Urubuto Pay transactions.
@@ -501,11 +503,6 @@ def initiate_payment():
     }
     """
     try:
-        # Validate Bearer token
-        #is_valid, error_response = validate_bearer_token()
-        #if not is_valid:
-            #return jsonify(error_response), 401
-
         # Validate request data
         if not request.is_json:
             return jsonify({
