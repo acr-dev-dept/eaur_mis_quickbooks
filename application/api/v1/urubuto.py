@@ -600,6 +600,9 @@ def initiate_payment():
         }), 500
 
 @urubuto_bp.route('/payments/status/<transaction_id>', methods=['GET'])
+@require_auth('status_check')
+@require_gateway('urubuto_pay')
+@log_api_access('transaction_status_check')
 def check_transaction_status(transaction_id):
     """
     Transaction status checking endpoint for payment reconciliation.
@@ -611,11 +614,6 @@ def check_transaction_status(transaction_id):
         transaction_id (str): Urubuto Pay transaction ID
     """
     try:
-        # Validate Bearer token
-        is_valid, error_response = validate_bearer_token()
-        if not is_valid:
-            return jsonify(error_response), 401
-
         if not transaction_id:
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
