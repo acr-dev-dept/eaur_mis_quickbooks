@@ -109,7 +109,7 @@ def payer_validation():
 
     Returns student details, invoice amount, and service information.
     """
-    current_app.logger.info("🎯 === PAYER VALIDATION ENDPOINT CALLED ===")
+    current_app.logger.info("PAYER VALIDATION ENDPOINT CALLED ===")
     current_app.logger.info(f"Request method: {request.method}")
     current_app.logger.info(f"Request endpoint: {request.endpoint}")
     current_app.logger.info(f"Request remote addr: {request.remote_addr}")
@@ -142,6 +142,7 @@ def payer_validation():
         # Validate required parameters
         merchant_code = data.get('merchant_code')
         payer_code = data.get('payer_code')
+        current_app.logger.info(f"Merchant code: {merchant_code}, Payer code: {payer_code}")
 
         if not merchant_code or not payer_code:
             return jsonify({
@@ -486,6 +487,12 @@ def initiate_payment():
         "redirection_url": "https://mis.eaur.ac.rw/payment-success"
     }
     """
+    current_app.logger.info("PAYMENT INITIATION ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"data received: {request.get_json()}")
     try:
         # Validate request data
         if not request.is_json:
@@ -551,7 +558,7 @@ def initiate_payment():
                 payer_names=data.get('payer_names'),
                 payer_email=data.get('payer_email')
             )
-            current_app.logger.info(f"Payment initiation result: {result}")
+            current_app.logger.info(f"Payment initiation result checking: {result}")
 
             if result['success']:
                 current_app.logger.info(f"Payment initiation successful for payer: {payer_code}")
