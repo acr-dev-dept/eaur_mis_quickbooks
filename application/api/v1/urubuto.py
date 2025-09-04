@@ -651,6 +651,8 @@ def check_transaction_status(transaction_id):
         }), 500
 
 @urubuto_bp.route('/payments/status', methods=['POST'])
+@require_auth('status_check')
+@log_api_access('payment_status_by_reference')
 def check_payment_status_by_reference():
     """
     Check payment status by reference number (payer_code).
@@ -664,11 +666,6 @@ def check_payment_status_by_reference():
     }
     """
     try:
-        # Validate Bearer token
-        is_valid, error_response = validate_bearer_token()
-        if not is_valid:
-            return jsonify(error_response), 401
-
         # Validate request data
         if not request.is_json:
             return jsonify({
