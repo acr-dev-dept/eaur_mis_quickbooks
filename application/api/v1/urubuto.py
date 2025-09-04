@@ -119,6 +119,7 @@ def payer_validation():
             }), 400
 
         data = request.get_json()
+        current_app.logger.info(f"Validation request data: {data}")
         if not data:
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -128,7 +129,7 @@ def payer_validation():
 
         # Validate required parameters
         merchant_code = data.get('merchant_code')
-        payer_code = data.get('reference_no')
+        payer_code = data.get('payer_code')
 
         if not merchant_code or not payer_code:
             return jsonify({
@@ -138,6 +139,36 @@ def payer_validation():
             }), 400
 
         current_app.logger.info(f"Payer validation request - Merchant: {merchant_code}, Payer: {payer_code}")
+
+        # We are going to stop here and respond with successful response
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Successful",
+            "status": 200,
+            "data": {
+                "merchant_code": merchant_code,
+                "payer_code": payer_code,
+                "payer_names": "Unknown Student",
+                "department_code": "0",
+                "department_name": "Unknown Department",
+                "class_name": "Unknown Class",
+                "service_group_code": "0",
+                "service_group_name": "Unknown Service Group",
+                "amount": 5,
+                "currency": "RWF",
+                "payer_must_pay_total_amount": "YES",
+                "comment": "Student fee payment",
+                "services": [
+                    {
+                        "service_id": 1,
+                        "service_code": "school-fees",
+                        "service_name": "School Fees",
+                        "account_number": "000500025695727",  # This should be configured
+                        "amount": 5
+                    }
+                ]
+            }
+        }), 200
 
         # Query invoice by reference number (assuming payer_code is invoice ID for now)
         # This will be updated when reference_number field is added to invoice table
