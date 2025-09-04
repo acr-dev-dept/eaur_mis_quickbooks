@@ -62,7 +62,27 @@ def require_auth(required_permission=None):
                         "status": 401
                     }), 401
 
-                token = auth_header.split(' ')[1]
+                # Handle both "Bearer token" and "Bearer Bearer token" formats
+                auth_parts = auth_header.split(' ')
+                current_app.logger.info(f"Auth header parts: {len(auth_parts)} parts")
+                current_app.logger.info(f"Auth header parts preview: {auth_parts[:3] if len(auth_parts) >= 3 else auth_parts}")
+
+                if len(auth_parts) >= 3 and auth_parts[1].lower() == 'bearer':
+                    # Handle "Bearer Bearer actual_token" format
+                    token = auth_parts[2]
+                    current_app.logger.info("Using token from position 2 (Bearer Bearer token format)")
+                elif len(auth_parts) >= 2:
+                    # Handle standard "Bearer token" format
+                    token = auth_parts[1]
+                    current_app.logger.info("Using token from position 1 (Bearer token format)")
+                else:
+                    current_app.logger.error("❌ Invalid Authorization header format - insufficient parts")
+                    return jsonify({
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "message": "Invalid Authorization header format",
+                        "status": 401
+                    }), 401
+
                 current_app.logger.info(f"Token extracted successfully")
                 current_app.logger.info(f"Token length: {len(token)}")
                 current_app.logger.info(f"Token preview: {token[:20]}...{token[-10:] if len(token) > 30 else token}")
