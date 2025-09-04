@@ -128,7 +128,7 @@ def payer_validation():
 
         # Validate required parameters
         merchant_code = data.get('merchant_code')
-        payer_code = data.get('payer_code')
+        payer_code = data.get('reference_no')
 
         if not merchant_code or not payer_code:
             return jsonify({
