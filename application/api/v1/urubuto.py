@@ -545,6 +545,13 @@ def initiate_payment():
         # Initialize Urubuto Pay service
         from application.services.urubuto_pay import UrubutoPay
         urubuto_service = UrubutoPay()
+        # try to access the service code
+        try:
+            service_code = urubuto_service.service_code
+            current_app.logger.info(f"Urubuto Pay service initialized with service code: {service_code}")
+        except Exception as e:
+            current_app.logger.error(f"Error accessing Urubuto Pay service code: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
 
         # Initiate payment
         try:
