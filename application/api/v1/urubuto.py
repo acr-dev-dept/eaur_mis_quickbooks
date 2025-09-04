@@ -424,7 +424,6 @@ def payment_notification():
         }), 500
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
-@require_auth('payments')
 @log_api_access('payment_initiation')
 def initiate_payment():
     """
