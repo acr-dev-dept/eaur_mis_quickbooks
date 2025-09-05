@@ -365,8 +365,9 @@ class TblImvoice(MISBaseModel):
     Rpt_Id = db.Column(db.Integer)
     dept = db.Column(Float)
     credit = db.Column(Float)
-    balance = db.Column(db.String(200))
+    balance = db.Column(db.Float, nullable=True)
     invoice_date = db.Column(DateTime)
+    reference_number = db.Column(db.String(255))
     comment = db.Column(db.String(900))
     user = db.Column(db.String(20))
     date = db.Column(DateTime)
@@ -408,6 +409,7 @@ class TblImvoice(MISBaseModel):
             'balance': self.balance,
             'invoice_date': self.invoice_date.isoformat() if self.invoice_date else None,
             'comment': self.comment,
+            'reference_number': self.reference_number,
             'user': self.user,
             'date': self.date.isoformat() if self.date else None,
             'intake_id': self.intake_id,
@@ -416,6 +418,26 @@ class TblImvoice(MISBaseModel):
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
         }
+    
+    @classmethod
+    def get_invoice_details(cls, reference_number):
+        """
+        Get detailed invoice information by reference number
+
+        Args:
+            reference_number (str): Invoice reference number
+
+        Returns:
+            dict: Invoice details or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
+                return invoice.to_dict() if invoice else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoice details for reference {reference_number}: {str(e)}")
+            return []
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
