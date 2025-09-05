@@ -19,9 +19,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from sqlalchemy import create_engine, MetaData, inspect, text
 from sqlalchemy.engine import Engine
-import mysql.connector
 from datetime import datetime
-
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
