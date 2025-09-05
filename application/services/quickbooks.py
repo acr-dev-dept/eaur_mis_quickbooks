@@ -1278,7 +1278,25 @@ class QuickBooks:
                     ]
                 }
             }
+    def get_items(self, realm_id):
+        """
+        Fetch all items from QuickBooks.
 
+        Args:
+            realm_id (str): The QuickBooks company ID.
+
+        Returns:
+            list: A list of items.
+        """
+        query = "SELECT * FROM Item"
+        try:
+            # Query to fetch all items
+            items_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            items = items_response.get("QueryResponse", {}).get("Item", [])
+            return items
+        except Exception as e:
+            logging.error(f"Error fetching items: {str(e)}")
+            return []
     
 
 

@@ -1022,3 +1022,43 @@ def send_payment(payment_id):
             'error': 'Error sending payment',
             'details': str(e)
         }), 500
+@quickbooks_bp.route('/item/get_all_items', methods=['GET'])
+def get_item():
+    """Get all items."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting items')
+
+        items = qb.get_items(qb.realm_id)
+        current_app.logger.info("Items retrieved successfully")
+
+        # Check for errors in the response
+        if 'error' in items:
+            return jsonify({
+                'success': False,
+                'error': items['error'],
+                'details': items.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'data': items,
+            'message': 'Items retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting items: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting items',
+            'details': str(e)
+        }), 500
+    
