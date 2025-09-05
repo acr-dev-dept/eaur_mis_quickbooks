@@ -1136,7 +1136,7 @@ def create_item():
              for k, v in item_data.items()}
         
 
-        if item_data.get('Type') not in required_item_types:
+        if item_data.get('Type').lower() not in required_item_types:
             current_app.logger.error(f"Invalid item type: {item_data.get('Type')}")
             return jsonify({
                 'success': False,
