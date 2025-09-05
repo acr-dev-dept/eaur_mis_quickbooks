@@ -9,6 +9,9 @@ import jwt
 import os
 
 urubuto_bp = Blueprint('urubuto', __name__)
+# Initialize Urubuto Pay service
+from application.services.urubuto_pay import UrubutoPay
+urubuto_service = UrubutoPay()
 
 
 
@@ -348,6 +351,14 @@ def payment_notification():
 
         # Only process successful payments
         if transaction_id:
+            # check the status of the transaction
+            try:
+                status = urubuto_service.check_transaction_status(transaction_id)
+                current_app.logger.info(f"Transaction status check result: {status}")
+            except Exception as e:
+                current_app.logger.error(f"Error checking transaction status: {e}")
+                
+
             current_app.logger.info(f"Checking that the transaction_id is not empty: {transaction_id}")
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -538,9 +549,6 @@ def initiate_payment():
         current_app.logger.info(f"Payment initiation request - Payer: {payer_code}, "
                                f"Amount: {amount}, Channel: {channel_name}")
 
-        # Initialize Urubuto Pay service
-        from application.services.urubuto_pay import UrubutoPay
-        urubuto_service = UrubutoPay()
         # try to access the service code
         try:
             service_code = urubuto_service.service_code
