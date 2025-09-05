@@ -1130,10 +1130,10 @@ def create_item():
                 'error': 'No data provided',
                 'message': 'Please provide item data in JSON format'
             }), 400
-
+        required_item_types = ['service', 'inventory', 'non-inventory', 'bundle']
         item_data = request.json
-        # Normalize field names to match QuickBooks API expectations ex: name -> Name
-        item_data = {k[0].upper() + k[1:]: v for k, v in item_data.items()}
+        item_data = {k.capitalize(): v.capitalize() if isinstance(v, str) else v
+             for k, v in item_data.items()}
 
         # Basic validation for required fields
         if 'Name' not in item_data:
@@ -1143,7 +1143,7 @@ def create_item():
                 'message': 'Item must have a name'
             }), 400
 
-        if 'Type' not in item_data or item_data['Type'].lower() not in ['service', 'inventory', 'non-inventory', 'bundle']:
+        if 'Type' not in item_data or item_data['Type'].lower() not in required_item_types:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or missing required field: Type',
