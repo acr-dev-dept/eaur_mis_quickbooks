@@ -170,16 +170,7 @@ def payer_validation():
                 "amount": 5,
                 "currency": "RWF",
                 "payer_must_pay_total_amount": "YES",
-                "comment": "Student fee payment",
-                "services": [
-                    {
-                        "service_id": 1,
-                        "service_code": "school-fees",
-                        "service_name": "School Fees",
-                        "account_number": "000500025695727",  # This should be configured
-                        "amount": 5
-                    }
-                ]
+                "payer_names": "Unknown Student"
             }
         }), 200
 
