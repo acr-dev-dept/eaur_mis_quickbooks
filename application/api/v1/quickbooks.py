@@ -1132,6 +1132,8 @@ def create_item():
             }), 400
 
         item_data = request.json
+        # Normalize field names to match QuickBooks API expectations ex: name -> Name
+        item_data = {k[0].upper() + k[1:]: v for k, v in item_data.items()}
 
         # Basic validation for required fields
         if 'Name' not in item_data:
