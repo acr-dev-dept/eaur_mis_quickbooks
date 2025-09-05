@@ -165,8 +165,6 @@ def payer_validation():
                 "department_code": "0",
                 "department_name": "Unknown Department",
                 "class_name": "Unknown Class",
-                "service_group_code": "0",
-                "service_group_name": "Unknown Service Group",
                 "amount": 5,
                 "currency": "RWF",
                 "payer_must_pay_total_amount": "YES",
