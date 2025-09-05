@@ -1022,7 +1022,7 @@ def send_payment(payment_id):
             'error': 'Error sending payment',
             'details': str(e)
         }), 500
-@quickbooks_bp.route('/item/get_all_items', methods=['GET'])
+@quickbooks_bp.route('/item/get_items', methods=['GET'])
 def get_item():
     """Get all items."""
     try:
@@ -1108,5 +1108,70 @@ def get_items(item_type):
         return jsonify({
             'success': False,
             'error': 'Error getting items',
+            'details': str(e)
+        }), 500
+    
+@quickbooks_bp.route('/item/create_item', methods=['POST'])
+def create_item():
+    """Create a new item."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide item data in JSON format'
+            }), 400
+
+        item_data = request.json
+
+        # Basic validation for required fields
+        if 'Name' not in item_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: Name',
+                'message': 'Item must have a name'
+            }), 400
+
+        if 'Type' not in item_data or item_data['Type'].lower() not in ['service', 'inventory', 'non-inventory', 'bundle']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or missing required field: Type',
+                'message': 'Item type must be one of: service, inventory, non-inventory, bundle'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new item')
+
+        result = qb.create_item(qb.realm_id, item_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create item',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Item created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Item created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating item: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating item',
             'details': str(e)
         }), 500

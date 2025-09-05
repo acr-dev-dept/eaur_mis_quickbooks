@@ -1321,6 +1321,36 @@ class QuickBooks:
             logging.error(f"Error fetching items by type: {str(e)}")
             return []
 
+    def create_item(self, realm_id, item_data):
+        """
+        Create an item in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            item_data (dict): The data for the item.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/item"
+        try:
+            current_app.logger.info(f"Creating item with data: {item_data}")
+            response = self.make_request(endpoint, method="POST", data=item_data)
+            current_app.logger.info(f"Item created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating item: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating item: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
 
 if __name__ == "__main__":
     # Import Flask app factory to create application context
