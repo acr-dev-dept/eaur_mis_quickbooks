@@ -1063,3 +1063,50 @@ def get_item():
             'details': str(e)
         }), 500
     
+@quickbooks_bp.route('/item/get_items/<string:item_type>', methods=['GET'])
+def get_items(item_type):
+    """Get items by type."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if item_type.lower() not in ['service', 'inventory', 'non-inventory', 'bundle']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid item type',
+                'message': 'Item type must be one of: service, inventory, non-inventory, bundle'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting items of type: {item_type}')
+
+        items = qb.get_items_by_type(qb.realm_id, item_type.lower())
+        current_app.logger.info("Items retrieved successfully")
+
+        # Check for errors in the response
+        if 'error' in items:
+            return jsonify({
+                'success': False,
+                'error': items['error'],
+                'details': items.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_items': len(items) if isinstance(items, list) else 0,
+            'data': items,
+            'message': f'Items of type {item_type} retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting items: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting items',
+            'details': str(e)
+        }), 500

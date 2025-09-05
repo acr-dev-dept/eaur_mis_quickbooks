@@ -1297,7 +1297,29 @@ class QuickBooks:
         except Exception as e:
             logging.error(f"Error fetching items: {str(e)}")
             return []
-    
+
+    def get_items_by_type(self, realm_id, item_type):
+        """
+        Fetch items by type from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            item_type (str): The type of items to fetch.
+
+        Returns:
+            list: A list of items of the specified type.
+        """
+
+        capitalized_type = item_type.capitalize()
+        query = f"SELECT * FROM Item WHERE Type = '{capitalized_type}'"
+        try:
+            # Query to fetch items by type
+            items_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            items = items_response.get("QueryResponse", {}).get("Item", [])
+            return items
+        except Exception as e:
+            logging.error(f"Error fetching items by type: {str(e)}")
+            return []
 
 
 if __name__ == "__main__":
