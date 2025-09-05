@@ -1050,6 +1050,7 @@ def get_item():
 
         return jsonify({
             'success': True,
+            'number_of_items': len(items) if isinstance(items, list) else 0,
             'data': items,
             'message': 'Items retrieved successfully'
         }), 200
