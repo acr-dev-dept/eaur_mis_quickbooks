@@ -86,7 +86,7 @@ class UrubutoPay:
     
     def initiate_payment(self, payer_code, amount, channel_name, phone_number=None, 
                         card_type=None, redirection_url=None, payer_names=None, 
-                        payer_email=None):
+                        payer_email=None, service_code=None):
         """
         Initiate a payment through Urubuto Pay gateway.
         
@@ -118,13 +118,13 @@ class UrubutoPay:
                 "redirection_url": redirection_url or "",
                 "payer_names": payer_names or "",
                 "payer_email": payer_email or "",
-                "service_code": "payment-1936"
+                "service_code": service_code or self.service_code or ""
             }
             current_app.logger.info(f"Payment data: {payment_data}")
             current_app.logger.info(f"Initiating payment for payer_code: {payer_code}, amount: {amount}, channel: {channel_name}")
-            
+            current_app.logger.info(f"The MIS Microservice is trying to initiate a payment with the following data: {payment_data}")
             response = self._make_request("payment/initiate", method="POST", data=payment_data)
-            current_app.logger.info(f"Payment initiation response: {response.status_code} - {response.text} and the full response: {response.json()}")
+            current_app.logger.info(f"The MIS Microservice received the following response from Urubuto Pay: {response.status_code} - {response.text} and the full response: {response.json()}")
             if response.status_code == 200:
                 result = response.json()
                 logger.info(f"Payment initiation successful: {result.get('message', 'Success')}")
