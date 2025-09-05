@@ -438,6 +438,26 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting invoice details for reference {reference_number}: {str(e)}")
             return []
+        
+    @classmethod
+    def get_invoice_balance(cls, reference_number):
+        """
+        Get invoice balance by reference number
+
+        Args:
+            reference_number (str): Invoice reference number
+
+        Returns:
+            float: Invoice balance or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
+                return invoice.balance if invoice else None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoice balance for reference {reference_number}: {str(e)}")
+            return None
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
