@@ -1134,6 +1134,9 @@ def create_item():
 
         item_data = request.json
 
+
+
+
         if item_data.get('Type') not in required_item_types:
             current_app.logger.error(f"Invalid item type: {item_data.get('Type')}")
             return jsonify({
@@ -1156,6 +1159,13 @@ def create_item():
                 'success': False,
                 'error': 'Invalid or missing required field: Type',
                 'message': 'Item type must be one of: service, inventory, non-inventory, bundle'
+            }), 400
+
+        if 'IncomeAccountRef' not in item_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: IncomeAccountRef',
+                'message': 'Item must have an income account reference'
             }), 400
 
         qb = QuickBooks()
