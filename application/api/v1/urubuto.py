@@ -320,7 +320,6 @@ def payment_notification():
             }), 400
 
         # Extract required fields
-        status = data.get('status')
         transaction_status = data.get('transaction_status')
         transaction_id = data.get('transaction_id')
         merchant_code = data.get('merchant_code')
@@ -333,7 +332,7 @@ def payment_notification():
         slip_number = data.get('slip_number', '')
 
         # Validate required fields
-        required_fields = ['status', 'transaction_status', 'transaction_id', 'merchant_code',
+        required_fields = ['transaction_id', 'merchant_code',
                           'payer_code', 'payment_channel', 'amount', 'currency', 'payment_date_time']
 
         missing_fields = [field for field in required_fields if not data.get(field)]
@@ -345,11 +344,11 @@ def payment_notification():
             }), 400
 
         current_app.logger.info(f"Payment notification received - Transaction: {transaction_id}, "
-                               f"Payer: {payer_code}, Status: {transaction_status}, Amount: {amount}")
+                               f"Payer: {payer_code}, Amount: {amount}")
 
         # Only process successful payments
-        if transaction_status not in ['VALID', 'PENDING']:
-            current_app.logger.info(f"Ignoring payment with status: {transaction_status}")
+        if transaction_id:
+            current_app.logger.info(f"Checking that the transaction_id is not empty: {transaction_id}")
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "message": "Payment status noted",
