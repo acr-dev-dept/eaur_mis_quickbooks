@@ -1130,8 +1130,18 @@ def create_item():
                 'error': 'No data provided',
                 'message': 'Please provide item data in JSON format'
             }), 400
+        required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
 
         item_data = request.json
+
+        if item_data.get('Type') not in required_item_types:
+            current_app.logger.error(f"Invalid item type: {item_data.get('Type')}")
+            return jsonify({
+                'success': False,
+                'error': 'Invalid item type',
+                'message': f"Item type must be one of: {', '.join(required_item_types)}"
+            }), 400
+
 
         # Basic validation for required fields
         if 'Name' not in item_data:
@@ -1141,7 +1151,7 @@ def create_item():
                 'message': 'Item must have a name'
             }), 400
 
-        if 'Type' not in item_data or item_data['Type'].lower() not in ['service', 'inventory', 'non-inventory', 'bundle']:
+        if 'Type' not in item_data:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or missing required field: Type',
