@@ -295,6 +295,13 @@ def payment_notification():
         "slip_number": ""
     }
     """
+    current_app.logger.info("PAYMENT NOTIFICATION ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
+    current_app.logger.info(f"data received: {request.get_json()}")
     try:
         # Validate request data
         if not request.is_json:
