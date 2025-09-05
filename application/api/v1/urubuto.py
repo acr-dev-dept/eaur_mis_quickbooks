@@ -514,6 +514,7 @@ def initiate_payment():
         payer_code = data.get('payer_code')
         amount = data.get('amount')
         channel_name = data.get('channel_name')
+        service_code = data.get('service_code')
 
         if not all([payer_code, amount, channel_name]):
             return jsonify({
@@ -563,7 +564,8 @@ def initiate_payment():
                 card_type=data.get('card_type'),
                 redirection_url=data.get('redirection_url'),
                 payer_names=data.get('payer_names'),
-                payer_email=data.get('payer_email')
+                payer_email=data.get('payer_email'),
+                service_code=service_code
             )
             current_app.logger.info(f"Payment initiation result checking: {result}")
 
