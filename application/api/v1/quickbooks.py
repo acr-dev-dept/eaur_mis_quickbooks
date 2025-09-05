@@ -1130,13 +1130,11 @@ def create_item():
                 'error': 'No data provided',
                 'message': 'Please provide item data in JSON format'
             }), 400
-        required_item_types = ['service', 'inventory', 'non-inventory', 'bundle']
-        item_data = request.json
-        item_data = {k.capitalize(): v.capitalize() if isinstance(v, str) else v
-             for k, v in item_data.items()}
-        
+        required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
 
-        if item_data.get('Type').lower() not in required_item_types:
+        item_data = request.json
+
+        if item_data.get('Type') not in required_item_types:
             current_app.logger.error(f"Invalid item type: {item_data.get('Type')}")
             return jsonify({
                 'success': False,
