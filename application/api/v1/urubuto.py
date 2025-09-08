@@ -526,14 +526,14 @@ def initiate_payment():
 
         # Extract and validate required fields
         payer_code = data.get('payer_code')
-        amount = data.get('amount')
+        amount = TblImvoice.get_invoice_balance(payer_code)
         channel_name = data.get('channel_name')
         service_code = data.get('service_code')
 
-        if not all([payer_code, amount, channel_name]):
+        if not all([payer_code,  channel_name]):
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Missing required parameters: payer_code, amount, channel_name",
+                "message": "Missing required parameters: payer_code, channel_name",
                 "status": 400
             }), 400
 
@@ -555,7 +555,7 @@ def initiate_payment():
             }), 400
 
         current_app.logger.info(f"Payment initiation request - Payer: {payer_code}, "
-                               f"Amount: {amount}, Channel: {channel_name}")
+                               f" Channel: {channel_name}")
 
         # try to access the service code
         try:
