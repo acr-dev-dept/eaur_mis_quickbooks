@@ -159,6 +159,8 @@ def payer_validation():
         # get invoice details given the reference number (payer_code)
         try:            
             invoice_balance = TblImvoice.get_invoice_balance(payer_code)
+            #make sure it doesn't have decimal places
+            invoice_balance = int(float(invoice_balance))
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
             current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
         except Exception as e:
@@ -178,7 +180,7 @@ def payer_validation():
                 "class_name": "Unknown Class",
                 "amount": invoice_balance,
                 "currency": "RWF",
-                "payer_must_pay_total_amount": "YES",
+                "payer_must_pay_total_amount": "NO",
                 "payer_names": "Unknown Student"
             }
         }), 200
