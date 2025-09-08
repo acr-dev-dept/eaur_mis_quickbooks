@@ -495,7 +495,6 @@ def initiate_payment():
     Expected request format:
     {
         "payer_code": "12345",
-        "amount": 150000,
         "channel_name": "MOMO",
         "phone_number": "0788215324",
         "payer_names": "John Doe",

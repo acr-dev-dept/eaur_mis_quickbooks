@@ -111,7 +111,6 @@ class UrubutoPay:
             payment_data = {
                 "merchant_code": self.merchant_code,
                 "payer_code": str(payer_code),
-                "amount": float(amount),
                 "channel_name": channel_name,
                 "card_type_to_be_used": card_type or "NOT_APPLICABLE",
                 "phone_number": phone_number or "",
