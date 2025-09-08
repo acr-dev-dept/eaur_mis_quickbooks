@@ -159,6 +159,21 @@ def payer_validation():
         # get invoice details given the reference number (payer_code)
         try:            
             invoice_balance = TblImvoice.get_invoice_balance(payer_code)
+            if invoice_balance is None:
+                current_app.logger.warning(f"No invoice found for payer_code: {payer_code}")
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": f"No data found for this code: {payer_code}",
+                    "status": 400
+                }), 400
+            # Make sure the balance is greater than zero
+            if float(invoice_balance) == 0.0:
+                current_app.logger.warning(f"Invoice balance is zero for payer_code: {payer_code}")
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": f"Invoice : {payer_code} has already been paid in full.",
+                    "status": 400
+                }), 400
             #make sure it doesn't have decimal places
             invoice_balance = int(float(invoice_balance))
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
@@ -166,6 +181,13 @@ def payer_validation():
         except Exception as e:
             current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
             current_app.logger.error(traceback.format_exc())
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": f"Error retrieving invoice details: {str(e)}",
+                "status": 500
+            }), 500
+
+        
         # We are going to stop here and respond with successful response
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -281,6 +303,42 @@ def payer_validation():
             "message": "Internal server error",
             "status": 500
         }), 500
+    
+@urubuto_bp.route('/callback', methods=['POST'])
+@require_auth('callbacks')
+@require_gateway('urubuto_pay')
+def payment_callback():
+    """
+    Payment callback endpoint for Urubuto Pay integration.
+
+    This endpoint receives payment callbacks from Urubuto Pay and updates
+    payment records in the MIS payments table.
+    """
+    current_app.logger.info("PAYMENT CALLBACK ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
+    current_app.logger.info(f"data received: {request.get_json()}")
+
+    # Process the callback data
+    data = request.get_json()
+    current_app.logger.info(f"Callback data: {data}")
+    if not data:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "No data provided",
+            "status": 400
+        }), 400
+
+    # TODO: Implement the logic to update payment records based on the callback data
+
+    return jsonify({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message": "Payment callback processed successfully",
+        "status": 200
+    }), 200
 
 @urubuto_bp.route('/payments/notification', methods=['POST'])
 @require_auth('notifications')
