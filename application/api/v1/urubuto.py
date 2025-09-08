@@ -158,10 +158,10 @@ def payer_validation():
 
         # get invoice details given the reference number (payer_code)
         try:
-            invoice_details = urubuto_service.get_invoice_details(payer_code)
+            invoice_details = TblImvoice.get_invoice_details(payer_code)
             current_app.logger.info(f"Invoice details retrieved from Urubuto Pay: {invoice_details}")
 
-            invoice_balance = urubuto_service.get_invoice_balance(payer_code)
+            invoice_balance = TblImvoice.get_invoice_balance(payer_code)
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
         except Exception as e:
             current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
