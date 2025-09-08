@@ -547,13 +547,10 @@ class CustomerSyncService:
                 ],
                 "Notes": f"Student synchronized from MIS - Registration Number: {student_data['reg_no']}"
             }
-            # serialize custom fields to JSON
-            payload = JSONFieldHelper.serialize_json(qb_customer)
 
             # Remove None values to clean up the payload
             qb_customer = {k: v for k, v in qb_customer.items() if v is not None}
-            payload = {k: v for k, v in qb_customer.items() if v is not None}
-            return payload
+            return qb_customer
 
         except Exception as e:
             logger.error(f"Error mapping student {student.reg_no} to QuickBooks format: {e}")
