@@ -8,6 +8,8 @@ from application.services.customer_sync import CustomerSyncService
 from application.models.central_models import QuickBooksConfig
 import traceback
 from datetime import datetime
+from application.models.mis_models import TblOnlineApplication, TblCountry
+from application.utils.database import db_manager
 
 customer_sync_bp = Blueprint('customer_sync', __name__)
 
@@ -351,6 +353,95 @@ def sync_applicants():
             details=str(e),
             status_code=500
         )
+    
+@customer_sync_bp.route('/applicants/<int:appl_id>', methods=['POST'])
+def map_applicant(appl_id: int):
+    """
+    Map a single MIS applicant into QuickBooks Customer format
+    without syncing, just preview the payload.
+    """
+    try:
+        # Get DB session safely
+        with db_manager.get_mis_session() as db:  
+            applicant = db.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
+            
+            if not applicant:
+                return jsonify({
+                    "success": False,
+                    "error": f"Applicant {appl_id} not found"
+                }), 404
+
+            # Use your mapping function from service
+            sync_service = CustomerSyncService()
+            qb_customer_payload = sync_service.map_applicant_to_quickbooks_customer(applicant)
+
+            return jsonify({
+                "success": True,
+                "data": qb_customer_payload,
+                "message": f"Applicant {appl_id} mapped successfully"
+            }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error mapping applicant {appl_id}: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Error mapping applicant {appl_id}",
+            "details": str(e)
+        }), 500
+
+@customer_sync_bp.route('/applicant/<int:appl_id>', methods=['POST'])
+def sync_single_applicant(appl_id: int):
+    """
+    Synchronize a single applicant to QuickBooks customer by appl_Id
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sync_service = CustomerSyncService()
+
+        # Get DB session safely
+        with db_manager.get_mis_session() as db:  
+            applicant = db.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
+            
+            if not applicant:
+                return create_response(
+                    success=False,
+                    error=f"Applicant {appl_id} not found",
+                    status_code=404
+                )
+
+            result = sync_service.sync_single_applicant(applicant)
+
+            if result.success:
+                return create_response(
+                    success=True,
+                    data={
+                        'applicant_id': result.customer_id,
+                        'quickbooks_id': result.quickbooks_id
+                    },
+                    message=f'Applicant {appl_id} synchronized successfully'
+                )
+            else:
+                return create_response(
+                    success=False,
+                    error=f'Failed to synchronize applicant {appl_id}',
+                    details=result.error_message,
+                    status_code=500
+                )
+
+    except Exception as e:
+        current_app.logger.error(f"Error synchronizing applicant {appl_id}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error synchronizing applicant {appl_id}',
+            details=str(e),
+            status_code=500
+        )
+
 
 @customer_sync_bp.route('/students', methods=['POST'])
 def sync_students():
@@ -447,6 +538,7 @@ def sync_students():
             details=str(e),
             status_code=500
         )
+
 
 @customer_sync_bp.route('/all', methods=['POST'])
 def sync_all_customers():
@@ -758,8 +850,7 @@ def debug_applicant_enrichment(appl_id):
         appl_id: Applicant ID to debug
     """
     try:
-        from application.models.mis_models import TblOnlineApplication, TblCountry
-        from application.utils.database import db_manager
+
 
         # Get applicant
         with db_manager.get_mis_session() as session:

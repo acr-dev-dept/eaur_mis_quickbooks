@@ -467,7 +467,7 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
-            raise
+            
 
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
@@ -571,18 +571,21 @@ class CustomerSyncService:
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
-
+            if qb_service:
+                logger.info(f"QuickBooks service initialized for applicant {applicant.appl_Id}")
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-
+            if qb_customer_data:
+                logger.debug(f"Mapped applicant {applicant.appl_Id} data to QuickBooks format: {qb_customer_data}")
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-
-            if 'Customer' in response:
-                # Success - update sync status
-                qb_customer_id = response['Customer']['Id']
-                self._update_applicant_sync_status(
-                    applicant.appl_Id,
+            if response:
+                logger.debug(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
+                if 'Customer' in response:
+                    # Success - update sync status
+                    qb_customer_id = response['Customer']['Id']
+                    self._update_applicant_sync_status(
+                        applicant.appl_Id,
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
@@ -602,7 +605,7 @@ class CustomerSyncService:
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
                 self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
                 self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-
+                logger.error(f"Failed to sync applicant {applicant.appl_Id} to QuickBooks: {error_msg}")
                 return CustomerSyncResult(
                     customer_id=str(applicant.appl_Id),
                     customer_type='Applicant',
@@ -616,13 +619,46 @@ class CustomerSyncService:
             error_msg = str(e)
             self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
             self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-
+            logger.error(f"Exception while syncing applicant {applicant.appl_Id}: {error_msg}")
             return CustomerSyncResult(
                 customer_id=str(applicant.appl_Id),
                 customer_type='Applicant',
                 success=False,
                 error_message=error_msg
             )
+
+    def sync_applicant_by_id(self, appl_id: int) -> CustomerSyncResult:
+        """
+        Synchronize a single applicant by their MIS application ID
+
+        Args:
+            appl_id: MIS applicant ID
+
+        Returns:
+            CustomerSyncResult: Result of the synchronization attempt
+        """
+        try:
+            with db_manager.get_mis_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
+                if not applicant:
+                    raise Exception(f"Applicant with ID {appl_id} not found")
+
+                return self.sync_single_applicant(applicant)
+
+        except Exception as e:
+            logger.error(f"Error syncing applicant by ID {appl_id}: {e}")
+            return CustomerSyncResult(
+                customer_id=str(appl_id),
+                customer_type='Applicant',
+                success=False,
+                error_message=str(e)
+            )
+        finally:
+            if 'session' in locals():
+                session.close()
+
+
+
 
     def sync_single_student(self, student: TblPersonalUg) -> CustomerSyncResult:
         """
@@ -703,26 +739,22 @@ class CustomerSyncService:
             quickbooks_id: QuickBooks customer ID if successfully synced
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
 
-            applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
-            if applicant:
-                applicant.QuickBk_Status = status
-                applicant.pushed_date = datetime.now()
-                applicant.pushed_by = "CustomerSyncService"
-
-                session.commit()
-                logger.info(f"Updated applicant {appl_id} sync status to {status}")
+                    applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
+                    if applicant:
+                        applicant.QuickBk_Status = status
+                        applicant.pushed_date = datetime.now()
+                        applicant.pushed_by = "CustomerSyncService"
+                        session.commit()
+                        logger.info(f"Updated applicant {appl_id} sync status to {status}")
 
         except Exception as e:
             logger.error(f"Error updating applicant sync status: {e}")
-            if 'session' in locals():
+            with db_manager.get_mis_session() as session:
                 session.rollback()
             raise
-        finally:
-            if 'session' in locals():
-                session.close()
-
+    
     def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None):
         """
         Update student synchronization status in MIS database
@@ -768,10 +800,11 @@ class CustomerSyncService:
             details: Additional details about the action
         """
         try:
-            audit_log = QuickBooksAuditLog(
-                action=f"CUSTOMER_SYNC_{action}",
-                details=f"{customer_type} ID: {customer_id} - {details}",
-                timestamp=datetime.now()
+            audit_log = QuickbooksAuditLog(
+                action_type=f"CUSTOMER_SYNC_{action}",
+                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
+                response_payload=f"{customer_type} ID: {customer_id} - {details}",
+                
             )
             db.session.add(audit_log)
             db.session.commit()

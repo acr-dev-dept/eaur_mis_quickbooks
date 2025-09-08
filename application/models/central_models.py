@@ -34,7 +34,6 @@ class QuickBooksConfig(BaseModel):
     realm_id = Column(String(50), nullable=True)
     connected_at = Column(DateTime, nullable=True)
     last_sync_at = Column(DateTime, nullable=True)
-
     # Configuration
     is_active = Column(Boolean, default=True, nullable=False)
     configuration = Column(JSON, nullable=True)  # Store additional QB config as JSON
