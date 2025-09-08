@@ -797,7 +797,7 @@ class CustomerSyncService:
             details: Additional details about the action
         """
         try:
-            audit_log = QuickBooksAuditLog(
+            audit_log = QuickbooksAuditLog(
                 action=f"CUSTOMER_SYNC_{action}",
                 details=f"{customer_type} ID: {customer_id} - {details}",
                 timestamp=datetime.now()
