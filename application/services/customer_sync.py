@@ -751,10 +751,6 @@ class CustomerSyncService:
             logger.error(f"Error updating applicant sync status: {e}")
             if 'session' in locals():
                 session.rollback()
-            raise
-        finally:
-            if 'session' in locals():
-                session.close()
 
     def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None):
         """
