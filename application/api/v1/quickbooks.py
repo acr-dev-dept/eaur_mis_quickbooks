@@ -1113,7 +1113,20 @@ def get_items(item_type):
     
 @quickbooks_bp.route('/item/create_item', methods=['POST'])
 def create_item():
-    """Create a new item."""
+    """Create a new item.
+    
+    Example:
+    {
+        "Name": "Sample Item",
+        "Type": "Service",
+        "IncomeAccountRef": {
+            "value": "79",
+            "name": "Sales of Product Income"
+        },
+        "Description": "This is a sample item",
+        "UnitPrice": 100.00,
+        "Taxable": false
+    """
     try:
         # Check if QuickBooks is configured
         if not QuickBooksConfig.is_connected():
@@ -1133,9 +1146,6 @@ def create_item():
         required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
 
         item_data = request.json
-
-
-
 
         if item_data.get('Type') not in required_item_types:
             current_app.logger.error(f"Invalid item type: {item_data.get('Type')}")

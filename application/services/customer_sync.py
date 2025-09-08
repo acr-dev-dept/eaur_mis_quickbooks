@@ -624,6 +624,39 @@ class CustomerSyncService:
                 error_message=error_msg
             )
 
+    def sync_applicant_by_id(self, appl_id: int) -> CustomerSyncResult:
+        """
+        Synchronize a single applicant by their MIS application ID
+
+        Args:
+            appl_id: MIS applicant ID
+
+        Returns:
+            CustomerSyncResult: Result of the synchronization attempt
+        """
+        try:
+            with db_manager.get_mis_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
+                if not applicant:
+                    raise Exception(f"Applicant with ID {appl_id} not found")
+
+                return self.sync_single_applicant(applicant)
+
+        except Exception as e:
+            logger.error(f"Error syncing applicant by ID {appl_id}: {e}")
+            return CustomerSyncResult(
+                customer_id=str(appl_id),
+                customer_type='Applicant',
+                success=False,
+                error_message=str(e)
+            )
+        finally:
+            if 'session' in locals():
+                session.close()
+
+
+
+
     def sync_single_student(self, student: TblPersonalUg) -> CustomerSyncResult:
         """
         Synchronize a single student to QuickBooks

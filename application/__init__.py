@@ -139,7 +139,7 @@ def register_blueprints(app):
     from application.api.v1.quickbooks import quickbooks_bp
     from application.api.v1.mis_data import mis_data_bp
     #from application.api.v1.sync import sync_bp
-    from application.api.v1.customer_sync import customer_sync_bp
+    from application.api.v1.customer_sync_api import customer_sync_bp
     
 
     # Register blueprints

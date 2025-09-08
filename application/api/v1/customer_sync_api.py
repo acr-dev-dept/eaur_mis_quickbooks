@@ -351,6 +351,50 @@ def sync_applicants():
             details=str(e),
             status_code=500
         )
+    
+@customer_sync_bp.route('/applicants/<int:appl_id>', methods=['POST'])
+def sync_single_applicant(appl_id):
+    """
+    Synchronize a single applicant to QuickBooks customer
+
+    Args:
+        appl_id: Applicant ID to synchronize
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sync_service = CustomerSyncService()
+        result = sync_service.sync_applicant_by_id(appl_id)
+
+        if result.success:
+            return create_response(
+                success=True,
+                data={
+                    'applicant_id': result.customer_id,
+                    'quickbooks_id': result.quickbooks_id
+                },
+                message=f'Applicant {appl_id} synchronized successfully'
+            )
+        else:
+            return create_response(
+                success=False,
+                error=f'Failed to synchronize applicant {appl_id}',
+                details=result.error_message,
+                status_code=500
+            )
+
+    except Exception as e:
+        current_app.logger.error(f"Error synchronizing applicant {appl_id}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error synchronizing applicant {appl_id}',
+            details=str(e),
+            status_code=500
+        )
 
 @customer_sync_bp.route('/students', methods=['POST'])
 def sync_students():
@@ -447,6 +491,7 @@ def sync_students():
             details=str(e),
             status_code=500
         )
+
 
 @customer_sync_bp.route('/all', methods=['POST'])
 def sync_all_customers():

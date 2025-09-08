@@ -34,7 +34,7 @@ marshmallow==3.20.1
 mccabe==0.7.0
 mypy_extensions==1.1.0
 mysql-connector-python==9.4.0
-numpy==1.24.3
+numpy>=1.24.3
 packaging==25.0
 pandas==2.0.3
 pathspec==0.12.1
