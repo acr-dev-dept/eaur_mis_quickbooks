@@ -157,10 +157,7 @@ def payer_validation():
         current_app.logger.info(f"Payer validation request - Merchant: {merchant_code}, Payer: {payer_code}")
 
         # get invoice details given the reference number (payer_code)
-        try:
-            invoice_details = TblImvoice.get_invoice_details(payer_code)
-            current_app.logger.info(f"Invoice details retrieved from Urubuto Pay: {invoice_details}")
-
+        try:            
             invoice_balance = TblImvoice.get_invoice_balance(payer_code)
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
             current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
@@ -179,7 +176,7 @@ def payer_validation():
                 "department_code": "0",
                 "department_name": "Unknown Department",
                 "class_name": "Unknown Class",
-                "amount": 5,
+                "amount": invoice_balance,
                 "currency": "RWF",
                 "payer_must_pay_total_amount": "YES",
                 "payer_names": "Unknown Student"
