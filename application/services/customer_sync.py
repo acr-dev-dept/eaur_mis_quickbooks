@@ -22,6 +22,8 @@ from application.models.central_models import QuickBooksConfig, QuickbooksAuditL
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
+from application.helpers.json_field_helper import JSONFieldHelper
+
 
 logger = logging.getLogger(__name__)
 
@@ -545,11 +547,13 @@ class CustomerSyncService:
                 ],
                 "Notes": f"Student synchronized from MIS - Registration Number: {student_data['reg_no']}"
             }
+            # serialize custom fields to JSON
+            payload = JSONFieldHelper.serialize_json(qb_customer)
 
             # Remove None values to clean up the payload
             qb_customer = {k: v for k, v in qb_customer.items() if v is not None}
-
-            return qb_customer
+            payload = {k: v for k, v in qb_customer.items() if v is not None}
+            return payload
 
         except Exception as e:
             logger.error(f"Error mapping student {student.reg_no} to QuickBooks format: {e}")
