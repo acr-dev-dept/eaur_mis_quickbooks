@@ -736,22 +736,22 @@ class CustomerSyncService:
             quickbooks_id: QuickBooks customer ID if successfully synced
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
 
-            applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
-            if applicant:
-                applicant.QuickBk_Status = status
-                applicant.pushed_date = datetime.now()
-                applicant.pushed_by = "CustomerSyncService"
-
-                session.commit()
-                logger.info(f"Updated applicant {appl_id} sync status to {status}")
+                    applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
+                    if applicant:
+                        applicant.QuickBk_Status = status
+                        applicant.pushed_date = datetime.now()
+                        applicant.pushed_by = "CustomerSyncService"
+                        session.commit()
+                        logger.info(f"Updated applicant {appl_id} sync status to {status}")
 
         except Exception as e:
             logger.error(f"Error updating applicant sync status: {e}")
-            if 'session' in locals():
+            with db_manager.get_mis_session() as session:
                 session.rollback()
-
+            raise
+    
     def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None):
         """
         Update student synchronization status in MIS database
