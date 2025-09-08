@@ -527,7 +527,7 @@ class CustomerSyncService:
                     {
                         "DefinitionId": "6",
                         "Name": "Intake",
-                        "StringValue": student_data['intake_details']
+                        "StringValue": str(student_data['intake_details']) if student_data['intake_details'] else ""
                     },
                     {
                         "DefinitionId": "7",
