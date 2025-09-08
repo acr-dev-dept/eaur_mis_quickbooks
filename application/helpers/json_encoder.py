@@ -9,3 +9,4 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(obj, Decimal):
             return float(obj)        # Convert Decimal -> float
         return super().default(obj)
+

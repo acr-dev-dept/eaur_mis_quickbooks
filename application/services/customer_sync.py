@@ -24,6 +24,7 @@ from application.utils.database import db_manager
 from application import db
 from application.helpers.json_field_helper import JSONFieldHelper
 from application.helpers.json_encoder import EnhancedJSONEncoder
+from application.helpers.SafeStringify import safe_stringify
 
 logger = logging.getLogger(__name__)
 
@@ -446,7 +447,7 @@ class CustomerSyncService:
                     {
                         "DefinitionId": "8",
                         "Name": "Intake",
-                        "StringValue": applicant_data['intake_details']
+                        "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
                     },
                     {
                         "DefinitionId": "9",
