@@ -571,18 +571,21 @@ class CustomerSyncService:
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
-
+            if qb_service:
+                logger.info(f"QuickBooks service initialized for applicant {applicant.appl_Id}")
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-
+            if qb_customer_data:
+                logger.debug(f"Mapped applicant {applicant.appl_Id} data to QuickBooks format: {qb_customer_data}")
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-
-            if 'Customer' in response:
-                # Success - update sync status
-                qb_customer_id = response['Customer']['Id']
-                self._update_applicant_sync_status(
-                    applicant.appl_Id,
+            if response:
+                logger.debug(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
+                if 'Customer' in response:
+                    # Success - update sync status
+                    qb_customer_id = response['Customer']['Id']
+                    self._update_applicant_sync_status(
+                        applicant.appl_Id,
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
@@ -602,7 +605,7 @@ class CustomerSyncService:
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
                 self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
                 self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-
+                logger.error(f"Failed to sync applicant {applicant.appl_Id} to QuickBooks: {error_msg}")
                 return CustomerSyncResult(
                     customer_id=str(applicant.appl_Id),
                     customer_type='Applicant',
@@ -616,7 +619,7 @@ class CustomerSyncService:
             error_msg = str(e)
             self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
             self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-
+            logger.error(f"Exception while syncing applicant {applicant.appl_Id}: {error_msg}")
             return CustomerSyncResult(
                 customer_id=str(applicant.appl_Id),
                 customer_type='Applicant',
@@ -799,8 +802,9 @@ class CustomerSyncService:
         try:
             audit_log = QuickbooksAuditLog(
                 action_type=f"CUSTOMER_SYNC_{action}",
-                operation_status="200",
+                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
                 response_payload=f"{customer_type} ID: {customer_id} - {details}",
+                
             )
             db.session.add(audit_log)
             db.session.commit()
