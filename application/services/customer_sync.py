@@ -798,9 +798,9 @@ class CustomerSyncService:
         """
         try:
             audit_log = QuickbooksAuditLog(
-                action=f"CUSTOMER_SYNC_{action}",
-                details=f"{customer_type} ID: {customer_id} - {details}",
-                timestamp=datetime.now()
+                action_type=f"CUSTOMER_SYNC_{action}",
+                operation_status="200",
+                response_payload=f"{customer_type} ID: {customer_id} - {details}",
             )
             db.session.add(audit_log)
             db.session.commit()
