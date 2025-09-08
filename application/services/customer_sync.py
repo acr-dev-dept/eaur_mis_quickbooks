@@ -467,7 +467,7 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
-            raise
+            
 
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
