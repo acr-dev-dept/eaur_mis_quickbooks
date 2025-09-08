@@ -23,7 +23,7 @@ from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
 from application.helpers.json_field_helper import JSONFieldHelper
-
+from application.helpers.json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -550,7 +550,29 @@ class CustomerSyncService:
 
             # Remove None values to clean up the payload
             qb_customer = {k: v for k, v in qb_customer.items() if v is not None}
+            
+            try:
+                json.dumps(qb_customer, cls=EnhancedJSONEncoder)
+            except TypeError as te:
+                # Walk through keys to find the exact field causing issues
+                for key, value in qb_customer.items():
+                    try:
+                        json.dumps({key: value}, cls=EnhancedJSONEncoder)
+                    except TypeError as field_error:
+                        logger.error(
+                            f"JSON serialization error for field '{key}' "
+                            f"with value '{value}' (type: {type(value)}): {field_error}"
+                        )
+                raise  # re-raise after logging
+
             return qb_customer
+
+        except Exception as e:
+            logger.error(
+                f"Error mapping student {getattr(student, 'reg_no', 'UNKNOWN')} "
+                f"to QuickBooks format: {e}"
+            )
+            raise
 
         except Exception as e:
             logger.error(f"Error mapping student {student.reg_no} to QuickBooks format: {e}")
