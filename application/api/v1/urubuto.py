@@ -156,6 +156,16 @@ def payer_validation():
 
         current_app.logger.info(f"Payer validation request - Merchant: {merchant_code}, Payer: {payer_code}")
 
+        # get invoice details given the reference number (payer_code)
+        try:
+            invoice_details = urubuto_service.get_invoice_details(payer_code)
+            current_app.logger.info(f"Invoice details retrieved from Urubuto Pay: {invoice_details}")
+
+            invoice_balance = urubuto_service.get_invoice_balance(payer_code)
+            current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
         # We are going to stop here and respond with successful response
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
