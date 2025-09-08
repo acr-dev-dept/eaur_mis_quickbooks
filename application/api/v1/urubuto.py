@@ -163,6 +163,7 @@ def payer_validation():
 
             invoice_balance = TblImvoice.get_invoice_balance(payer_code)
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
+            current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
         except Exception as e:
             current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
             current_app.logger.error(traceback.format_exc())
