@@ -326,19 +326,28 @@ def payment_callback():
     data = request.get_json()
     current_app.logger.info(f"Callback data: {data}")
     if not data:
+        message = f"No data found for this code: {data.get('payer_code')}"
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "No data provided",
-            "status": 400
-        }), 400
+            "message": message,
+            "status": 404
+        }), 404
 
-    # TODO: Implement the logic to update payment records based on the callback data
+    # Fetch some data from the callback for logging
+    transaction_id = data.get('transaction_id')
+    status = data.get('status')
+    transaction_status = data.get('transaction_status')
+    amount = data.get('amount')
+    payment_date_time = data.get('payment_date_time')
+    payer_code = data.get('payer_code')
 
-    return jsonify({
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "message": "Payment callback processed successfully",
-        "status": 200
-    }), 200
+    return jsonify(        
+        {
+        "data": {
+        "external_transaction_id": transaction_id ,
+        "internal_transaction_id": "45645645954674956745"
+        }
+        }), 200
 
 @urubuto_bp.route('/payments/notification', methods=['POST'])
 @require_auth('notifications')
