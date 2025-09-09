@@ -305,7 +305,7 @@ def payer_validation():
         }), 500
     
 @urubuto_bp.route('/callback', methods=['POST'])
-@require_auth('callbacks')
+@require_auth('notifications')
 @require_gateway('urubuto_pay')
 def payment_callback():
     """
