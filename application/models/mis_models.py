@@ -133,11 +133,11 @@ class Payment(MISBaseModel):
     __tablename__ = 'payment'
     
     id = db.Column(db.Integer, nullable=False, primary_key=True)
-    trans_code = db.Column(db.String(200))
+    trans_code = db.Column(db.String(200), unique=True)
     reg_no = db.Column(db.String(200))
     level_id = db.Column(db.Integer, ForeignKey("tbl_level.level_id"))
     bank_id = db.Column(db.Integer, ForeignKey("tbl_bank.bank_id"))
-    slip_no = db.Column(db.String(200))
+    slip_no = db.Column(db.String(200), unique=True)
     user = db.Column(db.String(20))
     acad_cycle_id = db.Column(db.String(100))
     date = db.Column(db.String(50))
@@ -147,7 +147,7 @@ class Payment(MISBaseModel):
     recorded_date = db.Column(DateTime, server_default=func.now())
     Remark = db.Column(db.String(200))
     action = db.Column(db.String(100))
-    external_transaction_id = db.Column(Text)
+    external_transaction_id = db.Column(Text, unique=True)
     payment_chanel = db.Column(db.String(100))
     payment_notifi = db.Column(db.String(100))
     invoi_ref = db.Column(db.String(255))
@@ -214,13 +214,14 @@ class Payment(MISBaseModel):
             with cls.get_session() as session:
                 payment = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
                 if payment:
-                    return payment.to_dict()
+                    return payment
                 return []
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting payment details for transaction ID {external_transaction_id}: {str(e)}")
-            return []
+            return None
         
+
     @classmethod
     def create_payment(cls, **kwargs):
         """
