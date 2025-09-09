@@ -198,6 +198,50 @@ class Payment(MISBaseModel):
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
         }
+    
+    @classmethod
+    def get_payment_details_by_external_id(cls, external_transaction_id):
+        """
+        Get detailed payment information by external transaction ID
+
+        Args:
+            external_transaction_id (str): External transaction ID
+
+        Returns:
+            dict: Payment details or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                payment = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
+                if payment:
+                    return payment.to_dict()
+                return []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting payment details for transaction ID {external_transaction_id}: {str(e)}")
+            return []
+        
+    @classmethod
+    def create_payment(cls, **kwargs):
+        """
+        Create a new payment record
+
+        Args:
+            kwargs: Payment fields
+
+        Returns:
+            Payment: Created payment record
+        """
+        try:
+            with cls.get_session() as session:
+                payment = cls(**kwargs)
+                session.add(payment)
+                session.commit()
+                return payment.to_dict()
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error creating payment: {str(e)}")
+            return []
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
