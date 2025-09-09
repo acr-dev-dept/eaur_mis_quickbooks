@@ -383,6 +383,7 @@ def payment_callback():
                         fee_category=updated[1].fee_category if updated[1] else None,
                         reg_no=updated[1].reg_no if updated[1] else None,
                         appl_Id=updated[1].appl_Id if updated[1] else None,
+                        user="URUBUTOPAY"
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
@@ -409,6 +410,8 @@ def payment_callback():
                     amount=amount,
                     fee_category=updated[1].fee_category if updated[1] else None,
                     reg_no=updated[1].reg_no if updated[1] else None,
+                    appl_Id=updated[1].appl_Id if updated[1] else None,
+                    user="URUBUTOPAY"
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
