@@ -135,6 +135,7 @@ class Payment(MISBaseModel):
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     trans_code = db.Column(db.String(200), unique=True)
     reg_no = db.Column(db.String(200))
+    appl_Id = db.Column(db.Integer, ForeignKey("tbl_online_application.appl_Id"))
     level_id = db.Column(db.Integer, ForeignKey("tbl_level.level_id"))
     bank_id = db.Column(db.Integer, ForeignKey("tbl_bank.bank_id"))
     slip_no = db.Column(db.String(200), unique=True)
@@ -159,6 +160,7 @@ class Payment(MISBaseModel):
     level = relationship("TblLevel", backref="payments", lazy='joined')
     bank = relationship("TblBank", backref="payments", lazy='joined')
     fee_category_rel = relationship("TblIncomeCategory", backref="payments", lazy='joined')
+    online_application = relationship("TblOnlineApplication", backref="payments", lazy='joined')
 
 
     def __repr__(self):
@@ -175,6 +177,8 @@ class Payment(MISBaseModel):
             'id': self.id,
             'trans_code': self.trans_code,
             'reg_no': self.reg_no,
+            'appl_Id': self.appl_Id,
+            'application_details': self.online_application.to_dict() if self.online_application else [],
             'level_id': self.level_id,
             'level_details': self.level.to_dict() if self.level else [],
             'bank_id': self.bank_id,
