@@ -523,12 +523,12 @@ class TblImvoice(MISBaseModel):
                     new_balance = max(0, (invoice.balance or 0) - amount_paid)
                     invoice.balance = new_balance
                     session.commit()
-                    return new_balance
-                return None
+                    return new_balance, invoice
+                return None, None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error updating invoice balance for reference {reference_number}: {str(e)}")
-            return None
+            return None, None
 
 
 class TblIncomeCategory(MISBaseModel):
