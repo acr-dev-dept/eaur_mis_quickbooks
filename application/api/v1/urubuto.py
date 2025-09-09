@@ -377,7 +377,7 @@ def payment_callback():
                         external_transaction_id=transaction_id,
                         trans_code=internal_transaction_id,
                         description=f"Urubuto Pay Via Microservice",
-                        payment_channel=data.get('payment_channel_name'),
+                        payment_chanel=data.get('payment_channel_name'),
                         invoi_ref=payer_code,
                         amount=amount,
                         fee_category=updated[1].fee_category if updated[1] else None,
@@ -404,7 +404,7 @@ def payment_callback():
                     payment = Payment.create_payment(
                         external_transaction_id=transaction_id,
                     description=f"Urubuto Pay Via Microservice",
-                    payment_channel=data.get('payment_channel_name'),
+                    payment_chanel=data.get('payment_channel_name'),
                     invoi_ref=payer_code,
                     amount=amount,
                     fee_category=updated[1].fee_category if updated[1] else None,
