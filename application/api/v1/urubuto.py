@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblOnlineApplication
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblOnlineApplication, Payment
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
@@ -343,6 +343,25 @@ def payment_callback():
     # Generate a random internal transaction in form of 625843
     internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
 
+    # Check if the transaction_id is not in the payment table so that we do not duplicate payments
+    try:
+        existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
+        current_app.logger.info(f"Existing payment check for transaction {transaction_id}: {existing_payment}")
+        if existing_payment:
+            message = f"Payment already exists for transaction: {transaction_id}"
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Successful",
+                "status": 200,
+                "data": {
+                    "external_transaction_id": transaction_id,
+                    "internal_transaction_id": str(existing_payment.id)
+                }
+            }), 200
+    except Exception as e:
+        current_app.logger.error(f"Error checking existing payment for transaction {transaction_id}: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+
     # check the transaction status so that we know how to update the balance in invoice
     # table and the payment table
     if transaction_status == "VALID":
@@ -350,6 +369,18 @@ def payment_callback():
         try:
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
+            # Create payment record
+            try:
+                payment = Payment.create_payment(
+                    external_transaction_id=transaction_id,
+                    trans_code=internal_transaction_id,
+                    slip_no=internal_transaction_id,
+                    description=f"Payment via Urubuto Pay - {data.get('payment_channel_name')}",
+                )
+                current_app.logger.info(f"Payment record created: {payment}")
+            except Exception as e:
+                current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
+                current_app.logger.error(traceback.format_exc())
         except Exception as e:
             current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
@@ -359,6 +390,18 @@ def payment_callback():
         try:
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
+            # Create payment record
+            try:
+                payment = Payment.create_payment(
+                    external_transaction_id=transaction_id,
+                    trans_code=internal_transaction_id,
+                    slip_no=internal_transaction_id,
+                    description=f"Payment via Urubuto Pay - {data.get('payment_channel_name')}",
+                )
+                current_app.logger.info(f"Payment record created: {payment}")
+            except Exception as e:
+                current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
+                current_app.logger.error(traceback.format_exc())
         except Exception as e:
             current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
@@ -370,6 +413,8 @@ def payment_callback():
 
     return jsonify(
         {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Successful",
             "data": {
                 "external_transaction_id": transaction_id,
                 "internal_transaction_id": internal_transaction_id
