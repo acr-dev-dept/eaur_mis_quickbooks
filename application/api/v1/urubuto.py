@@ -370,7 +370,7 @@ def payment_callback():
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
             # Make sure the invoice balance has been updated before creating payment record
-            if updated(0) is not None: # The method returns (new_balance, invoice) tuple
+            if updated[0] is not None: # The method returns (new_balance, invoice) tuple
                 # Create payment record
                 try:
                     payment = Payment.create_payment(
@@ -380,9 +380,9 @@ def payment_callback():
                         payment_channel=data.get('payment_channel_name'),
                         invoi_ref=payer_code,
                         amount=amount,
-                        fee_category=updated(1).fee_category if updated(1) else None,
-                        reg_no=updated(1).reg_no if updated(1) else None,
-                        appl_Id=updated(1).appl_Id if updated(1) else None,
+                        fee_category=updated[1].fee_category if updated[1] else None,
+                        reg_no=updated[1].reg_no if updated[1] else None,
+                        appl_Id=updated[1].appl_Id if updated[1] else None,
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
@@ -398,7 +398,7 @@ def payment_callback():
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
             # Make sure the invoice balance has been updated before creating payment record
-            if updated(0) is not None: # The method returns (new_balance, invoice) tuple
+            if updated[0] is not None: # The method returns (new_balance, invoice) tuple
                 # Create payment record
                 try:
                     payment = Payment.create_payment(
@@ -407,8 +407,8 @@ def payment_callback():
                     payment_channel=data.get('payment_channel_name'),
                     invoi_ref=payer_code,
                     amount=amount,
-                    fee_category=updated(1).fee_category if updated(1) else None,
-                    reg_no=updated(1).reg_no if updated(1) else None,
+                    fee_category=updated[1].fee_category if updated[1] else None,
+                    reg_no=updated[1].reg_no if updated[1] else None,
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
