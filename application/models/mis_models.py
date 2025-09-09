@@ -408,6 +408,7 @@ class TblImvoice(MISBaseModel):
     fee_category = db.Column(db.Integer, ForeignKey("tbl_income_category.id"))
     module_id = db.Column(db.Integer, ForeignKey("modules.module_id"))
     Rpt_Id = db.Column(db.Integer)
+    appl_Id = db.Column(db.Integer)
     dept = db.Column(Float)
     credit = db.Column(Float)
     balance = db.Column(db.Float, nullable=True)
@@ -455,6 +456,7 @@ class TblImvoice(MISBaseModel):
             'invoice_date': self.invoice_date.isoformat() if self.invoice_date else None,
             'comment': self.comment,
             'reference_number': self.reference_number,
+            'appl_Id': self.appl_Id,
             'user': self.user,
             'date': self.date.isoformat() if self.date else None,
             'intake_id': self.intake_id,
