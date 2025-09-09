@@ -340,13 +340,40 @@ def payment_callback():
     amount = data.get('amount')
     payment_date_time = data.get('payment_date_time')
     payer_code = data.get('payer_code')
+    # Generate a random internal transaction in form of 625843
+    internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
 
-    return jsonify(        
+    # check the transaction status so that we know how to update the balance in invoice
+    # table and the payment table
+    if transaction_status == "VALID":
+        # Update invoice balance
+        try:
+            updated = TblImvoice.update_invoice_balance(payer_code, amount)
+            current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
+    elif transaction_status == "PENDING": # tHIS SHOWS THAT THE STUDENT HAS PAID, ONLY THAT THE BANK HAS NOT CREDITED THE MERCHANT
+        current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} is pending.")
+        # WE update the balance because the student has paid, only that the bank has not credited the merchant
+        try:
+            updated = TblImvoice.update_invoice_balance(payer_code, amount)
+            current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
+    else:
+        current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
+        # Log the transaction status
+        current_app.logger.info(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
+        
+
+    return jsonify(
         {
-        "data": {
-        "external_transaction_id": transaction_id ,
-        "internal_transaction_id": "45645645954674956745"
-        }
+            "data": {
+                "external_transaction_id": transaction_id,
+                "internal_transaction_id": internal_transaction_id
+            }
         }), 200
 
 @urubuto_bp.route('/payments/notification', methods=['POST'])
