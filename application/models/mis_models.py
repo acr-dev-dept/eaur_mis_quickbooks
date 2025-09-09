@@ -458,6 +458,33 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting invoice balance for reference {reference_number}: {str(e)}")
             return None
+    
+    @classmethod
+    def update_invoice_balance(cls, reference_number, amount_paid):
+        """
+        Update invoice balance by reference number
+
+        Args:
+            reference_number (str): Invoice reference number
+            amount_paid (float): Amount paid to deduct from balance
+        Returns:
+            new_balance (float): Updated invoice balance or None if not found/error
+        """
+        try:
+            with cls.get_session() as session:
+                invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
+                if invoice:
+                    # The balance cannot be negative
+                    new_balance = max(0, (invoice.balance or 0) - amount_paid)
+                    invoice.balance = new_balance
+                    session.commit()
+                    return new_balance
+                return None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating invoice balance for reference {reference_number}: {str(e)}")
+            return None
+
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
