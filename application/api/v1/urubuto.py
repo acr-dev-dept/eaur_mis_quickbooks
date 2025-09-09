@@ -353,7 +353,7 @@ def payment_callback():
         except Exception as e:
             current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
-    elif transaction_status == "PENDING": # tHIS SHOWS THAT THE STUDENT HAS PAID, ONLY THAT THE BANK HAS NOT CREDITED THE MERCHANT
+    elif transaction_status == "PENDING_SETTLEMENT":  # tHIS SHOWS THAT THE STUDENT HAS PAID, ONLY THAT THE BANK HAS NOT CREDITED THE MERCHANT
         current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} is pending.")
         # WE update the balance because the student has paid, only that the bank has not credited the merchant
         try:
@@ -366,7 +366,7 @@ def payment_callback():
         current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
         # Log the transaction status
         current_app.logger.info(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
-        
+
 
     return jsonify(
         {
