@@ -22,6 +22,9 @@ from application.models.central_models import QuickBooksConfig, QuickbooksAuditL
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
+from application.helpers.json_field_helper import JSONFieldHelper
+from application.helpers.json_encoder import EnhancedJSONEncoder
+from application.helpers.SafeStringify import safe_stringify
 
 logger = logging.getLogger(__name__)
 
@@ -444,7 +447,7 @@ class CustomerSyncService:
                     {
                         "DefinitionId": "8",
                         "Name": "Intake",
-                        "StringValue": applicant_data['intake_details']
+                        "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
                     },
                     {
                         "DefinitionId": "9",
@@ -525,7 +528,7 @@ class CustomerSyncService:
                     {
                         "DefinitionId": "6",
                         "Name": "Intake",
-                        "StringValue": student_data['intake_details']
+                        "StringValue": str(student_data['intake_details']) if student_data['intake_details'] else ""
                     },
                     {
                         "DefinitionId": "7",
@@ -548,8 +551,30 @@ class CustomerSyncService:
 
             # Remove None values to clean up the payload
             qb_customer = {k: v for k, v in qb_customer.items() if v is not None}
+            
+            try:
+                json.dumps(qb_customer, cls=EnhancedJSONEncoder)
+                logger.info(f"Successfully validated JSON serialization for student {student.reg_no}")
+            except TypeError as te:
+                # Walk through keys to find the exact field causing issues
+                for key, value in qb_customer.items():
+                    try:
+                        json.dumps({key: value}, cls=EnhancedJSONEncoder)
+                    except TypeError as field_error:
+                        logger.error(
+                            f"JSON serialization error for field '{key}' "
+                            f"with value '{value}' (type: {type(value)}): {field_error}"
+                        )
+                raise  # re-raise after logging
 
             return qb_customer
+
+        except Exception as e:
+            logger.error(
+                f"Error mapping student {getattr(student, 'reg_no', 'UNKNOWN')} "
+                f"to QuickBooks format: {e}"
+            )
+            raise
 
         except Exception as e:
             logger.error(f"Error mapping student {student.reg_no} to QuickBooks format: {e}")
@@ -575,6 +600,21 @@ class CustomerSyncService:
                 logger.info(f"QuickBooks service initialized for applicant {applicant.appl_Id}")
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
+            # serialize data
+            try:
+                json.dumps(qb_customer_data, cls=EnhancedJSONEncoder)
+                logger.info(f"Successfully validated JSON serialization for applicant {applicant.appl_Id}")
+            except TypeError as te:
+                # Walk through keys to find the exact field causing issues
+                for key, value in qb_customer_data.items():
+                    try:
+                        json.dumps({key: value}, cls=EnhancedJSONEncoder)
+                    except TypeError as field_error:
+                        logger.error(
+                            f"JSON serialization error for field '{key}' "
+                            f"with value '{value}' (type: {type(value)}): {field_error}"
+                        )
+                raise
             if qb_customer_data:
                 logger.debug(f"Mapped applicant {applicant.appl_Id} data to QuickBooks format: {qb_customer_data}")
             # Create customer in QuickBooks
