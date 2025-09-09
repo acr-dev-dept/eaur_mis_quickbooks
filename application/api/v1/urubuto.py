@@ -594,7 +594,7 @@ def initiate_payment():
 
         # Extract and validate required fields
         payer_code = data.get('payer_code')
-        amount = TblImvoice.get_invoice_balance(payer_code)
+        amount = data.get('amount')
         channel_name = data.get('channel_name')
         service_code = data.get('service_code')
 
