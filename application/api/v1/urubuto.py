@@ -375,15 +375,17 @@ def payment_callback():
                 try:
                     payment = Payment.create_payment(
                         external_transaction_id=transaction_id,
-                        trans_code=internal_transaction_id,
+                        trans_code=transaction_id,
                         description=f"Urubuto Pay Via Microservice",
                         payment_chanel=data.get('payment_channel_name'),
                         invoi_ref=payer_code,
                         amount=amount,
+                        level_id=updated[1].level_id if updated[1] else None,
                         fee_category=updated[1].fee_category if updated[1] else None,
                         reg_no=updated[1].reg_no if updated[1] else None,
                         appl_Id=updated[1].appl_Id if updated[1] else None,
-                        user="URUBUTOPAY"
+                        user="URUBUTOPAY",
+                        bank_id=2
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
@@ -405,13 +407,16 @@ def payment_callback():
                     payment = Payment.create_payment(
                         external_transaction_id=transaction_id,
                     description=f"Urubuto Pay Via Microservice",
+                    trans_code=transaction_id,
                     payment_chanel=data.get('payment_channel_name'),
                     invoi_ref=payer_code,
+                    level_id=updated[1].level_id if updated[1] else None,
                     amount=amount,
                     fee_category=updated[1].fee_category if updated[1] else None,
                     reg_no=updated[1].reg_no if updated[1] else None,
                     appl_Id=updated[1].appl_Id if updated[1] else None,
-                    user="URUBUTOPAY"
+                    user="URUBUTOPAY",
+                    bank_id=2
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
                 except Exception as e:
