@@ -8,7 +8,7 @@ DO NOT MODIFY THIS FILE MANUALLY - it will be regenerated when the database sche
 """
 
 from datetime import datetime
-from sqlalchemy import  DateTime, ForeignKey, Text, Boolean, Float
+from sqlalchemy import  DateTime, ForeignKey, Text, Boolean, Float, func
 from sqlalchemy.types import Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -144,7 +144,7 @@ class Payment(MISBaseModel):
     fee_category = db.Column(db.Integer, ForeignKey("tbl_income_category.id"))
     amount = db.Column(Float)
     description = db.Column(Text)
-    recorded_date = db.Column(DateTime, default='current_timestamp()')
+    recorded_date = db.Column(DateTime, server_default=func.now())
     Remark = db.Column(db.String(200))
     action = db.Column(db.String(100))
     external_transaction_id = db.Column(Text)
