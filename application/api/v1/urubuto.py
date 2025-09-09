@@ -369,18 +369,25 @@ def payment_callback():
         try:
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
-            # Create payment record
-            try:
-                payment = Payment.create_payment(
-                    external_transaction_id=transaction_id,
-                    trans_code=internal_transaction_id,
-                    slip_no=internal_transaction_id,
-                    description=f"Payment via Urubuto Pay - {data.get('payment_channel_name')}",
-                )
-                current_app.logger.info(f"Payment record created: {payment}")
-            except Exception as e:
-                current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
-                current_app.logger.error(traceback.format_exc())
+            # Make sure the invoice balance has been updated before creating payment record
+            if updated(0) is not None: # The method returns (new_balance, invoice) tuple
+                # Create payment record
+                try:
+                    payment = Payment.create_payment(
+                        external_transaction_id=transaction_id,
+                        trans_code=internal_transaction_id,
+                        description=f"Urubuto Pay Via Microservice",
+                        payment_channel=data.get('payment_channel_name'),
+                        invoi_ref=payer_code,
+                        amount=amount,
+                        fee_category=updated(1).fee_category if updated(1) else None,
+                        reg_no=updated(1).reg_no if updated(1) else None,
+                        appl_Id=updated(1).appl_Id if updated(1) else None,
+                    )
+                    current_app.logger.info(f"Payment record created: {payment}")
+                except Exception as e:
+                    current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
+                    current_app.logger.error(traceback.format_exc())
         except Exception as e:
             current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
@@ -390,18 +397,23 @@ def payment_callback():
         try:
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
-            # Create payment record
-            try:
-                payment = Payment.create_payment(
-                    external_transaction_id=transaction_id,
-                    trans_code=internal_transaction_id,
-                    slip_no=internal_transaction_id,
-                    description=f"Payment via Urubuto Pay - {data.get('payment_channel_name')}",
-                )
-                current_app.logger.info(f"Payment record created: {payment}")
-            except Exception as e:
-                current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
-                current_app.logger.error(traceback.format_exc())
+            # Make sure the invoice balance has been updated before creating payment record
+            if updated(0) is not None: # The method returns (new_balance, invoice) tuple
+                # Create payment record
+                try:
+                    payment = Payment.create_payment(
+                        external_transaction_id=transaction_id,
+                    description=f"Urubuto Pay Via Microservice",
+                    payment_channel=data.get('payment_channel_name'),
+                    invoi_ref=payer_code,
+                    amount=amount,
+                    fee_category=updated(1).fee_category if updated(1) else None,
+                    reg_no=updated(1).reg_no if updated(1) else None,
+                    )
+                    current_app.logger.info(f"Payment record created: {payment}")
+                except Exception as e:
+                    current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
+                    current_app.logger.error(traceback.format_exc())
         except Exception as e:
             current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
