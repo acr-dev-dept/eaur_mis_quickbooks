@@ -478,7 +478,7 @@ class TblImvoice(MISBaseModel):
         try:
             with cls.get_session() as session:
                 invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
-                return invoice.to_dict() if invoice else []
+                return invoice
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting invoice details for reference {reference_number}: {str(e)}")
