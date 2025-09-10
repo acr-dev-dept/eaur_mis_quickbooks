@@ -298,17 +298,26 @@ class QuickBooks:
     
     def get_custom_field_definitions(self, realm_id):
         """
-        Fetches custom field definitions from QuickBooks Preferences.
+        Fetches custom field definitions for Customers from QuickBooks Preferences.
         """
         endpoint = f"{realm_id}/preferences"
         params = {"minorversion": "75"}
         response = self.make_request(endpoint, method="GET", params=params)
+        current_app.logger.info(f"Preferences response: {response}")
+        current_app.logger.info(f"Preferences response keys: {list(response.keys())}")
+        current_app.logger.info(f"Preferences response Preferences keys: {list(response.get('Preferences', {}).keys())}")
         
         custom_fields = {}
-        if 'Preferences' in response and 'SalesFormsPrefs' in response['Preferences']:
-            for field_def in response['Preferences']['SalesFormsPrefs'].get('CustomField', []):
-                if 'Name' in field_def and 'DefinitionId' in field_def:
-                    custom_fields[field_def['Name']] = field_def['DefinitionId']
+        # The correct path for customer custom fields is under OtherPrefs
+        if 'Preferences' in response and 'OtherPrefs' in response['Preferences']:
+            # The custom field definitions are in a list under the 'OtherCustomField' key
+            for field_def in response['Preferences']['OtherPrefs'].get('OtherCustomField', []):
+                # The response object has a sub-list; you must iterate through it
+                for item in field_def.get('CustomField', []):
+                    # Check for the correct attributes
+                    if 'DefinitionId' in item and 'Name' in item:
+                        # Map the name to the DefinitionId for easy lookup
+                        custom_fields[item['Name']] = item['DefinitionId']
                     
         return custom_fields
 
