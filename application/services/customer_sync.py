@@ -473,74 +473,48 @@ class CustomerSyncService:
     
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
-        Map MIS student data to QuickBooks customer format.
-
-        Args:
-            student: MIS student object.
-
-        Returns:
-            Dictionary formatted for QuickBooks Customer API.
+        Map MIS student data to QuickBooks customer format
         """
         try:
-            # Assuming `student` is a dictionary or a dict-like object
             student_data = student
-
-            # Create the CustomField list with hardcoded DefinitionIds and Types
-            # based on the successful API response
+            
+            # Create the CustomField list with only DefinitionId and StringValue
             custom_fields_list = [
                 {
                     "DefinitionId": "1000000001",
-                    "Name": "CustomerType",
-                    "StringValue": "Student",
-                    "Type": "StringType"
+                    "StringValue": "Student"
                 },
                 {
                     "DefinitionId": "1000000002",
-                    "Name": "RegNo",
-                    "StringValue": student_data.get('reg_no', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('reg_no', '')
                 },
                 {
                     "DefinitionId": "1000000003",
-                    "Name": "Gender",
-                    "StringValue": student_data.get('sex', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('sex', '')
                 },
                 {
                     "DefinitionId": "1000000004",
-                    "Name": "Level",
-                    "StringValue": student_data.get('level_name', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('level_name', '')
                 },
                 {
                     "DefinitionId": "1000000005",
-                    "Name": "Campus",
-                    "StringValue": student_data.get('campus_name', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('campus_name', '')
                 },
                 {
                     "DefinitionId": "1000000006",
-                    "Name": "Intake",
-                    "StringValue": str(student_data.get('intake_details', '')),
-                    "Type": "StringType"
+                    "StringValue": str(student_data.get('intake_details', ''))
                 },
                 {
                     "DefinitionId": "1000000007",
-                    "Name": "Program",
-                    "StringValue": student_data.get('program_name', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('program_name', '')
                 },
                 {
                     "DefinitionId": "1000000008",
-                    "Name": "NationalID",
-                    "StringValue": student_data.get('national_id', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('national_id', '')
                 },
                 {
                     "DefinitionId": "1000000009",
-                    "Name": "ProgramType",
-                    "StringValue": student_data.get('program_type', ''),
-                    "Type": "StringType"
+                    "StringValue": student_data.get('program_type', '')
                 }
             ]
 
@@ -548,7 +522,7 @@ class CustomerSyncService:
             filtered_custom_fields = [
                 field for field in custom_fields_list if field.get('StringValue')
             ]
-
+            
             # Create the main QuickBooks customer dictionary
             qb_customer = {
                 "Name": student_data.get('display_name'),
@@ -569,30 +543,10 @@ class CustomerSyncService:
             # Remove None values and empty strings to clean up the payload
             qb_customer = {k: v for k, v in qb_customer.items() if v is not None and v != ''}
             
-            try:
-                # Validate JSON serialization before sending
-                json.dumps(qb_customer, cls=EnhancedJSONEncoder)
-                logger.info(f"Successfully validated JSON serialization for student {student_data.get('reg_no')}")
-            except TypeError as te:
-                logger.error(f"JSON serialization error for student {student_data.get('reg_no')}: {te}")
-                # Walk through keys to find the exact field causing issues
-                for key, value in qb_customer.items():
-                    try:
-                        json.dumps({key: value}, cls=EnhancedJSONEncoder)
-                    except TypeError as field_error:
-                        logger.error(
-                            f"JSON serialization error for field '{key}' "
-                            f"with value '{value}' (type: {type(value)}): {field_error}"
-                        )
-                raise  # Re-raise after logging
-
             return qb_customer
 
         except Exception as e:
-            logger.error(
-                f"Error mapping student {student.get('reg_no', 'Unknown')} "
-                f"to QuickBooks format: {e}"
-            )
+            # ... your error handling ...
             raise
 
     def sync_single_applicant(self, applicant: TblOnlineApplication) -> CustomerSyncResult:
