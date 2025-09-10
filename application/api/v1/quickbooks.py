@@ -1246,3 +1246,52 @@ def get_customers():
             'error': 'Error getting customers',
             'details': str(e)
         }), 500
+    
+@quickbooks_bp.route('/get_customer', methods=['GET'])
+def get_customer():
+    """Get a specific customer by ID."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        customer_id = request.args.get('customer_id')
+        if not customer_id:
+            return jsonify({
+                'success': False,
+                'error': 'Customer ID is required',
+                'message': 'Please provide a valid customer ID as a query parameter'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting customer with ID: {customer_id}')
+
+        customer = qb.get_customer(qb.realm_id, customer_id)
+        current_app.logger.info(f"Customer data: {customer}")
+
+        # Check for errors in the response
+        if 'Fault' in customer:
+            return jsonify({
+                'success': False,
+                'error': 'Customer not found or error occurred',
+                'details': customer['Fault']['Error'][0]['Message'] if customer['Fault']['Error'] else 'Unknown error'
+            }), 404
+
+        current_app.logger.info("Customer retrieved successfully")
+        return jsonify({
+            'success': True,
+            'data': customer,
+            'message': 'Customer retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting customer: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting customer',
+            'details': str(e)
+        }), 500
