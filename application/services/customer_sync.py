@@ -484,7 +484,7 @@ class CustomerSyncService:
         """
         try:
             # Get enriched student data
-            student_data = student.to_dict_for_quickbooks()
+            student_data = student
 
             # Create QuickBooks customer structure
             qb_customer = {
