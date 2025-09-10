@@ -691,6 +691,7 @@ class CustomerSyncService:
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
+            current_app.logger.info(f"QuickBooks response for student {student.get('per_id_ug')}: {response}")
 
             if 'Customer' in response:
                 # Success - update sync status
