@@ -286,11 +286,13 @@ class QuickBooks:
         """Update an existing customer in QuickBooks."""
         endpoint = f"{realm_id}/customer/{customer_id}"
         return self.make_request(endpoint, method="POST", data=customer_data)
-
+    
     def get_customer(self, realm_id, customer_id):
-        """Retrieve a specific customer by ID."""
-        endpoint = f"{realm_id}/customer/{customer_id}"
-        return self.make_request(endpoint, method="GET")
+        """Retrieve a specific customer by ID, including custom fields."""
+        endpoint = f"{realm_id}/query"
+        query = f"SELECT * FROM Customer WHERE Id = '{customer_id}'"
+        return self.make_request(endpoint, method="POST", data=query, headers={"Content-Type": "application/text"})
+
 
     def get_invoices(self, realm_id, params=None):
         """
