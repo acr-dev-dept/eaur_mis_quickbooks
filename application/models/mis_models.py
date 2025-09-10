@@ -1475,7 +1475,8 @@ class TblPersonalUg(MISBaseModel):
             with cls.get_session() as session:
                 student = session.query(cls).filter(cls.reg_no == reg_no).first()
                 if student:
-                    return student.to_dict()
+                    # return the data formatted with quickbooks fields
+                    return student.to_dict_for_quickbooks()
                 return []
         except Exception as e:
             from flask import current_app
