@@ -295,6 +295,22 @@ class QuickBooks:
             "include": "enhancedAllCustomFields"
         }
         return self.make_request(endpoint, method="GET", params=params)
+    
+    def get_custom_field_definitions(self, realm_id):
+        """
+        Fetches custom field definitions from QuickBooks Preferences.
+        """
+        endpoint = f"{realm_id}/preferences"
+        params = {"minorversion": "75"}
+        response = self.make_request(endpoint, method="GET", params=params)
+        
+        custom_fields = {}
+        if 'Preferences' in response and 'SalesFormsPrefs' in response['Preferences']:
+            for field_def in response['Preferences']['SalesFormsPrefs'].get('CustomField', []):
+                if 'Name' in field_def and 'DefinitionId' in field_def:
+                    custom_fields[field_def['Name']] = field_def['DefinitionId']
+                    
+        return custom_fields
 
     def get_invoices(self, realm_id, params=None):
         """
