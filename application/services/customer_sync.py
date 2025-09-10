@@ -805,29 +805,29 @@ class CustomerSyncService:
             quickbooks_id: QuickBooks customer ID if successfully synced
         """
         try:
-            session = db_manager.get_mis_session()
+            with db_manager.get_mis_session() as session:
 
-            student = session.query(TblPersonalUg).filter(TblPersonalUg.per_id_ug == per_id_ug).first()
-            if student:
-                student.QuickBk_Status = status
-                student.pushed_date = datetime.now()
-                student.pushed_by = "CustomerSyncService"
+                student = session.query(TblPersonalUg).filter(TblPersonalUg.per_id_ug == per_id_ug).first()
+                if student:
+                    student.QuickBk_Status = status
+                    student.pushed_date = datetime.now()
+                    student.pushed_by = "CustomerSyncService"
 
-                # Store QuickBooks ID in existing qk_id field
-                if quickbooks_id and status == CustomerSyncStatus.SYNCED.value:
-                    student.qk_id = quickbooks_id
+                    # Store QuickBooks ID in existing qk_id field
+                    if quickbooks_id and status == CustomerSyncStatus.SYNCED.value:
+                        student.qk_id = quickbooks_id
 
-                session.commit()
-                logger.info(f"Updated student {per_id_ug} sync status to {status}")
+                    session.commit()
+                    logger.info(f"Updated student {per_id_ug} sync status to {status}")
 
         except Exception as e:
             logger.error(f"Error updating student sync status: {e}")
-            if 'session' in locals():
+            with db_manager.get_mis_session() as session:
                 session.rollback()
             raise
         finally:
-            if 'session' in locals():
-                session.close()
+            with db_manager.get_mis_session() as session:
+                session.rollback()
 
     def _log_customer_sync_audit(self, customer_id: int, customer_type: str, action: str, details: str):
         """
