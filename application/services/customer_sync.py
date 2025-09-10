@@ -712,7 +712,7 @@ class CustomerSyncService:
         """
         try:
             # Mark student as in progress
-            self._update_student_sync_status(student.per_id_ug, CustomerSyncStatus.IN_PROGRESS.value)
+            self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
@@ -733,10 +733,10 @@ class CustomerSyncService:
                 )
 
                 # Log successful sync
-                self._log_customer_sync_audit(student.per_id_ug, 'Student', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
+                self._log_customer_sync_audit(student.get('per_id_ug'), 'Student', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
-                    customer_id=student.reg_no,
+                    customer_id=student.get('reg_no'),
                     customer_type='Student',
                     success=True,
                     quickbooks_id=qb_customer_id,
@@ -745,11 +745,11 @@ class CustomerSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_student_sync_status(student.per_id_ug, CustomerSyncStatus.FAILED.value)
-                self._log_customer_sync_audit(student.per_id_ug, 'Student', 'ERROR', error_msg)
+                self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.FAILED.value)
+                self._log_customer_sync_audit(student.get('per_id_ug'), 'Student', 'ERROR', error_msg)
 
                 return CustomerSyncResult(
-                    customer_id=student.reg_no,
+                    customer_id=student.get('reg_no'),
                     customer_type='Student',
                     success=False,
                     error_message=error_msg,
@@ -759,11 +759,11 @@ class CustomerSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_student_sync_status(student.per_id_ug, CustomerSyncStatus.FAILED.value)
-            self._log_customer_sync_audit(student.per_id_ug, 'Student', 'ERROR', error_msg)
+            self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.FAILED.value)
+            self._log_customer_sync_audit(student.get('per_id_ug'), 'Student', 'ERROR', error_msg)
 
             return CustomerSyncResult(
-                customer_id=student.reg_no,
+                customer_id=student.get('reg_no'),
                 customer_type='Student',
                 success=False,
                 error_message=error_msg
