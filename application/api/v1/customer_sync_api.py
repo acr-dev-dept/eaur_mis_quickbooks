@@ -8,7 +8,7 @@ from application.services.customer_sync import CustomerSyncService
 from application.models.central_models import QuickBooksConfig
 import traceback
 from datetime import datetime
-from application.models.mis_models import TblOnlineApplication, TblCountry
+from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg
 from application.utils.database import db_manager
 
 customer_sync_bp = Blueprint('customer_sync', __name__)
@@ -354,6 +354,149 @@ def sync_applicants():
             status_code=500
         )
     
+@customer_sync_bp.route('/sync_student/<string:reg_no>', methods=['POST'])
+def sync_student(reg_no: str):
+    """
+    Synchronize a single student to QuickBooks customer by reg_no
+    description: This endpoint fetches the student by reg_no and synchronizes them.
+    1. Validates QuickBooks connection.
+    2. Fetches the student using TblPersonalUg.get_student_details(reg_no).
+    3. If student not found, returns 404.
+    4. Calls sync_service.sync_single_student(student) to perform synchronization.
+    5. Returns success or error response based on synchronization result.
+    6. Handles exceptions and logs errors.
+    Args:
+        reg_no: Student registration number to synchronize
+    200:
+        description: Student synchronized successfully
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        success:
+                            type: boolean
+                            example: true
+                        data:
+                            type: object
+                            properties:
+                                student_id:
+                                    type: string
+                                    example: "REG12345"
+                                quickbooks_id:
+                                    type: string
+                                    example: "1234567890"
+                        message:
+                            type: string
+                            example: "Student REG12345 synchronized successfully"
+    400:
+        description: Bad request, e.g. QuickBooks not connected
+        content:
+            application/json:
+                schema:           type: object
+                    properties:
+                        success:
+                            type: boolean
+                            example: false
+                        error:
+                            type: string
+                            example: "QuickBooks not connected"
+                        message:
+                            type: string
+                            example: "Please authenticate with QuickBooks first"
+    404:
+        description: Student not found
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        success:
+                            type: boolean
+                            example: false
+                        error:
+                            type: string
+                            example: "Student with reg_no REG12345 not found"
+    500:
+        description: Internal server error
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        success:
+                            type: boolean
+                            example: false
+                        error:
+                            type: string
+                            example: "Error synchronizing student REG12345"
+                        details:
+                            type: string
+                            example: "Detailed error message"
+    """
+    sync_service = CustomerSyncService()
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+    except Exception as e:
+        current_app.logger.error(f"Error synchronizing student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error synchronizing student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
+    try:
+        # WE need to use the method to get student by reg_no
+        student = TblPersonalUg.get_student_details(reg_no)
+        current_app.logger.info(f"Fetched student for reg_no {reg_no}: {student}")
+        if not student:
+            return create_response(
+                success=False,
+                error=f"Student with reg_no {reg_no} not found",
+                status_code=404
+            )
+    except Exception as e:
+        current_app.logger.error(f"Error fetching student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error fetching student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
+    try:
+        result = sync_service.sync_single_student(student)
+        current_app.logger.info(f"Synchronization result for student {reg_no}: {result}")
+        if result.success:
+            return create_response(
+                success=True,
+                data={
+                    'student_id': result.customer_id,
+                    'quickbooks_id': result.quickbooks_id
+                },
+                message=f'Student {reg_no} synchronized successfully'
+            )
+        else:
+            return create_response(
+                success=False,
+                error=f'Failed to synchronize student {reg_no}',
+                details=result.error_message,
+                status_code=500
+            )
+    except Exception as e:
+        current_app.logger.error(f"Error synchronizing student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f'Error synchronizing student {reg_no}',
+            details=str(e),
+            status_code=500
+        )
+
 @customer_sync_bp.route('/applicants/<int:appl_id>', methods=['POST'])
 def map_applicant(appl_id: int):
     """
