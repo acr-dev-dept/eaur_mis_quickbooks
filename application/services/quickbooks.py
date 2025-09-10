@@ -291,7 +291,7 @@ class QuickBooks:
         """Retrieve a specific customer by ID, including custom fields."""
         endpoint = f"{realm_id}/query"
         query = f"SELECT * FROM Customer WHERE Id = '{customer_id}'"
-        return self.make_request(endpoint, method="POST", data=query, headers={"Content-Type": "application/text"})
+        return self.make_request(endpoint, method="POST", data=query)
 
 
     def get_invoices(self, realm_id, params=None):
