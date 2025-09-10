@@ -487,7 +487,7 @@ def sync_student():
                     'quickbooks_id': result.quickbooks_id
                 },
                 message=f'Student {reg_no} synchronized successfully'
-            )
+            ), 200
         else:
             return create_response(
                 success=False,

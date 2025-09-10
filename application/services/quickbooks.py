@@ -268,11 +268,15 @@ class QuickBooks:
         """Retrieve company information for the specified realm ID."""
         endpoint = f"{realm_id}/companyinfo/{realm_id}"
         return self.make_request(endpoint, method="GET")
-
     def create_customer(self, realm_id, customer_data):
         """Create a new customer in QuickBooks."""
-        endpoint = f"{realm_id}/customer"
-        return self.make_request(endpoint, method="POST", data=customer_data)
+        # Add minorversion=75 as a query parameter
+        endpoint = f"{realm_id}/customer?minorversion=75"
+        try:
+            return self.make_request(endpoint, method="POST", data=customer_data)
+        except Exception as e:
+            current_app.logger.error(f"Error creating customer in QuickBooks: {e}")
+            raise
 
     def get_customers(self, realm_id, params=None):
         """Retrieve a list of customers."""
