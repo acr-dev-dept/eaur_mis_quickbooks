@@ -354,8 +354,8 @@ def sync_applicants():
             status_code=500
         )
     
-@customer_sync_bp.route('/sync_student/<string:reg_no>', methods=['POST'])
-def sync_student(reg_no: str):
+@customer_sync_bp.route('/sync_student', methods=['POST'])
+def sync_student():
     """
     Synchronize a single student to QuickBooks customer by reg_no
     description: This endpoint fetches the student by reg_no and synchronizes them.
@@ -434,6 +434,14 @@ def sync_student(reg_no: str):
                             type: string
                             example: "Detailed error message"
     """
+    data = request.get_json() or {}
+    reg_no = data.get('reg_no')
+    if not reg_no:
+        return create_response(
+            success=False,
+            error='reg_no is required',
+            status_code=400
+        )
     sync_service = CustomerSyncService()
     try:
         # Validate QuickBooks connection
