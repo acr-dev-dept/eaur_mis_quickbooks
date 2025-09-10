@@ -526,7 +526,6 @@ class CustomerSyncService:
             
             # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "Name": student_data.get('display_name'),
                 "DisplayName": student_data.get('display_name'),
                 "GivenName": student_data.get('first_name'),
                 "FamilyName": student_data.get('last_name'),
