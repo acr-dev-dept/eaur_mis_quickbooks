@@ -1205,3 +1205,44 @@ def create_item():
             'error': 'Error creating item',
             'details': str(e)
         }), 500
+    
+@quickbooks_bp.route('/get_customers', methods=['GET'])
+def get_customers():
+    """Get all customers."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting customers')
+
+        customers = qb.get_customers(qb.realm_id)
+        current_app.logger.info("Customers retrieved successfully")
+
+        # Check for errors in the response
+        if 'error' in customers:
+            return jsonify({
+                'success': False,
+                'error': customers['error'],
+                'details': customers.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_customers': len(customers) if isinstance(customers, list) else 0,
+            'data': customers,
+            'message': 'Customers retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting customers: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting customers',
+            'details': str(e)
+        }), 500
