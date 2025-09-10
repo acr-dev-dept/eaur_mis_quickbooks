@@ -470,92 +470,111 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
-            
-
+    
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
-        Map MIS student data to QuickBooks customer format
+        Map MIS student data to QuickBooks customer format.
 
         Args:
-            student: MIS student object
+            student: MIS student object.
 
         Returns:
-            Dictionary formatted for QuickBooks Customer API
+            Dictionary formatted for QuickBooks Customer API.
         """
         try:
-            # Get enriched student data
+            # Assuming `student` is a dictionary or a dict-like object
             student_data = student
 
-            # Create QuickBooks customer structure
+            # Create the CustomField list with hardcoded DefinitionIds and Types
+            # based on the successful API response
+            custom_fields_list = [
+                {
+                    "DefinitionId": "1000000001",
+                    "Name": "CustomerType",
+                    "StringValue": "Student",
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000002",
+                    "Name": "RegNo",
+                    "StringValue": student_data.get('reg_no', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000003",
+                    "Name": "Gender",
+                    "StringValue": student_data.get('sex', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000004",
+                    "Name": "Level",
+                    "StringValue": student_data.get('level_name', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000005",
+                    "Name": "Campus",
+                    "StringValue": student_data.get('campus_name', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000006",
+                    "Name": "Intake",
+                    "StringValue": str(student_data.get('intake_details', '')),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000007",
+                    "Name": "Program",
+                    "StringValue": student_data.get('program_name', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000008",
+                    "Name": "NationalID",
+                    "StringValue": student_data.get('national_id', ''),
+                    "Type": "StringType"
+                },
+                {
+                    "DefinitionId": "1000000009",
+                    "Name": "ProgramType",
+                    "StringValue": student_data.get('program_type', ''),
+                    "Type": "StringType"
+                }
+            ]
+
+            # Filter out custom fields with no value
+            filtered_custom_fields = [
+                field for field in custom_fields_list if field.get('StringValue')
+            ]
+
+            # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "Name": student_data['display_name'],
-                "DisplayName": student_data['display_name'],
-                "GivenName": student_data['first_name'],
-                "FamilyName": student_data['last_name'],
-                "MiddleName": student_data['middle_name'],
+                "Name": student_data.get('display_name'),
+                "DisplayName": student_data.get('display_name'),
+                "GivenName": student_data.get('first_name'),
+                "FamilyName": student_data.get('last_name'),
+                "MiddleName": student_data.get('middle_name'),
                 "PrimaryPhone": {
-                    "FreeFormNumber": student_data['phone']
-                } if student_data['phone'] else None,
+                    "FreeFormNumber": student_data.get('phone')
+                } if student_data.get('phone') else None,
                 "PrimaryEmailAddr": {
-                    "Address": student_data['email']
-                } if student_data['email'] else None,
-                "CustomField": [
-                    {
-                        "DefinitionId": "1",
-                        "Name": "CustomerType",
-                        "StringValue": "Student"
-                    },
-                    {
-                        "DefinitionId": "2",
-                        "Name": "RegNo",
-                        "StringValue": student_data['reg_no']
-                    },
-                    {
-                        "DefinitionId": "3",
-                        "Name": "Gender",
-                        "StringValue": student_data['sex']
-                    },
-                    {
-                        "DefinitionId": "4",
-                        "Name": "Level",
-                        "StringValue": student_data['level_name']
-                    },
-                    {
-                        "DefinitionId": "5",
-                        "Name": "Campus",
-                        "StringValue": student_data['campus_name']
-                    },
-                    {
-                        "DefinitionId": "6",
-                        "Name": "Intake",
-                        "StringValue": str(student_data['intake_details']) if student_data['intake_details'] else ""
-                    },
-                    {
-                        "DefinitionId": "7",
-                        "Name": "Program",
-                        "StringValue": student_data['program_name']
-                    },
-                    {
-                        "DefinitionId": "8",
-                        "Name": "NationalID",
-                        "StringValue": student_data['national_id']
-                    },
-                    {
-                        "DefinitionId": "9",
-                        "Name": "ProgramType",
-                        "StringValue": student_data['program_type']
-                    }
-                ],
-                "Notes": f"Student synchronized from MIS - Registration Number: {student_data['reg_no']}"
+                    "Address": student_data.get('email')
+                } if student_data.get('email') else None,
+                "CustomField": filtered_custom_fields,
+                "Notes": f"Student synchronized from MIS - Registration Number: {student_data.get('reg_no', '')}"
             }
 
-            # Remove None values to clean up the payload
-            qb_customer = {k: v for k, v in qb_customer.items() if v is not None}
+            # Remove None values and empty strings to clean up the payload
+            qb_customer = {k: v for k, v in qb_customer.items() if v is not None and v != ''}
             
             try:
+                # Validate JSON serialization before sending
                 json.dumps(qb_customer, cls=EnhancedJSONEncoder)
-                logger.info(f"Successfully validated JSON serialization for student {student.get('reg_no')}")
+                logger.info(f"Successfully validated JSON serialization for student {student_data.get('reg_no')}")
             except TypeError as te:
+                logger.error(f"JSON serialization error for student {student_data.get('reg_no')}: {te}")
                 # Walk through keys to find the exact field causing issues
                 for key, value in qb_customer.items():
                     try:
@@ -565,19 +584,15 @@ class CustomerSyncService:
                             f"JSON serialization error for field '{key}' "
                             f"with value '{value}' (type: {type(value)}): {field_error}"
                         )
-                raise  # re-raise after logging
+                raise  # Re-raise after logging
 
             return qb_customer
 
         except Exception as e:
             logger.error(
-                f"Error mapping student {getattr(student, 'reg_no', 'Unknown')} "
+                f"Error mapping student {student.get('reg_no', 'Unknown')} "
                 f"to QuickBooks format: {e}"
             )
-            raise
-
-        except Exception as e:
-            logger.error(f"Error mapping student {student.get('reg_no', 'Unknown')} to QuickBooks format: {e}")
             raise
 
     def sync_single_applicant(self, applicant: TblOnlineApplication) -> CustomerSyncResult:
