@@ -554,7 +554,7 @@ class CustomerSyncService:
             
             try:
                 json.dumps(qb_customer, cls=EnhancedJSONEncoder)
-                logger.info(f"Successfully validated JSON serialization for student {student.reg_no}")
+                logger.info(f"Successfully validated JSON serialization for student {student.get('reg_no')}")
             except TypeError as te:
                 # Walk through keys to find the exact field causing issues
                 for key, value in qb_customer.items():
@@ -571,13 +571,13 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(
-                f"Error mapping student {getattr(student, 'reg_no', 'UNKNOWN')} "
+                f"Error mapping student {getattr(student, 'reg_no', 'Unknown')} "
                 f"to QuickBooks format: {e}"
             )
             raise
 
         except Exception as e:
-            logger.error(f"Error mapping student {student.reg_no} to QuickBooks format: {e}")
+            logger.error(f"Error mapping student {student.get('reg_no', 'Unknown')} to QuickBooks format: {e}")
             raise
 
     def sync_single_applicant(self, applicant: TblOnlineApplication) -> CustomerSyncResult:
