@@ -517,6 +517,7 @@ class CustomerSyncService:
                     "StringValue": student_data.get('program_type', '')
                 }
             ]
+            current_app.logger.info(f"custom fields {custom_fields_list}")
 
             # Filter out custom fields with no value
             filtered_custom_fields = [
@@ -536,12 +537,7 @@ class CustomerSyncService:
                 "PrimaryEmailAddr": {
                     "Address": student_data.get('email')
                 } if student_data.get('email') else None,
-                "CustomField": [{
-                    "DefinitionId": "1000000008",
-                    "Name": "NationalID",
-                    "Type": "StringType",
-                    "StringValue": student_data.get('national_id', '')
-                }],
+                "CustomField": filtered_custom_fields,
                 "Notes": f"Student synchronized from MIS - Registration Number: {student_data.get('reg_no', '')}"
             }
 
