@@ -537,6 +537,7 @@ class CustomerSyncService:
                     "Address": student_data.get('email')
                 } if student_data.get('email') else None,
                 "CustomField": [{
+                    "DefinitionId": "1000000008",
                     "Name": "NationalID",
                     "Type": "StringType",
                     "StringValue": student_data.get('national_id', '')
