@@ -536,7 +536,11 @@ class CustomerSyncService:
                 "PrimaryEmailAddr": {
                     "Address": student_data.get('email')
                 } if student_data.get('email') else None,
-                "CustomField": filtered_custom_fields,
+                "CustomField": [{
+                    "Name": "NationalID",
+                    "Type": "StringType",
+                    "StringValue": student_data.get('national_id', '')
+                }],
                 "Notes": f"Student synchronized from MIS - Registration Number: {student_data.get('reg_no', '')}"
             }
 
