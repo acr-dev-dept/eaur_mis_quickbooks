@@ -115,49 +115,37 @@ def create_app(config_name=None):
 
 def setup_logging(app):
     """
-    Sets up application logging to write to app.log.
-    This function removes all default handlers to prevent duplicate logs
-    and ensures all logs are directed to the file.
+    Sets up a simple file logging configuration for the Flask application.
+    Logs will be written to a file named 'app.log' in the same directory
+    as the application.
     
     Args:
         app: The Flask application instance.
     """
     # Only set up file logging if not in debug or testing mode
     if not app.debug and not app.testing:
-        # Define the logs directory
-        logs_dir = 'logs'
-
-        # Create logs directory if it doesn't exist. The exist_ok=True
-        # prevents an error if the directory already exists.
-        os.makedirs(logs_dir, exist_ok=True)
-
-        # Get the root logger
-        root = logging.getLogger()
+        # Configure the Flask logger
+        handler = logging.FileHandler('app.log')
         
-        # This is the key fix: remove any existing handlers to prevent duplicate logs
-        if root.handlers:
-            for handler in root.handlers:
-                root.removeHandler(handler)
+        # Set the handler logging level to DEBUG to capture all logs
+        handler.setLevel(logging.DEBUG)
 
-        # Set the root logger's level to DEBUG to capture all messages.
-        # This is recommended for development to aid in troubleshooting.
-        root.setLevel(logging.DEBUG)
-
-        # Create a file handler that writes to the specified log file
-        file_handler = logging.FileHandler(os.path.join(logs_dir, 'app.log'))
-
-        # Define the log message format
+        # Update formatter to include pathname, filename, and line number
         formatter = logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s - [in %(pathname)s:%(lineno)d]'
         )
-        file_handler.setFormatter(formatter)
-
-        # Add the file handler to the root logger
-        root.addHandler(file_handler)
+        handler.setFormatter(formatter)
+        
+        # Add the file handler to the app logger
+        app.logger.addHandler(handler)
+        
+        # Set the app logger's level to DEBUG
+        app.logger.setLevel(logging.DEBUG)
 
         # Log a message to indicate successful startup
         app.logger.info('EAUR MIS-QuickBooks Integration startup')
         app.logger.info('Logging configured successfully to app.log')
+
 
 def register_blueprints(app):
     """Register application blueprints"""
