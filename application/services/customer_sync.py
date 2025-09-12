@@ -635,6 +635,7 @@ class CustomerSyncService:
             qb_service = self._get_qb_service()
 
             # Map applicant data
+            current_app.logger.info(f"Applicant data: {applicant}")
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
             current_app.logger.info(f"QuickBooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
 
