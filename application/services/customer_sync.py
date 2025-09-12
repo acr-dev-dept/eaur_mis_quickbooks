@@ -441,7 +441,7 @@ class CustomerSyncService:
             qb_customer = {
                 "DisplayName": applicant_data['tracking_id'],
                 "GivenName": applicant_data['first_name'],
-                "FamilyName": applicant_data['family_name'],
+                "FamilyName": applicant_data['last_name'],
                 "MiddleName": applicant_data['middle_name'],
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
@@ -640,6 +640,7 @@ class CustomerSyncService:
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
+            current_app.logger.info(f"Quickbooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
             current_app.logger.info(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
             if 'Customer' in response:
                 # Success - update sync status
