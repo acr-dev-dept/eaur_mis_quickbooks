@@ -567,7 +567,7 @@ def sync_single_applicant(tracking_id: int):
 
             result = sync_service.map_applicant_to_quickbooks_customer(applicant)
 
-            if result.success:
+            if result:
                 return create_response(
                     success=True,
                     data={
