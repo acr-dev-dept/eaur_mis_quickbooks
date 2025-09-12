@@ -1406,6 +1406,37 @@ class QuickBooks:
         except Exception as e:
             current_app.logger.error(f"Error fetching customer types: {str(e)}")
             return []
+        
+    def make_batch_request(self, realm_id, batch_data):
+        """
+        Make a batch request to QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            batch_data (dict): The batch request data.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/batch"
+        try:
+            current_app.logger.info(f"Making batch request with data: {batch_data}")
+            response = self.make_request(endpoint, method="POST", data=batch_data)
+            current_app.logger.info(f"Batch request successful: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error making batch request: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error making batch request: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
 
 if __name__ == "__main__":
     # Import Flask app factory to create application context
