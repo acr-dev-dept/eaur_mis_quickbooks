@@ -695,7 +695,7 @@ class CustomerSyncService:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_student_sync_status(
-                    student.per_id_ug,
+                    student.get('per_id_ug'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
