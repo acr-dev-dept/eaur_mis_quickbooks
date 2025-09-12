@@ -548,6 +548,7 @@ def sync_single_applicant(tracking_id: int):
     """
     Synchronize a single applicant to QuickBooks customer by tracking_id
     """
+    
     try:
         # Validate QuickBooks connection
         is_connected, error_response = validate_quickbooks_connection()
