@@ -668,6 +668,7 @@ class CustomerSyncService:
         Returns:
             CustomerSyncResult: Result of the synchronization attempt
         """
+        current_app.logger.info(f"Starting sync for student {student}")
         try:
             # Mark student as in progress
             self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
@@ -686,7 +687,7 @@ class CustomerSyncService:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_student_sync_status(
-                    student.per_id_ug,
+                    student.get('per_id_ug'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
@@ -777,16 +778,13 @@ class CustomerSyncService:
                         student.qk_id = quickbooks_id
 
                     session.commit()
-                    logger.info(f"Updated student {per_id_ug} sync status to {status}")
+                    current_app.logger.info(f"Updated student {per_id_ug} sync status to {status}")
 
         except Exception as e:
-            logger.error(f"Error updating student sync status: {e}")
+            current_app.logger.error(f"Error updating student sync status: {e}")
             with db_manager.get_mis_session() as session:
                 session.rollback()
             raise
-        finally:
-            with db_manager.get_mis_session() as session:
-                session.rollback()
 
     def _log_customer_sync_audit(self, customer_id: int, customer_type: str, action: str, details: str):
         """
@@ -799,16 +797,18 @@ class CustomerSyncService:
             details: Additional details about the action
         """
         try:
-            audit_log = QuickbooksAuditLog(
-                action_type=f"CUSTOMER_SYNC_{action}",
-                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
-                response_payload=f"{customer_type} ID: {customer_id} - {details}",
-                
-            )
-            db.session.add(audit_log)
-            db.session.commit()
+            with db_manager.get_mis_session() as session:
+                audit_log = QuickbooksAuditLog(
+                    action_type=f"CUSTOMER_SYNC_{action}",
+                    operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
+                    response_payload=f"{customer_type} ID: {customer_id} - {details}",
+                )
+                session.add(audit_log)
+                session.commit()
 
         except Exception as e:
-            logger.error(f"Error logging customer sync audit: {e}")
-            if db.session:
-                db.session.rollback()
+            current_app.logger.error(f"Error logging customer sync audit: {e}")
+            # The session should be handled by the context manager, but this is a safeguard
+            with db_manager.get_mis_session() as session:
+                session.rollback()
+            raise

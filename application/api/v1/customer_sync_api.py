@@ -469,7 +469,7 @@ def sync_student():
             )
     except Exception as e:
         current_app.logger.error(f"Error fetching student {reg_no}: {e}")
-        current_app.logger.error(traceback.format_exc())
+        current_app.logger.debug(f"Traceback: {traceback.format_exc()}")
         return create_response(
             success=False,
             error=f'Error fetching student {reg_no}',
@@ -487,7 +487,7 @@ def sync_student():
                     'quickbooks_id': result.quickbooks_id
                 },
                 message=f'Student {reg_no} synchronized successfully'
-            ), 200
+            ) 
         else:
             return create_response(
                 success=False,
@@ -497,6 +497,8 @@ def sync_student():
             )
     except Exception as e:
         current_app.logger.error(f"Error synchronizing student {reg_no}: {e}")
+        current_app.logger.debug(f"Traceback: {traceback.format_exc()}")
+        # we wanna get exactly which line caused the error
         current_app.logger.error(traceback.format_exc())
         return create_response(
             success=False,
@@ -669,7 +671,7 @@ def sync_students():
             except Exception as e:
                 results['failed'] += 1
                 results['errors'].append({
-                    'student_id': student.reg_no,
+                    'student_id': student.get('reg_no', ''),
                     'error': str(e)
                 })
 
