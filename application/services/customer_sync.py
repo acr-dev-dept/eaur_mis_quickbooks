@@ -684,6 +684,7 @@ class CustomerSyncService:
         Returns:
             CustomerSyncResult: Result of the synchronization attempt
         """
+        current_app.logger.info(f"Starting sync for student {student}")
         try:
             # Mark student as in progress
             self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
@@ -702,7 +703,7 @@ class CustomerSyncService:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_student_sync_status(
-                    student.per_id_ug,
+                    student.get('per_id_ug'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
