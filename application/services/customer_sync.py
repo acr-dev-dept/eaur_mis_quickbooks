@@ -628,50 +628,33 @@ class CustomerSyncService:
             CustomerSyncResult: Result of the synchronization attempt
         """
         try:
-            # Mark applicant as in progress
-            self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.IN_PROGRESS.value)
+           # Mark applicant as in progress
+            self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
-            if qb_service:
-                logger.info(f"QuickBooks service initialized for applicant {applicant.appl_Id}")
+
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-            # serialize data
-            try:
-                json.dumps(qb_customer_data, cls=EnhancedJSONEncoder)
-                logger.info(f"Successfully validated JSON serialization for applicant {applicant.appl_Id}")
-            except TypeError as te:
-                # Walk through keys to find the exact field causing issues
-                for key, value in qb_customer_data.items():
-                    try:
-                        json.dumps({key: value}, cls=EnhancedJSONEncoder)
-                    except TypeError as field_error:
-                        logger.error(
-                            f"JSON serialization error for field '{key}' "
-                            f"with value '{value}' (type: {type(value)}): {field_error}"
-                        )
-                raise
-            if qb_customer_data:
-                logger.debug(f"Mapped applicant {applicant.appl_Id} data to QuickBooks format: {qb_customer_data}")
+            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.get('appl_Id')}: {qb_customer_data}")
+
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-            if response:
-                logger.debug(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
-                if 'Customer' in response:
-                    # Success - update sync status
-                    qb_customer_id = response['Customer']['Id']
-                    self._update_applicant_sync_status(
-                        applicant.appl_Id,
+            current_app.logger.info(f"QuickBooks response for applicant {applicant.get('appl_Id')}: {response}")
+            if 'Customer' in response:
+                # Success - update sync status
+                qb_customer_id = response['Customer']['Id']
+                self._update_applicant_sync_status(
+                    applicant.get('appl_Id'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
 
                 # Log successful sync
-                self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
+                self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
-                    customer_id=str(applicant.tracking_id),
+                    customer_id=applicant.get('tracking_id'),
                     customer_type='Applicant',
                     success=True,
                     quickbooks_id=qb_customer_id,
@@ -680,11 +663,11 @@ class CustomerSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
-                self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-                logger.error(f"Failed to sync applicant {applicant.appl_Id} to QuickBooks: {error_msg}")
+                self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.FAILED.value)
+                self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'ERROR', error_msg)
+
                 return CustomerSyncResult(
-                    customer_id=str(applicant.appl_Id),
+                    customer_id=applicant.get('tracking_id'),
                     customer_type='Applicant',
                     success=False,
                     error_message=error_msg,
@@ -693,16 +676,15 @@ class CustomerSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
-            self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
-            logger.error(f"Exception while syncing applicant {applicant.appl_Id}: {error_msg}")
+            self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.FAILED.value)
+            self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'ERROR', error_msg)
+
             return CustomerSyncResult(
-                customer_id=str(applicant.appl_Id),
+                customer_id=applicant.get('tracking_id'),
                 customer_type='Applicant',
                 success=False,
                 error_message=error_msg
             )
-
 
     def _update_applicant_sync_status(self, appl_id: int, status: int, quickbooks_id: Optional[str] = None):
         """
