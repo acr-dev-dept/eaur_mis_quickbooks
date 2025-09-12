@@ -557,7 +557,7 @@ def sync_single_applicant(tracking_id: int):
 
         # Get DB session safely
         with db_manager.get_mis_session() as db:  
-            applicant = TblOnlineApplication.get_applicant_details(tracking_id, db_session=db)
+            applicant = TblOnlineApplication.get_applicant_details(tracking_id)
             if not applicant:
                 return create_response(
                     success=False,
