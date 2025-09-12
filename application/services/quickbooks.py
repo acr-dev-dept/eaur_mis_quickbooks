@@ -1384,6 +1384,28 @@ class QuickBooks:
                     ]
                 }
             }
+        
+    def get_customer_types(self, realm_id):
+        """
+        Fetch all customer types from QuickBooks.
+
+        Args:
+            realm_id (str): The QuickBooks company ID.
+
+        Returns:
+            list: A list of customer types.
+        """
+        query = "SELECT * FROM CustomerType"
+        current_app.logger.info(f"Fetching customer types with query: {query}")
+        try:
+            # Query to fetch all customer types
+            customer_types_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            current_app.logger.info(f"Customer types fetched successfully: {customer_types_response}")
+            customer_types = customer_types_response.get("QueryResponse", {}).get("CustomerType", [])
+            return customer_types
+        except Exception as e:
+            current_app.logger.error(f"Error fetching customer types: {str(e)}")
+            return []
 
 if __name__ == "__main__":
     # Import Flask app factory to create application context
