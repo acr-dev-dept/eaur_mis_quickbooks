@@ -790,7 +790,7 @@ class CustomerSyncService:
                 self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
-                    customer_id=str(applicant.appl_Id),
+                    customer_id=str(applicant.tracking_id),
                     customer_type='Applicant',
                     success=True,
                     quickbooks_id=qb_customer_id,
