@@ -604,7 +604,7 @@ def sync_students():
 
     Request body (JSON):
     {
-        "batch_size": 50  // Optional, defaults to 50
+        "batch_size": 10  // Optional, defaults to 10
     }
     """
     try:
@@ -615,7 +615,7 @@ def sync_students():
 
         # Get request data
         request_data = request.get_json() or {}
-        batch_size = request_data.get('batch_size', 50)
+        batch_size = request_data.get('batch_size', 10)
 
         # Validate batch size
         if batch_size > 100:
@@ -631,6 +631,7 @@ def sync_students():
 
         # Get unsynchronized students
         students = sync_service.get_unsynchronized_students(limit=batch_size)
+        current_app.logger.info(f"Fetched students for synchronization: {students}")
 
         if not students:
             return create_response(
@@ -647,51 +648,31 @@ def sync_students():
             'errors': [],
             'success_details': []
         }
+        # we are syncing with the batch method
+        try:
+            batch_results = sync_service.sync_batch_students(students)
+            current_app.logger.info(f"Batch synchronization results: {batch_results}")
 
-        for student in students:
-            try:
-                result = sync_service.sync_single_student(student)
-                results['total_processed'] += 1
+            results['total_processed'] = batch_results.get('total_processed', 0)
+            results['successful'] = batch_results.get('successful', 0)
+            results['failed'] = batch_results.get('failed', 0)
+            results['errors'] = batch_results.get('errors', [])
+            results['success_details'] = batch_results.get('success_details', [])
 
-                if result.success:
-                    results['successful'] += 1
-                    results['success_details'].append({
-                        'student_id': result.customer_id,
-                        'quickbooks_id': result.quickbooks_id
-                    })
-                else:
-                    results['failed'] += 1
-                    results['errors'].append({
-                        'student_id': result.customer_id,
-                        'error': result.error_message
-                    })
-
-                # Add delay between requests to avoid rate limiting
-                import time
-                time.sleep(0.5)
-
-            except Exception as e:
-                results['failed'] += 1
-                results['errors'].append({
-                    'student_id': student.get('reg_no', ''),
-                    'error': str(e)
-                })
-
-        return create_response(
-            success=True,
-            data=results,
-            message=f'Student synchronization completed: {results["successful"]} successful, {results["failed"]} failed'
-        )
-
-    except Exception as e:
-        current_app.logger.error(f"Error in student synchronization: {e}")
-        current_app.logger.error(traceback.format_exc())
-        return create_response(
-            success=False,
-            error='Error in student synchronization',
-            details=str(e),
-            status_code=500
-        )
+            return create_response(
+                success=True,
+                data=results,
+                message=f'Student synchronization completed: {results["successful"]} successful, {results["failed"]} failed'
+            )
+        except Exception as e:
+            current_app.logger.error(f"Error in batch student synchronization: {e}")
+            current_app.logger.error(traceback.format_exc())
+            return create_response(
+                success=False,
+                error=f'Error in batch student synchronization',
+                details=str(e),
+                status_code=500
+            )
 
 
 @customer_sync_bp.route('/all', methods=['POST'])
