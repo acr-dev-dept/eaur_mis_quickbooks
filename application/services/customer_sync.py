@@ -396,56 +396,65 @@ class CustomerSyncService:
             applicant_data = applicant.to_dict_for_quickbooks()
 
             # Create QuickBooks customer structure
+
+            custom_fields_list = [
+                {
+                    "DefinitionId": "1000000001",
+                    "StringValue": "Applicant"
+                },
+                {
+                    "DefinitionId": "1000000002",
+                    "StringValue": str(applicant_data['tracking_id'])
+                },
+                {
+                    "DefinitionId": "1000000003",
+                    "StringValue": applicant_data['sex']
+                },
+                {
+                    "DefinitionId": "1000000008",
+                    "Name": "NationalID",
+                    "StringValue": applicant_data['national_id']
+                },
+                {
+                    "DefinitionId": "1000000005",
+                    "StringValue": applicant_data['campus_name']
+                },
+                {
+                    "DefinitionId": "8",
+                    "Name": "Intake",
+                    "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
+                },
+                {
+                    "DefinitionId": "1000000009",
+                    "StringValue": applicant_data['program_mode']
+                }
+            ]
+            current_app.logger.info(f"custom fields {custom_fields_list}")
+
+            # Filter out custom fields with no value
+            filtered_custom_fields = [
+                field for field in custom_fields_list if field.get('StringValue')
+            ]
+
+
+            # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "Name": applicant_data['display_name'],
                 "DisplayName": applicant_data['tracking_id'],
                 "GivenName": applicant_data['first_name'],
-                "FamilyName": applicant_data['family_name'],
+                "FamilyName": applicant_data['last_name'],
                 "MiddleName": applicant_data['middle_name'],
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
-                } if applicant_data['phone'] else None,
+                } if applicant_data.get('phone') else None,
                 "PrimaryEmailAddr": {
                     "Address": applicant_data['email']
-                } if applicant_data['email'] else None,
-                "CustomField": [
-                    {
-                        "DefinitionId": "1000000001",
-                        "StringValue": "Applicant"
-                    },
-                    {
-                        "DefinitionId": "1000000002",
-                        "StringValue": str(applicant_data['tracking_id'])
-                    },
-                    {
-                        "DefinitionId": "1000000003",
-                        "StringValue": applicant_data['sex']
-                    },
-                    {
-                        "DefinitionId": "5",
-                        "Name": "BirthCountry",
-                        "StringValue": applicant_data['country_of_birth']
-                    },
-                    {
-                        "DefinitionId": "1000000008",
-                        "Name": "NationalID",
-                        "StringValue": applicant_data['national_id']
-                    },
-                    {
-                        "DefinitionId": "1000000005",
-                        "StringValue": applicant_data['campus_name']
-                    },
-                    {
-                        "DefinitionId": "8",
-                        "Name": "Intake",
-                        "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
-                    },
-                    {
-                        "DefinitionId": "1000000009",
-                        "StringValue": applicant_data['program_mode']
-                    }
-                ],
-                "Notes": f"Applicant synchronized from MIS - Application ID: {applicant_data['appl_Id']}, Tracking ID: {applicant_data['tracking_id']}"
+                } if applicant_data.get('email') else None,
+                "CustomerTypeRef": {
+                    "value": "528730",
+                    "name": "applicant"
+                },
+                "CustomField": filtered_custom_fields,
+                "Notes": f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
             }
 
             # Remove None values to clean up the payload
@@ -668,7 +677,6 @@ class CustomerSyncService:
         Returns:
             CustomerSyncResult: Result of the synchronization attempt
         """
-        current_app.logger.info(f"Starting sync for student {student}")
         try:
             # Mark student as in progress
             self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
@@ -687,7 +695,7 @@ class CustomerSyncService:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_student_sync_status(
-                    student.get('per_id_ug'),
+                    student.per_id_ug,
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
@@ -778,13 +786,16 @@ class CustomerSyncService:
                         student.qk_id = quickbooks_id
 
                     session.commit()
-                    current_app.logger.info(f"Updated student {per_id_ug} sync status to {status}")
+                    logger.info(f"Updated student {per_id_ug} sync status to {status}")
 
         except Exception as e:
-            current_app.logger.error(f"Error updating student sync status: {e}")
+            logger.error(f"Error updating student sync status: {e}")
             with db_manager.get_mis_session() as session:
                 session.rollback()
             raise
+        finally:
+            with db_manager.get_mis_session() as session:
+                session.rollback()
 
     def _log_customer_sync_audit(self, customer_id: int, customer_type: str, action: str, details: str):
         """
@@ -797,18 +808,16 @@ class CustomerSyncService:
             details: Additional details about the action
         """
         try:
-            with db_manager.get_mis_session() as session:
-                audit_log = QuickbooksAuditLog(
-                    action_type=f"CUSTOMER_SYNC_{action}",
-                    operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
-                    response_payload=f"{customer_type} ID: {customer_id} - {details}",
-                )
-                session.add(audit_log)
-                session.commit()
+            audit_log = QuickbooksAuditLog(
+                action_type=f"CUSTOMER_SYNC_{action}",
+                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
+                response_payload=f"{customer_type} ID: {customer_id} - {details}",
+                
+            )
+            db.session.add(audit_log)
+            db.session.commit()
 
         except Exception as e:
-            current_app.logger.error(f"Error logging customer sync audit: {e}")
-            # The session should be handled by the context manager, but this is a safeguard
-            with db_manager.get_mis_session() as session:
-                session.rollback()
-            raise
+            logger.error(f"Error logging customer sync audit: {e}")
+            if db.session:
+                db.session.rollback()
