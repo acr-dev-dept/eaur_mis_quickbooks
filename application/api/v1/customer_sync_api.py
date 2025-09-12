@@ -565,9 +565,9 @@ def sync_single_applicant(tracking_id: int):
                     status_code=404
                 )
 
-            result = sync_service.map_applicant_to_quickbooks_customer(applicant)
+            result = sync_service.sync_single_applicant(applicant)
 
-            if result:
+            if result.success:
                 return create_response(
                     success=True,
                     data={
