@@ -441,14 +441,14 @@ class CustomerSyncService:
             qb_customer = {
                 "DisplayName": applicant_data['tracking_id'],
                 "GivenName": applicant_data['first_name'],
-                "FamilyName": applicant_data['last_name'],
+                "FamilyName": applicant_data['family_name'],
                 "MiddleName": applicant_data['middle_name'],
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
-                } if applicant_data.get('phone') else None,
+                } if applicant_data.phone else None,
                 "PrimaryEmailAddr": {
                     "Address": applicant_data['email']
-                } if applicant_data.get('email') else None,
+                } if applicant_data.email else None,
                 "CustomerTypeRef": {
                     "value": "528730",
                     "name": "applicant"

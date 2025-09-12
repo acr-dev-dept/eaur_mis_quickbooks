@@ -777,7 +777,7 @@ class TblOnlineApplication(MISBaseModel):
                 # Display name (real name only)
                 'display_name': f"{self.first_name or ''} {self.family_name or ''}".strip() or f"Applicant {self.appl_Id}",
                 'first_name': self.first_name or '',
-                'family_name': self.family_name or '',
+                'last_name': self.family_name or '',
                 'middle_name': self.middlename or '',
 
                 # Contact information
