@@ -568,7 +568,7 @@ def sync_single_applicant(tracking_id: int):
                 )
 
             result = sync_service.sync_single_applicant(applicant)
-
+            current_app.logger.info(f"Synchronization result for applicant {tracking_id}: {result}")
             if result.success:
                 return create_response(
                     success=True,
