@@ -436,7 +436,7 @@ class CustomerSyncService:
                 field for field in custom_fields_list if field.get('StringValue')
             ]
 
-            current_app.logger.info(f"BEFORE applicant data {applicant_data}")
+
             # Create the main QuickBooks customer dictionary
             qb_customer = {
                 "DisplayName": applicant_data['tracking_id'],
@@ -445,10 +445,10 @@ class CustomerSyncService:
                 "MiddleName": applicant_data['middle_name'],
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
-                } if applicant_data['phone'] else None,
+                } if applicant_data.get('phone') else None,
                 "PrimaryEmailAddr": {
                     "Address": applicant_data['email']
-                } if applicant_data['email'] else None,
+                } if applicant_data.get('email') else None,
                 "CustomerTypeRef": {
                     "value": "528730",
                     "name": "applicant"
@@ -617,6 +617,85 @@ class CustomerSyncService:
                 success=False,
                 error_message=error_msg
             )
+        
+    
+    def sync_batch_students(self, students):
+        """
+        Prepares and sends a batch request to QuickBooks Online to create multiple customers.
+        
+        Args:
+            students (list): A list of student objects to synchronize.
+            
+        Returns:
+            dict: A dictionary with 'successful' and 'failed' results.
+        """
+        # The quickbooks_client should be an authenticated client instance.
+        quickbooks_client = self.get_authenticated_client()
+        # Get the realm_id from the authenticated client
+        realm_id = quickbooks_client.realm_id
+        
+        operations = []
+        for i, student in enumerate(students):
+            customer_data = {
+                "DisplayName": f"{student.first_name} {student.last_name}",
+                "GivenName": student.first_name,
+                "FamilyName": student.last_name,
+                "PrimaryEmailAddr": {
+                    "Address": student.email_address
+                },
+                "PrimaryPhone": {
+                    "FreeFormNumber": student.phone_number
+                },
+                "BillAddr": {
+                    "Line1": student.address
+                }
+            }
+            
+            # Each operation in the batch request needs an operation and a unique ID
+            operations.append({
+                "operation": "create",
+                "bId": str(i + 1), # A unique, client-generated ID for this operation
+                "Customer": customer_data
+            })
+            
+        # The main batch request payload
+        batch_payload = {
+            "BatchItemRequest": operations
+        }
+
+        try:
+            # Make the single batch API call, including the realm_id
+            batch_response = quickbooks_client.make_batch_request(realm_id, batch_payload)
+            
+            successful = []
+            failed = []
+            
+            for item in batch_response.get('BatchItemResponse', []):
+                # A successful creation will have a Customer object
+                if "Customer" in item:
+                    customer = item["Customer"]
+                    successful.append({
+                        "student_reg_no": students[int(item["bId"]) - 1].reg_no,
+                        "quickbooks_id": customer.get("Id"),
+                        "display_name": customer.get("DisplayName")
+                    })
+                    # You should also update your database here with the new QuickBooks ID
+                    # students[int(item["bId"]) - 1].quickbooks_id = customer.get("Id")
+                    # students[int(item["bId"]) - 1].save()
+                else:
+                    # An error response will have an error object
+                    error_info = item.get("Fault", {}).get("Error", [{}])[0]
+                    failed.append({
+                        "student_reg_no": students[int(item["bId"]) - 1].reg_no,
+                        "error_message": error_info.get("Detail", "Unknown error")
+                    })
+
+            return { "successful": successful, "failed": failed }
+
+        except Exception as e:
+            current_app.logger.error(f"QuickBooks batch API call failed: {e}")
+            raise e
+
     def sync_single_applicant(self, applicant: TblOnlineApplication) -> CustomerSyncResult:
         """
         Synchronize a single applicant to QuickBooks
@@ -635,13 +714,11 @@ class CustomerSyncService:
             qb_service = self._get_qb_service()
 
             # Map applicant data
-            current_app.logger.info(f"Applicant data: {applicant}")
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
             current_app.logger.info(f"QuickBooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-            current_app.logger.info(f"Quickbooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
             current_app.logger.info(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
             if 'Customer' in response:
                 # Success - update sync status
