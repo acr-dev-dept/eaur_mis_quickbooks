@@ -542,10 +542,10 @@ def map_applicant(appl_id: int):
             "details": str(e)
         }), 500
 
-@customer_sync_bp.route('/applicant/<int:appl_id>', methods=['POST'])
-def sync_single_applicant(appl_id: int):
+@customer_sync_bp.route('/applicant/<int:tracking_id>', methods=['POST'])
+def sync_single_applicant(tracking_id: int):
     """
-    Synchronize a single applicant to QuickBooks customer by appl_Id
+    Synchronize a single applicant to QuickBooks customer by tracking_id
     """
     try:
         # Validate QuickBooks connection
@@ -557,16 +557,15 @@ def sync_single_applicant(appl_id: int):
 
         # Get DB session safely
         with db_manager.get_mis_session() as db:  
-            applicant = db.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
-            
+            applicant = TblOnlineApplication.get_applicant_details(tracking_id)
             if not applicant:
                 return create_response(
                     success=False,
-                    error=f"Applicant {appl_id} not found",
+                    error=f"Applicant {tracking_id} not found",
                     status_code=404
                 )
 
-            result = sync_service.sync_single_applicant(applicant)
+            result = sync_service.map_applicant_to_quickbooks_customer(applicant)
 
             if result.success:
                 return create_response(
@@ -575,22 +574,22 @@ def sync_single_applicant(appl_id: int):
                         'applicant_id': result.customer_id,
                         'quickbooks_id': result.quickbooks_id
                     },
-                    message=f'Applicant {appl_id} synchronized successfully'
+                    message=f'Applicant {tracking_id} synchronized successfully'
                 )
             else:
                 return create_response(
                     success=False,
-                    error=f'Failed to synchronize applicant {appl_id}',
+                    error=f'Failed to synchronize applicant {tracking_id}',
                     details=result.error_message,
                     status_code=500
                 )
 
     except Exception as e:
-        current_app.logger.error(f"Error synchronizing applicant {appl_id}: {e}")
+        current_app.logger.error(f"Error synchronizing applicant {tracking_id}: {e}")
         current_app.logger.error(traceback.format_exc())
         return create_response(
             success=False,
-            error=f'Error synchronizing applicant {appl_id}',
+            error=f'Error synchronizing applicant {tracking_id}',
             details=str(e),
             status_code=500
         )
