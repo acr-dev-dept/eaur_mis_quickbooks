@@ -398,7 +398,7 @@ class CustomerSyncService:
             # Create QuickBooks customer structure
             qb_customer = {
                 "Name": applicant_data['display_name'],
-                "DisplayName": applicant_data['display_name'],
+                "DisplayName": applicant_data['tracking_id'],
                 "GivenName": applicant_data['first_name'],
                 "FamilyName": applicant_data['family_name'],
                 "MiddleName": applicant_data['middle_name'],
@@ -410,23 +410,15 @@ class CustomerSyncService:
                 } if applicant_data['email'] else None,
                 "CustomField": [
                     {
-                        "DefinitionId": "1",
-                        "Name": "CustomerType",
+                        "DefinitionId": "1000000001",
                         "StringValue": "Applicant"
                     },
                     {
-                        "DefinitionId": "2",
-                        "Name": "ApplicationID",
-                        "StringValue": str(applicant_data['appl_Id'])
+                        "DefinitionId": "1000000002",
+                        "StringValue": str(applicant_data['tracking_id'])
                     },
                     {
-                        "DefinitionId": "3",
-                        "Name": "TrackingID",
-                        "StringValue": applicant_data['tracking_id']
-                    },
-                    {
-                        "DefinitionId": "4",
-                        "Name": "Gender",
+                        "DefinitionId": "1000000003",
                         "StringValue": applicant_data['sex']
                     },
                     {
@@ -435,13 +427,12 @@ class CustomerSyncService:
                         "StringValue": applicant_data['country_of_birth']
                     },
                     {
-                        "DefinitionId": "6",
+                        "DefinitionId": "1000000008",
                         "Name": "NationalID",
                         "StringValue": applicant_data['national_id']
                     },
                     {
-                        "DefinitionId": "7",
-                        "Name": "Campus",
+                        "DefinitionId": "1000000005",
                         "StringValue": applicant_data['campus_name']
                     },
                     {
@@ -450,13 +441,7 @@ class CustomerSyncService:
                         "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
                     },
                     {
-                        "DefinitionId": "9",
-                        "Name": "Program",
-                        "StringValue": applicant_data['program_name']
-                    },
-                    {
-                        "DefinitionId": "10",
-                        "Name": "ProgramMode",
+                        "DefinitionId": "1000000009",
                         "StringValue": applicant_data['program_mode']
                     }
                 ],
@@ -477,7 +462,6 @@ class CustomerSyncService:
         """
         try:
             student_data = student
-            
             # Create the CustomField list with only DefinitionId and StringValue
             custom_fields_list = [
                 {

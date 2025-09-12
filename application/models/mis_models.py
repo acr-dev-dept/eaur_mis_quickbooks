@@ -946,6 +946,25 @@ class TblOnlineApplication(MISBaseModel):
                 current_app.logger.error(f"Error getting enriched country name for applicant {self.appl_Id}: {e}")
             return str(self.country_of_birth) if self.country_of_birth else ''
 
+    def get_applicant_details(tracking_id):
+        """
+        Get detailed applicant information by tracking ID
+
+        Args:
+            tracking_id (str): Applicant tracking ID
+
+        Returns:
+            dict: Applicant details or None if not found
+        """
+        try:
+            with TblOnlineApplication.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
+                return applicant
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting applicant details for tracking ID {tracking_id}: {str(e)}")
+            return []
+
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
     __tablename__ = 'tbl_personal_ug'
