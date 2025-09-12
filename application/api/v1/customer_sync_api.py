@@ -673,6 +673,15 @@ def sync_students():
                 details=str(e),
                 status_code=500
             )
+    except Exception as e:
+        current_app.logger.error(f"Error in student synchronization: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error in student synchronization',
+            details=str(e),
+            status_code=500
+        )
 
 
 @customer_sync_bp.route('/all', methods=['POST'])
