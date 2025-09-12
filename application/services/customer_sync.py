@@ -443,6 +443,7 @@ class CustomerSyncService:
                 "GivenName": applicant_data['first_name'],
                 "FamilyName": applicant_data['last_name'],
                 "MiddleName": applicant_data['middle_name'],
+                "CompanyName": f"{applicant_data['first_name']} {applicant_data['last_name']}",
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
                 } if applicant_data.get('phone') else None,
@@ -524,6 +525,7 @@ class CustomerSyncService:
                 "GivenName": student_data.get('first_name'),
                 "FamilyName": student_data.get('last_name'),
                 "MiddleName": student_data.get('middle_name'),
+                "CompanyName": f"{student_data.get('first_name', '')} {student_data.get('last_name', '')}",
                 "PrimaryPhone": {
                     "FreeFormNumber": student_data.get('phone')
                 } if student_data.get('phone') else None,
@@ -630,24 +632,25 @@ class CustomerSyncService:
             dict: A dictionary with 'successful' and 'failed' results.
         """
         # The quickbooks_client should be an authenticated client instance.
-        quickbooks_client = self.get_authenticated_client()
+        quickbooks_client = self._get_qb_service()
         # Get the realm_id from the authenticated client
         realm_id = quickbooks_client.realm_id
         
         operations = []
+        current_app.logger.info(f"Preparing batch sync students: {students}")
         for i, student in enumerate(students):
             customer_data = {
-                "DisplayName": f"{student.first_name} {student.last_name}",
-                "GivenName": student.first_name,
-                "FamilyName": student.last_name,
+                "DisplayName": f"{student.get('reg_no')}",
+                "GivenName": student.get('first_name'),
+                "FamilyName": student.get('last_name'),
                 "PrimaryEmailAddr": {
-                    "Address": student.email_address
+                    "Address": student.get('email_address')
                 },
                 "PrimaryPhone": {
-                    "FreeFormNumber": student.phone_number
+                    "FreeFormNumber": student.get('phone_number')
                 },
                 "BillAddr": {
-                    "Line1": student.address
+                    "Line1": student.get('address'),
                 }
             }
             
