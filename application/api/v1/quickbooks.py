@@ -1336,3 +1336,45 @@ def get_custom_field_definitions():
             'error': 'Error getting custom field definitions',
             'details': str(e)
         }), 500
+
+@quickbooks_bp.route('/get_customer_types', methods=['GET'])
+def get_customer_types():
+    """Get all customer types."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting customer types')
+
+        customer_types = qb.get_customer_types(qb.realm_id)
+        current_app.logger.info(f"Customer types retrieved successfully: {customer_types}")
+
+        # Check for errors in the response
+        if 'error' in customer_types:
+            return jsonify({
+                'success': False,
+                'error': customer_types['error'],
+                'details': customer_types.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_customer_types': len(customer_types) if isinstance(customer_types, list) else 0,
+            'data': customer_types,
+            'message': 'Customer types retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting customer types: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting customer types',
+            'details': str(e)
+        }), 500
+    
