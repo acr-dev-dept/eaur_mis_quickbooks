@@ -484,7 +484,8 @@ def sync_student():
                 success=True,
                 data={
                     'student_id': result.customer_id,
-                    'quickbooks_id': result.quickbooks_id
+                    'quickbooks_id': result.quickbooks_id,
+                    'student_details': student,
                 },
                 message=f'Student {reg_no} synchronized successfully'
             ) 
