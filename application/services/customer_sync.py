@@ -441,7 +441,7 @@ class CustomerSyncService:
             qb_customer = {
                 "DisplayName": applicant_data['tracking_id'],
                 "GivenName": applicant_data['first_name'],
-                "FamilyName": applicant_data['l_name'],
+                "FamilyName": applicant_data['family_name'],
                 "MiddleName": applicant_data['middle_name'],
                 "PrimaryPhone": {
                     "FreeFormNumber": applicant_data['phone']
