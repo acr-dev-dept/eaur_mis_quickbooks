@@ -670,7 +670,7 @@ def sync_students():
             except Exception as e:
                 results['failed'] += 1
                 results['errors'].append({
-                    'student_id': student.reg_no,
+                    'student_id': student.get('reg_no', ''),
                     'error': str(e)
                 })
 
