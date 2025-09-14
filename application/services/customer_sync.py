@@ -727,19 +727,22 @@ class CustomerSyncService:
             student_per_id_map = {}  # To map bId back to student for status update
 
             # 2. Prepare Batch Requests
-            for i, student in enumerate(students_batch):
-                per_id_ug = student.get('per_id_ug')
-                reg_no = student.get('reg_no')
+            for i, student_orm in enumerate(students_batch):
+                # Convert ORM object to dictionary for consistent access
+                student_data = student_orm.to_dict_for_quickbooks()
+                
+                per_id_ug = student_data.get('per_id_ug')
+                reg_no = student_data.get('reg_no')
                 
                 # Mark as IN_PROGRESS immediately to prevent reprocessing by other tasks
                 self._update_student_sync_status(per_id_ug, CustomerSyncStatus.IN_PROGRESS.value)
 
-                qb_customer_data = self.map_student_to_quickbooks_customer(student)
+                qb_customer_data = self.map_student_to_quickbooks_customer(student_data)
                 
                 # Assign a unique bId for each operation in the batch
                 # Use per_id_ug as bId or a combination for unique identification
                 bId = f"student-{per_id_ug}"
-                student_per_id_map[bId] = student
+                student_per_id_map[bId] = student_data # Store the dictionary, not the ORM object
 
                 batch_operations.append({
                     "operation": "create",  # Assuming new customer creation. Adjust for update if needed.
@@ -759,14 +762,14 @@ class CustomerSyncService:
                 # 4. Process Batch Response
                 for item_response in quickbooks_batch_response.get("BatchItemResponse", []):
                     bId = item_response.get("bId")
-                    student = student_per_id_map.get(bId)  # Retrieve student object
+                    student_data = student_per_id_map.get(bId)  # Retrieve student dictionary
 
-                    if not student:
+                    if not student_data:
                         current_app.logger.warning(f"Student with bId {bId} not found in map. Skipping status update.")
                         continue
                     
-                    per_id_ug = student.get('per_id_ug')
-                    reg_no = student.get('reg_no')
+                    per_id_ug = student_data.get('per_id_ug')
+                    reg_no = student_data.get('reg_no')
 
                     if "Customer" in item_response and item_response['Customer'].get('Id'):
                         # Success
@@ -798,9 +801,12 @@ class CustomerSyncService:
                 current_app.logger.error(f"Overall error during QuickBooks batch request: {e}")
                 current_app.logger.error(traceback.format_exc())
                 # If the entire batch request fails, mark all students in the current batch as failed
-                for student in students_batch:
-                    per_id_ug = student.get('per_id_ug')
-                    reg_no = student.get('reg_no')
+                for student_data in students_batch:
+                    # Need to get per_id_ug from the original ORM object or assume it's directly accessible
+                    # Given the error, it's safer to use student_data.per_id_ug directly here.
+                    # If student_data is already a dictionary from to_dict_for_quickbooks, use .get()
+                    per_id_ug = student_data.per_id_ug # Access directly from ORM object for robustness
+                    reg_no = student_data.reg_no     # Access directly from ORM object for robustness
                     self._update_student_sync_status(per_id_ug, CustomerSyncStatus.FAILED.value)
                     self._log_customer_sync_audit(per_id_ug, 'Student', 'ERROR', f"Overall batch request failed: {str(e)}")
                     all_results.append(CustomerSyncResult(
