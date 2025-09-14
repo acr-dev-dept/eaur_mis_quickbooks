@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 import time
+import traceback
 
 from flask import current_app
 from sqlalchemy import and_, or_, func
@@ -698,6 +699,127 @@ class CustomerSyncService:
         except Exception as e:
             current_app.logger.error(f"QuickBooks batch API call failed: {e}")
             raise e
+
+    def sync_all_unsynchronized_students_in_batches(self, batch_size: int = 50) -> Dict:
+        """
+        Fetches unsynchronized students in batches, maps their data to QuickBooks
+        customer format, and sends them for batch creation/update in QuickBooks.
+        Updates sync status and logs audit trails for each student.
+        """
+        realm_id = self._get_qb_service().realm_id  # Ensure qb_service is initialized
+
+        total_processed = 0
+        total_succeeded = 0
+        total_failed = 0
+        all_results = []
+        offset = 0
+
+        while True:
+            # 1. Fetch a batch of unsynchronized students
+            students_batch = self.get_unsynchronized_students(limit=batch_size, offset=offset)
+            if not students_batch:
+                current_app.logger.info("No more unsynchronized students to process.")
+                break  # No more unsynchronized students
+
+            current_app.logger.info(f"Processing batch of {len(students_batch)} unsynchronized students (offset: {offset})")
+
+            batch_operations = []
+            student_per_id_map = {}  # To map bId back to student for status update
+
+            # 2. Prepare Batch Requests
+            for i, student in enumerate(students_batch):
+                per_id_ug = student.get('per_id_ug')
+                reg_no = student.get('reg_no')
+                
+                # Mark as IN_PROGRESS immediately to prevent reprocessing by other tasks
+                self._update_student_sync_status(per_id_ug, CustomerSyncStatus.IN_PROGRESS.value)
+
+                qb_customer_data = self.map_student_to_quickbooks_customer(student)
+                
+                # Assign a unique bId for each operation in the batch
+                # Use per_id_ug as bId or a combination for unique identification
+                bId = f"student-{per_id_ug}"
+                student_per_id_map[bId] = student
+
+                batch_operations.append({
+                    "operation": "create",  # Assuming new customer creation. Adjust for update if needed.
+                    "bId": bId,
+                    "Customer": qb_customer_data
+                })
+
+            batch_payload = {
+                "BatchItemRequest": batch_operations
+            }
+
+            try:
+                # 3. Execute Batch Request
+                quickbooks_batch_response = self._get_qb_service().make_batch_request(realm_id, batch_payload)
+                current_app.logger.info(f"QuickBooks batch response: {quickbooks_batch_response}")
+
+                # 4. Process Batch Response
+                for item_response in quickbooks_batch_response.get("BatchItemResponse", []):
+                    bId = item_response.get("bId")
+                    student = student_per_id_map.get(bId)  # Retrieve student object
+
+                    if not student:
+                        current_app.logger.warning(f"Student with bId {bId} not found in map. Skipping status update.")
+                        continue
+                    
+                    per_id_ug = student.get('per_id_ug')
+                    reg_no = student.get('reg_no')
+
+                    if "Customer" in item_response and item_response['Customer'].get('Id'):
+                        # Success
+                        quickbooks_id = item_response['Customer']['Id']
+                        self._update_student_sync_status(per_id_ug, CustomerSyncStatus.SYNCED.value, quickbooks_id=quickbooks_id)
+                        self._log_customer_sync_audit(per_id_ug, 'Student', 'SUCCESS', f"Synced to QuickBooks ID: {quickbooks_id}")
+                        all_results.append(CustomerSyncResult(
+                            customer_id=reg_no, customer_type='Student', success=True, quickbooks_id=quickbooks_id,
+                            details=item_response
+                        ))
+                        total_succeeded += 1
+                    else:
+                        # Failure
+                        error_detail = "Unknown error during batch sync."
+                        if "Fault" in item_response and "Error" in item_response['Fault']:
+                            error_detail = item_response['Fault']['Error'][0].get('Detail', error_detail)
+                        
+                        # Log the full error response for debugging
+                        current_app.logger.error(f"Failed to sync student {reg_no} (bId: {bId}). Error: {error_detail}. Full response: {item_response}")
+
+                        self._update_student_sync_status(per_id_ug, CustomerSyncStatus.FAILED.value)
+                        self._log_customer_sync_audit(per_id_ug, 'Student', 'ERROR', f"Batch sync failed: {error_detail}")
+                        all_results.append(CustomerSyncResult(
+                            customer_id=reg_no, customer_type='Student', success=False, error_message=error_detail,
+                            details=item_response
+                        ))
+                        total_failed += 1
+            except Exception as e:
+                current_app.logger.error(f"Overall error during QuickBooks batch request: {e}")
+                current_app.logger.error(traceback.format_exc())
+                # If the entire batch request fails, mark all students in the current batch as failed
+                for student in students_batch:
+                    per_id_ug = student.get('per_id_ug')
+                    reg_no = student.get('reg_no')
+                    self._update_student_sync_status(per_id_ug, CustomerSyncStatus.FAILED.value)
+                    self._log_customer_sync_audit(per_id_ug, 'Student', 'ERROR', f"Overall batch request failed: {str(e)}")
+                    all_results.append(CustomerSyncResult(
+                        customer_id=reg_no, customer_type='Student', success=False, error_message=str(e)
+                    ))
+                    total_failed += 1
+
+            total_processed += len(students_batch)
+            offset += len(students_batch)  # Increment offset for the next batch
+
+            # Add a small delay to avoid hitting API rate limits, if necessary
+            time.sleep(1)  # Adjust as per QuickBooks API rate limits
+
+        return {
+            "total_processed": total_processed,
+            "total_succeeded": total_succeeded,
+            "total_failed": total_failed,
+            "results": all_results
+        }
 
     def sync_single_applicant(self, applicant: TblOnlineApplication) -> CustomerSyncResult:
         """
