@@ -205,11 +205,10 @@ class InvoiceSyncService:
             Dictionary with student details or None if not found
         """
         try:
-            session = db_manager.get_mis_session()
-            
-            student = session.query(TblPersonalUg).filter(
-                TblPersonalUg.reg_no == reg_no
-            ).first()
+            with db_manager.get_mis_session() as session:
+                student = session.query(TblPersonalUg).filter(
+                    TblPersonalUg.reg_no == reg_no
+                ).first()
             
             if student:
                 return {
