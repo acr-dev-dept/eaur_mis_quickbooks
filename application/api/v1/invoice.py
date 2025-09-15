@@ -573,14 +573,14 @@ def sync_single_invoice():
             return create_response(
                 success=False,
                 error='Failed to sync invoice',
-                details=result.get('details', 'Unknown error'),
+                details=result.error_message or 'Unknown error',
                 status_code=400
             )
 
         current_app.logger.info("Invoice synced successfully")
         return create_response(
             success=True,
-            data=result.get('data', {}),
+            data=result.data or {},
             message='Invoice synced successfully'
         )
 
