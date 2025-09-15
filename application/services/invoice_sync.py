@@ -418,20 +418,18 @@ class InvoiceSyncService:
             quickbooks_id: QuickBooks invoice ID if successfully synced
         """
         try:
-            session = db_manager.get_mis_session()
-
-            invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
-            if invoice:
-                invoice.QuickBk_Status = status
-                invoice.pushed_date = datetime.now()
-                invoice.pushed_by = "InvoiceSyncService"
+            with db_manager.mis_session_scope() as session:
+                invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
+                if invoice:
+                    invoice.QuickBk_Status = status
+                    invoice.pushed_date = datetime.now()
+                    invoice.pushed_by = "InvoiceSyncService"
 
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
                     current_comment = invoice.comment or ""
                     if "QB_ID:" not in current_comment:
                         invoice.comment = f"{current_comment} [QB_ID:{quickbooks_id}]".strip()
-
                 session.commit()
                 logger.info(f"Updated invoice {invoice_id} sync status to {status}")
 
