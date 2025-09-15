@@ -266,7 +266,7 @@ class InvoiceSyncService:
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
-                                "value": str(invoice.quickbooks_item_id),  # must exist in QB
+                                "value": "19"#str(invoice.quickbooks_item_id),  # must exist in QB
                             },
                             "Qty": 1,
                             "UnitPrice": float(amount)
