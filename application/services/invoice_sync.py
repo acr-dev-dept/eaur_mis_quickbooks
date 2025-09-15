@@ -226,7 +226,7 @@ class InvoiceSyncService:
             fee_description = "Tuition Fee"  # Default
             if invoice.fee_category_rel:
                 fee_description = getattr(invoice.fee_category_rel, 'name', 'Tuition Fee')
-
+                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
             invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
 
@@ -248,7 +248,7 @@ class InvoiceSyncService:
                     }
                 ],
                 "CustomerRef": {
-                    "name": customer_name
+                    "name": invoice.reg_no,
                 },
                 "TxnDate": invoice_date,
                 "DocNumber": f"MIS-{invoice.id}",
