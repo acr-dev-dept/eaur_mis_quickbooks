@@ -583,7 +583,7 @@ def sync_single_invoice():
         current_app.logger.info("Invoice synced successfully")
         return create_response(
             success=True,
-            data=result.data or {},
+            data=result.details or {},
             message='Invoice synced successfully'
         )
 
