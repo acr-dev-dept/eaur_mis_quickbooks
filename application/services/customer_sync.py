@@ -830,7 +830,7 @@ class CustomerSyncService:
             "results": all_results
         }
 
-    def sync_all_unsynchronized_applicants_in_batches(self, batch_size: int = 50) -> Dict:
+    def sync_all_unsynchronized_applicants_in_batches(self, batch_size: int = 20) -> Dict:
         """
         Fetches unsynchronized applicants in batches, maps their data to QuickBooks
         customer format, and sends them for batch creation/update in QuickBooks.
