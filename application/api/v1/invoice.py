@@ -567,7 +567,10 @@ def sync_single_invoice():
         current_app.logger.info(f'Syncing single invoice with ID: {invoice_id}')
 
         invoice_sync_service = InvoiceSyncService()
-        result = invoice_sync_service.sync_single_invoice(invoice_id)
+        invoice_data = invoice_sync_service.fetch_invoice_data(invoice_id)
+        result = invoice_sync_service.sync_single_invoice(invoice_data)
+        
+        current_app.logger.info(f'Sync result: {result}')
 
         if not result.success:
             return create_response(

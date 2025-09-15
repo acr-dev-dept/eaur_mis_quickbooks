@@ -125,7 +125,36 @@ class InvoiceSyncService:
         finally:
             if 'session' in locals():
                 session.close()
-    
+    def fetch_invoice_data(self, invoice_id: int) -> TblImvoice:
+        """
+        Fetch a single invoice by ID
+        
+        Args:
+            invoice_id: ID of the invoice to fetch
+            
+        Returns:
+            TblImvoice: Invoice object
+        """
+        try:
+            session = db_manager.get_mis_session()
+            invoice = session.query(TblImvoice).options(
+                joinedload(TblImvoice.level),
+                joinedload(TblImvoice.fee_category_rel),
+                joinedload(TblImvoice.module),
+                joinedload(TblImvoice.intake)
+            ).filter(TblImvoice.id == invoice_id).first()
+            
+            if not invoice:
+                raise Exception(f"Invoice with ID {invoice_id} not found")
+            
+            return invoice
+            
+        except Exception as e:
+            logger.error(f"Error fetching invoice {invoice_id}: {e}")
+            raise
+        finally:
+            if 'session' in locals():
+                session.close()
     def get_unsynchronized_invoices(self, limit: Optional[int] = None, offset: int = 0) -> List[TblImvoice]:
         """
         Get invoices that haven't been synchronized to QuickBooks
@@ -286,7 +315,7 @@ class InvoiceSyncService:
         try:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
-            self._update_invoice_sync_status(invoice, SyncStatus.IN_PROGRESS.value)
+            self._update_invoice_sync_status(invoice.id, SyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
@@ -331,14 +360,15 @@ class InvoiceSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_invoice_sync_status(invoice, SyncStatus.FAILED.value)
-            self._log_sync_audit(invoice, 'ERROR', error_msg)
+            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+            self._log_sync_audit(invoice.id, 'ERROR', error_msg)
 
             return SyncResult(
-                invoice_id=invoice,
+                invoice_id=invoice.id,
                 success=False,
                 error_message=error_msg
             )
+
 
     def sync_invoices_batch(self, batch_size: Optional[int] = None) -> Dict:
         """
