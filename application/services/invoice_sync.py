@@ -453,8 +453,9 @@ class InvoiceSyncService:
         """
         try:
             audit_log = QuickbooksAuditLog(
-                action=f"INVOICE_SYNC_{action}",
-                details=f"Invoice ID: {invoice_id} - {details}",
+                action_type=f"INVOICE_SYNC_{action}",
+                error_message=f"Invoice ID: {invoice_id} - {details}",
+                operation_by="InvoiceSyncService",
                 timestamp=datetime.now()
             )
             db.session.add(audit_log)

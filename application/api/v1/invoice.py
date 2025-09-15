@@ -569,7 +569,7 @@ def sync_single_invoice():
         invoice_sync_service = InvoiceSyncService()
         result = invoice_sync_service.sync_single_invoice(invoice_id)
 
-        if not result['success']:
+        if not result.success:
             return create_response(
                 success=False,
                 error='Failed to sync invoice',
