@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Navigate to project directory
-cd /home/alex/eaur_mis_quickbooks || exit 1
+cd /home/eaur/eaur_mis_quickbooks || exit 1
 
 # Activate the virtual environment
 source venv/bin/activate

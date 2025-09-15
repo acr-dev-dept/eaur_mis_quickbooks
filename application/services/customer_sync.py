@@ -392,10 +392,15 @@ class CustomerSyncService:
         Returns:
             Dictionary formatted for QuickBooks Customer API
         """
-        try:
-            # Get enriched applicant data
+        current_app.logger.info(f"Mapping applicant {applicant} and the type is {type(applicant)}")
+        #check if type is already dict
+        if isinstance(applicant, dict):
+            current_app.logger.info(f"applicant is already a dict {applicant}")
+            applicant_data = applicant
+        else:
+            current_app.logger.info(f"applicant is not a dict {applicant}")
             applicant_data = applicant.to_dict_for_quickbooks()
-
+        try:
             # Create QuickBooks customer structure
 
             custom_fields_list = [
@@ -842,6 +847,7 @@ class CustomerSyncService:
         while True:
             # 1. Fetch a batch of unsynchronized applicants
             applicants_batch = self.get_unsynchronized_applicants(limit=batch_size, offset=offset)
+            current_app.logger.info(f"batch applicants {applicants_batch} and length {len(applicants_batch)}")
             if not applicants_batch:
                 current_app.logger.info("No more unsynchronized applicants to process.")
                 break
@@ -855,15 +861,16 @@ class CustomerSyncService:
             for i, applicant_orm in enumerate(applicants_batch):
                 # Convert ORM object to dictionary for consistent access
                 applicant_data = applicant_orm.to_dict_for_quickbooks()
-                
+                current_app.logger.info(f"applicant data {applicant_data}")
                 appl_id = applicant_data.get('appl_Id')
                 tracking_id = applicant_data.get('tracking_id')
                 
                 # Mark as IN_PROGRESS immediately to prevent reprocessing by other tasks
                 self._update_applicant_sync_status(appl_id, CustomerSyncStatus.IN_PROGRESS.value)
-
+                current_app.logger.info(f"Applicant data for QuickBooks mapping: {applicant_data}")
                 qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant_data)
-                
+                current_app.logger.info(f"QuickBooks customer data for applicant {appl_id}: {qb_customer_data}")
+
                 # Assign a unique bId for each operation in the batch
                 bId = f"applicant-{appl_id}"
                 applicant_per_id_map[bId] = applicant_data # Store the dictionary
