@@ -418,7 +418,7 @@ class InvoiceSyncService:
             quickbooks_id: QuickBooks invoice ID if successfully synced
         """
         try:
-            with db_manager.mis_session_scope() as session:
+            with db_manager.get_mis_session() as session:
                 invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
                 if invoice:
                     invoice.QuickBk_Status = status
