@@ -456,7 +456,8 @@ class InvoiceSyncService:
                 action_type=f"INVOICE_SYNC_{action}",
                 error_message=f"Invoice ID: {invoice_id} - {details}",
                 operation_status="Completed" if action == "SUCCESS" else "Failed",
-                timestamp=datetime.now()
+                request_payload="N/A",
+                response_payload="N/A",
             )
             db.session.add(audit_log)
             db.session.commit()
