@@ -700,7 +700,7 @@ class CustomerSyncService:
             current_app.logger.error(f"QuickBooks batch API call failed: {e}")
             raise e
 
-    def sync_all_unsynchronized_students_in_batches(self, batch_size: int = 50) -> Dict:
+    def sync_all_unsynchronized_students_in_batches(self, batch_size: int = 20) -> Dict:
         """
         Fetches unsynchronized students in batches, maps their data to QuickBooks
         customer format, and sends them for batch creation/update in QuickBooks.
