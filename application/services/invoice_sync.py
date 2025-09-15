@@ -136,11 +136,11 @@ class InvoiceSyncService:
             TblImvoice: Invoice object
         """
         try:
-            session = db_manager.get_mis_session()
-            invoice = session.query(TblImvoice).options(
-                joinedload(TblImvoice.level),
-                joinedload(TblImvoice.fee_category_rel),
-                joinedload(TblImvoice.module),
+            with db_manager.get_mis_session() as session:
+                invoice = session.query(TblImvoice).options(
+                    joinedload(TblImvoice.level),
+                    joinedload(TblImvoice.fee_category_rel),
+                    joinedload(TblImvoice.module),
                 joinedload(TblImvoice.intake)
             ).filter(TblImvoice.id == invoice_id).first()
             
