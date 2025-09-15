@@ -331,7 +331,7 @@ class InvoiceSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+            self._update_invoice_sync_status(invoice, SyncStatus.FAILED.value)
             self._log_sync_audit(invoice.id, 'ERROR', error_msg)
 
             return SyncResult(
