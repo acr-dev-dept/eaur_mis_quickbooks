@@ -286,7 +286,7 @@ class InvoiceSyncService:
         try:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
-            self._update_invoice_sync_status(invoice.invoice_id, SyncStatus.IN_PROGRESS.value)
+            self._update_invoice_sync_status(invoice, SyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
