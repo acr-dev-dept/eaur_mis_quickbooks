@@ -1150,3 +1150,93 @@ def sync_unsynchronized_students_batch():
             details=str(e),
             status_code=500
         )
+
+@customer_sync_bp.route('/sync_unsynchronized_applicants_batch', methods=['POST'])
+def sync_unsynchronized_applicants_batch():
+    """
+    Synchronize a batch of unsynchronized applicants to QuickBooks customers.
+    description: This endpoint fetches unsynchronized applicants from the database
+                 and synchronizes them to QuickBooks in batches.
+    1. Validates QuickBooks connection.
+    2. Retrieves an optional 'batch_size' from the request body.
+    3. Calls sync_service.sync_all_unsynchronized_applicants_in_batches(batch_size).
+    4. Returns a summary of successful and failed synchronizations.
+    5. Handles exceptions and logs errors.
+    200:
+        description: Batch synchronization initiated successfully.
+        content:
+            application/json:
+                schema:
+                    type: object
+                    properties:
+                        success:
+                            type: boolean
+                            example: true
+                        data:
+                            type: object
+                            properties:
+                                total_processed:
+                                    type: integer
+                                    example: 100
+                                total_succeeded:
+                                    type: integer
+                                    example: 95
+                                total_failed:
+                                    type: integer
+                                    example: 5
+                                results:
+                                    type: array
+                                    items:
+                                        type: object # CustomerSyncResult schema
+                        message:
+                            type: string
+                            example: "Batch synchronization completed."
+    400:
+        description: Bad request, e.g. QuickBooks not connected or invalid batch_size.
+    500:
+        description: Internal server error during batch synchronization.
+    """
+    data = request.get_json() or {}
+    batch_size = data.get('batch_size', 50) # Default batch size to 50
+
+    if not isinstance(batch_size, int) or batch_size <= 0:
+        return create_response(
+            success=False,
+            error='Invalid batch_size. Must be a positive integer.',
+            status_code=400
+        )
+
+    sync_service = CustomerSyncService()
+
+    try:
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+    except Exception as e:
+        current_app.logger.error(f"Error validating QuickBooks connection for batch applicant sync: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error validating QuickBooks connection',
+            details=str(e),
+            status_code=500
+        )
+
+    try:
+        sync_summary = sync_service.sync_all_unsynchronized_applicants_in_batches(batch_size=batch_size)
+        message = f"Batch applicant synchronization completed. Processed: {sync_summary['total_processed']}, Succeeded: {sync_summary['total_succeeded']}, Failed: {sync_summary['total_failed']}."
+        current_app.logger.info(message)
+        return create_response(
+            success=True,
+            data=sync_summary,
+            message=message
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error during batch applicant synchronization: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error during batch applicant synchronization',
+            details=str(e),
+            status_code=500
+        )
