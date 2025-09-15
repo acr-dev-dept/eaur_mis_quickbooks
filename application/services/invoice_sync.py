@@ -262,38 +262,26 @@ class InvoiceSyncService:
             qb_invoice = {
                 "Line": [
                     {
-                        "Amount": amount,
+                        "Amount": float(amount),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
-                                "value": "1",  # Default item - should be configured
-                                "name": fee_description
+                                "value": str(invoice.quickbooks_item_id),  # must exist in QB
                             },
                             "Qty": 1,
-                            "UnitPrice": amount
+                            "UnitPrice": float(amount)
                         },
                         "Description": f"{fee_description} - {invoice.comment or 'Student Fee'}"
                     }
                 ],
                 "CustomerRef": {
-                    "name": invoice.reg_no,
+                    "value": "7557" #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
-                "TxnDate": invoice_date,
+                "TxnDate": invoice_date.strftime("%Y-%m-%d"),
                 "DocNumber": f"MIS-{invoice.id}",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
-                "CustomField": [
-                    {
-                        "DefinitionId": "1",
-                        "Name": "MIS_Invoice_ID",
-                        "StringValue": str(invoice.id)
-                    },
-                    {
-                        "DefinitionId": "2",
-                        "Name": "Student_RegNo",
-                        "StringValue": invoice.reg_no or ""
-                    }
-                ]
             }
+
 
             return qb_invoice
 
