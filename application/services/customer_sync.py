@@ -801,12 +801,10 @@ class CustomerSyncService:
                 current_app.logger.error(f"Overall error during QuickBooks batch request: {e}")
                 current_app.logger.error(traceback.format_exc())
                 # If the entire batch request fails, mark all students in the current batch as failed
-                for student_data in students_batch:
-                    # Need to get per_id_ug from the original ORM object or assume it's directly accessible
-                    # Given the error, it's safer to use student_data.per_id_ug directly here.
-                    # If student_data is already a dictionary from to_dict_for_quickbooks, use .get()
-                    per_id_ug = student_data.per_id_ug # Access directly from ORM object for robustness
-                    reg_no = student_data.reg_no     # Access directly from ORM object for robustness
+                for student_orm in students_batch:
+                    # In this outer exception, student_orm is the raw ORM object from students_batch
+                    per_id_ug = student_orm.per_id_ug # Access directly from ORM object
+                    reg_no = student_orm.reg_no     # Access directly from ORM object
                     self._update_student_sync_status(per_id_ug, CustomerSyncStatus.FAILED.value)
                     self._log_customer_sync_audit(per_id_ug, 'Student', 'ERROR', f"Overall batch request failed: {str(e)}")
                     all_results.append(CustomerSyncResult(
@@ -819,6 +817,127 @@ class CustomerSyncService:
 
             # Add a small delay to avoid hitting API rate limits, if necessary
             time.sleep(1)  # Adjust as per QuickBooks API rate limits
+
+        return {
+            "total_processed": total_processed,
+            "total_succeeded": total_succeeded,
+            "total_failed": total_failed,
+            "results": all_results
+        }
+
+    def sync_all_unsynchronized_applicants_in_batches(self, batch_size: int = 50) -> Dict:
+        """
+        Fetches unsynchronized applicants in batches, maps their data to QuickBooks
+        customer format, and sends them for batch creation/update in QuickBooks.
+        Updates sync status and logs audit trails for each applicant.
+        """
+        realm_id = self._get_qb_service().realm_id
+
+        total_processed = 0
+        total_succeeded = 0
+        total_failed = 0
+        all_results = []
+        offset = 0
+
+        while True:
+            # 1. Fetch a batch of unsynchronized applicants
+            applicants_batch = self.get_unsynchronized_applicants(limit=batch_size, offset=offset)
+            if not applicants_batch:
+                current_app.logger.info("No more unsynchronized applicants to process.")
+                break
+
+            current_app.logger.info(f"Processing batch of {len(applicants_batch)} unsynchronized applicants (offset: {offset})")
+
+            batch_operations = []
+            applicant_per_id_map = {}  # To map bId back to applicant for status update
+
+            # 2. Prepare Batch Requests
+            for i, applicant_orm in enumerate(applicants_batch):
+                # Convert ORM object to dictionary for consistent access
+                applicant_data = applicant_orm.to_dict_for_quickbooks()
+                
+                appl_id = applicant_data.get('appl_Id')
+                tracking_id = applicant_data.get('tracking_id')
+                
+                # Mark as IN_PROGRESS immediately to prevent reprocessing by other tasks
+                self._update_applicant_sync_status(appl_id, CustomerSyncStatus.IN_PROGRESS.value)
+
+                qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant_data)
+                
+                # Assign a unique bId for each operation in the batch
+                bId = f"applicant-{appl_id}"
+                applicant_per_id_map[bId] = applicant_data # Store the dictionary
+
+                batch_operations.append({
+                    "operation": "create",  # Assuming new customer creation
+                    "bId": bId,
+                    "Customer": qb_customer_data
+                })
+
+            batch_payload = {
+                "BatchItemRequest": batch_operations
+            }
+
+            try:
+                # 3. Execute Batch Request
+                quickbooks_batch_response = self._get_qb_service().make_batch_request(realm_id, batch_payload)
+                current_app.logger.info(f"QuickBooks batch response for applicants: {quickbooks_batch_response}")
+
+                # 4. Process Batch Response
+                for item_response in quickbooks_batch_response.get("BatchItemResponse", []):
+                    bId = item_response.get("bId")
+                    applicant_data = applicant_per_id_map.get(bId)
+
+                    if not applicant_data:
+                        current_app.logger.warning(f"Applicant with bId {bId} not found in map. Skipping status update.")
+                        continue
+                    
+                    appl_id = applicant_data.get('appl_Id')
+                    tracking_id = applicant_data.get('tracking_id')
+
+                    if "Customer" in item_response and item_response['Customer'].get('Id'):
+                        # Success
+                        quickbooks_id = item_response['Customer']['Id']
+                        self._update_applicant_sync_status(appl_id, CustomerSyncStatus.SYNCED.value, quickbooks_id=quickbooks_id)
+                        self._log_customer_sync_audit(appl_id, 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {quickbooks_id}")
+                        all_results.append(CustomerSyncResult(
+                            customer_id=tracking_id, customer_type='Applicant', success=True, quickbooks_id=quickbooks_id,
+                            details=item_response
+                        ))
+                        total_succeeded += 1
+                    else:
+                        # Failure
+                        error_detail = "Unknown error during batch sync."
+                        if "Fault" in item_response and "Error" in item_response['Fault']:
+                            error_detail = item_response['Fault']['Error'][0].get('Detail', error_detail)
+                        
+                        current_app.logger.error(f"Failed to sync applicant {tracking_id} (bId: {bId}). Error: {error_detail}. Full response: {item_response}")
+
+                        self._update_applicant_sync_status(appl_id, CustomerSyncStatus.FAILED.value)
+                        self._log_customer_sync_audit(appl_id, 'Applicant', 'ERROR', f"Batch sync failed: {error_detail}")
+                        all_results.append(CustomerSyncResult(
+                            customer_id=tracking_id, customer_type='Applicant', success=False, error_message=error_detail,
+                            details=item_response
+                        ))
+                        total_failed += 1
+            except Exception as e:
+                current_app.logger.error(f"Overall error during QuickBooks batch request for applicants: {e}")
+                current_app.logger.error(traceback.format_exc())
+                # If the entire batch request fails, mark all applicants in the current batch as failed
+                for applicant_orm in applicants_batch:
+                    appl_id = applicant_orm.appl_Id
+                    tracking_id = applicant_orm.tracking_id
+                    self._update_applicant_sync_status(appl_id, CustomerSyncStatus.FAILED.value)
+                    self._log_customer_sync_audit(appl_id, 'Applicant', 'ERROR', f"Overall batch request failed: {str(e)}")
+                    all_results.append(CustomerSyncResult(
+                        customer_id=tracking_id, customer_type='Applicant', success=False, error_message=str(e)
+                    ))
+                    total_failed += 1
+
+            total_processed += len(applicants_batch)
+            offset += len(applicants_batch) # Increment offset for the next batch
+
+            time.sleep(1) # Adjust as per QuickBooks API rate limits
 
         return {
             "total_processed": total_processed,
