@@ -18,7 +18,7 @@ from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment
-from application.models.central_models import QuickBooksConfig, QuickBooksAuditLog
+from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
@@ -453,7 +453,7 @@ class InvoiceSyncService:
             details: Additional details about the action
         """
         try:
-            audit_log = QuickBooksAuditLog(
+            audit_log = QuickbooksAuditLog(
                 action=f"INVOICE_SYNC_{action}",
                 details=f"Invoice ID: {invoice_id} - {details}",
                 timestamp=datetime.now()
