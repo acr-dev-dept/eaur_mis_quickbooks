@@ -1197,7 +1197,7 @@ def sync_unsynchronized_applicants_batch():
         description: Internal server error during batch synchronization.
     """
     data = request.get_json() or {}
-    batch_size = data.get('batch_size', 50) # Default batch size to 50
+    batch_size = data.get('batch_size', 5) # Default batch size to 5
 
     if not isinstance(batch_size, int) or batch_size <= 0:
         return create_response(
