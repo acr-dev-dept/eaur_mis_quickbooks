@@ -392,10 +392,15 @@ class CustomerSyncService:
         Returns:
             Dictionary formatted for QuickBooks Customer API
         """
-        try:
-            # Get enriched applicant data
+        current_app.logger.info(f"Mapping applicant {applicant} and the type is {type(applicant)}")
+        #check if type is already dict
+        if isinstance(applicant, dict):
+            current_app.logger.info(f"applicant is already a dict {applicant}")
+            applicant_data = applicant
+        else:
+            current_app.logger.info(f"applicant is not a dict {applicant}")
             applicant_data = applicant.to_dict_for_quickbooks()
-
+        try:
             # Create QuickBooks customer structure
 
             custom_fields_list = [
