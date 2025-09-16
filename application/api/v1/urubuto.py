@@ -993,7 +993,7 @@ def get_student_invoices():
             for invoice in invoices:
                 invoice_data.append({
                     "invoice_date": invoice.get('date'),
-                    "invoice_id": str(invoice.id),
+                    "invoice_id": str(invoice.get('id')),
                     "reference_number": invoice.get('reference_number', ''),
                     "amount": invoice.get('dept'),
                     "category": invoice.get('category'),
