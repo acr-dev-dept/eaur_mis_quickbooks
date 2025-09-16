@@ -7,6 +7,7 @@ import logging
 import traceback
 from decimal import Decimal
 from dotenv import load_dotenv
+from application.models.mis_models import TblIncomeCategory
 
 load_dotenv()
 
@@ -1126,6 +1127,7 @@ def create_item():
         "Description": "This is a sample item",
         "UnitPrice": 100.00,
         "Taxable": false
+        }
     """
     try:
         # Check if QuickBooks is configured
@@ -1206,6 +1208,83 @@ def create_item():
             'details': str(e)
         }), 500
     
+@quickbooks_bp.route('/item/sync_items', methods=['POST'])
+def sync_single_item():
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide item data in JSON format'
+            }), 400
+        required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
+        payload = request.json
+
+        income_category = TblIncomeCategory.get_category_by_id(payload.get('income_category_id'))
+
+        if not income_category:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid income category ID',
+                'message': 'Please provide a valid income category ID'
+            }), 400
+        if income_category['status_id'] != 1:
+            return jsonify({
+                'success': False,
+                'error': 'Income category is inactive',
+                'message': 'Please provide an active income category'
+            }), 400
+        
+        item_data = {
+            "Name": income_category.name,
+            "Type": "Service",
+            "IncomeAccountRef": {
+                "value": "",
+                "name": ""
+            },
+            "Description": income_category.description or "No description",
+            "UnitPrice": float(income_category.amount) if income_category.amount else 0.0,
+        }
+        qb = QuickBooks()
+        current_app.logger.info('Syncing single item')
+        result = qb.create_item(qb.realm_id, item_data)
+
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to sync item',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+        current_app.logger.info("Item synced successfully")
+        # update qb status
+        update_status = TblIncomeCategory.update_quickbooks_status(income_category.status_Id, result.get('Id'), "ItemSyncService")
+        if not update_status:
+            current_app.logger.error("Failed to update QuickBooks status in local database")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Item synced successfully'
+        }), 201
+    except Exception as e:
+        current_app.logger.error(f"Error syncing item: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error syncing item',
+            'details': str(e)
+        }), 500
+
+        
+
+
 @quickbooks_bp.route('/get_customers', methods=['GET'])
 def get_customers():
     """Get all customers."""

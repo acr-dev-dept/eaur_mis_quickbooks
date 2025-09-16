@@ -594,6 +594,9 @@ class TblIncomeCategory(MISBaseModel):
     status_Id = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(200), nullable=False)
     QuickBk_ctgId = db.Column(db.Integer)
+    Quickbk_Status = db.Column(db.Integer, default='0')
+    pushed_date = db.Column(DateTime)
+    pushed_by = db.Column(db.String(200))
 
     # Relationships 
     camp = relationship("TblCampus", backref="income_categories", lazy='joined')
@@ -627,6 +630,67 @@ class TblIncomeCategory(MISBaseModel):
             'category': self.category,
             'QuickBk_ctgId': self.QuickBk_ctgId
         }
+    @staticmethod
+    def get_category_by_id(category_id):
+        """
+        Get income category by ID
+
+        Args:
+            category_id (int): Income category ID
+
+        Returns:
+            TblIncomeCategory: Income category record or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                cat_data_obj=session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id).first()
+                cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
+                return cat_data_dict
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting income category for ID {category_id}: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_active_categories():
+        """
+        Get income categories with status_id = 1
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                categories = session.query(TblIncomeCategory).filter(TblIncomeCategory.status_Id == 1).all()
+                return [c.to_dict() for c in categories] if categories else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting active income categories: {str(e)}")
+            return []
+    @staticmethod
+    def update_quickbooks_status(category_id, quickbooks_id, pushed_by):
+        """
+        Update QuickBooks sync status for an income category
+
+        Args:
+            category_id (int): Income category ID
+            quickbooks_id (int): QuickBooks category ID
+            pushed_by (str): User who pushed the data
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                category = session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id).first()
+                if category:
+                    category.QuickBk_ctgId = quickbooks_id
+                    category.Quickbk_Status = 1  # Mark as synced
+                    category.pushed_by = pushed_by
+                    category.pushed_date = datetime.utcnow()
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating QuickBooks status for income category {category_id}: {str(e)}")
+            return False
 
 class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
