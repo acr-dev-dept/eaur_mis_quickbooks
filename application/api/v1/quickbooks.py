@@ -1251,8 +1251,8 @@ def sync_single_item():
                 "value": "",
                 "name": ""
             },
-            "Description": income_category.description or "No description",
-            "UnitPrice": float(income_category.amount) if income_category.amount else 0.0,
+            "Description": income_category['description'] or "No description",
+            "UnitPrice": float(income_category['amount']) if income_category['amount'] else 0.0,
         }
         qb = QuickBooks()
         current_app.logger.info('Syncing single item')
