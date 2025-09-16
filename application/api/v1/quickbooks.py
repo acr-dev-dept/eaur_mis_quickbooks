@@ -1275,6 +1275,10 @@ def sync_single_item():
             }), 400
         current_app.logger.info("Item synced successfully")
         # update qb status
+        current_app.logger.info(f"QuickBooks response: {result}")
+        current_app.logger.info(f"data from result: {result.get('data', {})}")
+        current_app.logger.info(f"Item from data: {result.get('data', {}).get('Item', {})}")
+
         item_id = result.get("data", {}).get("Item", {}).get("Id")
         current_app.logger.info(f"Item ID from QuickBooks: {item_id}")
         if not item_id:
