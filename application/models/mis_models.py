@@ -551,7 +551,8 @@ class TblImvoice(MISBaseModel):
             # get the invoices with the balance greater than zero
             with cls.get_session() as session:
                 invoices = session.query(cls).filter(
-                    cls.reg_no == reg_no
+                    cls.reg_no == reg_no,
+                    cls.balance > 0
                 ).all()
                 return [invoice.to_dict() for invoice in invoices] if invoices else []
         except Exception as e:
