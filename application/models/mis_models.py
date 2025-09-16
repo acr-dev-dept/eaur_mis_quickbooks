@@ -535,6 +535,46 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error updating invoice balance for reference {reference_number}: {str(e)}")
             return None, None
+        
+    @classmethod
+    def get_all_invoices_associated_with_student(cls, reg_no):
+        """
+        Get all invoices associated with a student by registration number
+
+        Args:
+            reg_no (str): Student registration number
+
+        Returns:
+            list: List of invoice records
+        """
+        try:
+            with cls.get_session() as session:
+                invoices = session.query(cls).filter(cls.reg_no == reg_no).all()
+                return [invoice.to_dict() for invoice in invoices] if invoices else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoices for student {reg_no}: {str(e)}")
+            return []
+        
+    @classmethod
+    def get_all_invoices_associated_with_application(cls, appl_Id):
+        """
+        Get all invoices associated with an application by application ID
+
+        Args:
+            appl_Id (int): Application ID
+
+        Returns:
+            list: List of invoice records
+        """
+        try:
+            with cls.get_session() as session:
+                invoices = session.query(cls).filter(cls.appl_Id == appl_Id).all()
+                return [invoice.to_dict() for invoice in invoices] if invoices else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoices for application {appl_Id}: {str(e)}")
+            return []
 
 
 class TblIncomeCategory(MISBaseModel):
