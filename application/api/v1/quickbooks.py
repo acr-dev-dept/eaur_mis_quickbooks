@@ -8,6 +8,9 @@ import traceback
 from decimal import Decimal
 from dotenv import load_dotenv
 from application.models.mis_models import TblIncomeCategory
+from datetime import datetime
+
+
 
 load_dotenv()
 
@@ -1272,7 +1275,11 @@ def sync_single_item():
             }), 400
         current_app.logger.info("Item synced successfully")
         # update qb status
-        update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=result["data"]["Item"]["Id"], pushed_by="ItemSyncService")
+        result = result.json()
+        item_id = result.get("data", {}).get("Item", {}).get("Id")
+
+        update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=item_id, pushed_by="ItemSyncService")
+        current_app.logger.info(f"QuickBooks status updated: {update_status}")
         if not update_status:
             current_app.logger.error("Failed to update QuickBooks status in local database")
         return jsonify({
