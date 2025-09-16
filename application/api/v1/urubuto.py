@@ -986,7 +986,7 @@ def get_student_invoices():
     with db_manager.get_mis_session() as session:
         # Fetch all invoices associated with the given registration number
         try:
-            invoices = TblImvoice.get_all_invoices_associated_with_student(session, reg_no)
+            invoices = TblImvoice.get_all_invoices_associated_with_student(reg_no)
             current_app.logger.info(f"Found {len(invoices)} invoices for student {reg_no}")
             return invoices
         except Exception as e:
