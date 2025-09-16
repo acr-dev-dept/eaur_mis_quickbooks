@@ -1244,6 +1244,13 @@ def sync_single_item():
                 'message': 'Please provide an active income category'
             }), 400
         
+        if income_category['QuickBk_ctgId'] or income_category['Quickbk_Status'] == 1:
+            return jsonify({
+                'success': False,
+                'error': 'Income category already synced',
+                'message': 'This income category has already been synced with QuickBooks'
+            }), 400
+
         item_data = {
             "Name": income_category['name'],
             "Type": "Service",
