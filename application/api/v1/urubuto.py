@@ -988,7 +988,10 @@ def get_student_invoices():
         try:
             invoices = TblImvoice.get_all_invoices_associated_with_student(reg_no)
             current_app.logger.info(f"Found {len(invoices)} invoices for student {reg_no}")
+            invoice_data = []
+            
             return invoices
+
         except Exception as e:
             current_app.logger.error(f"Error fetching invoices for student {reg_no}: {str(e)}")
             current_app.logger.error(traceback.format_exc())
