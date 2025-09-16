@@ -18,7 +18,7 @@ from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment
-from application.models.central_models import QuickBooksConfig, QuickBooksAuditLog
+from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
@@ -125,7 +125,36 @@ class InvoiceSyncService:
         finally:
             if 'session' in locals():
                 session.close()
-    
+    def fetch_invoice_data(self, invoice_id: int) -> TblImvoice:
+        """
+        Fetch a single invoice by ID
+        
+        Args:
+            invoice_id: ID of the invoice to fetch
+            
+        Returns:
+            TblImvoice: Invoice object
+        """
+        try:
+            with db_manager.get_mis_session() as session:
+                invoice = session.query(TblImvoice).options(
+                    joinedload(TblImvoice.level),
+                    joinedload(TblImvoice.fee_category_rel),
+                    joinedload(TblImvoice.module),
+                joinedload(TblImvoice.intake)
+            ).filter(TblImvoice.id == invoice_id).first()
+            
+            if not invoice:
+                raise Exception(f"Invoice with ID {invoice_id} not found")
+            
+            return invoice
+            
+        except Exception as e:
+            logger.error(f"Error fetching invoice {invoice_id}: {e}")
+            raise
+        finally:
+            if 'session' in locals():
+                session.close()
     def get_unsynchronized_invoices(self, limit: Optional[int] = None, offset: int = 0) -> List[TblImvoice]:
         """
         Get invoices that haven't been synchronized to QuickBooks
@@ -176,11 +205,10 @@ class InvoiceSyncService:
             Dictionary with student details or None if not found
         """
         try:
-            session = db_manager.get_mis_session()
-            
-            student = session.query(TblPersonalUg).filter(
-                TblPersonalUg.reg_no == reg_no
-            ).first()
+            with db_manager.get_mis_session() as session:
+                student = session.query(TblPersonalUg).filter(
+                    TblPersonalUg.reg_no == reg_no
+                ).first()
             
             if student:
                 return {
@@ -226,7 +254,7 @@ class InvoiceSyncService:
             fee_description = "Tuition Fee"  # Default
             if invoice.fee_category_rel:
                 fee_description = getattr(invoice.fee_category_rel, 'name', 'Tuition Fee')
-
+                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
             invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
 
@@ -234,38 +262,26 @@ class InvoiceSyncService:
             qb_invoice = {
                 "Line": [
                     {
-                        "Amount": amount,
+                        "Amount": float(amount),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
-                                "value": "1",  # Default item - should be configured
-                                "name": fee_description
+                                "value": "19"#str(invoice.quickbooks_item_id),  # must exist in QB
                             },
                             "Qty": 1,
-                            "UnitPrice": amount
+                            "UnitPrice": float(amount)
                         },
                         "Description": f"{fee_description} - {invoice.comment or 'Student Fee'}"
                     }
                 ],
                 "CustomerRef": {
-                    "name": customer_name
+                    "value": "7387" #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
-                "TxnDate": invoice_date,
+                "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
                 "DocNumber": f"MIS-{invoice.id}",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
-                "CustomField": [
-                    {
-                        "DefinitionId": "1",
-                        "Name": "MIS_Invoice_ID",
-                        "StringValue": str(invoice.id)
-                    },
-                    {
-                        "DefinitionId": "2",
-                        "Name": "Student_RegNo",
-                        "StringValue": invoice.reg_no or ""
-                    }
-                ]
             }
+
 
             return qb_invoice
 
@@ -285,6 +301,7 @@ class InvoiceSyncService:
         """
         try:
             # Mark invoice as in progress
+            current_app.logger.info(f"Invoice data: {invoice}")
             self._update_invoice_sync_status(invoice.id, SyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
@@ -338,6 +355,7 @@ class InvoiceSyncService:
                 success=False,
                 error_message=error_msg
             )
+
 
     def sync_invoices_batch(self, batch_size: Optional[int] = None) -> Dict:
         """
@@ -417,20 +435,18 @@ class InvoiceSyncService:
             quickbooks_id: QuickBooks invoice ID if successfully synced
         """
         try:
-            session = db_manager.get_mis_session()
-
-            invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
-            if invoice:
-                invoice.QuickBk_Status = status
-                invoice.pushed_date = datetime.now()
-                invoice.pushed_by = "InvoiceSyncService"
+            with db_manager.get_mis_session() as session:
+                invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
+                if invoice:
+                    invoice.QuickBk_Status = status
+                    invoice.pushed_date = datetime.now()
+                    invoice.pushed_by = "InvoiceSyncService"
 
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
                     current_comment = invoice.comment or ""
                     if "QB_ID:" not in current_comment:
                         invoice.comment = f"{current_comment} [QB_ID:{quickbooks_id}]".strip()
-
                 session.commit()
                 logger.info(f"Updated invoice {invoice_id} sync status to {status}")
 
@@ -453,10 +469,12 @@ class InvoiceSyncService:
             details: Additional details about the action
         """
         try:
-            audit_log = QuickBooksAuditLog(
-                action=f"INVOICE_SYNC_{action}",
-                details=f"Invoice ID: {invoice_id} - {details}",
-                timestamp=datetime.now()
+            audit_log = QuickbooksAuditLog(
+                action_type=f"INVOICE_SYNC_{action}",
+                error_message=f"Invoice ID: {invoice_id} - {details}",
+                operation_status="Completed" if action == "SUCCESS" else "Failed",
+                request_payload="N/A",
+                response_payload="N/A",
             )
             db.session.add(audit_log)
             db.session.commit()

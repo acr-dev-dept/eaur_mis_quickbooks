@@ -10,6 +10,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
+import traceback
 from flask import current_app
 from application import db
 
