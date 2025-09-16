@@ -1237,7 +1237,7 @@ def sync_single_item():
                 'error': 'Invalid income category ID',
                 'message': 'Please provide a valid income category ID'
             }), 400
-        if income_category['status_id'] != 1:
+        if income_category['status_Id'] != 1:
             return jsonify({
                 'success': False,
                 'error': 'Income category is inactive',
