@@ -1275,7 +1275,6 @@ def sync_single_item():
             }), 400
         current_app.logger.info("Item synced successfully")
         # update qb status
-        result = result.json()
         item_id = result.get("data", {}).get("Item", {}).get("Id")
 
         update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=item_id, pushed_by="ItemSyncService")
