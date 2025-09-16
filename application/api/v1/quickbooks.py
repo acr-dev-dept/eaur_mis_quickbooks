@@ -1266,7 +1266,7 @@ def sync_single_item():
         qb = QuickBooks()
         current_app.logger.info('Syncing single item')
         result = qb.create_item(qb.realm_id, item_data)
-
+        current_app.logger.info(f"QuickBooks response: {result}")
         if 'Fault' in result:
             return jsonify({
                 'success': False,
