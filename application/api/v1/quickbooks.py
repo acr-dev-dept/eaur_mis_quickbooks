@@ -1265,7 +1265,7 @@ def sync_single_item():
             }), 400
         current_app.logger.info("Item synced successfully")
         # update qb status
-        update_status = TblIncomeCategory.update_quickbooks_status(income_category.status_Id, result.get('Id'), "ItemSyncService")
+        update_status = TblIncomeCategory.update_quickbooks_status(income_category['status_Id'], result.get('Id'), "ItemSyncService")
         if not update_status:
             current_app.logger.error("Failed to update QuickBooks status in local database")
         return jsonify({
