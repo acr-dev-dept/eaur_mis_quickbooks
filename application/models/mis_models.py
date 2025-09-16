@@ -631,7 +631,10 @@ class TblIncomeCategory(MISBaseModel):
             'recorded_by': self.recorded_by,
             'status_Id': self.status_Id,
             'category': self.category,
-            'QuickBk_ctgId': self.QuickBk_ctgId
+            'QuickBk_ctgId': self.QuickBk_ctgId,
+            'Quickbk_Status': self.Quickbk_Status,
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'pushed_by': self.pushed_by
         }
     @staticmethod
     def get_category_by_id(category_id):
