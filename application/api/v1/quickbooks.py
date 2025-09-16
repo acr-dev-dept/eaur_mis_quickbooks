@@ -1248,8 +1248,7 @@ def sync_single_item():
             "Name": income_category['name'],
             "Type": "Service",
             "IncomeAccountRef": {
-                "value": "",
-                "name": ""
+                "value": "79",
             },
             "Description": income_category['description'] or "No description",
             "UnitPrice": float(income_category['amount']) if income_category['amount'] else 0.0,
