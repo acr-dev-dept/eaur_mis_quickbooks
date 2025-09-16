@@ -989,8 +989,27 @@ def get_student_invoices():
             invoices = TblImvoice.get_all_invoices_associated_with_student(reg_no)
             current_app.logger.info(f"Found {len(invoices)} invoices for student {reg_no}")
             invoice_data = []
+            invoice_num = len(invoices)
+            for invoice in invoices:
+                invoice_data.append({
+                    "invoice_date": invoice.get('date').isoformat() if invoice.get('date') else None,
+                    "invoice_id": str(invoice.id),
+                    "reference_number": invoice.get('reference_number', ''),
+                    "amount": invoice.get('dept'),
+                    "category": invoice.get('category'),
+                    "description": invoice.get('description'),
+                })
             
-            return invoices
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": f"Found {invoice_num} invoices for student {reg_no}",
+                "status": 200,
+                "data": {
+                    "reg_no": reg_no,
+                    "invoice_count": invoice_num,
+                    "invoices": invoice_data
+                }
+            }), 200
 
         except Exception as e:
             current_app.logger.error(f"Error fetching invoices for student {reg_no}: {str(e)}")
