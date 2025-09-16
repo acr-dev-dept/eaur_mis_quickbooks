@@ -938,3 +938,84 @@ def test_auth():
             "client_id": request.token_payload.get('client_id')
         }
     }), 200
+
+@urubuto_bp.route('/get_student_invoices', methods=['POST'])
+#@require_auth('payer_validation')
+#@require_gateway('urubuto_pay')
+#@log_api_access('get_student_invoices')
+def get_student_invoices():
+    """
+    Retrieve all unpaid invoices for a student by their registration number.
+
+    This endpoint allows fetching all unpaid invoices for a student,
+    providing details such as invoice ID, amount due, fee category,
+    level, and due date.
+
+    Expected request format:
+    {
+        "reg_no": "2022011019"
+    }
+    """
+    
+    # Validate request data
+    if not request.is_json:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Content-Type must be application/json",
+            "status": 400
+        }), 400
+
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "No data provided",
+            "status": 400
+        }), 400
+
+    reg_no = data.get('reg_no')
+    if not reg_no:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "reg_no is required",
+            "status": 400
+        }), 400
+
+    current_app.logger.info(f"Fetching unpaid invoices for student: {reg_no}")
+
+    with db_manager.get_mis_session() as session:
+        # Fetch all invoices associated with the given registration number
+        try:
+            invoices = TblImvoice.get_all_invoices_associated_with_student(reg_no)
+            current_app.logger.info(f"Found {len(invoices)} invoices for student {reg_no}")
+            invoice_data = []
+            invoice_num = len(invoices)
+            for invoice in invoices:
+                invoice_data.append({
+                    "invoice_date": invoice.get('date'),
+                    "invoice_id": str(invoice.get('id')),
+                    "reference_number": invoice.get('reference_number', ''),
+                    "amount": invoice.get('dept'),
+                    "category": invoice.get('category'),
+                    "description": invoice.get('description'),
+                })
+            
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": f"Found {invoice_num} invoices for student {reg_no}",
+                "status": 200,
+                "data": {
+                    "reg_no": reg_no,
+                    "invoice_count": invoice_num,
+                    "invoices": invoice_data
+                }
+            }), 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error fetching invoices for student {reg_no}: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Error fetching invoices",
+                "status": 400
+            }), 400
