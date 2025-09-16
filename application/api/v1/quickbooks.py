@@ -1276,7 +1276,13 @@ def sync_single_item():
         current_app.logger.info("Item synced successfully")
         # update qb status
         item_id = result.get("data", {}).get("Item", {}).get("Id")
-
+        current_app.logger.info(f"Item ID from QuickBooks: {item_id}")
+        if not item_id:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to retrieve Item ID from QuickBooks response',
+                'details': 'Item ID is missing in the response data'
+            }), 500
         update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=item_id, pushed_by="ItemSyncService")
         current_app.logger.info(f"QuickBooks status updated: {update_status}")
         if not update_status:
