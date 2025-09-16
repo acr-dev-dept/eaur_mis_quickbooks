@@ -1244,7 +1244,7 @@ def sync_single_item():
                 'message': 'Please provide an active income category'
             }), 400
         
-        if income_category['QuickBk_ctgId'] or income_category['Quickbk_Status'] == 1:
+        if income_category['Quickbk_Status'] == 1:
             return jsonify({
                 'success': False,
                 'error': 'Income category already synced',
