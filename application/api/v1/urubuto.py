@@ -992,7 +992,7 @@ def get_student_invoices():
             invoice_num = len(invoices)
             for invoice in invoices:
                 invoice_data.append({
-                    "invoice_date": invoice.get('date').isoformat() if invoice.get('date') else None,
+                    "invoice_date": invoice.get('date'),
                     "invoice_id": str(invoice.id),
                     "reference_number": invoice.get('reference_number', ''),
                     "amount": invoice.get('dept'),
