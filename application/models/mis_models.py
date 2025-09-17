@@ -731,8 +731,8 @@ class TblIncomeCategory(MISBaseModel):
                 # Fetch categories that are active and not yet synced
                 unsynced_categories = session.query(TblIncomeCategory).filter(
                     or_(
-                        TblIncomeCategory.QuickBk_ctgId == None,  # not pushed
-                        TblIncomeCategory.Quickbk_Status != 1,  # not synced
+                        TblIncomeCategory.Quickbk_Status != 1,  # not pushed
+                        TblIncomeCategory.Quickbk_Status.is_(None),  # not synced
                     ),
                     TblIncomeCategory.status_Id == 1        # active
                 ).all()
