@@ -93,7 +93,7 @@ def authentication():
 
 @urubuto_bp.route('/validation', methods=['POST'])
 @require_auth('validation')
-@require_gateway('urubuto_pay')
+@require_gateway(['urubuto_pay', 'school_gear'])
 @log_api_access('payer_validation')
 def payer_validation():
     """
@@ -303,7 +303,7 @@ def payer_validation():
     
 @urubuto_bp.route('/callback', methods=['POST'])
 @require_auth('notifications')
-@require_gateway('urubuto_pay')
+@require_gateway(['urubuto_pay', 'school_gear'])
 def payment_callback():
     """
     Payment callback endpoint for Urubuto Pay integration.
