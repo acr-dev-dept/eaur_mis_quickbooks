@@ -20,7 +20,9 @@ class ItemSyncService:
 
         # Fetch all unsynced active categories
         unsynced_categories = TblIncomeCategory.get_unsynced_categories()  # implement this method
-
+        # get existing categories from QuickBooks to avoid duplicates
+        existing_qb_categories = self.qb.get_items(self.qb.realm_id)
+        existing_names = {item['Name'] for item in existing_qb_categories.get('Item', [])}
         # Process in batches
         for i in range(0, len(unsynced_categories), batch_size):
             batch = unsynced_categories[i:i + batch_size]
@@ -39,12 +41,12 @@ class ItemSyncService:
                     }
 
                     current_app.logger.info(f"Syncing category {category['id']} to QuickBooks")
-
-                    existing_item = self.qb.get_item_by_name(self.qb.realm_id, category['name'])
-                    if existing_item:
-                        results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name exists'})
+                    if category['name'] in existing_names:
+                        results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name in QuickBooks'})
                         current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
+                        total_failed += 1
                         continue
+
                     result = self.qb.create_item(self.qb.realm_id, item_data)
 
                     if 'Fault' in result:
