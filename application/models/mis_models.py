@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from application.utils.database import db_manager
 from application import db
+from sqlalchemy import or_
 
 
 class MISBaseModel(db.Model):
@@ -729,7 +730,10 @@ class TblIncomeCategory(MISBaseModel):
             with MISBaseModel.get_session() as session:
                 # Fetch categories that are active and not yet synced
                 unsynced_categories = session.query(TblIncomeCategory).filter(
-                    TblIncomeCategory.Quickbk_Status != 1,  # not synced
+                    or_(
+                        TblIncomeCategory.QuickBk_ctgId == None,  # not pushed
+                        TblIncomeCategory.Quickbk_Status != 1,  # not synced
+                    ),
                     TblIncomeCategory.status_Id == 1        # active
                 ).all()
                 
