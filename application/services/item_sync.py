@@ -19,20 +19,13 @@ class ItemSyncService:
         total_failed = 0
         total_skipped = 0
 
-        # Fetch all unsynced active categories
-        unsynced_categories = TblIncomeCategory.get_unsynced_categories()  # implement this method
-        # get existing categories from QuickBooks to avoid duplicates
+        unsynced_categories = TblIncomeCategory.get_unsynced_categories()
+
         existing_qb_categories = self.qb.get_items(self.qb.realm_id)
-
-        # If the API returns a list directly
-        existing_names = {item['Name'] for item in existing_qb_categories}
-
-        # Or, if it can sometimes be a dict with 'Item' key, you can do:
         if isinstance(existing_qb_categories, dict):
             items = existing_qb_categories.get('Item', [])
         else:
-            items = existing_qb_categories  # assume list
-
+            items = existing_qb_categories
         existing_names = {item['Name'] for item in items}
 
         # Process in batches
@@ -43,6 +36,12 @@ class ItemSyncService:
                     if category['Quickbk_Status'] == 1:
                         results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Already synced'})
                         continue
+                    
+                    if category['name'] in existing_names:
+                        results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name in QuickBooks'})
+                        current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
+                        total_skipped += 1
+                        continue  
 
                     item_data = {
                         "Name": category['name'],
@@ -53,10 +52,6 @@ class ItemSyncService:
                     }
 
                     current_app.logger.info(f"Syncing category {category['id']} to QuickBooks")
-                    if category['name'] in existing_names:
-                        results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name in QuickBooks'})
-                        current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
-                        total_skipped += 1
 
                     result = self.qb.create_item(self.qb.realm_id, item_data)
 
