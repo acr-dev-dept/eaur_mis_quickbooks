@@ -57,7 +57,6 @@ class ItemSyncService:
                         results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name in QuickBooks'})
                         current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
                         total_skipped += 1
-                        continue
 
                     result = self.qb.create_item(self.qb.realm_id, item_data)
 
