@@ -578,6 +578,32 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting invoices for application {appl_Id}: {str(e)}")
             return []
+        
+    @classmethod
+    def get_payer_details(cls, reference_number):
+        """
+        Get payer details for an invoice by reference number
+
+        Args:
+            reference_number (str): Invoice reference number
+        Returns:
+            dict: Payer details or None if not found
+        """ 
+        try:
+            with cls.get_session() as session:
+                invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
+                if invoice and invoice.online_application:
+                    app = invoice.online_application
+                    payer_name = f"{app.first_name} {app.middlename} {app.family_name}".strip()
+                    return {
+                        'payer_name': payer_name if payer_name else "Unknown Student",
+                        'payer_email': app.email1 if app.email1 else "",
+                    }
+                return {}
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting payer details for invoice {reference_number}: {str(e)}")
+            return {}
 
 
 class TblIncomeCategory(MISBaseModel):

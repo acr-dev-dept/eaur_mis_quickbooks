@@ -13,8 +13,6 @@ urubuto_bp = Blueprint('urubuto', __name__)
 from application.services.urubuto_pay import UrubutoPay
 urubuto_service = UrubutoPay()
 
-
-
 @urubuto_bp.route('/authentication', methods=['POST'])
 def authentication():
     """
@@ -202,8 +200,7 @@ def payer_validation():
                 "class_name": "Unknown Class",
                 "amount": invoice_balance,
                 "currency": "RWF",
-                "payer_must_pay_total_amount": "NO",
-                "payer_names": "Unknown Student"
+                "payer_must_pay_total_amount": "NO"
             }
         }), 200
 
@@ -998,6 +995,7 @@ def get_student_invoices():
                     "amount": invoice.get('dept'),
                     "category": invoice.get('category'),
                     "description": invoice.get('description'),
+                    "balance": invoice.get('balance'),
                 })
             
             return jsonify({
@@ -1019,3 +1017,97 @@ def get_student_invoices():
                 "message": "Error fetching invoices",
                 "status": 400
             }), 400
+        
+
+@urubuto_bp.route('/payments/refund', methods=['POST'])
+@require_auth('refunds')
+@require_gateway('urubuto_pay')
+@log_api_access('process_refund')
+def process_refund():
+    """
+    Process a refund for a specific transaction.
+
+    This endpoint allows processing refunds for payments made via Urubuto Pay.
+    It requires the original transaction ID and the amount to be refunded.
+
+    Expected request format:
+    {
+        "transaction_id": "11202202011152166608",
+        "amount": 50.0,
+        "reason": "Overpayment"
+    }
+    """
+    current_app.logger.info("REFUND PROCESSING ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
+    current_app.logger.info(f"data received: {request.get_json()}")
+    try:
+        # Validate request data
+        if not request.is_json:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Content-Type must be application/json",
+                "status": 400
+            }), 400
+
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "No data provided",
+                "status": 400
+            }), 400
+
+        transaction_id = data.get('transaction_id')
+        amount = data.get('amount')
+        reason = data.get('reason', 'No reason provided')
+
+        if not transaction_id or not amount:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Missing required parameters: transaction_id, amount",
+                "status": 400
+            }), 400
+
+        current_app.logger.info(f"Refund request - Transaction: {transaction_id}, Amount: {amount}, Reason: {reason}")
+
+        # Process refund via Urubuto Pay service
+        try:
+            result = urubuto_service.process_refund(
+                transaction_id=transaction_id,
+                amount=amount,
+                reason=reason
+            )
+            current_app.logger.info(f"Refund processing result checking: {result}")
+
+            if result['success']:
+                current_app.logger.info(f"Refund processed successfully for transaction: {transaction_id}")
+                return jsonify(result['data']), result['status_code']
+            else:
+                current_app.logger.error(f"Refund processing failed: {result['error']}")
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": result['error'],
+                    "status": result['status_code']
+                }), result['status_code']
+        except Exception as e:
+            current_app.logger.error(f"Error in refund processing: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
+            message = f"Refund processing error: {str(e)} and traceback: {traceback.format_exc()}"
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": message,
+                "status": 405
+            }), 405
+    except Exception as e:
+        current_app.logger.error(f"Error in refund processing: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        message = f"Refund processing error: {str(e)} and traceback: {traceback.format_exc()}"
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": message,
+            "status": 500
+        }), 500 
