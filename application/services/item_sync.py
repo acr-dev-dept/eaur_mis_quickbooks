@@ -39,6 +39,12 @@ class ItemSyncService:
                     }
 
                     current_app.logger.info(f"Syncing category {category['id']} to QuickBooks")
+
+                    existing_item = self.qb.get_item_by_name(self.qb.realm_id, category['name'])
+                    if existing_item:
+                        results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name exists'})
+                        current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
+                        continue
                     result = self.qb.create_item(self.qb.realm_id, item_data)
 
                     if 'Fault' in result:
