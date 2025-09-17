@@ -697,6 +697,22 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error updating QuickBooks status for income category {category_id}: {str(e)}")
             return False
+    @staticmethod
+    def get_unsynced_categories():
+        try:
+            with MISBaseModel.get_session() as session:
+                # Fetch categories that are active and not yet synced
+                unsynced_categories = session.query(TblIncomeCategory).filter(
+                    TblIncomeCategory.Quickbk_Status != 1,  # not synced
+                    TblIncomeCategory.status_Id == 1        # active
+                ).all()
+                
+                return [c.to_dict() for c in unsynced_categories] if unsynced_categories else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
+            return []
+
 
 class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
