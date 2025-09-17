@@ -17,6 +17,7 @@ class ItemSyncService:
         results = []
         total_succeeded = 0
         total_failed = 0
+        total_skipped = 0
 
         # Fetch all unsynced active categories
         unsynced_categories = TblIncomeCategory.get_unsynced_categories()  # implement this method
@@ -55,7 +56,7 @@ class ItemSyncService:
                     if category['name'] in existing_names:
                         results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Duplicate name in QuickBooks'})
                         current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
-                        total_failed += 1
+                        total_skipped += 1
                         continue
 
                     result = self.qb.create_item(self.qb.realm_id, item_data)
@@ -81,6 +82,7 @@ class ItemSyncService:
             'total_processed': len(unsynced_categories),
             'total_succeeded': total_succeeded,
             'total_failed': total_failed,
+            'total_skipped': total_skipped,
             'details': results
         }
 
