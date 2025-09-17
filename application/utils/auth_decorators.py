@@ -149,31 +149,34 @@ def require_auth(required_permission=None):
         return decorated_function
     return decorator
 
-def require_gateway(gateway_name):
+def require_gateway(allowed_gateways):
     """
-    Decorator to restrict access to specific payment gateway.
+    Decorator to restrict access to specific payment gateways.
     
-    This decorator ensures that only clients from a specific gateway
+    This decorator ensures that only clients from specific gateways
     can access the protected route. Must be used after @require_auth.
     
     Args:
-        gateway_name (str): Gateway name (e.g., 'urubuto_pay', 'school_gear')
-    
+        allowed_gateways (list): List of allowed gateway names 
+                                 (e.g., ['urubuto_pay', 'school_gear'])
+
     Usage:
         @require_auth('validation')
-        @require_gateway('urubuto_pay')
+        @require_gateway(['urubuto_pay'])
         def urubuto_only_endpoint():
             pass
-    
-    Returns:
-        Decorated function that validates gateway access before execution
+
+        @require_auth('validation')
+        @require_gateway(['urubuto_pay', 'school_gear'])
+        def shared_endpoint():
+            pass
     """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             try:
                 current_app.logger.info(f"🚪 === GATEWAY CHECK for {f.__name__} ===")
-                current_app.logger.info(f"Required gateway: {gateway_name}")
+                current_app.logger.info(f"Allowed gateways: {allowed_gateways}")
 
                 # Check if token payload exists (should be set by @require_auth)
                 if not hasattr(request, 'token_payload'):
@@ -186,20 +189,22 @@ def require_gateway(gateway_name):
 
                 client_gateway = request.token_payload.get('gateway_name')
                 current_app.logger.info(f"Client gateway: {client_gateway}")
-                current_app.logger.info(f"Gateway match check: {client_gateway} == {gateway_name} = {client_gateway == gateway_name}")
+                current_app.logger.info(
+                    f"Gateway match check: {client_gateway} in {allowed_gateways} = {client_gateway in allowed_gateways}"
+                )
 
-                if client_gateway != gateway_name:
+                if client_gateway not in allowed_gateways:
                     current_app.logger.warning(
                         f"❌ Gateway access denied. Client gateway: {client_gateway}, "
-                        f"Required: {gateway_name}"
+                        f"Allowed: {allowed_gateways}"
                     )
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "message": f"Access restricted to {gateway_name} gateway",
+                        "message": f"Access restricted to {', '.join(allowed_gateways)} gateway(s)",
                         "status": 403
                     }), 403
 
-                current_app.logger.info(f"✅ Gateway access granted for {gateway_name}")
+                current_app.logger.info(f"✅ Gateway access granted for {client_gateway}")
                 current_app.logger.info(f"🚪 === GATEWAY CHECK END ===")
                 return f(*args, **kwargs)
                 
@@ -214,6 +219,7 @@ def require_gateway(gateway_name):
         
         return decorated_function
     return decorator
+
 
 def log_api_access(operation_name=None):
     """
