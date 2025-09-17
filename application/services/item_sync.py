@@ -22,7 +22,18 @@ class ItemSyncService:
         unsynced_categories = TblIncomeCategory.get_unsynced_categories()  # implement this method
         # get existing categories from QuickBooks to avoid duplicates
         existing_qb_categories = self.qb.get_items(self.qb.realm_id)
-        existing_names = {item['Name'] for item in existing_qb_categories.get('Item', [])}
+
+        # If the API returns a list directly
+        existing_names = {item['Name'] for item in existing_qb_categories}
+
+        # Or, if it can sometimes be a dict with 'Item' key, you can do:
+        if isinstance(existing_qb_categories, dict):
+            items = existing_qb_categories.get('Item', [])
+        else:
+            items = existing_qb_categories  # assume list
+
+        existing_names = {item['Name'] for item in items}
+
         # Process in batches
         for i in range(0, len(unsynced_categories), batch_size):
             batch = unsynced_categories[i:i + batch_size]
