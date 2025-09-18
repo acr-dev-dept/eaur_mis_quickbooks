@@ -1170,6 +1170,7 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for tracking ID {tracking_id}: {str(e)}")
             return []
+    @staticmethod
     def get_applicant_by_reg_no(reg_no):
         """
         Get detailed applicant information by registration number
@@ -1182,7 +1183,7 @@ class TblOnlineApplication(MISBaseModel):
         """
         try:
             with TblOnlineApplication.get_session() as session:
-                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.reg_no == reg_no).first()
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == reg_no).first()
                 return applicant.to_dict() if applicant else None
         except Exception as e:
             from flask import current_app

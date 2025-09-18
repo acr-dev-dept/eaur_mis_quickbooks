@@ -272,7 +272,7 @@ class InvoiceSyncService:
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             if student_ref:
                 customer_id = student_ref.get('qk_id')
-            applicant_ref = TblOnlineApplication.get_applicant_by_reg_no(invoice.reg_no)
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             if applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
             else:
