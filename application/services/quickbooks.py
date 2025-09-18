@@ -1055,7 +1055,44 @@ class QuickBooks:
                     ]
                 }
             }
-        
+    def get_payments_by_account(self, realm_id, account_id):
+        """
+        Retrieve all payments associated with a specific DepositToAccountRef.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            account_id (str): The QuickBooks Account ID to filter payments by.
+
+        Returns:
+            dict: The response from the QuickBooks API containing the matching payments.
+        """
+        # QBOQL query string
+        query = f"select * from Payment where DepositToAccountRef = '{account_id}'"
+
+        endpoint = f"{realm_id}/query"
+        try:
+            current_app.logger.info(f"Fetching payments for account {account_id}")
+            response = self.make_request(
+                endpoint,
+                method="POST",
+                data=query,
+                headers={"Content-Type": "application/text"}
+            )
+            current_app.logger.info(f"Payments fetched successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error fetching payments for account {account_id}: {str(e)}")
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error fetching payments for account {account_id}: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
     def create_deposit(self, realm_id, payment_id, bank_account_id, amount):
         """
         Create a deposit in QuickBooks to move a payment from Undeposited Funds to a bank account.
