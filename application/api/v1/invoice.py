@@ -8,6 +8,8 @@ from application.services.quickbooks import QuickBooks
 from application.models.central_models import QuickBooksConfig
 import traceback
 from application.services.invoice_sync import InvoiceSyncService
+from datetime import datetime
+from application.models.mis_models import TblImvoice
 
 invoices_bp = Blueprint('invoices', __name__)
 
@@ -581,6 +583,21 @@ def sync_single_invoice():
             )
 
         current_app.logger.info("Invoice synced successfully")
+        # update quickbooks_id in MIS database
+        update_invoice = TblImvoice.update_invoice_quickbooks_status(
+            quickbooks_id=result.details.get('quickbooks_id'),
+            pushed_by="InvoiceSyncService",
+            pushed_date=datetime.now(),
+            QuickBk_Status=1
+        )
+
+        if not update_invoice:
+            current_app.logger.error(f"Failed to update MIS invoice {invoice_id} with QuickBooks ID")
+            return create_response(
+                success=False,
+                error='Failed to update MIS invoice with QuickBooks ID',
+                status_code=500
+            )
         return create_response(
             success=True,
             data=result.details or {},
