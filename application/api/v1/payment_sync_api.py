@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request, current_app
 from datetime import datetime
 
 from application.services.payment_sync import PaymentSyncService
+from application.models.mis_models import Payment
 
 
 payment_sync_bp = Blueprint('payment_sync_bp', __name__)
@@ -28,9 +29,23 @@ def sync_payments():
     
 @payment_sync_bp.route('/sync_payment/<int:payment_id>', methods=['POST'])
 def sync_payment(payment_id):
+    """Sync a single payment by its ID."""
+    try:
+        # get the payment object given the payment_id
+        payment = Payment.get_payment_by_id(payment_id)
+        payment_dict = payment.to_dict() if payment else {}
+        current_app.logger.info(f"Attempting to sync payment: {payment_dict}")
+        if not payment:
+            return jsonify({'error': 'Payment not found'}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error retrieving payment {payment_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+        
+
     try:
         payment_sync_service = PaymentSyncService()
-        result = payment_sync_service.sync_payment(payment_id)
+        result = payment_sync_service.sync_single_payment(payment)
+        current_app.logger.info(f"Sync result for payment {payment_id}: {result}")
 
         return jsonify(result), 200
     except Exception as e:
