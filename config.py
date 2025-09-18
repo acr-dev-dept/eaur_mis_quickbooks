@@ -36,6 +36,8 @@ class Config:
     QUICKBOOKS_REDIRECT_URI = os.environ.get('QUICK_BOOKS_REDIRECT_URI')
     QUICKBOOKS_SANDBOX_BASE_URL = os.environ.get('QUICK_BOOKS_BASEURL_SANDBOX')
     QUICKBOOKS_PRODUCTION_BASE_URL = os.environ.get('QUICK_BOOKS_BASEURL_PRODUCTION')
+    QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID = os.environ.get('QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID', '35') # Default to '35' (e.g., Checking)
+    QUICKBOOKS_DEFAULT_PAYMENT_METHOD_ID = os.environ.get('QUICKBOOKS_DEFAULT_PAYMENT_METHOD_ID', '2')   # Default to '2' (e.g., Cash)
     
     # Encryption Configuration
     FERNET_KEY = os.environ.get('FERNET_KEY')

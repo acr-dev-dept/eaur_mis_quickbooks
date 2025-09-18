@@ -1046,8 +1046,7 @@ class CustomerSyncService:
             logger.error(f"Error updating applicant sync status: {e}")
             with db_manager.get_mis_session() as session:
                 session.rollback()
-            raise
-    
+
     def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None):
         """
         Update student synchronization status in MIS database
@@ -1075,10 +1074,6 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(f"Error updating student sync status: {e}")
-            with db_manager.get_mis_session() as session:
-                session.rollback()
-            raise
-        finally:
             with db_manager.get_mis_session() as session:
                 session.rollback()
 

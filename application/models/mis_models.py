@@ -248,6 +248,26 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error creating payment: {str(e)}")
             return []
+        
+    @classmethod
+    def get_payment_by_id(cls, payment_id):
+        """
+        Get payment by ID
+
+        Args:
+            payment_id (int): Payment ID
+
+        Returns:
+            Payment: Payment record or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                payment = session.query(cls).filter(cls.id == payment_id).first()
+                return payment
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting payment for ID {payment_id}: {str(e)}")
+            return None
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""

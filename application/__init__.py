@@ -158,6 +158,7 @@ def register_blueprints(app):
     #from application.api.v1.sync import sync_bp
     from application.api.v1.customer_sync_api import customer_sync_bp
     from application.api.v1.invoice import invoices_bp
+    from application.api.v1.payment_sync_api import payment_sync_bp # New blueprint
     
 
     # Register blueprints
@@ -169,6 +170,7 @@ def register_blueprints(app):
     #app.register_blueprint(sync_bp, url_prefix='/api/v1/sync')
     app.register_blueprint(customer_sync_bp, url_prefix='/api/v1/sync/customers')
     app.register_blueprint(invoices_bp, url_prefix='/api/v1/invoices')
+    app.register_blueprint(payment_sync_bp, url_prefix='/api/v1/sync/payments') # Register new blueprint
 
 def register_error_handlers(app):
     """Register application error handlers"""
