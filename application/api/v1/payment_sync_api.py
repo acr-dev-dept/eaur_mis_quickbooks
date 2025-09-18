@@ -54,7 +54,13 @@ def get_unsynced_payments():
         
         dict_payments = [payment.to_dict() for payment in result]
         
-        return jsonify(dict_payments), 200
+        return jsonify(
+            {
+                "status": "success",
+                "number_of_records": len(dict_payments),
+                "payments": dict_payments
+            }
+        ), 200
     except Exception as e:
         current_app.logger.error(f"Error retrieving unsynchronized payments: {e}")
         return jsonify({'error': 'Internal server error'}), 500
