@@ -17,11 +17,12 @@ from flask import current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
 from application import db
+
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +264,21 @@ class InvoiceSyncService:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
                 quickbooks_id = category.QuickBk_ctgId if category else None
             
+            # Fallback if no category found
+            if not quickbooks_id:
+                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+            # Get student customer reference from applicants and students tables
+
+            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
+            if student_ref:
+                customer_id = student_ref.get('qk_id')
+            applicant_ref = TblOnlineApplication.get_applicant_by_reg_no(invoice.reg_no)
+            if applicant_ref:
+                customer_id = applicant_ref.get('quickbooks_id')
+            else:
+                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
             # Create QuickBooks invoice structure
+            
             qb_invoice = {
                 "Line": [
                     {
@@ -280,7 +295,7 @@ class InvoiceSyncService:
                     }
                 ],
                 "CustomerRef": {
-                    "value": "7387" #str(invoice.quickbooks_customer_id)  # must exist in QB
+                    "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
                 "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
                 "DocNumber": f"MIS-{invoice.id}",
