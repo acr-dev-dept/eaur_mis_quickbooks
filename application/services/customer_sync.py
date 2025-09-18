@@ -912,6 +912,9 @@ class CustomerSyncService:
                             details=item_response
                         ))
                         total_succeeded += 1
+                        update_db_data = TblOnlineApplication.update_applicant_quickbooks_status(tracking_id, quickbooks_id, pushed_by="ApplicantSyncService", QuickBk_Status=CustomerSyncStatus.SYNCED.value)
+                        if update_db_data:
+                            current_app.logger.info(f"Successfully updated applicant {appl_id} with QuickBooks ID {quickbooks_id}")
                     else:
                         # Failure
                         error_detail = "Unknown error during batch sync."

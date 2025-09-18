@@ -885,6 +885,7 @@ class TblOnlineApplication(MISBaseModel):
     response_date = db.Column(DateTime)
     response_comment = db.Column(Text)
     status = db.Column(db.Integer)
+    quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Customer ID
 
     # Relationships for performance optimization
     intake = relationship("TblIntake", backref="applications", lazy='select')
@@ -953,7 +954,8 @@ class TblOnlineApplication(MISBaseModel):
             'status': self.status,
             'quickbooks_status': self.QuickBk_Status,
             'pushed_by': self.pushed_by,
-            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'quickbooks_id': self.quickbooks_id
         }
 
     def to_dict_for_quickbooks(self):
@@ -1011,7 +1013,8 @@ class TblOnlineApplication(MISBaseModel):
                 # Sync tracking
                 'quickbooks_status': self.QuickBk_Status or 0,
                 'pushed_by': self.pushed_by or 'System Auto Push',
-                'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+                'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+                'quickbooks_id': self.quickbooks_id or ''
             }
         except Exception as e:
             # Fallback to basic data if enrichment fails
@@ -1167,6 +1170,57 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for tracking ID {tracking_id}: {str(e)}")
             return []
+    def get_applicant_by_reg_no(reg_no):
+        """
+        Get detailed applicant information by registration number
+
+        Args:
+            reg_no (str): Applicant registration number
+
+        Returns:
+            dict: Applicant details or None if not found
+        """
+        try:
+            with TblOnlineApplication.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.reg_no == reg_no).first()
+                return applicant.to_dict() if applicant else None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting applicant details for reg no {reg_no}: {str(e)}")
+            return []
+
+    def update_applicant_quickbooks_status(cls, tracking_id, quickbooks_id, pushed_by, QuickBk_Status):
+        """
+        Update QuickBooks sync status for an applicant
+
+        Args:
+            appl_Id (int): Applicant ID
+            quickbooks_id (str): QuickBooks Customer ID
+            pushed_by (str): User who pushed the data
+            pushed_date (datetime): Date when data was pushed
+            QuickBk_Status (int): Sync status (0=not pushed, 1=pushed)
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with cls.get_session() as session:
+                applicant = session.query(cls).filter(cls.tracking_id == tracking_id).first()
+                if applicant:
+                    applicant.QuickBk_Status = QuickBk_Status
+                    applicant.quickbooks_id = quickbooks_id
+                    applicant.pushed_by = pushed_by
+                    applicant.pushed_date = datetime.now()
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating QuickBooks status for applicant {tracking_id}: {str(e)}")
+            return False
+
+
+
+
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
@@ -1681,7 +1735,24 @@ class TblPersonalUg(MISBaseModel):
                     current_app.logger.error(f"Enrichment {method_name} failed for {self.reg_no}: {e}")
 
         return debug_results
+    def get_student_by_reg_no(reg_no):
+        """
+        Get detailed student information by registration number
 
+        Args:
+            reg_no (str): Student registration number
+
+        Returns:
+            dict: Student details or None if not found
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                student = session.query(TblPersonalUg).filter(TblPersonalUg.reg_no == reg_no).first()
+                return student.to_dict() if student else None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting student details for reg no {reg_no}: {str(e)}")
+            return []
     @classmethod
     def get_student_details(cls, reg_no):
         """
