@@ -4,7 +4,6 @@ from flask_restx import Namespace, Resource, fields
 from datetime import datetime
 
 from application.services.payment_sync import PaymentSyncService
-from application.helpers.decorator import token_required
 from application.exceptions import ClientError, ServerError
 
 payment_sync_bp = Blueprint('payment_sync_bp', __name__)
@@ -52,7 +51,6 @@ overall_sync_results_model = payment_sync_ns.model('OverallSyncResults', {
 
 @payment_sync_ns.route('/status')
 class PaymentSyncStatusResource(Resource):
-    @token_required
     @payment_sync_ns.marshal_with(sync_status_model)
     @payment_sync_ns.doc(security='apikey')
     def get(self):
@@ -73,7 +71,6 @@ class PaymentSyncStatusResource(Resource):
 
 @payment_sync_ns.route('/sync-batch')
 class PaymentSyncBatchResource(Resource):
-    @token_required
     @payment_sync_ns.doc(
         security='apikey',
         params={'batch_size': {'description': 'Number of payments to sync in this batch', 'type': 'integer', 'default': 50}}
@@ -98,7 +95,6 @@ class PaymentSyncBatchResource(Resource):
 
 @payment_sync_ns.route('/sync-all')
 class PaymentSyncAllResource(Resource):
-    @token_required
     @payment_sync_ns.doc(
         security='apikey',
         params={'max_batches': {'description': 'Maximum number of batches to process', 'type': 'integer', 'default': 0}}
