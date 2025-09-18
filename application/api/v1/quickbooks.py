@@ -756,6 +756,61 @@ def create_payment():
             'details': str(e)
         }), 500
 
+@quickbooks_bp.route('/get_payments_by_account/<account_id>', methods=['GET'])
+def get_payments_by_account(account_id):
+    """Get payments associated with a specific account ID."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        if not account_id:
+            return jsonify({
+                'success': False,
+                'error': 'Account ID is required',
+                'message': 'Please provide a valid account ID'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info(f'Getting payments associated with account ID: {account_id}')
+
+        try:
+            payments = qb.get_payments_by_account(qb.realm_id, account_id)
+            current_app.logger.info(f"Payments retrieved successfully for account ID: {account_id}")
+            current_app.logger.debug(f"Payments data: {payments}")
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving payments for account ID {account_id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Error retrieving payments',
+                'details': str(e)
+            }), 500
+
+        if not payments:
+            return jsonify({
+                'success': False,
+                'error': 'No payments found',
+                'message': 'No payments found for the specified account ID'
+            }), 404
+
+        current_app.logger.info(f"Found {len(payments)} payments for account ID: {account_id}")
+        return jsonify({
+            'success': True,
+            'data': payments,
+            'message': 'Payments retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting payments: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting payments',
+            'details': str(e)
+        }), 500
 
 @quickbooks_bp.route('/payments/<payment_id>', methods=['PUT'])
 def update_payment(payment_id):
