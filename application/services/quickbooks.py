@@ -1059,15 +1059,6 @@ class QuickBooks:
     def create_deposit(self, realm_id, payment_id, bank_account_id, amount):
         """
         Create a deposit in QuickBooks to move a payment from Undeposited Funds to a bank account.
-
-        Args:
-            realm_id (str): The realm ID of the company.
-            payment_id (str): The ID of the payment to be deposited.
-            bank_account_id (str): The ID of the bank account where the funds are being deposited.
-            amount (float): The total amount of the payment to be deposited.
-
-        Returns:
-            dict: The response from the QuickBooks API.
         """
         endpoint = f"{realm_id}/deposit"
         deposit_data = {
@@ -1079,7 +1070,7 @@ class QuickBooks:
                     "Amount": amount,
                     "DetailType": "DepositLineDetail",
                     "DepositLineDetail": {
-                        "EntityRef": {
+                        "Entity": {  
                             "value": payment_id,
                             "type": "Payment"
                         }
