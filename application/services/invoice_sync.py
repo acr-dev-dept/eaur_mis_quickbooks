@@ -258,6 +258,11 @@ class InvoiceSyncService:
             # Format invoice date
             invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
 
+            # Get fee category for item mapping
+            if invoice.fee_category:
+                category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
+                quickbooks_id = category.QuickBk_ctgId if category else None
+            
             # Create QuickBooks invoice structure
             qb_invoice = {
                 "Line": [
@@ -266,7 +271,7 @@ class InvoiceSyncService:
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
-                                "value": "19"#str(invoice.quickbooks_item_id),  # must exist in QB
+                                "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
                             },
                             "Qty": 1,
                             "UnitPrice": float(amount)

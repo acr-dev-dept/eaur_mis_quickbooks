@@ -446,7 +446,7 @@ class TblImvoice(MISBaseModel):
     QuickBk_Status = db.Column(db.Integer, default='0')
     pushed_by = db.Column(db.String(200))
     pushed_date = db.Column(DateTime)
-
+    quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Invoice ID
     # Define relationships between levels, modules, and intakes
     # This is not implemented on database level, we need them for joins
     level = relationship("TblLevel", backref="invoices", lazy='joined')
@@ -488,7 +488,8 @@ class TblImvoice(MISBaseModel):
             'intake_details': self.intake.to_dict() if self.intake else [],
             'QuickBk_Status': self.QuickBk_Status,
             'pushed_by': self.pushed_by,
-            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'quickbooks_id': self.quickbooks_id
         }
     
     @classmethod
@@ -625,7 +626,33 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting payer details for invoice {reference_number}: {str(e)}")
             return {}
+    @classmethod
+    def update_invoice_quickbooks_status(cls, quickbooks_id, pushed_by, pushed_date, QuickBk_Status):
+        """
+        Update QuickBooks sync status for an invoice
 
+        Args:
+            quickbooks_id (str): QuickBooks Invoice ID
+            pushed_by (str): User who pushed the data
+            pushed_date (datetime): Date when data was pushed
+            QuickBk_Status (int): Sync status (0=not pushed, 1=pushed)
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with cls.get_session() as session:
+                invoice = session.query(cls).filter(cls.quickbooks_id == quickbooks_id).first()
+                if invoice:
+                    invoice.QuickBk_Status = QuickBk_Status
+                    invoice.pushed_by = pushed_by
+                    invoice.pushed_date = pushed_date
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating QuickBooks status for invoice {quickbooks_id}: {str(e)}")
+            return False
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""

@@ -308,3 +308,19 @@ For technical support or questions:
 ---
 
 **Note**: This microservice is part of the EAUR MIS-QuickBooks Integration project. Ensure you have the necessary credentials and permissions before setting up the integration.
+
+
+**Syncing to QuickBoooks**
+While syncing to Quickbooks there are some concerns
+requirements needed:
+## Requirements
+   1. IncomeAccountRef (which demands the corresponding income account for a specific item)
+   
+   2. ItemRef id while syncing invoices to quickbooks
+   3. IncomeAccountRef while referencing syncing Payments to QB
+
+## Order of Syncing
+   1. Customers (Applicants and students)
+   2. Income Accounts
+   3. Items (dependent on Income accounts ref)
+   4. Invoices (dependent on Items and income accounts)
