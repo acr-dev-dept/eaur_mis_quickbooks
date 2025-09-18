@@ -1055,6 +1055,56 @@ class QuickBooks:
                     ]
                 }
             }
+        
+    def create_deposit(self, realm_id, payment_id, bank_account_id):
+        """
+        Create a deposit in QuickBooks to move a payment from Undeposited Funds to a bank account.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to be deposited.
+            bank_account_id (str): The ID of the bank account where the funds are being deposited.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/deposit"
+        deposit_data = {
+            "DepositToAccountRef": {
+                "value": bank_account_id
+            },
+            "Line": [
+                {
+                    "Amount": 0,  # The amount will be calculated from the linked transaction
+                    "DetailType": "DepositLineDetail",
+                    "DepositLineDetail": {
+                        "EntityRef": {
+                            "value": payment_id,
+                            "type": "Payment"
+                        }
+                    }
+                }
+            ]
+        }
+        
+        try:
+            current_app.logger.info(f"Creating deposit with data: {deposit_data}")
+            response = self.make_request(endpoint, method="POST", data=deposit_data)
+            current_app.logger.info(f"Deposit created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating deposit: {str(e)}")
+            # Return a structured error response
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating deposit: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
     def delete_payment(self, realm_id, payment_id):
         """
         Delete a payment by ID from QuickBooks.

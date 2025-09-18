@@ -294,6 +294,12 @@ class PaymentSyncService:
 
             if 'Payment' in response and response['Payment'].get('Id'):
                 qb_payment_id = response['Payment']['Id']
+                try:
+                    bank_account_id = response['Payment']['DepositToAccountRef']['value']
+                    deposit = qb_service.create_deposit(qb_service.realm_id, qb_payment_id, bank_account_id)
+                    current_app.logger.info(f"Created deposit for payment {payment.id} in QuickBooks: {deposit}")
+                except Exception as e:
+                    current_app.logger.error(f"Error creating deposit for payment {payment.id}: {e}")
                 self._update_payment_sync_status(
                     payment.id,
                     PaymentSyncStatus.SYNCED.value,
