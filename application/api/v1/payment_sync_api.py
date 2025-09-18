@@ -1,121 +1,117 @@
 import logging
 from flask import Blueprint, jsonify, request
-from flask_restx import Namespace, Resource, fields
 from datetime import datetime
 
 from application.services.payment_sync import PaymentSyncService
 
 
 payment_sync_bp = Blueprint('payment_sync_bp', __name__)
-payment_sync_ns = Namespace('payment_sync', description='Payment Synchronization Operations')
 
-# Logger
-logger = logging.getLogger(__name__)
 
-# Models for API serialization
-sync_status_model = payment_sync_ns.model('SyncStatus', {
-    'total_payments': fields.Integer(required=True, description='Total payments found in MIS'),
-    'not_synced': fields.Integer(required=True, description='Number of payments not yet synced'),
-    'synced': fields.Integer(required=True, description='Number of payments successfully synced'),
-    'failed': fields.Integer(required=True, description='Number of payments that failed to sync'),
-    'in_progress': fields.Integer(required=True, description='Number of payments currently in progress of syncing')
-})
+@payment_sync_bp.route('/sync_payments', methods=['POST'])
+def sync_payments():
+    try:
+        data = request.get_json()
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
 
-sync_result_item_model = payment_sync_ns.model('SyncResultItem', {
-    'status': fields.String(required=True, description='Synchronization status (SYNCED, FAILED, IN_PROGRESS)'),
-    'message': fields.String(required=True, description='Descriptive message for the sync result'),
-    'success': fields.Boolean(required=True, description='True if the synchronization was successful, False otherwise'),
-    'quickbooks_id': fields.String(description='QuickBooks ID if successfully synced'),
-    'details': fields.Raw(description='Additional details from the QuickBooks API response'),
-    'error_message': fields.String(description='Error message if an error occurred'),
-    'traceback': fields.String(description='Full traceback if an error occurred'),
-    'duration': fields.Float(description='Duration of the sync operation in seconds')
-})
+        if not start_date or not end_date:
+            return jsonify({'error': 'start_date and end_date are required'}), 400
 
-sync_batch_result_model = payment_sync_ns.model('SyncBatchResult', {
-    'total_processed': fields.Integer(required=True, description='Total payments processed in the batch'),
-    'successful': fields.Integer(required=True, description='Number of payments successfully synced in the batch'),
-    'failed': fields.Integer(required=True, description='Number of payments that failed in the batch'),
-    'results': fields.List(fields.Nested(sync_result_item_model), description='Detailed results for each payment in the batch')
-})
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.sync_payments(start_date, end_date)
 
-overall_sync_results_model = payment_sync_ns.model('OverallSyncResults', {
-    'batches_processed': fields.Integer(required=True, description='Total batches processed'),
-    'total_processed': fields.Integer(required=True, description='Total payments processed across all batches'),
-    'total_successful': fields.Integer(required=True, description='Number of payments successfully synced overall'),
-    'total_failed': fields.Integer(required=True, description='Number of payments that failed overall'),
-    'batch_results': fields.List(fields.Nested(sync_batch_result_model), description='Results of each batch synchronization'),
-    'start_time': fields.DateTime(dt_format='iso8601', description='Start time of the overall synchronization process'),
-    'end_time': fields.DateTime(dt_format='iso8601', description='End time of the overall synchronization process')
-})
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error syncing payments: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/sync_payment/<int:payment_id>', methods=['POST'])
+def sync_payment(payment_id):
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.sync_payment(payment_id)
 
-@payment_sync_ns.route('/status')
-class PaymentSyncStatusResource(Resource):
-    @payment_sync_ns.marshal_with(sync_status_model)
-    @payment_sync_ns.doc(security='apikey')
-    def get(self):
-        """Get current payment synchronization status"""
-        try:
-            service = PaymentSyncService()
-            status = service.analyze_sync_requirements()
-            return status.to_dict(), 200 # Return the dictionary representation
-        except Exception as e:
-            logger.warning(f"Client error in payment sync status: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.error(f"Server error in payment sync status: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.exception("Unexpected error getting payment sync status")
-            payment_sync_ns.abort(500, message=f"Internal server error: {e}")
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error syncing payment {payment_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/get_unsynced_payments', methods=['GET'])
+def get_unsynced_payments():
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.get_unsynced_payments()
 
-@payment_sync_ns.route('/sync-batch')
-class PaymentSyncBatchResource(Resource):
-    @payment_sync_ns.doc(
-        security='apikey',
-        params={'batch_size': {'description': 'Number of payments to sync in this batch', 'type': 'integer', 'default': 50}}
-    )
-    @payment_sync_ns.marshal_with(sync_batch_result_model)
-    def post(self):
-        """Trigger synchronization for a batch of payments to QuickBooks"""
-        try:
-            batch_size = request.args.get('batch_size', type=int)
-            service = PaymentSyncService()
-            result = service.sync_payments_batch(batch_size=batch_size)
-            return result, 200
-        except Exception as e:
-            logger.warning(f"Client error in payment batch sync: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.error(f"Server error in payment batch sync: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.exception("Unexpected error during payment batch sync")
-            payment_sync_ns.abort(500, message=f"Internal server error: {e}")
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error retrieving unsynced payments: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/get_payment_status/<int:payment_id>', methods=['GET'])
+def get_payment_status(payment_id):
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.get_payment_status(payment_id)
 
-@payment_sync_ns.route('/sync-all')
-class PaymentSyncAllResource(Resource):
-    @payment_sync_ns.doc(
-        security='apikey',
-        params={'max_batches': {'description': 'Maximum number of batches to process', 'type': 'integer', 'default': 0}}
-    )
-    @payment_sync_ns.marshal_with(overall_sync_results_model)
-    def post(self):
-        """Trigger synchronization for all unsynchronized payments to QuickBooks"""
-        try:
-            max_batches = request.args.get('max_batches', type=int)
-            service = PaymentSyncService()
-            result = service.sync_all_payments(max_batches=max_batches if max_batches > 0 else None)
-            return result, 200
-        except Exception as e:
-            logger.warning(f"Client error in overall payment sync: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.error(f"Server error in overall payment sync: {e.message}")
-            payment_sync_ns.abort(e.status_code, message=e.message)
-        except Exception as e:
-            logger.exception("Unexpected error during overall payment sync")
-            payment_sync_ns.abort(500, message=f"Internal server error: {e}")
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error retrieving payment status for {payment_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/resync_payment/<int:payment_id>', methods=['POST'])
+def resync_payment(payment_id):
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.resync_payment(payment_id)
 
-# Register namespace with blueprint
-payment_sync_bp.add_url_rule('/<path:path>', endpoint='payment_sync_ns', view_func=payment_sync_ns.as_view('payment_sync_ns'))
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error resyncing payment {payment_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/get_sync_audit_logs', methods=['GET'])
+def get_sync_audit_logs():
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.get_sync_audit_logs()
+
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error retrieving sync audit logs: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/get_quickbooks_config', methods=['GET'])
+def get_quickbooks_config():
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.get_quickbooks_config()
+
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error retrieving QuickBooks config: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/update_quickbooks_config', methods=['POST'])
+def update_quickbooks_config():
+    try:
+        data = request.get_json()
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.update_quickbooks_config(data)
+
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error updating QuickBooks config: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@payment_sync_bp.route('/analyze_sync_requirements', methods=['get'])
+def analyze_sync_requirements():
+    """Analyze and report on payment sync requirements."""
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.analyze_sync_requirements()
+
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error analyzing sync requirements: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
