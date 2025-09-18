@@ -270,6 +270,7 @@ class InvoiceSyncService:
             # Get student customer reference from applicants and students tables
 
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
+            customer_id = None
             if student_ref:
                 customer_id = student_ref.get('qk_id')
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
@@ -278,7 +279,7 @@ class InvoiceSyncService:
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
             # Create QuickBooks invoice structure
-            
+            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
             qb_invoice = {
                 "Line": [
                     {
