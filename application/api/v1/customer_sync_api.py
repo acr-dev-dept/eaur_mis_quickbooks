@@ -569,6 +569,14 @@ def sync_single_applicant(tracking_id: int):
             result = sync_service.sync_single_applicant(applicant)
             current_app.logger.info(f"Synchronization result for applicant {tracking_id}: {result}")
             if result.success:
+                update = TblOnlineApplication.update_applicant_quickbooks_status(
+                    tracking_id=tracking_id,
+                    quickbooks_id=result.quickbooks_id,
+                    pushed_by="API",
+                    QuickBk_Status=1
+                )
+                if not update:
+                    current_app.logger.warning(f"Failed to update QuickBooks status for applicant {tracking_id} after sync.")
                 return create_response(
                     success=True,
                     data={
@@ -577,12 +585,7 @@ def sync_single_applicant(tracking_id: int):
                     },
                     message=f'Applicant {tracking_id} synchronized successfully'
                 )
-                update = TblOnlineApplication.update_applicant_quickbooks_status(
-                    tracking_id=tracking_id,
-                    quickbooks_id=result.quickbooks_id,
-                    pushed_by="API",
-                    QuickBk_Status=CustomerSyncStatus.SYNCED.value
-                )
+
             else:
                 return create_response(
                     success=False,
