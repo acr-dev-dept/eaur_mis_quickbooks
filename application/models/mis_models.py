@@ -1188,7 +1188,7 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for reg no {reg_no}: {str(e)}")
             return []
-
+    @classmethod
     def update_applicant_quickbooks_status(cls, tracking_id, quickbooks_id, pushed_by, QuickBk_Status):
         """
         Update QuickBooks sync status for an applicant
