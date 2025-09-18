@@ -213,7 +213,7 @@ class PaymentSyncService:
             # For now, using a placeholder.
             deposit_account_id = current_app.config.get('QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID', "35") # Use configurable default
             if payment.bank and payment.bank.quickbook: # Assuming quickbook field in TblBank stores QB account ID
-                deposit_account_id = payment.bank.quickbook
+                deposit_account_id = 35 #payment.bank.quickbook
             else:
                 self.logger.warning(f"QuickBooks account ID not found for bank {payment.bank_id}. Using default: {deposit_account_id}")
 
