@@ -36,19 +36,27 @@ def sync_payment(payment_id):
     except Exception as e:
         logging.error(f"Error syncing payment {payment_id}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
-    
 @payment_sync_bp.route('/get_unsynced_payments', methods=['GET'])
 def get_unsynced_payments():
     try:
+        # Get limit and offset from request query parameters
+        limit = request.args.get('limit', type=int, default=50) # default to 50
+        offset = request.args.get('offset', type=int, default=0) # default to 0
+        
+        # Ensure limit is not excessively large
+        if limit > 200:
+            limit = 200 # Set a max limit to prevent misuse
+
         payment_sync_service = PaymentSyncService()
-        result = payment_sync_service.get_unsynchronized_payments()
-        current_app.logger.info(f"Retrieved {result} unsynchronized payments")
-        # result is a list of Payment objects; convert each to dict
+        result = payment_sync_service.get_unsynchronized_payments(limit=limit, offset=offset)
+        
+        current_app.logger.info(f"Retrieved {len(result)} unsynchronized payments")
+        
         dict_payments = [payment.to_dict() for payment in result]
-        current_app.logger.debug(f"Unsynchronized payments data: {dict_payments}")
-        return result, 200
+        
+        return jsonify(dict_payments), 200
     except Exception as e:
-        logging.error(f"Error retrieving unsynchronized payments: {e}")
+        current_app.logger.error(f"Error retrieving unsynchronized payments: {e}")
         return jsonify({'error': 'Internal server error'}), 500
     
 @payment_sync_bp.route('/get_payment_status/<int:payment_id>', methods=['GET'])
