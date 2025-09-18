@@ -4,7 +4,7 @@ from flask_restx import Namespace, Resource, fields
 from datetime import datetime
 
 from application.services.payment_sync import PaymentSyncService
-from application.exceptions import ClientError, ServerError
+
 
 payment_sync_bp = Blueprint('payment_sync_bp', __name__)
 payment_sync_ns = Namespace('payment_sync', description='Payment Synchronization Operations')
@@ -59,10 +59,10 @@ class PaymentSyncStatusResource(Resource):
             service = PaymentSyncService()
             status = service.analyze_sync_requirements()
             return status.to_dict(), 200 # Return the dictionary representation
-        except ClientError as e:
+        except Exception as e:
             logger.warning(f"Client error in payment sync status: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
-        except ServerError as e:
+        except Exception as e:
             logger.error(f"Server error in payment sync status: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
         except Exception as e:
@@ -83,10 +83,10 @@ class PaymentSyncBatchResource(Resource):
             service = PaymentSyncService()
             result = service.sync_payments_batch(batch_size=batch_size)
             return result, 200
-        except ClientError as e:
+        except Exception as e:
             logger.warning(f"Client error in payment batch sync: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
-        except ServerError as e:
+        except Exception as e:
             logger.error(f"Server error in payment batch sync: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
         except Exception as e:
@@ -107,10 +107,10 @@ class PaymentSyncAllResource(Resource):
             service = PaymentSyncService()
             result = service.sync_all_payments(max_batches=max_batches if max_batches > 0 else None)
             return result, 200
-        except ClientError as e:
+        except Exception as e:
             logger.warning(f"Client error in overall payment sync: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
-        except ServerError as e:
+        except Exception as e:
             logger.error(f"Server error in overall payment sync: {e.message}")
             payment_sync_ns.abort(e.status_code, message=e.message)
         except Exception as e:
