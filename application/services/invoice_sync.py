@@ -262,7 +262,7 @@ class InvoiceSyncService:
             # Get fee category for item mapping
             if invoice.fee_category:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
-                quickbooks_id = category.QuickBk_ctgId if category else None
+                quickbooks_id = category['QuickBk_ctgId'] if category else None
             
             # Fallback if no category found
             if not quickbooks_id:
