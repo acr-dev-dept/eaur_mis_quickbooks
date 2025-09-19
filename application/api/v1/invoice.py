@@ -584,8 +584,14 @@ def sync_single_invoice():
 
         current_app.logger.info("Invoice synced successfully")
         # update quickbooks_id in MIS database
+        qb_id = result.details.get("Invoice", {}).get("Id")
+
+        if not qb_id:
+            qb_id = result["data"]["Invoice"]["Id"]
+            current_app.logger.info(f"Extracted QuickBooks ID from alternative location: {qb_id}")
+        current_app.logger.info(f"Updating MIS invoice {invoice_id} with QuickBooks ID {qb_id}")
         update_invoice = TblImvoice.update_invoice_quickbooks_status(
-            quickbooks_id=result.details.get('quickbooks_id'),
+            quickbooks_id=qb_id,
             pushed_by="InvoiceSyncService",
             pushed_date=datetime.now(),
             QuickBk_Status=1
