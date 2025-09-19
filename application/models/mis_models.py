@@ -1165,11 +1165,11 @@ class TblOnlineApplication(MISBaseModel):
         try:
             with TblOnlineApplication.get_session() as session:
                 applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
-                return applicant
+                return applicant.to_dict() if applicant else None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for tracking ID {tracking_id}: {str(e)}")
-            return []
+            return False
     @staticmethod
     def get_applicant_by_reg_no(reg_no):
         """
@@ -1736,6 +1736,7 @@ class TblPersonalUg(MISBaseModel):
                     current_app.logger.error(f"Enrichment {method_name} failed for {self.reg_no}: {e}")
 
         return debug_results
+    @staticmethod
     def get_student_by_reg_no(reg_no):
         """
         Get detailed student information by registration number
@@ -1753,7 +1754,7 @@ class TblPersonalUg(MISBaseModel):
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting student details for reg no {reg_no}: {str(e)}")
-            return []
+            return False
     @classmethod
     def get_student_details(cls, reg_no):
         """
