@@ -280,7 +280,7 @@ class InvoiceSyncService:
                     
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
-                customer_id = student_ref.get('qk_id')
+                customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found QuickBooks customer ID {customer_id} for student {invoice.reg_no}")
 
             # If no student reference, check the applicant reference
