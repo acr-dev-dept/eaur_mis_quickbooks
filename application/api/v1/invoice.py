@@ -585,7 +585,7 @@ def sync_single_invoice():
 
         current_app.logger.info("Invoice synced successfully")
         # update quickbooks_id in MIS database
-        qb_id = result.details.get("data", {}).get("Invoice", {}).get("Id")
+        qb_id = result.get("data", {}).get("Invoice", {}).get("Id")
 
         if not qb_id:
             qb_id = result["data"]["Invoice"]["Id"]
