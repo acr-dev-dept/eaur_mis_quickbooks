@@ -1280,13 +1280,13 @@ class TblPersonalUg(MISBaseModel):
     QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
 
     # Relationships will be added after analyzing foreign keys
-    country = relationship("TblCountry", backref="personal_ugs", lazy='joined')
-    district = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
-    sector = relationship("TblSector", backref="personal_ugs", lazy='joined')
-    cell = relationship("TblCell", backref="personal_ugs", lazy='joined')
-    village = relationship("TblVillage", backref="personal_ugs", lazy='joined')
-    province = relationship("Province", backref="personal_ugs", lazy='joined')
-    prgtype = relationship("TblProgramType", backref="personal_ugs", lazy='joined')
+    country_rel = relationship("TblCountry", backref="personal_ugs", lazy='joined')
+    district_rel = relationship("TblDistrict", backref="personal_ugs", lazy='joined')
+    sector_rel = relationship("TblSector", backref="personal_ugs", lazy='joined')
+    cell_rel = relationship("TblCell", backref="personal_ugs", lazy='joined')
+    village_rel = relationship("TblVillage", backref="personal_ugs", lazy='joined')
+    province_rel = relationship("Province", backref="personal_ugs", lazy='joined')
+    prgtype_rel = relationship("TblProgramType", backref="personal_ugs", lazy='joined')
 
 
     def __repr__(self):
@@ -1316,15 +1316,11 @@ class TblPersonalUg(MISBaseModel):
             'VISA_Expiration_date': self.VISA_Expiration_date.isoformat() if self.VISA_Expiration_date else None,
             'b_province': self.b_province.to_dict() if self.b_province else [],
 
-            'b_district': self.b_district.to_dict() if self.b_district else [],
-            'b_sector': self.b_sector.to_dict() if self.b_sector else [],
-            'b_cell': self.b_cell.to_dict() if self.b_cell else [],
-            'b_village': self.b_village.to_dict() if self.b_village else [],
-            'district': self.district.to_dict() if self.district else [],
-            'sector': self.sector.to_dict() if self.sector else [],
-            'cell': self.cell.to_dict() if self.cell else [],
-            'village': self.village.to_dict() if self.village else [],
-            'province': self.province.to_dict() if self.province else [],
+            'district': self.district_rel.to_dict() if self.district_rel else [],
+            'sector': self.sector_rel.to_dict() if self.sector_rel else [],
+            'cell': self.cell_rel.to_dict() if self.cell_rel else [],
+            'village': self.village_rel.to_dict() if self.village_rel else [],
+            'province': self.province_rel.to_dict() if self.province_rel else [],
             'nationality': self.nationality,
             'phone1': self.phone1,
             'phone2': self.phone2,
