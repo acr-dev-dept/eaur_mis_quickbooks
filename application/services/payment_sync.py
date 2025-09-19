@@ -225,12 +225,12 @@ class PaymentSyncService:
                 from application.models.mis_models import TblImvoice
                 with db_manager.get_mis_session() as session:
                     invoice_obj = session.query(TblImvoice).filter_by(reference_number=payment.invoi_ref).first()
+                    current_app.logger.info(f"Invoice object for reference {payment.invoi_ref}: {invoice_obj}")
                 
-                if invoice_obj and invoice_obj.QuickBk_Status == PaymentSyncStatus.SYNCED.value and invoice_obj.id: # Assuming MIS invoice.id stores QB invoice ID after sync
+                if invoice_obj and invoice_obj.quickbooks_id:
                     linked_invoices.append({
-                        "TxnId": str(invoice_obj.id), # This should be the QuickBooks Invoice ID
-                        "TxnType": "Invoice",
-                        "Amount": amount
+                        "TxnId": str(invoice_obj.quickbooks_id),
+                        "TxnType": "Invoice"
                     })
                 else:
                     self.logger.warning(f"Associated invoice {payment.invoi_ref} not synced to QuickBooks or not found.")
@@ -257,13 +257,8 @@ class PaymentSyncService:
             if linked_invoices:
                 qb_payment_data["Line"] = [{
                     "Amount": amount,
-                    "LinkedTxn": [
-                        {
-                            "TxnId": str(linked_invoices[0]),
-                            "TxnType": "Invoice"
-                        }
-                    ]
-                }]
+                    "LinkedTxn": linked_invoices
+                    }]
 
             return qb_payment_data, None # Return payload and no error
 
