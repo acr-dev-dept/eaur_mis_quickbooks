@@ -572,7 +572,7 @@ def sync_single_applicant(tracking_id: int):
                 update = TblOnlineApplication.update_applicant_quickbooks_status(
                     tracking_id=tracking_id,
                     quickbooks_id=result.quickbooks_id,
-                    pushed_by="API",
+                    pushed_by="ApplicantSyncService",
                     QuickBk_Status=1
                 )
                 if not update:

@@ -262,23 +262,38 @@ class InvoiceSyncService:
             # Get fee category for item mapping
             if invoice.fee_category:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
-                quickbooks_id = category.QuickBk_ctgId if category else None
+                quickbooks_id = category['QuickBk_ctgId'] if category else None
             
-            # Fallback if no category found
+
+            # if no category found
             if not quickbooks_id:
                 current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
             # Get student customer reference from applicants and students tables
 
+            reg_no = invoice.reg_no
+            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
+
+            # Attempt to find student or applicant reference by registration number
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
+            customer_id = None
+                    
+            # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.get('qk_id')
-            applicant_ref = TblOnlineApplication.get_applicant_by_reg_no(invoice.reg_no)
-            if applicant_ref:
+                current_app.logger.info(f"Found QuickBooks customer ID {customer_id} for student {invoice.reg_no}")
+
+            # If no student reference, check the applicant reference
+            elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
+                current_app.logger.info(f"Found QuickBooks customer ID {customer_id} for applicant {invoice.reg_no}")
+
+            # Log a warning if no customer reference is found
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
+
             # Create QuickBooks invoice structure
-            
+            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
             qb_invoice = {
                 "Line": [
                     {
