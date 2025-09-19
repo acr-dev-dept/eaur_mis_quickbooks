@@ -626,33 +626,34 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting payer details for invoice {reference_number}: {str(e)}")
             return {}
-    @classmethod
-    def update_invoice_quickbooks_status(cls,invoice_id, quickbooks_id, pushed_by, pushed_date, QuickBk_Status):
+    @staticmethod
+    def update_invoice_quickbooks_status(invoice_id,quickbooks_id, pushed_by, pushed_date, QuickBk_Status):
         """
         Update QuickBooks sync status for an invoice
 
         Args:
-            quickbooks_id (str): QuickBooks Invoice ID
+            invoice_id (int): Invoice ID
+            quickbooks_id (str): QuickBooks invoice ID
             pushed_by (str): User who pushed the data
             pushed_date (datetime): Date when data was pushed
-            QuickBk_Status (int): Sync status (0=not pushed, 1=pushed)
+            QuickBk_Status (int): Sync status (0=not synced, 1=synced)
         Returns:
             bool: True if update was successful, False otherwise
         """
         try:
-            with cls.get_session() as session:
-                invoice = session.query(cls).filter(cls.id == invoice_id).first()
+            with MISBaseModel.get_session() as session:
+                invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
                 if invoice:
-                    invoice.QuickBk_Status = QuickBk_Status
+                    invoice.quickbooks_id = quickbooks_id
                     invoice.pushed_by = pushed_by
                     invoice.pushed_date = pushed_date
-                    invoice.quickbooks_id = quickbooks_id
+                    invoice.QuickBk_Status = QuickBk_Status
                     session.commit()
                     return True
                 return False
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(f"Error updating QuickBooks status for invoice {quickbooks_id}: {str(e)}")
+            current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
 
 class TblIncomeCategory(MISBaseModel):
