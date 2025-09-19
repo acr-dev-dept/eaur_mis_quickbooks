@@ -257,13 +257,8 @@ class PaymentSyncService:
             if linked_invoices:
                 qb_payment_data["Line"] = [{
                     "Amount": amount,
-                    "LinkedTxn": [
-                        {
-                            "TxnId": str(linked_invoices[0]),
-                            "TxnType": "Invoice"
-                        }
-                    ]
-                }]
+                    "LinkedTxn": linked_invoices
+                    }]
 
             return qb_payment_data, None # Return payload and no error
 
