@@ -264,10 +264,14 @@ class InvoiceSyncService:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
                 quickbooks_id = category['QuickBk_ctgId'] if category else None
             
-            # Fallback if no category found
+
+            # if no category found
             if not quickbooks_id:
                 current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
             # Get student customer reference from applicants and students tables
+
+            reg_no = invoice.reg_no
+            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
 
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             customer_id = None
