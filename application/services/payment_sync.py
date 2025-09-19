@@ -230,8 +230,7 @@ class PaymentSyncService:
                 if invoice_obj and invoice_obj.quickbooks_id:
                     linked_invoices.append({
                         "TxnId": str(invoice_obj.quickbooks_id),
-                        "TxnType": "Invoice",
-                        "Amount": amount
+                        "TxnType": "Invoice"
                     })
                 else:
                     self.logger.warning(f"Associated invoice {payment.invoi_ref} not synced to QuickBooks or not found.")
