@@ -257,11 +257,12 @@ class PaymentSyncService:
             if linked_invoices:
                 qb_payment_data["Line"] = [{
                     "Amount": amount,
-                    "DetailType": "PaymentLineDetail",
-                    "PaymentLineDetail": {
-                        "LineExchRate": 1.0,
-                        "InvoiceRef": linked_invoices[0] # Link to the first associated invoice
-                    }
+                    "LinkedTxn": [
+                        {
+                            "TxnId": str(linked_invoices[0]),
+                            "TxnType": "Invoice"
+                        }
+                    ]
                 }]
 
             return qb_payment_data, None # Return payload and no error
@@ -294,14 +295,6 @@ class PaymentSyncService:
 
             if 'Payment' in response and response['Payment'].get('Id'):
                 qb_payment_id = response['Payment']['Id']
-                try:
-                    bank_account_id = response['Payment']['DepositToAccountRef']['value']
-                    payment_amount = response['Payment']['TotalAmt']
-                    deposit = qb_service.create_deposit(qb_service.realm_id, qb_payment_id, bank_account_id, payment_amount)
-
-                    current_app.logger.info(f"Created deposit for payment {payment.id} in QuickBooks: {deposit}")
-                except Exception as e:
-                    current_app.logger.error(f"Error creating deposit for payment {payment.id}: {e}")
                 self._update_payment_sync_status(
                     payment.id,
                     PaymentSyncStatus.SYNCED.value,
