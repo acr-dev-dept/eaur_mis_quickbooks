@@ -320,6 +320,7 @@ requirements needed:
    3. IncomeAccountRef while referencing syncing Payments to QB
 
 ## Order of Syncing
+   0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis
    1. Customers (Applicants and students)
    2. Income Accounts
    3. Items (dependent on Income accounts ref)

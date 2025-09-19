@@ -627,7 +627,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error getting payer details for invoice {reference_number}: {str(e)}")
             return {}
     @classmethod
-    def update_invoice_quickbooks_status(cls, quickbooks_id, pushed_by, pushed_date, QuickBk_Status):
+    def update_invoice_quickbooks_status(cls,invoice_id, quickbooks_id, pushed_by, pushed_date, QuickBk_Status):
         """
         Update QuickBooks sync status for an invoice
 
@@ -641,11 +641,12 @@ class TblImvoice(MISBaseModel):
         """
         try:
             with cls.get_session() as session:
-                invoice = session.query(cls).filter(cls.quickbooks_id == quickbooks_id).first()
+                invoice = session.query(cls).filter(cls.id == invoice_id).first()
                 if invoice:
                     invoice.QuickBk_Status = QuickBk_Status
                     invoice.pushed_by = pushed_by
                     invoice.pushed_date = pushed_date
+                    invoice.quickbooks_id = quickbooks_id
                     session.commit()
                     return True
                 return False

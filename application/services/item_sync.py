@@ -63,7 +63,7 @@ class ItemSyncService:
                         TblIncomeCategory.update_quickbooks_status(
                             category_id=category['id'],
                             quickbooks_id=item_id,
-                            pushed_by="ItemSyncService"
+                            pushed_by="ItemSyncService",
                         )
                         results.append({'id': category['id'], 'status': 'success', 'quickbooks_id': item_id})
                         total_succeeded += 1
