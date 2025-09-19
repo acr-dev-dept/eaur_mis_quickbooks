@@ -239,13 +239,11 @@ class InvoiceSyncService:
         Returns:
             Dictionary formatted for QuickBooks API
         """
+
+        if invoice.quickbooks_id:
+            logger.info(f"Invoice {invoice.id} already synced with QuickBooks ID {invoice.quickbooks_id}")
+            raise Exception(f"Invoice {invoice.id} is already synchronized with QuickBooks.")
         try:
-            # Get student details for customer mapping
-            student_details = self.get_student_details(invoice.reg_no)
-
-            # Create customer reference
-            customer_name = student_details['full_name'] if student_details else f"Student {invoice.reg_no}"
-
             # Calculate amounts
             amount = float(invoice.dept or 0) - float(invoice.credit or 0)
             if amount <= 0:
@@ -273,11 +271,12 @@ class InvoiceSyncService:
             reg_no = invoice.reg_no
             current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
 
+
             # Attempt to find student or applicant reference by registration number
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             customer_id = None
-                    
+            
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
