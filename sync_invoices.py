@@ -18,11 +18,12 @@ def sync_invoices(batch_size: int = 20):
 
         while True:
             results = sync_service.sync_invoices_batch(batch_size=batch_size)
-            if not results or (results.get("total_succeeded", 0) == 0 and results.get("total_failed", 0) == 0):
-                break  # no more invoices to sync
 
-            total_succeeded += results.get("total_succeeded", 0)
-            total_failed += results.get("total_failed", 0)
+            if results['total_processed'] == 0:  # nothing left
+                break
+
+            total_succeeded += results['successful']
+            total_failed += results['failed']
 
         return {"total_succeeded": total_succeeded, "total_failed": total_failed}
 

@@ -174,7 +174,7 @@ class InvoiceSyncService:
                     .join(TblImvoice.fee_category_rel)  # join TblIncomeCategory
                     .filter(
                         or_(
-                            TblImvoice.QuickBk_Status != 0,
+                            TblImvoice.QuickBk_Status != 1,
                             TblImvoice.QuickBk_Status.is_(None),
                         ),
                         TblIncomeCategory.status_Id == 1,  # active category
