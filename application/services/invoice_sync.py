@@ -262,7 +262,7 @@ class InvoiceSyncService:
             # if no category found
             if not quickbooks_id:
                 current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
-            # Get student customer reference from applicants and students tables
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
 
             reg_no = invoice.reg_no
             current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
