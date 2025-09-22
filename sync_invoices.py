@@ -29,7 +29,7 @@ def sync_invoices(batch_size: int = 10):
 
 if __name__ == '__main__':
     try:
-        outcome = sync_invoices(batch_size=15)
+        outcome = sync_invoices(batch_size=10)
         app.logger.info(f"Invoice sync script finished execution: {outcome}")
         if "error" in outcome:
             sys.exit(1)

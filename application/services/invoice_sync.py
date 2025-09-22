@@ -437,6 +437,9 @@ class InvoiceSyncService:
                             'quickbooks_id': result.quickbooks_id
                         })
                         logger.info(f"Successfully synced invoice {result.invoice_id}")
+                        # update the quickbooks_id in MIS table
+                        quickbooks_id = result.quickbooks_id
+                        TblImvoice.update_quickbooks_id(invoice.id, quickbooks_id, pushed_by="InvoiceSyncService", pushed_date=datetime.now())
                     else:
                         results['failed'] += 1
                         results['errors'].append({
@@ -464,7 +467,7 @@ class InvoiceSyncService:
             results['errors'].append({'general_error': str(e)})
             return results
 
-    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[str] = None):
+    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id):
         """
         Update invoice synchronization status in MIS database
 
@@ -479,7 +482,8 @@ class InvoiceSyncService:
                 if invoice:
                     invoice.QuickBk_Status = status
                     invoice.pushed_date = datetime.now()
-                    invoice.pushed_by = "InvoiceSyncService"
+                    invoice.pushed_by = "InvoiceSyncService",
+                    invoice.quickbooks_id = quickbooks_id
 
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
