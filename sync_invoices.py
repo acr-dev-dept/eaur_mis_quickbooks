@@ -10,26 +10,27 @@ app.logger.setLevel(logging.DEBUG)
 app.logger.info("Starting invoice sync process")
 
 
-def sync_invoices(batch_size: int = 10):
-    """Sync unsynced invoices from MIS to QuickBooks in batches."""
-    try:
-        with app.app_context():
-            sync_service = InvoiceSyncService()
+def sync_invoices(batch_size: int = 20):
+    with app.app_context():
+        sync_service = InvoiceSyncService()
+        total_succeeded = 0
+        total_failed = 0
+
+        while True:
             results = sync_service.sync_invoices_batch(batch_size=batch_size)
-            app.logger.info(
-                f"Invoice sync process completed successfully: "
-                f"{results['total_succeeded']} invoices synchronized, "
-                f"{results['total_failed']} failed."
-            )
-            return results
-    except Exception as e:
-        app.logger.error(f"Error during invoice sync process: {e}")
-        return {"error": str(e)}
+            if not results or (results.get("total_succeeded", 0) == 0 and results.get("total_failed", 0) == 0):
+                break  # no more invoices to sync
+
+            total_succeeded += results.get("total_succeeded", 0)
+            total_failed += results.get("total_failed", 0)
+
+        return {"total_succeeded": total_succeeded, "total_failed": total_failed}
+
 
 
 if __name__ == '__main__':
     try:
-        outcome = sync_invoices(batch_size=10)
+        outcome = sync_invoices(batch_size=20)
         app.logger.info(f"Invoice sync script finished execution: {outcome}")
         if "error" in outcome:
             sys.exit(1)

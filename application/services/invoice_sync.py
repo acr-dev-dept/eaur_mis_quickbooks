@@ -437,9 +437,6 @@ class InvoiceSyncService:
                             'quickbooks_id': result.quickbooks_id
                         })
                         logger.info(f"Successfully synced invoice {result.invoice_id}")
-                        # update the quickbooks_id in MIS table
-                        quickbooks_id = result.quickbooks_id
-                        TblImvoice.update_quickbooks_id(invoice.id, quickbooks_id, pushed_by="InvoiceSyncService", pushed_date=datetime.now())
                     else:
                         results['failed'] += 1
                         results['errors'].append({
