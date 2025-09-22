@@ -318,7 +318,7 @@ class InvoiceSyncService:
             }
 
 
-            return qb_invoice.to_dict(), customer_id, quickbooks_id
+            return qb_invoice, customer_id, quickbooks_id
 
         except Exception as e:
             logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
@@ -348,7 +348,7 @@ class InvoiceSyncService:
             qb_service = self._get_qb_service()
 
             # Map invoice data
-            qb_invoice_data, qb = self.map_invoice_to_quickbooks(invoice)[0]
+            qb_invoice_data = self.map_invoice_to_quickbooks(invoice)[0]
 
             qb_item_id = self.map_invoice_to_quickbooks(invoice)[2]
             if not qb_item_id:
