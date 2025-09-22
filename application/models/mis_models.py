@@ -725,7 +725,7 @@ class TblIncomeCategory(MISBaseModel):
         """
         try:
             with MISBaseModel.get_session() as session:
-                cat_data_obj=session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id).first()
+                cat_data_obj=session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id, TblIncomeCategory.status_Id == 1).first()
                 cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
                 return cat_data_dict
         except Exception as e:
