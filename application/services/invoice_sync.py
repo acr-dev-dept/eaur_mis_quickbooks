@@ -169,14 +169,19 @@ class InvoiceSyncService:
         """
         try:
             with db_manager.get_mis_session() as session:
-                query = session.query(TblImvoice).options(
-                    joinedload(TblImvoice.level),
-                    joinedload(TblImvoice.fee_category_rel),
-                joinedload(TblImvoice.module),
-                joinedload(TblImvoice.intake)
-            ).filter(
-                or_(TblImvoice.QuickBk_Status == 0, TblImvoice.QuickBk_Status.is_(None))
-            ).order_by(TblImvoice.invoice_date.desc())
+                query = (
+                    session.query(TblImvoice)
+                    .join(TblImvoice.fee_category_rel)  # join TblIncomeCategory
+                    .filter(
+                        or_(
+                            TblImvoice.QuickBk_Status == 0,
+                            TblImvoice.QuickBk_Status.is_(None),
+                        ),
+                        TblIncomeCategory.status_Id == 1,  # active category
+                    )
+                    .order_by(TblImvoice.invoice_date.desc())
+                )
+
             
             if limit:
                 query = query.limit(limit)
