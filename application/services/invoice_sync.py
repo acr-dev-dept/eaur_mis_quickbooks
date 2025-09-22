@@ -174,7 +174,7 @@ class InvoiceSyncService:
                     .join(TblImvoice.fee_category_rel)  # join TblIncomeCategory
                     .filter(
                         or_(
-                            TblImvoice.QuickBk_Status == 0,
+                            TblImvoice.QuickBk_Status != 0,
                             TblImvoice.QuickBk_Status.is_(None),
                         ),
                         TblIncomeCategory.status_Id == 1,  # active category
@@ -467,7 +467,7 @@ class InvoiceSyncService:
             results['errors'].append({'general_error': str(e)})
             return results
 
-    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id):
+    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[int] = None):
         """
         Update invoice synchronization status in MIS database
 

@@ -9,5 +9,3 @@ python3 sync_invoices.py
 EXIT_STATUS=$?
 # Log the completion of the script
 echo "Invoice sync script executed on $(date) with exit status $EXIT_STATUS" >> invoices_sync.log
-# Deactivate the virtual environment
-deactivate
