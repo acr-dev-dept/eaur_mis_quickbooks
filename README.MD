@@ -325,3 +325,4 @@ requirements needed:
    2. Income Accounts
    3. Items (dependent on Income accounts ref)
    4. Invoices (dependent on Items and income accounts)
+      1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync

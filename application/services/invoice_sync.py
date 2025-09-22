@@ -290,6 +290,7 @@ class InvoiceSyncService:
             # Log a warning if no customer reference is found
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
 
             # Create QuickBooks invoice structure
             current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
