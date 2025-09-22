@@ -168,11 +168,10 @@ class InvoiceSyncService:
             List of unsynchronized invoice objects
         """
         try:
-            session = db_manager.get_mis_session()
-            
-            query = session.query(TblImvoice).options(
-                joinedload(TblImvoice.level),
-                joinedload(TblImvoice.fee_category_rel),
+            with db_manager.get_mis_session() as session:
+                query = session.query(TblImvoice).options(
+                    joinedload(TblImvoice.level),
+                    joinedload(TblImvoice.fee_category_rel),
                 joinedload(TblImvoice.module),
                 joinedload(TblImvoice.intake)
             ).filter(
