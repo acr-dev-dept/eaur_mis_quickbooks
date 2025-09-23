@@ -439,7 +439,7 @@ class InvoiceSyncService:
 
             for invoice in invoices:
                 try:
-                    result = self.sync_single_invoice(invoice)[0]
+                    result = self.sync_single_invoice(invoice)
                     results['total_processed'] += 1
 
                     if result.success:
