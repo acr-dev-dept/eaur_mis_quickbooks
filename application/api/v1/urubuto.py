@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 import traceback
 import jwt
 import os
+from application.services.payment_sync import PaymentSyncService
 
 urubuto_bp = Blueprint('urubuto', __name__)
 # Initialize Urubuto Pay service
@@ -340,6 +341,8 @@ def payment_callback():
     # Generate a random internal transaction in form of 625843
     internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
 
+    payment_sync_service = PaymentSyncService()
+
     # Check if the transaction_id is not in the payment table so that we do not duplicate payments
     try:
         existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
@@ -385,6 +388,13 @@ def payment_callback():
                         bank_id=2
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
+                    #sync the payment to quickbooks
+                    try:
+                        result = payment_sync_service.sync_single_payment(payment)
+                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {result}")
+                    except Exception as e:
+                        current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
+                        current_app.logger.error(traceback.format_exc())
                 except Exception as e:
                     current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
                     current_app.logger.error(traceback.format_exc())
@@ -416,6 +426,13 @@ def payment_callback():
                     bank_id=2
                     )
                     current_app.logger.info(f"Payment record created: {payment}")
+                    #sync the payment to quickbooks
+                    try:
+                        result = payment_sync_service.sync_single_payment(payment)
+                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {result}")
+                    except Exception as e:
+                        current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
+                        current_app.logger.error(traceback.format_exc())
                 except Exception as e:
                     current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
                     current_app.logger.error(traceback.format_exc())
