@@ -1039,9 +1039,9 @@ class QuickBooks:
         """
         endpoint = f"{realm_id}/payment"
         try:
-            current_app.logger.info(f"Creating payment with data: {payment_data}")
+            current_app.logger.debug(f"QuickBooks create_payment received data: {json.dumps(payment_data, cls=EnhancedJSONEncoder)}")
             response = self.make_request(endpoint, method="POST", data=payment_data)
-            current_app.logger.info(f"Payment created successfully: {response}")
+            current_app.logger.debug(f"QuickBooks create_payment API response: {json.dumps(response, cls=EnhancedJSONEncoder)}")
             return response
         except Exception as e:
             current_app.logger.error(f"Error creating payment: {str(e)}")
