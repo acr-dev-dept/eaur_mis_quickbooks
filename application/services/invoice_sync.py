@@ -339,6 +339,7 @@ class InvoiceSyncService:
             logger.info(f"Invoice {invoice.id} already synced with QuickBooks ID {invoice.quickbooks_id}")
             raise Exception(f"Invoice {invoice.id} is already synchronized with QuickBooks.")
         """
+        
         try:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
