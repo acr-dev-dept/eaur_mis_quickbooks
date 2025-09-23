@@ -9,6 +9,7 @@ import urllib.parse  # For URL encoding
 import re  # For regular expressions
 from flask import current_app
 from application.helpers.quickbooks_helpers import QuickBooksHelper
+from application.helpers.json_encoder import EnhancedJSONEncoder
 
 load_dotenv()
 
