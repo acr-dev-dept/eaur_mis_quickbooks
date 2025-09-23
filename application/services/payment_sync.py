@@ -260,6 +260,7 @@ class PaymentSyncService:
                     "LinkedTxn": linked_invoices
                     }]
 
+            self.logger.debug(f"QuickBooks Payment Payload for payment {payment.id}: {json.dumps(qb_payment_data, cls=EnhancedJSONEncoder)}")
             return qb_payment_data, None # Return payload and no error
 
         except Exception as e:
@@ -275,6 +276,8 @@ class PaymentSyncService:
             qb_service = self._get_qb_service()
             qb_payment_data, map_error = self.map_payment_to_quickbooks(payment)
 
+            self.logger.debug(f"Mapped QuickBooks payment data for payment {payment.id}: {json.dumps(qb_payment_data, cls=EnhancedJSONEncoder)}")
+
             if map_error:
                 self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
                 self._log_sync_audit(payment.id, 'ERROR', map_error)
@@ -286,7 +289,7 @@ class PaymentSyncService:
                 )
 
             response = qb_service.create_payment(qb_service.realm_id, qb_payment_data)
-            self.logger.info(f"QuickBooks response for payment {payment.id}: {response}")
+            self.logger.debug(f"QuickBooks response for payment {payment.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
 
             if 'Payment' in response and response['Payment'].get('Id'):
                 qb_payment_id = response['Payment']['Id']

@@ -47,7 +47,7 @@ def sync_payment(payment_id):
         result = payment_sync_service.sync_single_payment(payment)
         current_app.logger.info(f"Sync result for payment {payment_id}: {result}")
 
-        return jsonify(result), 200
+        return jsonify(result.to_dict()), 200
     except Exception as e:
         logging.error(f"Error syncing payment {payment_id}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
