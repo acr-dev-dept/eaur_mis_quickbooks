@@ -63,6 +63,29 @@ class PaymentSyncResult:
     traceback: Optional[str] = None
     duration: Optional[float] = None
 
+    def __init__(self, status, message, success, quickbooks_id=None, details=None,
+                 error_message=None, traceback=None, duration=None):
+        self.status = status
+        self.message = message
+        self.success = success
+        self.quickbooks_id = quickbooks_id
+        self.details = details or {}
+        self.error_message = error_message
+        self.traceback = traceback
+        self.duration = duration
+
+    def to_dict(self) -> Dict:
+        return {
+            'status': self.status.name,
+            'message': self.message,
+            'success': self.success,
+            'quickbooks_id': self.quickbooks_id,
+            'details': self.details,
+            'error_message': self.error_message,
+            'traceback': self.traceback,
+            'duration': self.duration
+        }
+
 class PaymentSyncService:
     """
     Service for synchronizing MIS payments to QuickBooks
@@ -75,6 +98,13 @@ class PaymentSyncService:
         self.retry_delay = 5  # seconds
         self.logger = logging.getLogger(self.__class__.__name__)
 
+    def to_dict(self) -> Dict:
+        return {
+            'qb_service': safe_stringify(self.qb_service),
+            'batch_size': self.batch_size,
+            'max_retries': self.max_retries,
+            'retry_delay': self.retry_delay
+        }
     def _get_qb_service(self) -> QuickBooks:
         """
         Get QuickBooks service instance
@@ -299,13 +329,14 @@ class PaymentSyncService:
                     quickbooks_id=qb_payment_id
                 )
                 self._log_sync_audit(payment.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_payment_id}")
-                return PaymentSyncResult(
+                result = PaymentSyncResult(
                     status=PaymentSyncStatus.SYNCED,
                     message=f"Payment {payment.id} synchronized successfully",
                     success=True,
                     details=response,
                     quickbooks_id=qb_payment_id
                 )
+                return result.to_dict()
             else:
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
                 self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
