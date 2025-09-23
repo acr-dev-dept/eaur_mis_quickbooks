@@ -177,7 +177,7 @@ class CustomerSyncService:
             with db_manager.get_mis_session() as session:
                 # Step 1: Get base applicants
                 query = session.query(TblOnlineApplication).filter(
-                    or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
+                    or_(TblOnlineApplication.QuickBk_Status != 1, TblOnlineApplication.QuickBk_Status.is_(None))
                 ).order_by(TblOnlineApplication.appl_date.desc())
 
                 if limit:
@@ -256,7 +256,7 @@ class CustomerSyncService:
             with db_manager.get_mis_session() as session:
                 # Step 1: Get base students
                 query = session.query(TblPersonalUg).filter(
-                    or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
+                    or_(TblPersonalUg.QuickBk_Status != 1, TblPersonalUg.QuickBk_Status.is_(None))
                 ).order_by(TblPersonalUg.reg_date.desc())
 
                 if limit:
