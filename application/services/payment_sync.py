@@ -341,26 +341,28 @@ class PaymentSyncService:
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
                 self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
                 self._log_sync_audit(payment.id, 'ERROR', error_msg)
-                return PaymentSyncResult(
+                result = PaymentSyncResult(
                     status=PaymentSyncStatus.FAILED,
                     message=f"Failed to synchronize payment {payment.id}",
                     success=False,
                     error_message=error_msg,
                     details=response
                 )
+                return result.to_dict()
 
         except Exception as e:
             error_msg = str(e)
             tb = traceback.format_exc()
             self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
             self._log_sync_audit(payment.id, 'ERROR', error_msg)
-            return PaymentSyncResult(
+            result = PaymentSyncResult(
                 status=PaymentSyncStatus.FAILED,
                 message=f"Error synchronizing payment {payment.id}",
                 success=False,
                 error_message=error_msg,
                 traceback=tb
             )
+            return result.to_dict()
 
     def sync_payments_batch(self, batch_size: Optional[int] = None) -> Dict:
         """
