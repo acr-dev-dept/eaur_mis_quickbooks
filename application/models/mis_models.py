@@ -734,6 +734,26 @@ class TblIncomeCategory(MISBaseModel):
             return None
 
     @staticmethod
+    def get_category_by_id_not_synced(category_id):
+        """
+        Get income category by ID only if not yet synced
+
+        Args:
+            category_id (int): Income category ID
+        Returns:
+            TblIncomeCategory: Income category record or None if not found or already synced
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                cat_data_obj=session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id, TblIncomeCategory.status_Id == 1, or_(TblIncomeCategory.Quickbk_Status != 1, TblIncomeCategory.Quickbk_Status.is_(None))).first()
+                cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
+                return cat_data_dict
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced income category for ID {category_id}: {str(e)}")
+            return None
+
+    @staticmethod
     def get_active_categories():
         """
         Get income categories with status_id = 1

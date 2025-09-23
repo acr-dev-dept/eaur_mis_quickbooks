@@ -1286,8 +1286,9 @@ def sync_single_item():
             }), 400
         required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
         payload = request.json
+        income_category_id = payload.get('income_category_id')
 
-        income_category = TblIncomeCategory.get_category_by_id(payload.get('income_category_id'))
+        income_category = TblIncomeCategory.get_category_by_id_not_synced(income_category_id)
 
         if not income_category:
             return jsonify({
