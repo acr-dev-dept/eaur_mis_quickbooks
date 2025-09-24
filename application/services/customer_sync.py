@@ -478,7 +478,7 @@ class CustomerSyncService:
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant['appl_Id']} to QuickBooks format: {e}")
 
-    def is_valid_email(email: str) -> bool:
+    def is_valid_email(self, email: str) -> bool:
         """
         Validate email format using email_validator library
         """
@@ -986,6 +986,7 @@ class CustomerSyncService:
         Returns:
             CustomerSyncResult: Result of the synchronization attempt
         """
+        current_app.logger.info(f"Syncing single applicant: {applicant} and the type is {type(applicant)}")
         try:
            # Mark applicant as in progress
             self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.IN_PROGRESS.value)
