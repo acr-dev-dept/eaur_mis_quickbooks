@@ -442,6 +442,10 @@ class CustomerSyncService:
                 field for field in custom_fields_list if field.get('StringValue')
             ]
 
+            # quickbooks require a valid email format, if email is invalid, set to None
+            email = applicant_data.get('email')
+            if not self.is_valid_email(email):
+                email = None
 
             # Create the main QuickBooks customer dictionary
             qb_customer = {
@@ -454,8 +458,8 @@ class CustomerSyncService:
                     "FreeFormNumber": applicant_data['phone']
                 } if applicant_data.get('phone') else None,
                 "PrimaryEmailAddr": {
-                    "Address": applicant_data['email']
-                } if applicant_data.get('email') else None,
+                    "Address": email
+                } if email else None,
                 "CustomerTypeRef": {
                     "value": "528730",
                     "name": "applicant"
@@ -471,6 +475,12 @@ class CustomerSyncService:
 
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
+    
+    def is_valid_email(self, email: str) -> bool:
+        """Simple email validation"""
+        import re
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        return re.match(email_regex, email) is not None
     
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
