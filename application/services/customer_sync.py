@@ -541,8 +541,11 @@ class CustomerSyncService:
                 field for field in custom_fields_list if field.get('StringValue')
             ]
             current_app.logger.info(f"student data {student_data}")
-            email = student_data.get('email_address')
-            if not self.is_valid_email(email):
+            email = student_data.get('email1')
+            if email and isinstance(email, str):
+                if not self.is_valid_email(email):
+                    email = None
+            else:
                 email = None
 
             # Create the main QuickBooks customer dictionary
