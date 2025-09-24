@@ -5,6 +5,7 @@ This service handles the synchronization of applicants and students from MIS to 
 as customers with proper custom fields and data enrichment.
 """
 
+import email
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
@@ -26,6 +27,7 @@ from application import db
 from application.helpers.json_field_helper import JSONFieldHelper
 from application.helpers.json_encoder import EnhancedJSONEncoder
 from application.helpers.SafeStringify import safe_stringify
+from email_validator import validate_email, EmailNotValidError
 
 logger = logging.getLogger(__name__)
 
@@ -476,11 +478,16 @@ class CustomerSyncService:
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
     
-    def is_valid_email(self, email: str) -> bool:
-        """Simple email validation"""
-        import re
-        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        return re.match(email_regex, email) is not None
+    def is_valid_email(email: str) -> bool:
+        """
+        Validate email format using email_validator library
+        """
+        try:
+            # validate and get normalized form
+            validate_email(email, check_deliverability=False)
+            return True
+        except EmailNotValidError:
+            return False
     
     def map_student_to_quickbooks_customer(self, student: TblPersonalUg) -> Dict:
         """
