@@ -534,7 +534,10 @@ class CustomerSyncService:
                 field for field in custom_fields_list if field.get('StringValue')
             ]
             current_app.logger.info(f"student data {student_data}")
-            
+            email = student_data.get('email_address')
+            if not self.is_valid_email(email):
+                email = None
+
             # Create the main QuickBooks customer dictionary
             qb_customer = {
                 "DisplayName": student_data.get('reg_no', ''),
@@ -546,8 +549,8 @@ class CustomerSyncService:
                     "FreeFormNumber": student_data.get('phone')
                 } if student_data.get('phone') else None,
                 "PrimaryEmailAddr": {
-                    "Address": student_data.get('email')
-                } if student_data.get('email') else None,
+                    "Address": email
+                } if email else None,
                 "CustomerTypeRef": {
                     "value": "528694",
                     "name": "student"
