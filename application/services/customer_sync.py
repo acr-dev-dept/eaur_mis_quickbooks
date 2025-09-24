@@ -476,8 +476,8 @@ class CustomerSyncService:
             return qb_customer
 
         except Exception as e:
-            logger.error(f"Error mapping applicant {applicant.appl_Id} to QuickBooks format: {e}")
-    
+            logger.error(f"Error mapping applicant {applicant['appl_Id']} to QuickBooks format: {e}")
+
     def is_valid_email(email: str) -> bool:
         """
         Validate email format using email_validator library
