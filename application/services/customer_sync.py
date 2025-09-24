@@ -1055,6 +1055,9 @@ class CustomerSyncService:
                         applicant.QuickBk_Status = status
                         applicant.pushed_date = datetime.now()
                         applicant.pushed_by = "CustomerSyncService"
+                        # Store QuickBooks ID in existing quickbooks_id field
+                        if quickbooks_id and status == CustomerSyncStatus.SYNCED.value:
+                            applicant.quickbooks_id = quickbooks_id
                         session.commit()
                         logger.info(f"Updated applicant {appl_id} sync status to {status}")
 
