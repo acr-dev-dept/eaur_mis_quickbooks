@@ -10,8 +10,8 @@ flask_app.logger.setLevel(logging.DEBUG)
 flask_app.logger.info("Starting QuickBooks sync task")
 celery = make_celery(flask_app)
 
-@celery.task
-def sync_payments(limit=50, offset=0):
+@celery.task(bind=True)
+def sync_payments(self, limit=50, offset=0):
     """
     Celery task to synchronize unsynchronized payments from MIS to QuickBooks.
     """
