@@ -1,6 +1,5 @@
 from celery import Celery
 from application.tasks.quickbooks_sync import celery as payment_celery
-from application.tasks.customer_sync_tasks import celery as customer_celery
 from celery.schedules import crontab
 
 # Pick one Celery instance to configure beat (usually the main one)
