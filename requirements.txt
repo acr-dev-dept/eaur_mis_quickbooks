@@ -28,8 +28,10 @@ flask-restx==1.1.0
 Flask-Session==0.5.0
 Flask-SQLAlchemy==3.0.5
 Flask-WTF==1.1.1
+flower==2.0.1
 greenlet==3.2.4
 gunicorn==21.2.0
+humanize==4.13.0
 idna==3.10
 isort==5.12.0
 itsdangerous==2.2.0
@@ -48,6 +50,7 @@ packaging==25.0
 pandas==2.0.3
 pathspec==0.12.1
 platformdirs==4.3.8
+prometheus_client==0.23.1
 prompt_toolkit==3.0.52
 pycodestyle==2.10.0
 pycparser==2.22
@@ -66,6 +69,7 @@ six==1.17.0
 SQLAlchemy==2.0.21
 structlog==23.1.0
 supervisor==4.2.5
+tornado==6.5.2
 typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.0.4
