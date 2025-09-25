@@ -177,6 +177,24 @@ class PaymentSyncService:
             self.logger.error(f"Error getting unsynchronized payments: {e}")
             raise
 
+    def get_unsynced_payments(self, limit: int = 50, offset: int = 0) -> List[Payment]:
+        """
+        API method to retrieve unsynchronized payments with pagination
+        """
+        try:
+            payments = self.get_unsynchronized_payments(limit=limit, offset=offset)
+            payment_list = [payment.to_dict() for payment in payments]
+            total_count = self.analyze_sync_requirements().not_synced
+
+            return {
+                'total_unsynced': total_count,
+                'returned_count': len(payment_list),
+                'payments': payment_list
+            }
+        except Exception as e:
+            self.logger.error(f"Error retrieving unsynced payments: {e}")
+            return {'error': str(e)}
+
     def _get_quickbooks_customer_id(self, mis_customer_id: str, customer_type: str) -> Optional[str]:
         """
         Helper to retrieve QuickBooks Customer ID from local database or QuickBooks API if needed.
