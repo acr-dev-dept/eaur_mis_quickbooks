@@ -49,8 +49,13 @@ class Config:
     MIS_DB_PASSWORD = os.environ.get('MIS_DB_PASSWORD')
     MIS_DB_NAME = os.environ.get('MIS_DB_NAME')
     
-    # Redis Configuration (for caching)
-    REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    # Celery Configuration
+    REDIS_URL = 'redis://localhost:6379/0'
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes per task
+
     
     # Logging Configuration
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
