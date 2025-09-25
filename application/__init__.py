@@ -66,6 +66,8 @@ def create_app(config_name=None):
     # Initialize Celery
     celery = make_celery(app)
 
+    app.celery_app = celery
+
     # create a home page route
     @app.route('/')
     def home():
