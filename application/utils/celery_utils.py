@@ -1,10 +1,11 @@
 from celery import Celery
 
 def make_celery(app=None):
+    """Create a new Celery object and tie together the Celery config to the app's config."""
     celery = Celery(
         __name__,
-        broker=app.config.get("CELERY_BROKER_URL"),
-        backend=app.config.get("CELERY_RESULT_BACKEND")
+        broker=app.config.get("broker_url"),
+        backend=app.config.get("result_backend")
     )
     if app:
         # Copy config from Flask app to Celery
