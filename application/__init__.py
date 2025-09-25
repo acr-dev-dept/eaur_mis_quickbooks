@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_session import Session
 from dotenv import load_dotenv
+from celery import Celery
 
 load_dotenv()
 
@@ -62,6 +63,9 @@ def create_app(config_name=None):
     # Register error handlers
     register_error_handlers(app)
 
+    # Initialize Celery
+    celery = make_celery(app)
+
     # create a home page route
     @app.route('/')
     def home():
@@ -111,6 +115,25 @@ def create_app(config_name=None):
 
     app.logger.info(f"Application created with config: {config_name}")
     return app
+
+def make_celery(app=None):
+    celery = Celery(
+        __name__,
+        broker=app.config.get("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+        backend=app.config.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+    )
+    if app:
+        # Copy config from Flask app to Celery
+        celery.conf.update(app.config)
+
+        # Bind Flask context to Celery tasks
+        class ContextTask(celery.Task):
+            def __call__(self, *args, **kwargs):
+                with app.app_context():
+                    return self.run(*args, **kwargs)
+        celery.Task = ContextTask
+
+    return celery
 
 
 def setup_logging(app):
