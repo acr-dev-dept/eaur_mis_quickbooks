@@ -3,8 +3,8 @@ from celery import Celery
 def make_celery(app=None):
     celery = Celery(
         __name__,
-        broker=app.config.get("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-        backend=app.config.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+        broker=app.config.get("CELERY_BROKER_URL"),
+        backend=app.config.get("CELERY_RESULT_BACKEND")
     )
     if app:
         # Copy config from Flask app to Celery
