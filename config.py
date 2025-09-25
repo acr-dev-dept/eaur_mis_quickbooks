@@ -51,10 +51,10 @@ class Config:
     
     # Celery Configuration
     REDIS_URL = 'redis://localhost:6379/0'
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
-    CELERY_TASK_TRACK_STARTED = True
-    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes per task
+    broker_url = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+    result_backend = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+    task_track_started = True
+    task_time_limit = 30 * 60  # 30 minutes per task
 
     
     # Logging Configuration
