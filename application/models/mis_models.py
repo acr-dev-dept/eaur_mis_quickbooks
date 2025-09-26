@@ -662,22 +662,24 @@ class TblImvoice(MISBaseModel):
     def get_all_with_relations():
         """
         Fetch all invoices with student and applicant relations,
+        from January 1, 2025 onwards,
         ordered by date descending.
         """
         try:
             with MISBaseModel.get_session() as session:
+                start_date = datetime(2025, 1, 1)  # January 1, 2025
                 invoices = (
                     session.query(TblImvoice)
                     .options(
                         joinedload(TblImvoice.student),
                         joinedload(TblImvoice.online_application),
                     )
+                    .filter(TblImvoice.date >= start_date)
                     .order_by(TblImvoice.date.desc())
                     .all()
                 )
                 return invoices
         except Exception as e:
-            # Optional: log or raise
             print(f"Error fetching invoices: {e}")
             return []
 
