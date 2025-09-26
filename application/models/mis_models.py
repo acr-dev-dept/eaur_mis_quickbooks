@@ -723,11 +723,12 @@ class TblImvoice(MISBaseModel):
             close_session = True
 
         try:
-            invoices = (
-                session.query(TblImvoice)
-                .options(
-                    joinedload(TblImvoice.student),
-                    joinedload(TblImvoice.online_application)
+            with MISBaseModel.get_session() as session:
+                invoices = (
+                    session.query(TblImvoice)
+                    .options(
+                        joinedload(TblImvoice.student),
+                        joinedload(TblImvoice.online_application)
                 )
                 .filter(TblImvoice.date >= datetime(2025, 1, 1))
                 .order_by(TblImvoice.date.desc())
