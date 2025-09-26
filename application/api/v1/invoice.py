@@ -677,7 +677,7 @@ def get_all_mis_invoices():
             "reg_no": inv.reg_no,
             "date": inv.date.isoformat(),
             "balance": inv.balance,
-            "student_name": inv.student.fname if inv.student else None,
+            "student_name": inv.student.first_name if inv.student else None,
             "applicant_name": inv.online_application.first_name if inv.online_application else None
         }
         for inv in invoices
