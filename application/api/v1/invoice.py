@@ -668,8 +668,22 @@ def fetch_mis_invoices():
     current_app.logger.info("Fetching all MIS invoices")
     try:
         invoices = TblImvoice.fetch_from_january_2025()
-        current_app.logger.info(f"Fetched {len(invoices)} MIS invoices")
-        return jsonify({"data": invoices})
+        
+        # Convert each invoice to a dictionary
+        invoices_list = []
+        for inv in invoices:
+            invoices_list.append({
+                "id": inv.id,
+                "reg_no": inv.reg_no,
+                "balance": float(inv.balance or 0),
+                "invoice_date": inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else None,
+                "student_name": getattr(inv.online_application, "first_name", "") if inv.online_application else "",
+                "applicant_name": getattr(inv.personal_ug, "fname", "") if inv.personal_ug else "",
+                # add other fields you need
+            })
+
+        current_app.logger.info(f"Returning {len(invoices_list)} invoices")
+        return jsonify({"data": invoices_list})
     except Exception as e:
         current_app.logger.error(f"Error fetching all MIS invoices: {e}")
         return jsonify({"error": str(e)}), 500
