@@ -665,8 +665,10 @@ def get_mis_invoices():
 
 @invoices_bp.route('/get_all_mis_invoices', methods=['GET'])
 def fetch_mis_invoices():
+    current_app.logger.info("Fetching all MIS invoices")
     try:
         invoices = TblImvoice.fetch_from_january_2025()
         return jsonify({"data": invoices})
     except Exception as e:
+        current_app.logger.error(f"Error fetching all MIS invoices: {e}")
         return jsonify({"error": str(e)}), 500

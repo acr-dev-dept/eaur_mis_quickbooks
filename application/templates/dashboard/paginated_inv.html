@@ -28,7 +28,7 @@
 
 <script>
 $(document).ready(function() {
-    fetch("/api/v1/invoices/get_all_mis_invoices/")
+    fetch("/api/v1/invoices/get_all_mis_invoices")
         .then(response => response.json())
         .then(data => {
             const tbody = $("#invoices-table tbody");
