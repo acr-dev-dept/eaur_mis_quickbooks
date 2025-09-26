@@ -1,61 +1,61 @@
 {% extends "dashboard/layout.html" %}
+
 {% block content %}
-
 <div class="p-6 bg-white rounded-lg shadow">
-    <h2 class="text-2xl font-bold mb-4">Invoices (From Jan 1, 2025)</h2>
-
-    <table id="invoices-table" class="min-w-full table-auto text-sm text-left text-gray-700">
-        <thead class="bg-gray-100 uppercase text-gray-600">
+    <h2 class="text-2xl font-semibold mb-4">MIS Invoices</h2>
+    <table id="mis-invoices-table" class="stripe hover w-full">
+        <thead>
             <tr>
-                <th class="px-4 py-2">ID</th>
-                <th class="px-4 py-2">Reg No</th>
-                <th class="px-4 py-2">Date</th>
-                <th class="px-4 py-2">Balance</th>
-                <th class="px-4 py-2">Student</th>
-                <th class="px-4 py-2">Applicant</th>
+                <th>ID</th>
+                <th>Registration No</th>
+                <th>Date</th>
+                <th>Balance</th>
+                <th>Student Name</th>
+                <th>Applicant Name</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- DataTables will populate rows via AJAX -->
-        </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
-<!-- DataTables CSS & JS -->
+<!-- DataTables JS and CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    $('#invoices-table').DataTable({
+    $('#mis-invoices-table').DataTable({
+        processing: true,
+        serverSide: true,
         ajax: {
-            url: '/api/invoices',  // Flask API endpoint
-            dataSrc: 'invoices',    // JSON key containing invoice list
-            data: function(d) {
-                // Optional: send additional params like from_date
-                d.from_date = '2025-01-01';
+            url: '/api/v1/mis-invoices/',
+            type: 'GET',
+            dataSrc: function(json) {
+                // Handle API errors gracefully
+                if (json.error) {
+                    alert('Error: ' + json.error);
+                    return [];
+                }
+                return json.data;
             }
         },
         columns: [
             { data: 'id' },
             { data: 'reg_no' },
-            { 
-                data: 'date',
-                render: function(data) {
-                    return data ? data.split('T')[0] : '-';
-                }
-            },
-            { data: 'balance' },
-            { data: 'student_name', defaultContent: '-' },
-            { data: 'applicant_name', defaultContent: '-' }
+            { data: 'date' },
+            { data: 'balance', render: $.fn.dataTable.render.number(',', '.', 2, 'Rwf') },
+            { data: 'student_name' },
+            { data: 'applicant_name' }
         ],
-        pageLength: 10,
+        order: [[2, 'desc']], // default order by date descending
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
         responsive: true,
-        processing: true,
-        serverSide: true  // Optional: enable if backend supports paginated queries
+        language: {
+            emptyTable: "No invoices found from January 1, 2025."
+        }
     });
 });
 </script>
-
 {% endblock %}
