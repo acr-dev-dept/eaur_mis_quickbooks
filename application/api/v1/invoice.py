@@ -664,7 +664,7 @@ def get_mis_invoices():
         )
 
 @invoices_bp.route('/get_all_mis_invoices', methods=['GET'])
-def get_mis_invoices():
+def fetch_mis_invoices():
     try:
         invoices = TblImvoice.fetch_from_january_2025()
         return jsonify({"data": invoices})
