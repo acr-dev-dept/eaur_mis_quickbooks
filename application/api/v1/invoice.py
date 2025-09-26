@@ -668,6 +668,7 @@ def fetch_mis_invoices():
     current_app.logger.info("Fetching all MIS invoices")
     try:
         invoices = TblImvoice.fetch_from_january_2025()
+        current_app.logger.info(f"Fetched {len(invoices)} MIS invoices")
         return jsonify({"data": invoices})
     except Exception as e:
         current_app.logger.error(f"Error fetching all MIS invoices: {e}")
