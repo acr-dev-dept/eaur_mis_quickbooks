@@ -1,73 +1,62 @@
 {% extends "dashboard/layout.html" %}
 
 {% block content %}
-<div class="p-6 bg-white rounded-lg shadow">
-    <h2 class="text-2xl font-semibold mb-4">MIS Invoices</h2>
+<div class="container mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-4">MIS Invoices from Jan 2025</h2>
 
-    <!-- Live Search Input -->
-    <div class="mb-4">
-        <input type="text" id="invoice-search" placeholder="Search invoices..." 
-               class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300">
-    </div>
-
-    <table id="mis-invoices-table" class="stripe hover w-full">
-        <thead>
+    <table id="invoices-table" class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
             <tr>
-                <th>ID</th>
-                <th>Registration No</th>
-                <th>Date</th>
-                <th>Balance</th>
-                <th>Student Name</th>
-                <th>Applicant Name</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">ID</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Reg No</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Date</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Balance</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Student Name</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">Applicant Name</th>
             </tr>
         </thead>
-        <tbody></tbody>
+        <tbody class="bg-white divide-y divide-gray-200">
+            <!-- Data will be injected here -->
+        </tbody>
     </table>
 </div>
 
-<!-- DataTables JS and CSS -->
+<!-- DataTables and jQuery (CDN) -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    const table = $('#mis-invoices-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '/api/v1/mis-invoices/',
-            type: 'GET',
-            dataSrc: function(json) {
-                if (json.error) {
-                    alert('Error: ' + json.error);
-                    return [];
-                }
-                return json.data;
-            }
-        },
-        columns: [
-            { data: 'id' },
-            { data: 'reg_no' },
-            { data: 'date' },
-            { data: 'balance', render: $.fn.dataTable.render.number(',', '.', 2, '$') },
-            { data: 'student_name' },
-            { data: 'applicant_name' }
-        ],
-        order: [[2, 'desc']],
-        pageLength: 25,
-        lengthMenu: [10, 25, 50, 100],
-        responsive: true,
-        language: {
-            emptyTable: "No invoices found from January 1, 2025."
-        }
-    });
+    fetch("/api/v1/invoices/get_all_mis_invoices/")
+        .then(response => response.json())
+        .then(data => {
+            const tbody = $("#invoices-table tbody");
+            data.data.forEach(inv => {
+                tbody.append(`
+                    <tr>
+                        <td class="px-4 py-2">${inv.id}</td>
+                        <td class="px-4 py-2">${inv.reg_no}</td>
+                        <td class="px-4 py-2">${inv.date}</td>
+                        <td class="px-4 py-2">${inv.balance.toFixed(2)}</td>
+                        <td class="px-4 py-2">${inv.student_name}</td>
+                        <td class="px-4 py-2">${inv.applicant_name}</td>
+                    </tr>
+                `);
+            });
 
-    // Live search filter
-    $('#invoice-search').on('keyup', function() {
-        table.search(this.value).draw();
-    });
+            // Initialize DataTables after data is loaded
+            $('#invoices-table').DataTable({
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                ordering: true,
+                searching: true,
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching invoices:", err);
+            $("#invoices-table tbody").append(`<tr><td colspan="6" class="text-center text-red-500">Failed to load data</td></tr>`);
+        });
 });
 </script>
 {% endblock %}
