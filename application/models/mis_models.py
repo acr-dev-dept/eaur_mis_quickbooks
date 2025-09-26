@@ -712,6 +712,49 @@ class TblImvoice(MISBaseModel):
             print(f"Error fetching invoices: {e}")
             return [], 0
 
+    @staticmethod
+    def fetch_from_january_2025(session=None):
+        """
+        Fetch invoices from Jan 1, 2025 with related student and applicant info.
+        """
+        close_session = False
+        if session is None:
+            session = MISBaseModel.get_session()
+            close_session = True
+
+        try:
+            invoices = (
+                session.query(TblImvoice)
+                .options(
+                    joinedload(TblImvoice.student),
+                    joinedload(TblImvoice.online_application)
+                )
+                .filter(TblImvoice.date >= datetime(2025, 1, 1))
+                .order_by(TblImvoice.date.desc())
+                .all()
+            )
+
+            # Optional: convert to dict for JSON
+            result = []
+            for inv in invoices:
+                result.append({
+                    "id": inv.id,
+                    "reg_no": inv.reg_no,
+                    "date": inv.date.strftime("%Y-%m-%d") if inv.date else "",
+                    "balance": float(inv.balance or 0),
+                    "student_name": f"{inv.student.fname} {inv.student.lname}" if inv.student else "",
+                    "applicant_name": f"{inv.online_application.first_name} {inv.online_application.family_name}" 
+                                      if inv.online_application else ""
+                })
+            return result
+
+        except Exception as e:
+            print(f"Error fetching invoices: {e}")
+            return []
+        finally:
+            if close_session:
+                session.close()
+
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'

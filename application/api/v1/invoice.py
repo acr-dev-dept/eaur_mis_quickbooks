@@ -664,68 +664,9 @@ def get_mis_invoices():
         )
 
 @invoices_bp.route('/get_all_mis_invoices', methods=['GET'])
-def get_all_mis_invoices():
-    """
-    Server-side pagination for MIS invoices.
-    Accepts DataTables parameters: start, length, search[value], order[0][column], order[0][dir]
-    """
+def get_mis_invoices():
     try:
-        start = int(request.args.get('start', 0))
-        length = int(request.args.get('length', 25))
-        search_value = request.args.get('search[value]', '').strip()
-        order_col_index = request.args.get('order[0][column]', 2)  # default sort by date
-        order_dir = request.args.get('order[0][dir]', 'desc')
-
-        # Columns mapping (adjust if needed)
-        columns = ['id', 'reg_no', 'date', 'balance', 'student_name', 'applicant_name']
-
-        with MISBaseModel.get_session() as session:
-            query = session.query(TblImvoice).options(
-                joinedload(TblImvoice.student),
-                joinedload(TblImvoice.online_application)
-            ).filter(TblImvoice.date >= '2025-01-01')
-
-            # Apply search filter
-            if search_value:
-                query = query.filter(TblImvoice.reg_no.ilike(f"%{search_value}%"))
-
-            records_total = query.count()
-
-            # Apply sorting
-            order_column = columns[int(order_col_index)]
-            if order_dir == 'desc':
-                query = query.order_by(getattr(TblImvoice, order_column).desc())
-            else:
-                query = query.order_by(getattr(TblImvoice, order_column))
-
-            # Pagination
-            invoices = query.offset(start).limit(length).all()
-
-            # Prepare response data
-            data = []
-            for inv in invoices:
-                data.append({
-                    "id": inv.id,
-                    "reg_no": inv.reg_no,
-                    "date": inv.date.strftime("%Y-%m-%d") if inv.date else "",
-                    "balance": float(inv.balance or 0),
-                    "student_name": inv.student.full_name if inv.student else "",
-                    "applicant_name": inv.online_application.full_name if inv.online_application else ""
-                })
-
-            return jsonify({
-                "draw": int(request.args.get('draw', 1)),
-                "recordsTotal": records_total,
-                "recordsFiltered": records_total,  # adjust if applying search filters
-                "data": data
-            })
-
+        invoices = TblImvoice.fetch_from_january_2025()
+        return jsonify({"data": invoices})
     except Exception as e:
-        print(f"Error fetching MIS invoices: {e}")
-        return jsonify({
-            "draw": int(request.args.get('draw', 1)),
-            "recordsTotal": 0,
-            "recordsFiltered": 0,
-            "data": [],
-            "error": str(e)
-        })
+        return jsonify({"error": str(e)}), 500

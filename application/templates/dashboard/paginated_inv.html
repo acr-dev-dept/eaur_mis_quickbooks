@@ -3,6 +3,13 @@
 {% block content %}
 <div class="p-6 bg-white rounded-lg shadow">
     <h2 class="text-2xl font-semibold mb-4">MIS Invoices</h2>
+
+    <!-- Live Search Input -->
+    <div class="mb-4">
+        <input type="text" id="invoice-search" placeholder="Search invoices..." 
+               class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300">
+    </div>
+
     <table id="mis-invoices-table" class="stripe hover w-full">
         <thead>
             <tr>
@@ -25,14 +32,14 @@
 
 <script>
 $(document).ready(function() {
-    $('#mis-invoices-table').DataTable({
+    // Initialize DataTable
+    const table = $('#mis-invoices-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
             url: '/api/v1/mis-invoices/',
             type: 'GET',
             dataSrc: function(json) {
-                // Handle API errors gracefully
                 if (json.error) {
                     alert('Error: ' + json.error);
                     return [];
@@ -44,17 +51,22 @@ $(document).ready(function() {
             { data: 'id' },
             { data: 'reg_no' },
             { data: 'date' },
-            { data: 'balance', render: $.fn.dataTable.render.number(',', '.', 2, 'Rwf') },
+            { data: 'balance', render: $.fn.dataTable.render.number(',', '.', 2, '$') },
             { data: 'student_name' },
             { data: 'applicant_name' }
         ],
-        order: [[2, 'desc']], // default order by date descending
+        order: [[2, 'desc']],
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
         responsive: true,
         language: {
             emptyTable: "No invoices found from January 1, 2025."
         }
+    });
+
+    // Live search filter
+    $('#invoice-search').on('keyup', function() {
+        table.search(this.value).draw();
     });
 });
 </script>
