@@ -454,7 +454,7 @@ class TblImvoice(MISBaseModel):
     module = relationship("Modules", backref="invoices", lazy='joined')
     intake = relationship("TblIntake", backref="invoices", lazy='joined')
     fee_category_rel = relationship("TblIncomeCategory", backref="invoices", lazy='joined')
-    online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblOnlineApplication.tracking_no)")
+    online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblOnlineApplication.tracking_id)")
     student = relationship("TblStudent", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblStudent.reg_no)")
 
 
