@@ -15,6 +15,7 @@ from sqlalchemy.orm import relationship
 from application.utils.database import db_manager
 from application import db
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload, foreign
 
 
 class MISBaseModel(db.Model):
