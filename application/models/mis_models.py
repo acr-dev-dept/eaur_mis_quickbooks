@@ -657,7 +657,6 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
-
     @staticmethod
     def get_all_with_relations():
         """
@@ -666,14 +665,21 @@ class TblImvoice(MISBaseModel):
         """
         try:
             with MISBaseModel.get_session() as session:
-                invoices = session.query(TblImvoice)
-                .options(
-                    joinedload(TblImvoice.student),
-                    joinedload(TblImvoice.online_application),
+                invoices = (
+                    session.query(TblImvoice)
+                    .options(
+                        joinedload(TblImvoice.student),
+                        joinedload(TblImvoice.online_application),
+                    )
+                    .order_by(TblImvoice.date.desc())
+                    .all()
                 )
-                .order_by(TblImvoice.date.desc())
-                .all()
                 return invoices
+        except Exception as e:
+            # Optional: log or raise
+            print(f"Error fetching invoices: {e}")
+            return []
+
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
