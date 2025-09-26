@@ -454,7 +454,7 @@ class TblImvoice(MISBaseModel):
     module = relationship("Modules", backref="invoices", lazy='joined')
     intake = relationship("TblIntake", backref="invoices", lazy='joined')
     fee_category_rel = relationship("TblIncomeCategory", backref="invoices", lazy='joined')
-    online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined')
+    online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblOnlineApplication.tracking_no)")
     student = relationship("TblStudent", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblStudent.reg_no)")
 
 
@@ -1323,6 +1323,7 @@ class TblPersonalUg(MISBaseModel):
     qk_id = db.Column(db.String)
     pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
+    
 
     # QuickBooks sync tracking field (additional to existing fields)
     QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
