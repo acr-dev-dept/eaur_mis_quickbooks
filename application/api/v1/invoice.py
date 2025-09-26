@@ -662,3 +662,30 @@ def get_mis_invoices():
             details=str(e),
             status_code=500
         )
+
+@invoices_bp.route('/get_all_mis_invoices', methods=['GET'])
+def get_all_mis_invoices():
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+
+    invoices, total = TblImvoice.get_paginated(page=page, per_page=per_page)
+
+    # Example: convert to dict for JSON response
+    invoices_data = [
+        {
+            "id": inv.id,
+            "reg_no": inv.reg_no,
+            "date": inv.date.isoformat(),
+            "balance": inv.balance,
+            "student_name": inv.student.fname if inv.student else None,
+            "applicant_name": inv.online_application.first_name if inv.online_application else None
+        }
+        for inv in invoices
+    ]
+
+    return jsonify({
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "invoices": invoices_data
+    })

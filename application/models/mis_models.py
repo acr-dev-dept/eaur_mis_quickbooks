@@ -682,7 +682,35 @@ class TblImvoice(MISBaseModel):
         except Exception as e:
             print(f"Error fetching invoices: {e}")
             return []
+    @staticmethod
+    def get_paginated(page: int = 1, per_page: int = 50, start_date: datetime = datetime(2025, 1, 1)):
+        """
+        Fetch invoices with relations, paginated.
+        :param page: Current page number (starts at 1)
+        :param per_page: Number of records per page
+        :param start_date: Fetch invoices from this date
+        :return: tuple (invoices_list, total_count)
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                query = (
+                    session.query(TblImvoice)
+                    .options(
+                        joinedload(TblImvoice.student),
+                        joinedload(TblImvoice.online_application)
+                    )
+                    .filter(TblImvoice.date >= start_date)
+                    .order_by(TblImvoice.date.desc())
+                )
 
+                total_count = query.count()  # total invoices matching criteria
+                invoices = query.offset((page - 1) * per_page).limit(per_page).all()
+                
+                return invoices, total_count
+
+        except Exception as e:
+            print(f"Error fetching invoices: {e}")
+            return [], 0
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
