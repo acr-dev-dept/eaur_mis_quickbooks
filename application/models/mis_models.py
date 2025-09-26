@@ -455,7 +455,7 @@ class TblImvoice(MISBaseModel):
     intake = relationship("TblIntake", backref="invoices", lazy='joined')
     fee_category_rel = relationship("TblIncomeCategory", backref="invoices", lazy='joined')
     online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblOnlineApplication.tracking_id)")
-    student = relationship("TblStudent", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblStudent.reg_no)")
+    student = relationship("TblPersonalUg", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblPersonalUg.reg_no)")
 
 
     def __repr__(self):
