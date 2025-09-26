@@ -658,6 +658,23 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
 
+    @staticmethod
+    def get_all_with_relations():
+        """
+        Fetch all invoices with student and applicant relations,
+        ordered by date descending.
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoices = session.query(TblImvoice)
+                .options(
+                    joinedload(TblImvoice.student),
+                    joinedload(TblImvoice.online_application),
+                )
+                .order_by(TblImvoice.date.desc())
+                .all()
+                return invoices
+
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'

@@ -628,15 +628,7 @@ def get_mis_invoices():
     Ordered by date descending
     """
     try:
-        invoices = (
-            db.session.query(TblImvoice)
-            .options(
-                joinedload(TblImvoice.student),
-                joinedload(TblImvoice.online_application),
-            )
-            .order_by(TblImvoice.date.desc())
-            .all()
-        )
+        invoices = TblImvoice.get_all_with_relations()
 
         results = []
         for inv in invoices:
