@@ -453,6 +453,8 @@ class TblImvoice(MISBaseModel):
     module = relationship("Modules", backref="invoices", lazy='joined')
     intake = relationship("TblIntake", backref="invoices", lazy='joined')
     fee_category_rel = relationship("TblIncomeCategory", backref="invoices", lazy='joined')
+    online_application = relationship("TblOnlineApplication", backref="invoices", lazy='joined')
+    student = relationship("TblStudent", backref="invoices", lazy='joined', primaryjoin="TblImvoice.reg_no==foreign(TblStudent.reg_no)")
 
 
     def __repr__(self):

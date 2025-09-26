@@ -1,0 +1,87 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Dashboard - MIS ↔ QBO{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Sync Entity Cards -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+  <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
+    <i class="fi fi-rr-user-add text-indigo-600 text-3xl"></i>
+    <div>
+      <p class="text-gray-500">Applicants</p>
+      <h2 class="text-2xl font-bold text-indigo-600">320</h2>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
+    <i class="fi fi-rr-users-alt text-green-600 text-3xl"></i>
+    <div>
+      <p class="text-gray-500">Students</p>
+      <h2 class="text-2xl font-bold text-green-600">1,245</h2>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
+    <i class="fi fi-rr-file-invoice-dollar text-yellow-600 text-3xl"></i>
+    <div>
+      <p class="text-gray-500">Invoices</p>
+      <h2 class="text-2xl font-bold text-yellow-600">893</h2>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
+    <i class="fi fi-rr-credit-card text-red-600 text-3xl"></i>
+    <div>
+      <p class="text-gray-500">Payments</p>
+      <h2 class="text-2xl font-bold text-red-600">1,080</h2>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
+    <i class="fi fi-rr-box-open text-purple-600 text-3xl"></i>
+    <div>
+      <p class="text-gray-500">Items (Fees)</p>
+      <h2 class="text-2xl font-bold text-purple-600">56</h2>
+    </div>
+  </div>
+</div>
+
+<!-- Sync History Chart -->
+<div class="bg-white rounded-2xl shadow p-6">
+  <h3 class="font-semibold text-gray-800 mb-4">Sync History</h3>
+  <canvas id="syncHistoryChart" height="100"></canvas>
+</div>
+
+<!-- Sync Queue Status -->
+<div class="bg-white rounded-2xl shadow p-6">
+  <h3 class="font-semibold text-gray-800 mb-4">Sync Queue Status</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="flex items-center p-4 bg-indigo-50 rounded-xl">
+      <i class="fi fi-rr-time-quarter-to text-indigo-600 text-3xl mr-4"></i>
+      <div>
+        <p class="text-gray-500">Queued</p>
+        <h2 class="text-xl font-bold text-indigo-600">45</h2>
+      </div>
+    </div>
+    <div class="flex items-center p-4 bg-yellow-50 rounded-xl">
+      <i class="fi fi-rr-refresh text-yellow-600 text-3xl mr-4 animate-spin"></i>
+      <div>
+        <p class="text-gray-500">In Progress</p>
+        <h2 class="text-xl font-bold text-yellow-600">12</h2>
+      </div>
+    </div>
+    <div class="flex items-center p-4 bg-red-50 rounded-xl">
+      <i class="fi fi-rr-undo text-red-600 text-3xl mr-4"></i>
+      <div>
+        <p class="text-gray-500">Retried</p>
+        <h2 class="text-xl font-bold text-red-600">6</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="bg-white rounded-2xl shadow overflow-hidden">
+  <div class="p-4 border-b flex justify-between items-center">
+    <h3 class="font-semibold text-gray-800">Recent Transactions</h3>
+    <button class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Sync Now</button>
+  </div>
+  <table class="w-full text-left border-collapse">
+    <thead class="bg-gra

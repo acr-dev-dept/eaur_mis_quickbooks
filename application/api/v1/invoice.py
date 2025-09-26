@@ -11,6 +11,7 @@ from application.services.invoice_sync import InvoiceSyncService
 from datetime import datetime
 from application.models.mis_models import TblImvoice
 
+
 invoices_bp = Blueprint('invoices', __name__)
 
 # Standard response format
@@ -619,3 +620,53 @@ def sync_single_invoice():
             status_code=500
         )
     
+
+@invoices_bp.route('/get_mis_invoices', methods=['GET'])
+def get_mis_invoices():
+    """
+    Fetch all invoices with student/applicant details
+    Ordered by date descending
+    """
+    try:
+        invoices = (
+            db.session.query(TblImvoice)
+            .options(
+                joinedload(TblImvoice.student),
+                joinedload(TblImvoice.online_application),
+            )
+            .order_by(TblImvoice.date.desc())
+            .all()
+        )
+
+        results = []
+        for inv in invoices:
+            # Prefer student relationship if available, else fallback to applicant
+            student_id = None
+            names = None
+
+            if inv.student:
+                student_id = inv.student.id
+                names = f"{inv.student.first_name} {inv.student.last_name}"
+            elif inv.online_application:
+                student_id = inv.online_application.id
+                names = f"{inv.online_application.first_name} {inv.online_application.last_name}"
+
+            results.append({
+                "id": inv.id,
+                "student_id": student_id,
+                "reg_no": inv.reg_no,
+                "names": names,
+                "date": inv.date.strftime("%Y-%m-%d") if inv.date else None,
+                "quickbooks_id": inv.quickbooks_id,
+            })
+
+        return render_template('/dashboard/mis_invoices.html', invoices=results)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching MIS invoices: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error='Error fetching MIS invoices',
+            details=str(e),
+            status_code=500
+        )
