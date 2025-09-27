@@ -148,7 +148,7 @@ class BankSyncService:
         try:
             with db_manager.get_mis_session() as session:
                 query = session.query(TblBank).filter(
-                    or_(TblBank.QuickBk_Status == BankSyncStatus.NOT_SYNCED.value, TblBank.QuickBk_Status.is_(None))
+                    or_(TblBank.status == BankSyncStatus.NOT_SYNCED.value, TblBank.QuickBk_Status.is_(None))
                 ).order_by(TblBank.bank_id.asc())
 
                 if limit:
