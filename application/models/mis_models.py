@@ -275,7 +275,7 @@ class Payment(MISBaseModel):
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
     __tablename__ = 'tbl_bank'
-    
+
     bank_id = db.Column(db.Integer, nullable=False, primary_key=True)
     bank_code = db.Column(db.String(10), nullable=False)
     bank_name = db.Column(db.String(100), nullable=False)
@@ -283,7 +283,11 @@ class TblBank(MISBaseModel):
     account_no = db.Column(db.String(30))
     currency = db.Column(db.String(10), nullable=False)
     status = db.Column(db.String(10), nullable=False)
-    quickbook = db.Column(db.String(10))
+    qk_id = db.Column(db.String(255))  # QuickBooks Account ID
+
+    # QuickBooks sync tracking fields
+    pushed_by = db.Column(db.String(200), default='System Auto Push')
+    pushed_date = db.Column(DateTime)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -305,7 +309,9 @@ class TblBank(MISBaseModel):
             'account_no': self.account_no,
             'currency': self.currency,
             'status': self.status,
-            'quickbook': self.quickbook
+            'qk_id': self.qk_id,
+            'pushed_by': self.pushed_by,
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
         }
 
     @classmethod
