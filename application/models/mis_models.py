@@ -285,7 +285,7 @@ class TblBank(MISBaseModel):
     status = db.Column(db.String(10), nullable=False)
     qk_id = db.Column(db.String(255))  # QuickBooks Account ID
 
-    # QuickBooks sync tracking fields
+    # QuickBooks sync tracking fields (using existing status field)
     pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
 
