@@ -65,9 +65,11 @@ class BankSyncResult:
     error_message: Optional[str] = None
     traceback: Optional[str] = None
     duration: Optional[float] = None
+    already_synced: bool = False  # New field to indicate if bank was already synced
+    action_taken: Optional[str] = None  # What action was taken (created, skipped, verified, etc.)
 
     def __init__(self, status, message, success, quickbooks_id=None, details=None,
-                 error_message=None, traceback=None, duration=None):
+                 error_message=None, traceback=None, duration=None, already_synced=False, action_taken=None):
         self.status = status
         self.message = message
         self.success = success
@@ -76,6 +78,8 @@ class BankSyncResult:
         self.error_message = error_message
         self.traceback = traceback
         self.duration = duration
+        self.already_synced = already_synced
+        self.action_taken = action_taken
 
     def to_dict(self) -> Dict:
         return {
@@ -86,7 +90,9 @@ class BankSyncResult:
             'details': self.details,
             'error_message': self.error_message,
             'traceback': self.traceback,
-            'duration': self.duration
+            'duration': self.duration,
+            'already_synced': self.already_synced,
+            'action_taken': self.action_taken
         }
 
 
@@ -285,6 +291,112 @@ class BankSyncService:
             self.logger.error(f"Error getting bank for ID {bank_id}: {e}")
             return None
 
+    def _is_bank_already_synced_status_based(self, bank: TblBank) -> Dict[str, Any]:
+        """
+        Check sync state using status field as primary indicator with qk_id validation
+
+        This is the robust hybrid approach that provides operational intelligence
+        and maintains consistency with existing payment/customer sync patterns.
+
+        Args:
+            bank (TblBank): Bank to check
+
+        Returns:
+            Dict containing sync status analysis
+        """
+        sync_status_enum = self._safe_get_sync_status(bank.status)
+
+        analysis = {
+            'is_synced': False,
+            'has_qb_id': bool(bank.qk_id and bank.qk_id.strip()),
+            'sync_status': sync_status_enum,
+            'sync_status_value': bank.status,
+            'qb_id': bank.qk_id,
+            'pushed_date': bank.pushed_date,
+            'data_consistent': False,
+            'issues': [],
+            'recommendation': None
+        }
+
+        # Primary check: Status field indicates sync state
+        if sync_status_enum == BankSyncStatus.SYNCED:
+            analysis['is_synced'] = True
+
+            # Secondary validation: Ensure qk_id exists for data consistency
+            if analysis['has_qb_id']:
+                analysis['data_consistent'] = True
+                analysis['recommendation'] = 'SKIP_ALREADY_SYNCED'
+            else:
+                analysis['issues'].append('Bank marked as synced but missing QuickBooks ID')
+                analysis['recommendation'] = 'VERIFY_OR_RESYNC'
+
+        elif sync_status_enum == BankSyncStatus.IN_PROGRESS:
+            analysis['issues'].append('Bank sync appears to be in progress')
+            analysis['recommendation'] = 'CHECK_PROGRESS_OR_RETRY'
+
+        elif sync_status_enum == BankSyncStatus.FAILED:
+            analysis['issues'].append('Previous sync attempt failed')
+            analysis['recommendation'] = 'RETRY_SYNC'
+
+        else:  # NOT_SYNCED
+            analysis['recommendation'] = 'PROCEED_WITH_SYNC'
+
+        return analysis
+
+    def _is_bank_already_synced(self, bank: TblBank) -> Dict[str, Any]:
+        """
+        Check if bank is already synchronized using the hybrid status-based approach
+
+        This is the primary method that uses status field as primary indicator
+        with qk_id validation for robust duplicate detection.
+
+        Args:
+            bank (TblBank): Bank to check
+
+        Returns:
+            Dict containing sync status analysis
+        """
+        # Use the status-based approach as the primary/default method
+        return self._is_bank_already_synced_status_based(bank)
+
+    def _verify_quickbooks_account_exists(self, qb_account_id: str) -> Dict[str, Any]:
+        """
+        Verify that a QuickBooks account actually exists
+
+        Args:
+            qb_account_id (str): QuickBooks Account ID to verify
+
+        Returns:
+            Dict containing verification results
+        """
+        verification = {
+            'exists': False,
+            'account_data': None,
+            'error': None,
+            'verified_at': datetime.now().isoformat()
+        }
+
+        try:
+            qb_service = self._get_qb_service()
+
+            # Query specific account by ID
+            endpoint = f"{qb_service.realm_id}/account/{qb_account_id}"
+            response = qb_service.make_request(endpoint, method="GET")
+
+            if 'Account' in response:
+                verification['exists'] = True
+                verification['account_data'] = response['Account']
+                self.logger.info(f"Verified QuickBooks account {qb_account_id} exists")
+            else:
+                verification['error'] = 'Account not found in QuickBooks'
+                self.logger.warning(f"QuickBooks account {qb_account_id} not found")
+
+        except Exception as e:
+            verification['error'] = f"Error verifying account: {str(e)}"
+            self.logger.error(f"Error verifying QuickBooks account {qb_account_id}: {e}")
+
+        return verification
+
     def _decide_currency_handling(self, bank: TblBank) -> Dict[str, Any]:
         """
         Intelligently decide how to handle currency for this bank
@@ -479,14 +591,80 @@ class BankSyncService:
             self.logger.error(error_msg)
             return None, error_msg
 
-    def sync_single_bank(self, bank: TblBank) -> BankSyncResult:
+    def sync_single_bank(self, bank: TblBank, force_resync: bool = False) -> BankSyncResult:
         """
-        Synchronize a single bank to QuickBooks Chart of Accounts
+        Synchronize a single bank to QuickBooks Chart of Accounts with duplicate handling
+
+        Args:
+            bank (TblBank): Bank to synchronize
+            force_resync (bool): If True, bypass duplicate checks and force re-sync
+
+        Returns:
+            BankSyncResult: Result of synchronization attempt
         """
         start_time = time.time()
+        log_prefix = self.config.get('log_prefix', '[BANK_SYNC]')
 
         try:
+            # Step 1: Check if bank is already synchronized (unless forced)
+            if not force_resync:
+                sync_analysis = self._is_bank_already_synced(bank)
+
+                if sync_analysis['recommendation'] == 'SKIP_ALREADY_SYNCED':
+                    # Bank is properly synced - verify QB account still exists
+                    verification = self._verify_quickbooks_account_exists(sync_analysis['qb_id'])
+
+                    if verification['exists']:
+                        # Perfect - bank is synced and QB account exists
+                        self.logger.info(f"{log_prefix} Bank {bank.bank_id} already synchronized (QB ID: {sync_analysis['qb_id']})")
+                        self._log_sync_audit(bank.bank_id, 'SKIPPED', f"Already synced to QB Account ID: {sync_analysis['qb_id']}")
+
+                        return BankSyncResult(
+                            status=BankSyncStatus.SYNCED,
+                            message=f"Bank {bank.bank_id} ({bank.bank_name}) is already synchronized",
+                            success=True,
+                            quickbooks_id=sync_analysis['qb_id'],
+                            duration=time.time() - start_time,
+                            already_synced=True,
+                            action_taken='SKIPPED_ALREADY_SYNCED',
+                            details={
+                                'sync_date': sync_analysis['pushed_date'].isoformat() if sync_analysis['pushed_date'] else None,
+                                'quickbooks_account': verification['account_data']
+                            }
+                        )
+                    else:
+                        # Data inconsistency - QB account missing
+                        self.logger.warning(f"{log_prefix} Bank {bank.bank_id} marked as synced but QB account {sync_analysis['qb_id']} not found")
+                        self._log_sync_audit(bank.bank_id, 'WARNING', f"QB Account {sync_analysis['qb_id']} not found - will re-sync")
+                        # Continue with sync to fix inconsistency
+
+                elif sync_analysis['recommendation'] == 'VERIFY_OR_RESYNC':
+                    # Bank marked as synced but missing QB ID - data inconsistency
+                    self.logger.warning(f"{log_prefix} Bank {bank.bank_id} has inconsistent sync state: {sync_analysis['issues']}")
+                    self._log_sync_audit(bank.bank_id, 'WARNING', f"Inconsistent sync state: {', '.join(sync_analysis['issues'])}")
+                    # Continue with sync to fix inconsistency
+
+                elif sync_analysis['recommendation'] == 'CHECK_PROGRESS_OR_RETRY':
+                    # Bank is in progress - check how long it's been
+                    if sync_analysis['pushed_date']:
+                        time_since_start = datetime.now() - sync_analysis['pushed_date']
+                        if time_since_start.total_seconds() < 300:  # Less than 5 minutes
+                            return BankSyncResult(
+                                status=BankSyncStatus.IN_PROGRESS,
+                                message=f"Bank {bank.bank_id} sync is already in progress (started {time_since_start.total_seconds():.0f}s ago)",
+                                success=False,
+                                duration=time.time() - start_time,
+                                already_synced=False,
+                                action_taken='SKIPPED_IN_PROGRESS',
+                                error_message="Sync already in progress - try again later"
+                            )
+                    # If too much time has passed, continue with sync
+                    self.logger.info(f"{log_prefix} Bank {bank.bank_id} sync appears stalled - proceeding with fresh sync")
+
+            # Step 2: Proceed with synchronization
+            self.logger.info(f"{log_prefix} Starting synchronization for bank {bank.bank_id} ({bank.bank_name})")
             self._update_bank_sync_status(bank.bank_id, BankSyncStatus.IN_PROGRESS.value)
+
             qb_service = self._get_qb_service()
             account_data, map_error = self.map_bank_to_quickbooks_account(bank)
 
@@ -500,9 +678,11 @@ class BankSyncService:
                     message=f"Failed to synchronize bank {bank.bank_id} due to mapping error",
                     success=False,
                     error_message=map_error,
-                    duration=time.time() - start_time
+                    duration=time.time() - start_time,
+                    action_taken='FAILED_MAPPING'
                 )
 
+            # Step 3: Create account in QuickBooks
             response = qb_service.create_account(qb_service.realm_id, account_data)
             self.logger.debug(f"QuickBooks response for bank {bank.bank_id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
 
@@ -514,15 +694,17 @@ class BankSyncService:
                     quickbooks_id=qb_account_id
                 )
                 self._log_sync_audit(bank.bank_id, 'SUCCESS', f"Synced to QuickBooks Account ID: {qb_account_id}")
-                result = BankSyncResult(
+
+                action = 'CREATED_NEW' if not force_resync else 'FORCE_RESYNCED'
+                return BankSyncResult(
                     status=BankSyncStatus.SYNCED,
-                    message=f"Bank {bank.bank_id} synchronized successfully",
+                    message=f"Bank {bank.bank_id} ({bank.bank_name}) synchronized successfully",
                     success=True,
                     details=response,
                     quickbooks_id=qb_account_id,
-                    duration=time.time() - start_time
+                    duration=time.time() - start_time,
+                    action_taken=action
                 )
-                return result
             else:
                 error_detail = "Unknown error during bank sync."
                 if "Fault" in response and "Error" in response['Fault']:
@@ -536,7 +718,8 @@ class BankSyncService:
                     success=False,
                     error_message=error_detail,
                     details=response,
-                    duration=time.time() - start_time
+                    duration=time.time() - start_time,
+                    action_taken='FAILED_QB_CREATE'
                 )
 
         except Exception as e:
@@ -549,15 +732,15 @@ class BankSyncService:
             self._update_bank_sync_status(bank.bank_id, BankSyncStatus.FAILED.value)
             self._log_sync_audit(bank.bank_id, 'ERROR', error_msg)
 
-            result = BankSyncResult(
+            return BankSyncResult(
                 status=BankSyncStatus.FAILED,
                 message=f"Exception during bank sync for bank {bank.bank_id}",
                 success=False,
                 error_message=error_msg,
                 traceback=tb,
-                duration=duration
+                duration=duration,
+                action_taken='FAILED_EXCEPTION'
             )
-            return result
 
     def get_bank_status(self, bank_id: int) -> Dict:
         """
