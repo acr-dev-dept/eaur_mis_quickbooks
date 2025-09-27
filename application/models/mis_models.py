@@ -157,6 +157,7 @@ class Payment(MISBaseModel):
     QuickBk_Status = db.Column(db.Integer, default='0')
     pushed_by = db.Column(db.String(200))
     pushed_date = db.Column(DateTime)
+    qk_id = db.Column(db.String(255))  # QuickBooks Payment ID
 
     # Relationships
     level = relationship("TblLevel", backref="payments", lazy='joined')
@@ -202,7 +203,8 @@ class Payment(MISBaseModel):
             'invoi_ref': self.invoi_ref,
             'QuickBk_Status': self.QuickBk_Status,
             'pushed_by': self.pushed_by,
-            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'qk_id': self.qk_id
         }
     
     @classmethod
