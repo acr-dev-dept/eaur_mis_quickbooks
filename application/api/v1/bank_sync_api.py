@@ -69,45 +69,70 @@ def sync_single_bank(bank_id: int):
                 'timestamp': datetime.now().isoformat()
             }), 404
 
-        # Check if bank is already synced
-        sync_service_temp = BankSyncService()
-        current_sync_status = sync_service_temp._safe_get_sync_status(bank.status)
-        if current_sync_status == BankSyncStatus.SYNCED and bank.qk_id:
-            return jsonify({
-                'message': f'Bank {bank_id} is already synchronized',
-                'status': 'already_synced',
-                'bank_id': bank_id,
-                'bank_name': bank.bank_name,
-                'quickbooks_id': bank.qk_id,
-                'sync_date': bank.pushed_date.isoformat() if bank.pushed_date else None,
-                'timestamp': datetime.now().isoformat()
-            }), 200
+        # Get force_resync parameter
+        force_resync = request.args.get('force', 'false').lower() == 'true'
 
-        # Perform synchronization
-        result = sync_service.sync_single_bank(bank)
+        # Perform synchronization with duplicate handling
+        result = sync_service.sync_single_bank(bank, force_resync=force_resync)
 
+        # Handle different result scenarios
         if result.success:
-            current_app.logger.info(f"Bank sync successful for bank ID: {bank_id}")
-            return jsonify({
+            current_app.logger.info(f"Bank sync successful for bank ID: {bank_id} - Action: {result.action_taken}")
+
+            # Determine HTTP status code based on action taken
+            status_code = 200
+            if result.already_synced:
+                status_code = 200  # OK - already synced
+            elif result.action_taken == 'CREATED_NEW':
+                status_code = 201  # Created - new account created
+
+            response_data = {
                 'message': result.message,
                 'status': 'success',
                 'bank_id': bank_id,
                 'bank_name': bank.bank_name,
                 'quickbooks_id': result.quickbooks_id,
                 'duration': result.duration,
+                'already_synced': result.already_synced,
+                'action_taken': result.action_taken,
                 'timestamp': datetime.now().isoformat()
-            }), 200
+            }
+
+            # Add additional details for already-synced banks
+            if result.already_synced and result.details:
+                response_data['sync_details'] = {
+                    'sync_date': result.details.get('sync_date'),
+                    'quickbooks_account_name': result.details.get('quickbooks_account', {}).get('Name') if result.details.get('quickbooks_account') else None
+                }
+
+            return jsonify(response_data), status_code
+
         else:
-            current_app.logger.error(f"Bank sync failed for bank ID: {bank_id} - {result.error_message}")
-            return jsonify({
-                'error': result.error_message,
-                'message': result.message,
-                'status': 'failed',
-                'bank_id': bank_id,
-                'bank_name': bank.bank_name,
-                'duration': result.duration,
-                'timestamp': datetime.now().isoformat()
-            }), 500
+            # Handle different types of failures
+            if result.status == BankSyncStatus.IN_PROGRESS:
+                current_app.logger.info(f"Bank sync in progress for bank ID: {bank_id}")
+                return jsonify({
+                    'message': result.message,
+                    'status': 'in_progress',
+                    'bank_id': bank_id,
+                    'bank_name': bank.bank_name,
+                    'action_taken': result.action_taken,
+                    'duration': result.duration,
+                    'timestamp': datetime.now().isoformat(),
+                    'retry_suggestion': 'Try again in a few minutes or use ?force=true to override'
+                }), 409  # Conflict - operation in progress
+            else:
+                current_app.logger.error(f"Bank sync failed for bank ID: {bank_id} - {result.error_message}")
+                return jsonify({
+                    'error': result.error_message,
+                    'message': result.message,
+                    'status': 'failed',
+                    'bank_id': bank_id,
+                    'bank_name': bank.bank_name,
+                    'action_taken': result.action_taken,
+                    'duration': result.duration,
+                    'timestamp': datetime.now().isoformat()
+                }), 500
 
     except Exception as e:
         current_app.logger.error(f"Exception during bank sync for bank {bank_id}: {str(e)}")
@@ -282,27 +307,104 @@ def analyze_bank_sync_requirements():
         }), 500
 
 
+@bank_sync_bp.route('/force_resync_bank/<int:bank_id>', methods=['POST'])
+def force_resync_bank(bank_id: int):
+    """
+    Force re-synchronization of a bank, bypassing duplicate checks
+
+    Args:
+        bank_id (int): The ID of the bank to force re-sync
+
+    Returns:
+        JSON response with synchronization result
+    """
+    try:
+        # Validate QuickBooks connection
+        connection_error = validate_quickbooks_connection()
+        if connection_error:
+            return connection_error
+
+        current_app.logger.info(f"Starting FORCE re-sync for bank ID: {bank_id}")
+
+        # Initialize sync service
+        sync_service = BankSyncService()
+
+        # Get bank details
+        bank = sync_service.get_bank_by_id(bank_id)
+        if not bank:
+            return jsonify({
+                'error': f'Bank with ID {bank_id} not found',
+                'status': 'error',
+                'bank_id': bank_id,
+                'timestamp': datetime.now().isoformat()
+            }), 404
+
+        # Force synchronization (bypass duplicate checks)
+        result = sync_service.sync_single_bank(bank, force_resync=True)
+
+        if result.success:
+            current_app.logger.info(f"Force re-sync successful for bank ID: {bank_id}")
+            return jsonify({
+                'message': f'Bank {bank_id} force re-synchronized successfully',
+                'status': 'success',
+                'bank_id': bank_id,
+                'bank_name': bank.bank_name,
+                'quickbooks_id': result.quickbooks_id,
+                'action_taken': result.action_taken,
+                'duration': result.duration,
+                'timestamp': datetime.now().isoformat(),
+                'warning': 'Force re-sync may create duplicate accounts if the original still exists in QuickBooks'
+            }), 201
+        else:
+            current_app.logger.error(f"Force re-sync failed for bank ID: {bank_id} - {result.error_message}")
+            return jsonify({
+                'error': result.error_message,
+                'message': result.message,
+                'status': 'failed',
+                'bank_id': bank_id,
+                'bank_name': bank.bank_name,
+                'action_taken': result.action_taken,
+                'duration': result.duration,
+                'timestamp': datetime.now().isoformat()
+            }), 500
+
+    except Exception as e:
+        current_app.logger.error(f"Exception during force re-sync for bank {bank_id}: {str(e)}")
+        return jsonify({
+            'error': f'Internal server error during force re-sync: {str(e)}',
+            'status': 'error',
+            'bank_id': bank_id,
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+
 @bank_sync_bp.route('/health', methods=['GET'])
 def health_check():
     """
     Health check endpoint for bank sync service
-    
+
     Returns:
         JSON response with service health status
     """
     try:
         # Check QuickBooks connection
         qb_connected = QuickBooksConfig.is_connected()
-        
+
         # Initialize sync service to test basic functionality
         sync_service = BankSyncService()
-        
+
         return jsonify({
             'service': 'Bank Sync API',
             'status': 'healthy',
             'quickbooks_connected': qb_connected,
             'timestamp': datetime.now().isoformat(),
-            'version': '1.0.0'
+            'version': '2.0.0',  # Updated version with duplicate handling
+            'features': [
+                'duplicate_detection',
+                'force_resync',
+                'quickbooks_verification',
+                'intelligent_currency_handling'
+            ]
         }), 200
 
     except Exception as e:
