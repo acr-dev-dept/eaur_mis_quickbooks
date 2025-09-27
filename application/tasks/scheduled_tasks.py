@@ -8,7 +8,7 @@ celery = payment_celery  # you can also make a dedicated celery instance if you 
 celery.conf.beat_schedule = {
     "sync-payments-every-5-min": {
         "task": "application.tasks.quickbooks_sync.sync_payments",
-        "schedule": 300.0,  # every 5 minutes
+        "schedule": 120.0,  # every 5 minutes
         "args": (),
     }
 }
