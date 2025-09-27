@@ -23,6 +23,7 @@ from application.utils.database import db_manager
 from application import db
 from application.helpers.json_encoder import EnhancedJSONEncoder
 from application.helpers.SafeStringify import safe_stringify
+from application.config.bank_sync_config import BankSyncConfig, DEFAULT_CONFIG
 
 
 class BankSyncStatus(Enum):
@@ -94,12 +95,24 @@ class BankSyncService:
     Service for synchronizing MIS banks to QuickBooks Chart of Accounts
     """
 
-    def __init__(self):
+    def __init__(self, config=None):
         self.qb_service = None
         self.batch_size = 20  # Banks are fewer, smaller batches
         self.max_retries = 3
         self.retry_delay = 5  # seconds
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Load configuration (defaults to current environment setting)
+        self.config = config or DEFAULT_CONFIG
+        self.environment = self.config.get('environment', 'SANDBOX')
+        self.qb_base_currency = self.config.get('qb_base_currency', 'USD')
+        self.mis_primary_currency = self.config.get('mis_primary_currency', 'RWF')
+        self.currency_strategy = self.config.get('currency_strategy', 'AUTO_DETECT')
+        self.enable_multi_currency_detection = self.config.get('enable_multi_currency_detection', True)
+
+        self.logger.info(f"BankSyncService initialized for {self.environment} environment")
+        self.logger.info(f"QB base currency: {self.qb_base_currency}, MIS primary: {self.mis_primary_currency}")
+        self.logger.info(f"Currency strategy: {self.currency_strategy}")
 
     def to_dict(self) -> Dict:
         return {
@@ -118,6 +131,92 @@ class BankSyncService:
                 raise Exception("QuickBooks is not connected. Please authenticate first.")
             self.qb_service = QuickBooks()
         return self.qb_service
+
+    def _is_multicurrency_enabled(self) -> bool:
+        """
+        DEPRECATED: Not needed for single-currency EAUR environment
+        Kept for backward compatibility if needed in future
+        """
+        """
+        Check if QuickBooks company has multi-currency enabled
+
+        Returns:
+            bool: True if multi-currency is enabled, False otherwise
+        """
+        try:
+            # First try the simple currency query method
+            if self._test_multicurrency_support():
+                return True
+
+            # Fallback: Try company info method
+            qb_service = self._get_qb_service()
+
+            # Get company information to check multi-currency status
+            endpoint = f"{qb_service.realm_id}/companyinfo/{qb_service.realm_id}"
+            response = qb_service.make_request(endpoint, method="GET")
+
+            if 'CompanyInfo' in response:
+                company_info = response['CompanyInfo'][0] if isinstance(response['CompanyInfo'], list) else response['CompanyInfo']
+                # Check for multi-currency preference
+                multicurrency_enabled = company_info.get('QBORealmID') is not None and \
+                                      company_info.get('Country') != 'US'  # Basic heuristic
+
+                self.logger.info(f"Multi-currency enabled from company info: {multicurrency_enabled}")
+                return multicurrency_enabled
+
+            # Final fallback: Try to get preferences
+            prefs_endpoint = f"{qb_service.realm_id}/preferences"
+            prefs_response = qb_service.make_request(prefs_endpoint, method="GET")
+
+            if 'Preferences' in prefs_response:
+                # Look for currency preferences
+                preferences = prefs_response['Preferences']
+                if 'CurrencyPrefs' in preferences:
+                    multicurrency = preferences['CurrencyPrefs'].get('MultiCurrencyEnabled', False)
+                    self.logger.info(f"Multi-currency from preferences: {multicurrency}")
+                    return multicurrency
+
+            # Default to False (single currency) to avoid errors
+            self.logger.warning("Could not determine multi-currency status, defaulting to False")
+            return False
+
+        except Exception as e:
+            self.logger.warning(f"Error checking multi-currency status: {e}. Defaulting to False")
+            return False
+
+    def _test_multicurrency_support(self) -> bool:
+        """
+        DEPRECATED: Not needed for single-currency EAUR environment
+        Alternative method: Test multi-currency support by attempting to query currencies
+
+        Returns:
+            bool: True if multi-currency is supported, False otherwise
+        """
+        try:
+            qb_service = self._get_qb_service()
+
+            # Try to query available currencies - this will fail if multi-currency is disabled
+            endpoint = f"{qb_service.realm_id}/query"
+            query = "SELECT * FROM Currency MAXRESULTS 1"
+
+            response = qb_service.make_request(
+                endpoint,
+                method="POST",
+                data=query,
+                headers={"Content-Type": "application/text"}
+            )
+
+            # If we get currencies back, multi-currency is enabled
+            if 'Currency' in response:
+                self.logger.info("Multi-currency detected via Currency query")
+                return True
+
+            return False
+
+        except Exception as e:
+            # If currency query fails, multi-currency is likely disabled
+            self.logger.info(f"Currency query failed (multi-currency likely disabled): {e}")
+            return False
 
     def analyze_sync_requirements(self) -> BankSyncStats:
         """
@@ -186,6 +285,80 @@ class BankSyncService:
             self.logger.error(f"Error getting bank for ID {bank_id}: {e}")
             return None
 
+    def _decide_currency_handling(self, bank: TblBank) -> Dict[str, Any]:
+        """
+        Intelligently decide how to handle currency for this bank
+
+        Args:
+            bank (TblBank): The bank being synchronized
+
+        Returns:
+            Dict containing currency decision and rationale
+        """
+        decision = {
+            'include_currency_ref': False,
+            'currency_value': None,
+            'strategy_used': None,
+            'rationale': None
+        }
+
+        bank_currency = (bank.currency or self.mis_primary_currency).upper()
+
+        if self.currency_strategy == 'OMIT':
+            # Always omit CurrencyRef - QB will use base currency
+            decision.update({
+                'include_currency_ref': False,
+                'strategy_used': 'OMIT',
+                'rationale': f'Omitting CurrencyRef - QB will use base currency ({self.qb_base_currency})'
+            })
+
+        elif self.currency_strategy == 'FORCE_BASE':
+            # Always use QB base currency
+            decision.update({
+                'include_currency_ref': True,
+                'currency_value': self.qb_base_currency,
+                'strategy_used': 'FORCE_BASE',
+                'rationale': f'Forcing QB base currency ({self.qb_base_currency})'
+            })
+
+        elif self.currency_strategy == 'MATCH_BANK':
+            # Use bank's actual currency
+            decision.update({
+                'include_currency_ref': True,
+                'currency_value': self._map_currency(bank_currency),
+                'strategy_used': 'MATCH_BANK',
+                'rationale': f'Using bank currency ({bank_currency})'
+            })
+
+        elif self.currency_strategy == 'AUTO_DETECT':
+            # Intelligent decision based on environment and currencies
+            if bank_currency == self.qb_base_currency:
+                # Perfect match - omit CurrencyRef
+                decision.update({
+                    'include_currency_ref': False,
+                    'strategy_used': 'AUTO_DETECT_MATCH',
+                    'rationale': f'Bank currency ({bank_currency}) matches QB base ({self.qb_base_currency}) - omitting CurrencyRef'
+                })
+            else:
+                # Currency mismatch - check if multi-currency is enabled
+                if self.enable_multi_currency_detection and self._is_multicurrency_enabled():
+                    # Multi-currency enabled - use bank's currency
+                    decision.update({
+                        'include_currency_ref': True,
+                        'currency_value': self._map_currency(bank_currency),
+                        'strategy_used': 'AUTO_DETECT_MULTI',
+                        'rationale': f'Multi-currency enabled - using bank currency ({bank_currency})'
+                    })
+                else:
+                    # Multi-currency disabled - omit CurrencyRef (QB will use base currency)
+                    decision.update({
+                        'include_currency_ref': False,
+                        'strategy_used': 'AUTO_DETECT_FALLBACK',
+                        'rationale': f'Multi-currency disabled - omitting CurrencyRef, QB will use base currency ({self.qb_base_currency})'
+                    })
+
+        return decision
+
     def _map_currency(self, mis_currency: str) -> str:
         """
         Map MIS currency codes to QuickBooks currency codes
@@ -194,9 +367,12 @@ class BankSyncService:
             'RWF': 'RWF',
             'USD': 'USD',
             'EUR': 'EUR',
-            'GBP': 'GBP'
+            'GBP': 'GBP',
+            'KES': 'KES',  # Kenyan Shilling
+            'TZS': 'TZS',  # Tanzanian Shilling
+            'UGX': 'UGX'   # Ugandan Shilling
         }
-        return currency_map.get(mis_currency.upper(), 'RWF')  # Default to RWF
+        return currency_map.get(mis_currency.upper(), self.qb_base_currency)
 
     def _safe_get_sync_status(self, status_value) -> BankSyncStatus:
         """
@@ -245,11 +421,11 @@ class BankSyncService:
 
     def map_bank_to_quickbooks_account(self, bank: TblBank) -> Tuple[Optional[Dict], Optional[str]]:
         """
-        Map MIS bank to QuickBooks Account format
-        
+        Map MIS bank to QuickBooks Account format with intelligent currency handling
+
         Args:
             bank (TblBank): MIS bank object
-            
+
         Returns:
             Tuple[Optional[Dict], Optional[str]]: (account_data, error_message)
         """
@@ -257,21 +433,44 @@ class BankSyncService:
             if not bank.bank_name:
                 return None, "Bank name is required"
 
-            # Create account name combining bank name and branch
-            account_name = f"{bank.bank_name}"
-            if bank.bank_branch and bank.bank_branch.strip():
-                account_name += f" - {bank.bank_branch}"
+            # Make currency decision
+            currency_decision = self._decide_currency_handling(bank)
 
+            # Create account name using template
+            name_template = self.config.get('account_name_template', '{bank_name} - {bank_branch}')
+            account_name = name_template.format(
+                bank_name=bank.bank_name,
+                bank_branch=bank.bank_branch or '',
+                currency=bank.currency or self.mis_primary_currency
+            ).strip(' -')
+
+            # Create description using template
+            desc_template = self.config.get('description_template', 'MIS Bank ID: {bank_id} - {bank_name} {bank_branch}')
+            description = desc_template.format(
+                bank_id=bank.bank_id,
+                bank_name=bank.bank_name,
+                bank_branch=bank.bank_branch or '',
+                currency=bank.currency or self.mis_primary_currency
+            ).strip()
+
+            # Base account data
             account_data = {
                 "Name": account_name,
                 "AccountType": "Bank",
-                "AccountSubType": "Checking",  # Default to Checking account
+                "AccountSubType": "Checking",
                 "AcctNum": bank.account_no or "",
-                "Description": f"MIS Bank ID: {bank.bank_id} - {bank.bank_name} {bank.bank_branch or ''}".strip(),
-                "CurrencyRef": {
-                    "value": self._map_currency(bank.currency)
-                }
+                "Description": description
             }
+
+            # Add currency reference if decision says to include it
+            if currency_decision['include_currency_ref'] and currency_decision['currency_value']:
+                account_data["CurrencyRef"] = {
+                    "value": currency_decision['currency_value']
+                }
+
+            # Log the decision
+            log_prefix = self.config.get('log_prefix', '[BANK_SYNC]')
+            self.logger.info(f"{log_prefix} Bank {bank.bank_id} mapping: {currency_decision['rationale']}")
 
             return account_data, None
 
