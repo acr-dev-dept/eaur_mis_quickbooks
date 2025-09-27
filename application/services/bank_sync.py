@@ -117,16 +117,16 @@ class BankSyncService:
             with db_manager.get_mis_session() as session:
                 total_banks = session.query(func.count(TblBank.bank_id)).scalar()
                 not_synced = session.query(func.count(TblBank.bank_id)).filter(
-                    or_(TblBank.QuickBk_Status == BankSyncStatus.NOT_SYNCED.value, TblBank.QuickBk_Status.is_(None))
+                    or_(TblBank.status == BankSyncStatus.NOT_SYNCED.value, TblBank.status.is_(None))
                 ).scalar()
                 synced = session.query(func.count(TblBank.bank_id)).filter(
-                    TblBank.QuickBk_Status == BankSyncStatus.SYNCED.value
+                    TblBank.status == BankSyncStatus.SYNCED.value
                 ).scalar()
                 failed = session.query(func.count(TblBank.bank_id)).filter(
-                    TblBank.QuickBk_Status == BankSyncStatus.FAILED.value
+                    TblBank.status == BankSyncStatus.FAILED.value
                 ).scalar()
                 in_progress = session.query(func.count(TblBank.bank_id)).filter(
-                    TblBank.QuickBk_Status == BankSyncStatus.IN_PROGRESS.value
+                    TblBank.status == BankSyncStatus.IN_PROGRESS.value
                 ).scalar()
 
                 return BankSyncStats(
@@ -148,7 +148,7 @@ class BankSyncService:
         try:
             with db_manager.get_mis_session() as session:
                 query = session.query(TblBank).filter(
-                    or_(TblBank.status == BankSyncStatus.NOT_SYNCED.value, TblBank.QuickBk_Status.is_(None))
+                    or_(TblBank.status == BankSyncStatus.NOT_SYNCED.value, TblBank.status.is_(None))
                 ).order_by(TblBank.bank_id.asc())
 
                 if limit:
@@ -321,8 +321,8 @@ class BankSyncService:
                 'bank_id': bank.bank_id,
                 'bank_name': bank.bank_name,
                 'bank_branch': bank.bank_branch,
-                'sync_status': bank.QuickBk_Status,
-                'sync_status_name': BankSyncStatus(bank.QuickBk_Status or 0).name,
+                'sync_status': bank.status,
+                'sync_status_name': BankSyncStatus(bank.status or 0).name,
                 'quickbooks_id': bank.qk_id,
                 'pushed_by': bank.pushed_by,
                 'pushed_date': bank.pushed_date.isoformat() if bank.pushed_date else None,
@@ -344,7 +344,7 @@ class BankSyncService:
             with db_manager.get_mis_session() as session:
                 bank = session.query(TblBank).filter(TblBank.bank_id == bank_id).first()
                 if bank:
-                    bank.QuickBk_Status = status
+                    bank.status = status
                     bank.pushed_date = datetime.now()
                     bank.pushed_by = "BankSyncService"
                     if quickbooks_id and status == BankSyncStatus.SYNCED.value:
