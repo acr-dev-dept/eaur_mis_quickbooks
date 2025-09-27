@@ -38,6 +38,11 @@ class Config:
     QUICKBOOKS_PRODUCTION_BASE_URL = os.environ.get('QUICK_BOOKS_BASEURL_PRODUCTION')
     QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID = os.environ.get('QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID', '35') # Default to '35' (e.g., Checking)
     QUICKBOOKS_DEFAULT_PAYMENT_METHOD_ID = os.environ.get('QUICKBOOKS_DEFAULT_PAYMENT_METHOD_ID', '2')   # Default to '2' (e.g., Cash)
+
+    # Payment Sync Configuration - Dynamic Bank Account Lookup
+    PAYMENT_SYNC_ALLOW_FALLBACK_ACCOUNT = os.environ.get('PAYMENT_SYNC_ALLOW_FALLBACK_ACCOUNT', 'true').lower() == 'true'  # Allow fallback to default account
+    PAYMENT_SYNC_ENABLE_AUTO_BANK_SYNC = os.environ.get('PAYMENT_SYNC_ENABLE_AUTO_BANK_SYNC', 'false').lower() == 'true'  # Auto-sync banks during payment processing
+    PAYMENT_SYNC_VERIFY_BANK_ACCOUNTS = os.environ.get('PAYMENT_SYNC_VERIFY_BANK_ACCOUNTS', 'true').lower() == 'true'     # Verify QB accounts exist before use
     
     # Encryption Configuration
     FERNET_KEY = os.environ.get('FERNET_KEY')

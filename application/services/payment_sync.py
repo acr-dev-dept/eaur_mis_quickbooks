@@ -97,6 +97,7 @@ class PaymentSyncService:
         self.max_retries = 3
         self.retry_delay = 5  # seconds
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.bank_sync_service = None  # Lazy load for bank operations
 
     def to_dict(self) -> Dict:
         return {
@@ -210,6 +211,174 @@ class PaymentSyncService:
                 return student.qk_id if student else None
         return None
 
+    def _get_deposit_account_id(self, payment: Payment, enable_auto_sync: bool = None) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Get QuickBooks deposit account ID for payment with dynamic bank lookup and verification
+
+        Args:
+            payment (Payment): Payment object with bank relationship
+            enable_auto_sync (bool): Whether to auto-sync bank if not synced (defaults to config)
+
+        Returns:
+            Tuple[account_id, error_message]: QuickBooks account ID or error message
+        """
+        try:
+            # Step 1: Check if payment has associated bank
+            if not payment.bank_id:
+                return None, "Payment has no associated bank_id"
+
+            if not payment.bank:
+                return None, f"Bank relationship not found for bank_id {payment.bank_id}"
+
+            bank_name = payment.bank.bank_name or f"Bank ID {payment.bank_id}"
+
+            # Step 2: Check if bank is synced to QuickBooks
+            if not payment.bank.qk_id or not payment.bank.qk_id.strip():
+                # Bank not synced - check if auto-sync is enabled
+                if enable_auto_sync is None:
+                    enable_auto_sync = current_app.config.get('PAYMENT_SYNC_ENABLE_AUTO_BANK_SYNC', False)
+
+                if enable_auto_sync:
+                    self.logger.info(f"Bank '{bank_name}' not synced, attempting auto-sync for payment {payment.id}")
+
+                    # Attempt to auto-sync the bank
+                    auto_sync_result = self._auto_sync_bank(payment.bank)
+
+                    if auto_sync_result['success']:
+                        # Auto-sync successful, use the new QuickBooks ID
+                        qb_account_id = auto_sync_result['quickbooks_id']
+                        self.logger.info(f"Auto-sync successful for bank '{bank_name}', using QB account ID: {qb_account_id}")
+                        return qb_account_id, None
+                    else:
+                        # Auto-sync failed
+                        return None, f"Bank '{bank_name}' (ID: {payment.bank_id}) auto-sync failed: {auto_sync_result['message']}"
+                else:
+                    # Auto-sync disabled
+                    return None, f"Bank '{bank_name}' (ID: {payment.bank_id}) not synced to QuickBooks"
+
+            # Step 3: Bank has QB ID - verify it still exists (optional verification)
+            enable_verification = current_app.config.get('PAYMENT_SYNC_VERIFY_BANK_ACCOUNTS', True)
+
+            if enable_verification:
+                verification = self._verify_bank_account_exists(payment.bank.qk_id)
+
+                if not verification['exists']:
+                    error_msg = f"QuickBooks account {payment.bank.qk_id} for bank '{bank_name}' no longer exists"
+                    if verification.get('error'):
+                        error_msg += f": {verification['error']}"
+
+                    # Account doesn't exist - could attempt re-sync here if desired
+                    return None, error_msg
+
+            # Step 4: Return verified QuickBooks account ID
+            self.logger.info(f"Using dynamic QuickBooks account ID '{payment.bank.qk_id}' for bank '{bank_name}' (ID: {payment.bank_id})")
+            return payment.bank.qk_id, None
+
+        except Exception as e:
+            error_msg = f"Error retrieving deposit account ID for payment {payment.id}: {str(e)}"
+            self.logger.error(error_msg)
+            return None, error_msg
+
+    def _get_fallback_account_id(self) -> str:
+        """
+        Get fallback QuickBooks account ID from configuration
+
+        Returns:
+            str: Fallback account ID
+        """
+        fallback_id = current_app.config.get('QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID', "35")
+        self.logger.warning(f"Using fallback QuickBooks account ID: {fallback_id}")
+        return fallback_id
+
+    def _get_bank_sync_service(self):
+        """
+        Get bank sync service instance for bank operations
+
+        Returns:
+            BankSyncService: Bank sync service instance
+        """
+        if not self.bank_sync_service:
+            from application.services.bank_sync import BankSyncService
+            self.bank_sync_service = BankSyncService()
+        return self.bank_sync_service
+
+    def _verify_bank_account_exists(self, qb_account_id: str) -> Dict[str, Any]:
+        """
+        Verify that QuickBooks bank account still exists using bank sync service
+
+        Args:
+            qb_account_id (str): QuickBooks Account ID to verify
+
+        Returns:
+            Dict containing verification results
+        """
+        try:
+            bank_sync_service = self._get_bank_sync_service()
+            verification = bank_sync_service._verify_quickbooks_account_exists(qb_account_id)
+
+            if verification['exists']:
+                self.logger.debug(f"Verified QuickBooks account {qb_account_id} exists for payment sync")
+            else:
+                self.logger.warning(f"QuickBooks account {qb_account_id} not found during payment sync verification")
+
+            return verification
+
+        except Exception as e:
+            self.logger.error(f"Error verifying QuickBooks account {qb_account_id}: {e}")
+            return {
+                'exists': False,
+                'error': f"Verification failed: {str(e)}",
+                'verified_at': datetime.now().isoformat()
+            }
+
+    def _auto_sync_bank(self, bank) -> Dict[str, Any]:
+        """
+        Automatically sync bank to QuickBooks if not already synced
+
+        Args:
+            bank: TblBank object to sync
+
+        Returns:
+            Dict containing sync result
+        """
+        try:
+            bank_sync_service = self._get_bank_sync_service()
+
+            self.logger.info(f"Attempting auto-sync for bank {bank.bank_id} ({bank.bank_name}) during payment processing")
+
+            # Perform bank sync
+            sync_result = bank_sync_service.sync_single_bank(bank)
+
+            result = {
+                'success': sync_result.success,
+                'quickbooks_id': sync_result.quickbooks_id,
+                'message': sync_result.message,
+                'action_taken': getattr(sync_result, 'action_taken', 'UNKNOWN')
+            }
+
+            if sync_result.success:
+                self.logger.info(f"Auto-sync successful for bank {bank.bank_id}: QB ID {sync_result.quickbooks_id}")
+                # Log audit entry for auto-sync
+                self._log_sync_audit(f"BANK_AUTO_SYNC_{bank.bank_id}", 'SUCCESS',
+                                   f"Auto-synced bank {bank.bank_name} (ID: {bank.bank_id}) to QB ID: {sync_result.quickbooks_id}")
+            else:
+                self.logger.error(f"Auto-sync failed for bank {bank.bank_id}: {sync_result.error_message}")
+                self._log_sync_audit(f"BANK_AUTO_SYNC_{bank.bank_id}", 'ERROR',
+                                   f"Auto-sync failed for bank {bank.bank_name} (ID: {bank.bank_id}): {sync_result.error_message}")
+
+            return result
+
+        except Exception as e:
+            error_msg = f"Exception during auto-sync for bank {bank.bank_id}: {str(e)}"
+            self.logger.error(error_msg)
+            self._log_sync_audit(f"BANK_AUTO_SYNC_{bank.bank_id}", 'ERROR', error_msg)
+            return {
+                'success': False,
+                'quickbooks_id': None,
+                'message': error_msg,
+                'action_taken': 'FAILED_EXCEPTION'
+            }
+
     def map_payment_to_quickbooks(self, payment: Payment) -> Tuple[Optional[Dict], Optional[str]]:
         """
         Map MIS payment data to QuickBooks Payment API format
@@ -256,14 +425,22 @@ class PaymentSyncService:
             # Determine payment amount
             amount = float(payment.amount or 0)
 
-            # Determine deposit to account (e.g., bank account)
-            # This would ideally be dynamically mapped from MIS bank_id to QuickBooks Account ID
-            # For now, using a placeholder.
-            deposit_account_id = current_app.config.get('QUICKBOOKS_DEFAULT_DEPOSIT_ACCOUNT_ID', "35") # Use configurable default
-            if payment.bank and payment.bank.quickbook: # Assuming quickbook field in TblBank stores QB account ID
-                deposit_account_id = 35 #payment.bank.quickbook
-            else:
-                self.logger.warning(f"QuickBooks account ID not found for bank {payment.bank_id}. Using default: {deposit_account_id}")
+            # Determine deposit to account using dynamic bank lookup
+            deposit_account_id, bank_error = self._get_deposit_account_id(payment)
+
+            if bank_error:
+                # Handle bank sync dependency with fallback strategy
+                self.logger.warning(f"Bank lookup failed for payment {payment.id}: {bank_error}")
+
+                # Check if fallback is allowed (configurable)
+                allow_fallback = current_app.config.get('PAYMENT_SYNC_ALLOW_FALLBACK_ACCOUNT', True)
+
+                if allow_fallback:
+                    deposit_account_id = self._get_fallback_account_id()
+                    self.logger.warning(f"Using fallback account {deposit_account_id} for payment {payment.id} due to: {bank_error}")
+                else:
+                    # Strict mode - fail payment sync if bank not synced
+                    return None, f"Payment sync failed: {bank_error}. Fallback account disabled."
 
             # Reference to an invoice if applicable
             linked_invoices = []
