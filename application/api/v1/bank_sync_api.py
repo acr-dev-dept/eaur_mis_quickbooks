@@ -70,7 +70,7 @@ def sync_single_bank(bank_id: int):
             }), 404
 
         # Check if bank is already synced
-        if bank.QuickBk_Status == BankSyncStatus.SYNCED.value and bank.qk_id:
+        if bank.status == BankSyncStatus.SYNCED.value and bank.qk_id:
             return jsonify({
                 'message': f'Bank {bank_id} is already synchronized',
                 'status': 'already_synced',
@@ -159,8 +159,8 @@ def get_unsynced_banks():
                 'account_no': bank.account_no,
                 'currency': bank.currency,
                 'status': bank.status,
-                'sync_status': bank.QuickBk_Status or 0,
-                'sync_status_name': BankSyncStatus(bank.QuickBk_Status or 0).name,
+                'sync_status': bank.status or 0,
+                'sync_status_name': BankSyncStatus(bank.status or 0).name,
                 'quickbooks_id': bank.qk_id,
                 'pushed_by': bank.pushed_by,
                 'pushed_date': bank.pushed_date.isoformat() if bank.pushed_date else None
