@@ -26,7 +26,17 @@ from application.helpers.SafeStringify import safe_stringify
 
 
 class BankSyncStatus(Enum):
-    """Enumeration for bank synchronization status."""
+    """
+    Enumeration for bank synchronization status.
+
+    These values are stored in the tbl_bank.status field:
+    - 0: Bank not synchronized to QuickBooks
+    - 1: Bank successfully synchronized to QuickBooks
+    - 2: Bank synchronization failed
+    - 3: Bank synchronization in progress
+
+    Note: The status field serves dual purpose - original bank status AND sync status
+    """
     NOT_SYNCED = 0
     SYNCED = 1
     FAILED = 2
@@ -188,6 +198,51 @@ class BankSyncService:
         }
         return currency_map.get(mis_currency.upper(), 'RWF')  # Default to RWF
 
+    def _safe_get_sync_status(self, status_value) -> BankSyncStatus:
+        """
+        Safely convert database status value to BankSyncStatus enum
+
+        Args:
+            status_value: The status value from database (could be int, str, or None)
+
+        Returns:
+            BankSyncStatus: The corresponding enum value, defaults to NOT_SYNCED
+        """
+        try:
+            # Handle None or empty values
+            if status_value is None or status_value == '':
+                return BankSyncStatus.NOT_SYNCED
+
+            # Convert to integer if it's a string
+            if isinstance(status_value, str):
+                try:
+                    status_value = int(status_value)
+                except ValueError:
+                    # If string can't be converted to int, check for known string values
+                    status_map = {
+                        'active': BankSyncStatus.NOT_SYNCED,
+                        'inactive': BankSyncStatus.NOT_SYNCED,
+                        'synced': BankSyncStatus.SYNCED,
+                        'failed': BankSyncStatus.FAILED,
+                        'in_progress': BankSyncStatus.IN_PROGRESS
+                    }
+                    return status_map.get(status_value.lower(), BankSyncStatus.NOT_SYNCED)
+
+            # Try to create enum from integer value
+            if isinstance(status_value, int):
+                try:
+                    return BankSyncStatus(status_value)
+                except ValueError:
+                    # If integer is not a valid enum value, default to NOT_SYNCED
+                    return BankSyncStatus.NOT_SYNCED
+
+            # Default fallback
+            return BankSyncStatus.NOT_SYNCED
+
+        except Exception as e:
+            self.logger.warning(f"Error converting status value '{status_value}' to BankSyncStatus: {e}")
+            return BankSyncStatus.NOT_SYNCED
+
     def map_bank_to_quickbooks_account(self, bank: TblBank) -> Tuple[Optional[Dict], Optional[str]]:
         """
         Map MIS bank to QuickBooks Account format
@@ -317,12 +372,14 @@ class BankSyncService:
                     'bank_id': bank_id
                 }
 
+            sync_status_enum = self._safe_get_sync_status(bank.status)
             return {
                 'bank_id': bank.bank_id,
                 'bank_name': bank.bank_name,
                 'bank_branch': bank.bank_branch,
                 'sync_status': bank.status,
-                'sync_status_name': BankSyncStatus(bank.status or 0).name,
+                'sync_status_name': sync_status_enum.name,
+                'sync_status_value': sync_status_enum.value,
                 'quickbooks_id': bank.qk_id,
                 'pushed_by': bank.pushed_by,
                 'pushed_date': bank.pushed_date.isoformat() if bank.pushed_date else None,
