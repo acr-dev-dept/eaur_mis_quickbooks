@@ -652,7 +652,7 @@ def get_mis_invoices():
         })
 
 # HTML page route
-@invoices_bp.route('/invoices', methods=['GET'])
+@invoices_bp.route('/', methods=['GET'])
 def invoices_page():
     """Render the invoices page with empty table skeleton"""
     return render_template("dashboard/invoices.html")
