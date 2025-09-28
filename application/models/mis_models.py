@@ -16,6 +16,8 @@ from application.utils.database import db_manager
 from application import db
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, foreign
+from flask import current_app
+
 
 
 class MISBaseModel(db.Model):
@@ -682,6 +684,7 @@ class TblImvoice(MISBaseModel):
                         TblImvoice.pushed_by,
                         TblImvoice.pushed_date
                     )
+                    .order_by(TblImvoice.invoice_date.desc())
                 )
 
                 total_records = query.count()
