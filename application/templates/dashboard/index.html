@@ -84,4 +84,33 @@
     <button class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Sync Now</button>
   </div>
   <table class="w-full text-left border-collapse">
-    <thead class="bg-gra
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="p-4 border-b">#</th>
+        <th class="p-4 border-b">Type</th>
+        <th class="p-4 border-b">Entity</th>
+        <th class="p-4 border-b">Status</th>
+        <th class="p-4 border-b">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="hover:bg-gray-50">
+        <td class="p-4 border-b">1</td>
+        <td class="p-4 border-b">Invoice</td>
+        <td class="p-4 border-b">INV-1001</td>
+        <td class="p-4 border-b"><span class="text-green-600 font-semibold">Synced</span></td>
+        <td class="p-4 border-b">2024-10-01</td>
+      </tr>
+      <tr class="hover:bg-gray-50">
+        <td class="p-4 border-b">2</td> 
+        <td class="p-4 border-b">Invoice</td>
+        <td class="p-4 border-b">INV-1002</td>
+        <td class="p-4 border-b"><span class="text-yellow-600 font-semibold">Pending</span></td>
+        <td class="p-4 border-b">2024-10-02</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
