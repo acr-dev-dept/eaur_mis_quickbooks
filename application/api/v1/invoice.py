@@ -621,38 +621,4 @@ def sync_single_invoice():
         )
     
 
-@invoices_bp.route('/get_mis_invoices', methods=['GET'])
-def get_mis_invoices():
-    """Server-side endpoint for DataTables pagination"""
-    try:
-        draw = int(request.args.get('draw', 1))
-        start = int(request.args.get('start', 0))
-        length = int(request.args.get('length', 50))
-        search_value = request.args.get('search[value]', None)
 
-        total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
-            start=start, length=length, search=search_value
-        )
-
-        return jsonify({
-            "draw": draw,
-            "recordsTotal": total_records,
-            "recordsFiltered": filtered_records,
-            "data": invoices
-        })
-
-    except Exception as e:
-        from flask import current_app
-        current_app.logger.error(f"Error in get_mis_invoices: {str(e)}")
-        return jsonify({
-            "draw": request.args.get('draw', 1),
-            "recordsTotal": 0,
-            "recordsFiltered": 0,
-            "data": []
-        })
-
-# HTML page route
-@invoices_bp.route('/mis_invoices', methods=['GET'])
-def invoices_page():
-    """Render the invoices page with empty table skeleton"""
-    return render_template("dashboard/invoices.html")
