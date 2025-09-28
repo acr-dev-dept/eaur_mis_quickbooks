@@ -703,8 +703,6 @@ class TblImvoice(MISBaseModel):
                     }
                     for inv in invoices
                 ]
-                current_app.logger.info(f"Fetched {len(results)} invoices successfully.")
-
                 return {"total_records": total_records, "invoices": results}
         except Exception as e:
             from flask import current_app
