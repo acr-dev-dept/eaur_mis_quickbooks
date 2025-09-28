@@ -623,67 +623,26 @@ def sync_single_invoice():
 
 @invoices_bp.route('/get_mis_invoices', methods=['GET'])
 def get_mis_invoices():
-    """
-    Fetch all invoices with student/applicant details
-    Ordered by date descending
-    """
+    """Endpoint to fetch paginated invoices"""
     try:
-        invoices = TblImvoice.get_all_with_relations()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
 
-        results = []
-        for inv in invoices:
-            # Prefer student relationship if available, else fallback to applicant
-            student_id = None
-            names = None
+        current_app.logger.info(f'Fetching MIS invoices - Page: {page}, Per Page: {per_page}')
+        paginated_invoices = TblImvoice.fetch_paginated_invoices(page, per_page)
 
-            if inv.student:
-                student_id = inv.student.id
-                names = f"{inv.student.first_name} {inv.student.last_name}"
-            elif inv.online_application:
-                student_id = inv.online_application.id
-                names = f"{inv.online_application.first_name} {inv.online_application.last_name}"
-
-            results.append({
-                "id": inv.id,
-                "student_id": student_id,
-                "reg_no": inv.reg_no,
-                "names": names,
-                "date": inv.date.strftime("%Y-%m-%d") if inv.date else None,
-                "quickbooks_id": inv.quickbooks_id,
-            })
-
-        return render_template('/dashboard/mis_invoices.html', invoices=results)
-    except Exception as e:
-        current_app.logger.error(f"Error fetching MIS invoices: {e}")
-        current_app.logger.error(traceback.format_exc())
-        return create_response(
-            success=False,
-            error='Error fetching MIS invoices',
-            details=str(e),
-            status_code=500
+        return render_template(
+            'dashboard/invoices.html',
+            **paginated_invoices,
+            page=page,
+            per_page=per_page
         )
-
-@invoices_bp.route('/get_all_mis_invoices', methods=['GET'])
-def fetch_mis_invoices():
-    current_app.logger.info("Fetching all MIS invoices")
-    try:
-        invoices = TblImvoice.fetch_from_january_2025()
-        
-        # Convert each invoice to a dictionary
-        invoices_list = []
-        for inv in invoices:
-            invoices_list.append({
-                "id": inv.id,
-                "reg_no": inv.reg_no,
-                "balance": float(inv.balance or 0),
-                "invoice_date": inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else None,
-                "student_name": getattr(inv.online_application, "first_name", "") if inv.online_application else "",
-                "applicant_name": getattr(inv.personal_ug, "fname", "") if inv.personal_ug else "",
-                # add other fields you need
-            })
-
-        current_app.logger.info(f"Returning {len(invoices_list)} invoices")
-        return jsonify({"data": invoices_list})
     except Exception as e:
-        current_app.logger.error(f"Error fetching all MIS invoices: {e}")
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"Error in get_mis_invoices: {str(e)}")
+        return render_template(
+            'dashboard/invoices.html',
+            invoices=[],
+            total_records=0,
+            page=page,
+            per_page=per_page
+        )

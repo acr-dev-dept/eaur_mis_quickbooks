@@ -1,0 +1,77 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Invoices - Sync Dashboard{% endblock %}
+
+{% block page_title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6">
+  <h2 class="text-lg font-semibold mb-4">Invoice List</h2>
+
+  <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">ID</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Reg No</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Balance</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Reference</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Invoice Date</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">QB Status</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Pushed By</th>
+        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Pushed Date</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-100">
+      {% for inv in invoices %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.id }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.reg_no }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ "%.2f"|format(inv.balance or 0) }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.reference_number }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">
+          {{ inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else "" }}
+        </td>
+        <td class="px-4 py-2 text-sm">
+          {% if inv.QuickBk_Status == 1 %}
+            <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Synced</span>
+          {% elif inv.QuickBk_Status == 2 %}
+            <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Failed</span>
+          {% else %}
+            <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">Pending</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.pushed_by or "-" }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">
+          {{ inv.pushed_date.strftime("%Y-%m-%d %H:%M") if inv.pushed_date else "" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="flex items-center justify-between mt-4">
+    <div class="text-sm text-gray-600">
+      Showing
+      <span class="font-semibold">{{ (page - 1) * per_page + 1 }}</span>
+      to
+      <span class="font-semibold">{{ min(page * per_page, total_records) }}</span>
+      of
+      <span class="font-semibold">{{ total_records }}</span>
+      results
+    </div>
+
+    <div class="flex space-x-2">
+      {% if page > 1 %}
+      <a href="{{ url_for('invoices.get_mis_invoices', page=page-1, per_page=per_page) }}"
+         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">Previous</a>
+      {% endif %}
+
+      {% if page * per_page < total_records %}
+      <a href="{{ url_for('invoices.get_mis_invoices', page=page+1, per_page=per_page) }}"
+         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -667,98 +667,49 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def get_all_with_relations():
-        """
-        Fetch all invoices with student and applicant relations,
-        from January 1, 2025 onwards,
-        ordered by date descending.
-        """
-        try:
-            with MISBaseModel.get_session() as session:
-                start_date = datetime(2025, 1, 1)  # January 1, 2025
-                invoices = (
-                    session.query(TblImvoice)
-                    .options(
-                        joinedload(TblImvoice.student),
-                        joinedload(TblImvoice.online_application),
-                    )
-                    .filter(TblImvoice.date >= start_date)
-                    .order_by(TblImvoice.date.desc())
-                    .all()
-                )
-                return invoices
-        except Exception as e:
-            print(f"Error fetching invoices: {e}")
-            return []
-    @staticmethod
-    def get_paginated(page: int = 1, per_page: int = 50, start_date: datetime = datetime(2025, 1, 1)):
-        """
-        Fetch invoices with relations, paginated.
-        :param page: Current page number (starts at 1)
-        :param per_page: Number of records per page
-        :param start_date: Fetch invoices from this date
-        :return: tuple (invoices_list, total_count)
-        """
+    def fetch_paginated_invoices(page: int = 1, per_page: int = 50):
+        """Fetch only needed columns in paginated manner"""
         try:
             with MISBaseModel.get_session() as session:
                 query = (
-                    session.query(TblImvoice)
-                    .options(
-                        joinedload(TblImvoice.student),
-                        joinedload(TblImvoice.online_application)
+                    session.query(
+                        TblImvoice.id,
+                        TblImvoice.reg_no,
+                        TblImvoice.balance,
+                        TblImvoice.reference_number,
+                        TblImvoice.invoice_date,
+                        TblImvoice.QuickBk_Status,
+                        TblImvoice.pushed_by,
+                        TblImvoice.pushed_date
                     )
-                    .filter(TblImvoice.date >= start_date)
                     .order_by(TblImvoice.date.desc())
                 )
 
-                total_count = query.count()  # total invoices matching criteria
-                invoices = query.offset((page - 1) * per_page).limit(per_page).all()
-                
-                return invoices, total_count
+                total_records = query.count()
+                invoices = query.limit(per_page).offset((page - 1) * per_page).all()
 
+                results = [
+                    {
+                        "id": inv.id,
+                        "reg_no": inv.reg_no,
+                        "balance": inv.balance,
+                        "reference_number": inv.reference_number,
+                        "invoice_date": inv.invoice_date.isoformat() if inv.invoice_date else None,
+                        "QuickBk_Status": inv.QuickBk_Status,
+                        "pushed_by": inv.pushed_by,
+                        "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else None,
+                    }
+                    for inv in invoices
+                ]
+
+                return {"total_records": total_records, "invoices": results}
         except Exception as e:
-            print(f"Error fetching invoices: {e}")
-            return [], 0
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated invoices: {str(e)}")
+            return {"total_records": 0, "invoices": []}
 
-    @staticmethod
-    def fetch_from_january_2025(session=None):
-        """
-        Fetch invoices from Jan 1, 2025 with related student and applicant info.
-        """
-        close_session = False
-        if session is None:
-            session = MISBaseModel.get_session()
-            close_session = True
 
-        try:
-            with MISBaseModel.get_session() as session:
-                invoices = (
-                    session.query(TblImvoice)
-                    .filter(TblImvoice.date >= datetime(2025, 1, 1))
-                    .order_by(TblImvoice.date.desc())
-                    .all()
-                )
 
-            # Optional: convert to dict for JSON
-            result = []
-            for inv in invoices:
-                result.append({
-                    "id": inv.id,
-                    "reg_no": inv.reg_no,
-                    "date": inv.date.strftime("%Y-%m-%d") if inv.date else "",
-                    "balance": float(inv.balance or 0),
-                    "student_name": f"{inv.student.fname} {inv.student.lname}" if inv.student else "",
-                    "applicant_name": f"{inv.online_application.first_name} {inv.online_application.family_name}" 
-                                      if inv.online_application else ""
-                })
-            return result
-
-        except Exception as e:
-            print(f"Error fetching invoices: {e}")
-            return []
-        finally:
-            if close_session:
-                session.close()
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
