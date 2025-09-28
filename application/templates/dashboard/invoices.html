@@ -7,8 +7,7 @@
 <div class="bg-white shadow rounded-lg p-6">
   <h2 class="text-lg font-semibold mb-4">Invoices</h2>
 
-  {% if invoices %}
-  <table class="w-full table-auto border-collapse border border-gray-200">
+  <table id="invoices-table" class="w-full table-auto border-collapse border border-gray-200">
     <thead>
       <tr class="bg-gray-100 text-left">
         <th class="p-2 border">#</th>
@@ -22,56 +21,59 @@
       </tr>
     </thead>
     <tbody>
-      {% for inv in invoices %}
-      <tr class="hover:bg-gray-50">
-        <td class="p-2 border">{{ inv.id }}</td>
-        <td class="p-2 border">{{ inv.reg_no }}</td>
-        <td class="p-2 border">{{ inv.reference_number or "-" }}</td>
-        <td class="p-2 border">{{ inv.balance or 0 }}</td>
-        <td class="p-2 border">
-          {{ inv.invoice_date if inv.invoice_date else "-" }}
-        </td>
-        <td class="p-2 border">
-          {% if inv.QuickBk_Status == 1 %}
-            <span class="text-green-600 font-semibold">Synced</span>
-          {% elif inv.QuickBk_Status == 2 %}
-            <span class="text-red-600 font-semibold">Failed</span>
-          {% else %}
-            <span class="text-yellow-600 font-semibold">Pending</span>
-          {% endif %}
-        </td>
-        <td class="p-2 border">{{ inv.pushed_by or "-" }}</td>
-        <td class="p-2 border">
-          {{ inv.pushed_date if inv.pushed_date else "-" }}
-        </td>
-      </tr>
-      {% endfor %}
+      <!-- DataTables will populate rows here -->
     </tbody>
   </table>
-
-  <!-- Pagination -->
-  <div class="flex justify-between items-center mt-4">
-    <span class="text-sm text-gray-600">
-      Page {{ page }} of {{ total_pages }} ({{ total_records }} total)
-    </span>
-    <div class="flex space-x-2">
-      {% if page > 1 %}
-        <a href="?page={{ page - 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Prev</a>
-      {% endif %}
-      {% for num in range(start_page, end_page + 1) %}
-        <a href="?page={{ num }}"
-           class="px-3 py-1 rounded {{ 'bg-indigo-600 text-white' if num == page else 'bg-gray-200 hover:bg-gray-300' }}">
-          {{ num }}
-        </a>
-      {% endfor %}
-      {% if page < total_pages %}
-        <a href="?page={{ page + 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
-      {% endif %}
-    </div>
-  </div>
-
-  {% else %}
-  <p class="text-gray-500">No invoices found.</p>
-  {% endif %}
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function() {
+    $('#invoices-table').DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: {
+        url: "{{ url_for('invoices_bp.get_mis_invoices') }}",
+        type: 'GET'
+      },
+      columns: [
+        { data: 'id' },
+        { data: 'reg_no' },
+        { data: 'reference_number', defaultContent: '-' },
+        { data: 'balance', defaultContent: 0 },
+        { data: 'invoice_date', defaultContent: '-' },
+        { 
+          data: 'QuickBk_Status',
+          render: function(data) {
+            if (data === 1) return '<span class="text-green-600 font-semibold">Synced</span>';
+            if (data === 2) return '<span class="text-red-600 font-semibold">Failed</span>';
+            return '<span class="text-yellow-600 font-semibold">Pending</span>';
+          }
+        },
+        { data: 'pushed_by', defaultContent: '-' },
+        { data: 'pushed_date', defaultContent: '-' }
+      ],
+      order: [[4, 'desc']], // sort by invoice_date descending
+      pageLength: 50,
+      lengthMenu: [10, 25, 50, 100],
+      responsive: true,
+      language: {
+        processing: "Loading invoices...",
+        emptyTable: "No invoices found",
+        search: "Search:",
+        lengthMenu: "Show _MENU_ invoices",
+        info: "Showing _START_ to _END_ of _TOTAL_ invoices",
+        infoEmpty: "No invoices available",
+        paginate: {
+          first: "First",
+          last: "Last",
+          next: "Next",
+          previous: "Prev"
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}
