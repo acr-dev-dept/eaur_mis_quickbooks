@@ -623,51 +623,30 @@ def sync_single_invoice():
 
 @invoices_bp.route('/get_mis_invoices', methods=['GET'])
 def get_mis_invoices():
-    """Endpoint to fetch paginated invoices (supports DataTables)"""
+    """Server-side endpoint for DataTables pagination"""
     try:
-        page = (request.args.get('start', 0, type=int) // request.args.get('length', 50, type=int)) + 1
-        per_page = request.args.get('length', 50, type=int)
-        search = request.args.get('search[value]', type=str)
-        order_column_index = request.args.get('order[0][column]', 0, type=int)
-        order_dir = request.args.get('order[0][dir]', 'desc')
+        draw = int(request.args.get('draw', 1))
+        start = int(request.args.get('start', 0))
+        length = int(request.args.get('length', 50))
+        search_value = request.args.get('search[value]', None)
 
-        columns = ['id', 'reg_no', 'balance', 'reference_number', 'invoice_date', 'QuickBk_Status']
-        order_column = columns[order_column_index] if order_column_index < len(columns) else 'invoice_date'
-
-        current_app.logger.info(f'Fetching MIS invoices - Page: {page}, Per Page: {per_page}, Search: {search}')
-        paginated_invoices = TblImvoice.fetch_paginated_invoices(page, per_page, search, order_column, order_dir)
-
-        total_records = paginated_invoices.get('total_records', 0)
-        total_pages = (total_records // per_page) + (1 if total_records % per_page > 0 else 0)
-
-        # If DataTables ajax request, return JSON
-        if request.args.get('draw'):
-            return {
-                "draw": request.args.get('draw', type=int),
-                "recordsTotal": total_records,
-                "recordsFiltered": total_records,
-                "data": paginated_invoices.get('invoices', [])
-            }
-
-        # Else render template
-        start_page = max(1, page - 2)
-        end_page = min(total_pages, page + 2)
-        return render_template(
-            'dashboard/invoices.html',
-            **paginated_invoices,
-            page=page,
-            per_page=per_page,
-            start_page=start_page,
-            end_page=end_page,
-            total_pages=total_pages,
+        total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
+            start=start, length=length, search=search_value
         )
+
+        return jsonify({
+            "draw": draw,
+            "recordsTotal": total_records,
+            "recordsFiltered": filtered_records,
+            "data": invoices
+        })
 
     except Exception as e:
+        from flask import current_app
         current_app.logger.error(f"Error in get_mis_invoices: {str(e)}")
-        return render_template(
-            'dashboard/invoices.html',
-            invoices=[],
-            total_records=0,
-            page=page,
-            per_page=per_page
-        )
+        return jsonify({
+            "draw": request.args.get('draw', 1),
+            "recordsTotal": 0,
+            "recordsFiltered": 0,
+            "data": []
+        })

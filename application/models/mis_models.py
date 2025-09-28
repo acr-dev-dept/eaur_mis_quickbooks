@@ -669,8 +669,8 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def fetch_paginated_invoices(page: int = 1, per_page: int = 50, search: str = None, order_column: str = "invoice_date", order_dir: str = "desc"):
-        """Fetch invoices for pagination or DataTables server-side"""
+    def fetch_paginated_invoices(start: int = 0, length: int = 50, search: str = None):
+        """Fetch invoices with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:
                 query = session.query(
@@ -684,46 +684,38 @@ class TblImvoice(MISBaseModel):
                     TblImvoice.pushed_date
                 )
 
-                # Search filter
+                # Optional search filter
                 if search:
-                    search_pattern = f"%{search}%"
                     query = query.filter(
-                        TblImvoice.reg_no.like(search_pattern) |
-                        TblImvoice.reference_number.like(search_pattern)
+                        TblImvoice.reg_no.ilike(f"%{search}%") |
+                        TblImvoice.reference_number.ilike(f"%{search}%")
                     )
 
-                # Ordering
-                if hasattr(TblImvoice, order_column):
-                    col_attr = getattr(TblImvoice, order_column)
-                    if order_dir.lower() == "desc":
-                        col_attr = col_attr.desc()
-                    query = query.order_by(col_attr)
+                total_records = session.query(TblImvoice.id).count()
+                filtered_records = query.count()
 
-                total_records = query.count()
-                invoices = query.limit(per_page).offset((page - 1) * per_page).all()
+                invoices = query.order_by(TblImvoice.invoice_date.desc()).offset(start).limit(length).all()
 
-                results = [
+                data = [
                     {
                         "id": inv.id,
                         "reg_no": inv.reg_no,
-                        "balance": inv.balance,
-                        "reference_number": inv.reference_number,
-                        "invoice_date": inv.invoice_date.isoformat() if inv.invoice_date else None,
+                        "reference_number": inv.reference_number or "-",
+                        "balance": inv.balance or 0,
+                        "invoice_date": inv.invoice_date.isoformat() if inv.invoice_date else "-",
                         "QuickBk_Status": inv.QuickBk_Status,
-                        "pushed_by": inv.pushed_by,
-                        "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else None,
+                        "pushed_by": inv.pushed_by or "-",
+                        "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else "-"
                     }
                     for inv in invoices
                 ]
 
-                return {"total_records": total_records, "invoices": results}
+                return total_records, filtered_records, data
+
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated invoices: {str(e)}")
-            return {"total_records": 0, "invoices": []}
-
-
-
+            return 0, 0, []
 
 
 class TblIncomeCategory(MISBaseModel):
