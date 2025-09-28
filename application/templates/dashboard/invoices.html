@@ -8,22 +8,47 @@
   <h2 class="text-lg font-semibold mb-4">Invoices</h2>
 
   <table id="invoices-table" class="w-full table-auto border-collapse border border-gray-200">
-    <thead>
-      <tr class="bg-gray-100 text-left">
-        <th class="p-2 border">#</th>
-        <th class="p-2 border">Reg No</th>
-        <th class="p-2 border">Reference</th>
-        <th class="p-2 border">Balance</th>
-        <th class="p-2 border">Invoice Date</th>
-        <th class="p-2 border">QBO Status</th>
-        <th class="p-2 border">Pushed By</th>
-        <th class="p-2 border">Pushed Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- DataTables will populate rows here -->
-    </tbody>
-  </table>
+  <thead>
+    <tr class="bg-gray-100 text-left">
+      <th>#</th>
+      <th>Reg No</th>
+      <th>Reference</th>
+      <th>Balance</th>
+      <th>Invoice Date</th>
+      <th>QBO Status</th>
+      <th>Pushed By</th>
+      <th>Pushed Date</th>
+    </tr>
+  </thead>
+</table>
+
+<script>
+$(document).ready(function() {
+  $('#invoices-table').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: '/api/v1/invoices/get_mis_invoices',
+    columns: [
+      { data: 'id' },
+      { data: 'reg_no' },
+      { data: 'reference_number' },
+      { data: 'balance' },
+      { data: 'invoice_date' },
+      { 
+        data: 'QuickBk_Status',
+        render: function(data) {
+          if (data == 1) return '<span class="text-green-600 font-semibold">Synced</span>';
+          if (data == 2) return '<span class="text-red-600 font-semibold">Failed</span>';
+          return '<span class="text-yellow-600 font-semibold">Pending</span>';
+        }
+      },
+      { data: 'pushed_by' },
+      { data: 'pushed_date' }
+    ]
+  });
+});
+</script>
+
 </div>
 
 {% endblock %}
