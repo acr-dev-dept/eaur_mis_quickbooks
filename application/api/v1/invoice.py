@@ -623,28 +623,30 @@ def sync_single_invoice():
 
 @invoices_bp.route('/get_mis_invoices', methods=['GET'])
 def get_mis_invoices():
+    """Server-side endpoint for DataTables pagination"""
     try:
-        # DataTables sends draw, start, length
         draw = int(request.args.get('draw', 1))
         start = int(request.args.get('start', 0))
         length = int(request.args.get('length', 50))
-        page = (start // length) + 1
+        search_value = request.args.get('search[value]', None)
 
-        paginated_invoices = TblImvoice.fetch_paginated_invoices(page, length)
-        total = paginated_invoices.get('total_records', 0)
-        data = paginated_invoices.get('invoices', [])
+        total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
+            start=start, length=length, search=search_value
+        )
 
-        return {
+        return jsonify({
             "draw": draw,
-            "recordsTotal": total,
-            "recordsFiltered": total,
-            "data": data
-        }
+            "recordsTotal": total_records,
+            "recordsFiltered": filtered_records,
+            "data": invoices
+        })
+
     except Exception as e:
-        current_app.logger.error(f"Error fetching invoices: {str(e)}")
-        return {
+        from flask import current_app
+        current_app.logger.error(f"Error in get_mis_invoices: {str(e)}")
+        return jsonify({
             "draw": request.args.get('draw', 1),
             "recordsTotal": 0,
             "recordsFiltered": 0,
             "data": []
-        }
+        })
