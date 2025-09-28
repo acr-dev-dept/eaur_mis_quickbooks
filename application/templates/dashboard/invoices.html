@@ -8,26 +8,36 @@
   <h2 class="text-lg font-semibold mb-4">Invoices</h2>
 
   <table id="invoices-table" class="w-full table-auto border-collapse border border-gray-200">
-  <thead>
-    <tr class="bg-gray-100 text-left">
-      <th>#</th>
-      <th>Reg No</th>
-      <th>Reference</th>
-      <th>Balance</th>
-      <th>Invoice Date</th>
-      <th>QBO Status</th>
-      <th>Pushed By</th>
-      <th>Pushed Date</th>
-    </tr>
-  </thead>
-</table>
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th>#</th>
+        <th>Reg No</th>
+        <th>Reference</th>
+        <th>Balance</th>
+        <th>Invoice Date</th>
+        <th>QBO Status</th>
+        <th>Pushed By</th>
+        <th>Pushed Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- DataTables Script -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
 $(document).ready(function() {
   $('#invoices-table').DataTable({
     processing: true,
     serverSide: true,
-    ajax: '/api/v1/invoices/get_mis_invoices',
+    ajax: {
+      url: '/api/v1/invoices/get_mis_invoices',
+      type: 'GET'
+    },
     columns: [
       { data: 'id' },
       { data: 'reg_no' },
@@ -44,61 +54,11 @@ $(document).ready(function() {
       },
       { data: 'pushed_by' },
       { data: 'pushed_date' }
-    ]
+    ],
+    order: [[4, 'desc']], // order by invoice_date descending
+    lengthMenu: [[10, 25, 50], [10, 25, 50]],
+    pageLength: 50
   });
 });
-</script>
-
-</div>
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-  $(document).ready(function() {
-    $('#invoices-table').DataTable({
-      processing: true,
-      serverSide: true,
-      ajax: {
-        url: "{{ url_for('invoices.get_mis_invoices') }}",
-        type: 'GET'
-      },
-      columns: [
-        { data: 'id' },
-        { data: 'reg_no' },
-        { data: 'reference_number', defaultContent: '-' },
-        { data: 'balance', defaultContent: 0 },
-        { data: 'invoice_date', defaultContent: '-' },
-        { 
-          data: 'QuickBk_Status',
-          render: function(data) {
-            if (data === 1) return '<span class="text-green-600 font-semibold">Synced</span>';
-            if (data === 2) return '<span class="text-red-600 font-semibold">Failed</span>';
-            return '<span class="text-yellow-600 font-semibold">Pending</span>';
-          }
-        },
-        { data: 'pushed_by', defaultContent: '-' },
-        { data: 'pushed_date', defaultContent: '-' }
-      ],
-      order: [[4, 'desc']], // sort by invoice_date descending
-      pageLength: 50,
-      lengthMenu: [10, 25, 50, 100],
-      responsive: true,
-      language: {
-        processing: "Loading invoices...",
-        emptyTable: "No invoices found",
-        search: "Search:",
-        lengthMenu: "Show _MENU_ invoices",
-        info: "Showing _START_ to _END_ of _TOTAL_ invoices",
-        infoEmpty: "No invoices available",
-        paginate: {
-          first: "First",
-          last: "Last",
-          next: "Next",
-          previous: "Prev"
-        }
-      }
-    });
-  });
 </script>
 {% endblock %}
