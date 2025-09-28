@@ -631,11 +631,20 @@ def get_mis_invoices():
         current_app.logger.info(f'Fetching MIS invoices - Page: {page}, Per Page: {per_page}')
         paginated_invoices = TblImvoice.fetch_paginated_invoices(page, per_page)
 
+        total_records = paginated_invoices.get('total', 0)
+        total_pages = (total_records // per_page) + (1 if total_records % per_page > 0 else 0)
+
+        start_page = max(1, page - 2)
+        end_page = min(total_pages, page + 2)
         return render_template(
             'dashboard/invoices.html',
             **paginated_invoices,
             page=page,
-            per_page=per_page
+            per_page=per_page,
+            start_page=start_page,
+            end_page=end_page,
+            total_pages=total_pages,
+            total_records=total_records
         )
     except Exception as e:
         current_app.logger.error(f"Error in get_mis_invoices: {str(e)}")

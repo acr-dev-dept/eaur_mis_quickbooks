@@ -1,48 +1,48 @@
 {% extends "dashboard/layout.html" %}
 
 {% block title %}Invoices - Sync Dashboard{% endblock %}
-
 {% block page_title %}Invoices{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-xl shadow p-6">
-  <h2 class="text-lg font-semibold mb-4">Invoice List</h2>
+<div class="bg-white shadow rounded-lg p-6">
+  <h2 class="text-lg font-semibold mb-4">Invoices</h2>
 
-  <table class="min-w-full border border-gray-200 divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">ID</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Reg No</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Balance</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Reference</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Invoice Date</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">QB Status</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Pushed By</th>
-        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600">Pushed Date</th>
+  {% if invoices %}
+  <table class="w-full table-auto border-collapse border border-gray-200">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="p-2 border">#</th>
+        <th class="p-2 border">Reg No</th>
+        <th class="p-2 border">Reference</th>
+        <th class="p-2 border">Balance</th>
+        <th class="p-2 border">Invoice Date</th>
+        <th class="p-2 border">QBO Status</th>
+        <th class="p-2 border">Pushed By</th>
+        <th class="p-2 border">Pushed Date</th>
       </tr>
     </thead>
-    <tbody class="bg-white divide-y divide-gray-100">
+    <tbody>
       {% for inv in invoices %}
       <tr class="hover:bg-gray-50">
-        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.id }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.reg_no }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ "%.2f"|format(inv.balance or 0) }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.reference_number }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">
-          {{ inv.invoice_date.strftime("%Y-%m-%d") if inv.invoice_date else "" }}
+        <td class="p-2 border">{{ inv.id }}</td>
+        <td class="p-2 border">{{ inv.reg_no }}</td>
+        <td class="p-2 border">{{ inv.reference_number or "-" }}</td>
+        <td class="p-2 border">{{ inv.balance or 0 }}</td>
+        <td class="p-2 border">
+          {{ inv.invoice_date if inv.invoice_date else "-" }}
         </td>
-        <td class="px-4 py-2 text-sm">
+        <td class="p-2 border">
           {% if inv.QuickBk_Status == 1 %}
-            <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Synced</span>
+            <span class="text-green-600 font-semibold">Synced</span>
           {% elif inv.QuickBk_Status == 2 %}
-            <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Failed</span>
+            <span class="text-red-600 font-semibold">Failed</span>
           {% else %}
-            <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">Pending</span>
+            <span class="text-yellow-600 font-semibold">Pending</span>
           {% endif %}
         </td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ inv.pushed_by or "-" }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">
-          {{ inv.pushed_date.strftime("%Y-%m-%d %H:%M") if inv.pushed_date else "" }}
+        <td class="p-2 border">{{ inv.pushed_by or "-" }}</td>
+        <td class="p-2 border">
+          {{ inv.pushed_date if inv.pushed_date else "-" }}
         </td>
       </tr>
       {% endfor %}
@@ -50,28 +50,28 @@
   </table>
 
   <!-- Pagination -->
-  <div class="flex items-center justify-between mt-4">
-    <div class="text-sm text-gray-600">
-      Showing
-      <span class="font-semibold">{{ (page - 1) * per_page + 1 }}</span>
-      to
-      <span class="font-semibold">{{ min(page * per_page, total_records) }}</span>
-      of
-      <span class="font-semibold">{{ total_records }}</span>
-      results
-    </div>
-
+  <div class="flex justify-between items-center mt-4">
+    <span class="text-sm text-gray-600">
+      Page {{ page }} of {{ total_pages }} ({{ total_records }} total)
+    </span>
     <div class="flex space-x-2">
       {% if page > 1 %}
-      <a href="{{ url_for('invoices.get_mis_invoices', page=page-1, per_page=per_page) }}"
-         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">Previous</a>
+        <a href="?page={{ page - 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Prev</a>
       {% endif %}
-
-      {% if page * per_page < total_records %}
-      <a href="{{ url_for('invoices.get_mis_invoices', page=page+1, per_page=per_page) }}"
-         class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">Next</a>
+      {% for num in range(start_page, end_page + 1) %}
+        <a href="?page={{ num }}"
+           class="px-3 py-1 rounded {{ 'bg-indigo-600 text-white' if num == page else 'bg-gray-200 hover:bg-gray-300' }}">
+          {{ num }}
+        </a>
+      {% endfor %}
+      {% if page < total_pages %}
+        <a href="?page={{ page + 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
       {% endif %}
     </div>
   </div>
+
+  {% else %}
+  <p class="text-gray-500">No invoices found.</p>
+  {% endif %}
 </div>
 {% endblock %}
