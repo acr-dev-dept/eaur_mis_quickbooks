@@ -1,3 +1,4 @@
+
 {% extends "dashboard/layout.html" %}
 
 {% block title %}Invoices - Sync Dashboard{% endblock %}
@@ -24,7 +25,7 @@
   </table>
 </div>
 
-<!-- DataTables Script -->
+<!-- DataTables Scripts -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -35,15 +36,19 @@ $(document).ready(function() {
     processing: true,
     serverSide: true,
     ajax: {
-      url: '/api/v1/invoices/get_mis_invoices',
-      type: 'GET'
+      url: '/api/v1/invoices/get_mis_invoices', // your Flask endpoint returning DataTables JSON
+      type: 'GET',
+      data: function(d) {
+        // d.draw, d.start, d.length are automatically sent by DataTables
+        // You can add extra params here if needed
+      }
     },
     columns: [
       { data: 'id' },
       { data: 'reg_no' },
-      { data: 'reference_number' },
-      { data: 'balance' },
-      { data: 'invoice_date' },
+      { data: 'reference_number', defaultContent: '-' },
+      { data: 'balance', defaultContent: 0 },
+      { data: 'invoice_date', defaultContent: '-' },
       { 
         data: 'QuickBk_Status',
         render: function(data) {
@@ -52,8 +57,8 @@ $(document).ready(function() {
           return '<span class="text-yellow-600 font-semibold">Pending</span>';
         }
       },
-      { data: 'pushed_by' },
-      { data: 'pushed_date' }
+      { data: 'pushed_by', defaultContent: '-' },
+      { data: 'pushed_date', defaultContent: '-' }
     ],
     order: [[4, 'desc']], // order by invoice_date descending
     lengthMenu: [[10, 25, 50], [10, 25, 50]],
