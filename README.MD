@@ -313,6 +313,12 @@ For technical support or questions:
 **Syncing to QuickBoooks**
 While syncing to Quickbooks there are some concerns
 requirements needed:
+
+## Pre-requirements
+   1. We found that there are some existing customers, items, and invoices already there in EAUR's quickbooks.
+   2. Knowing what we have to delete and what to not before syncing with our own logic
+
+
 ## Requirements
    1. IncomeAccountRef (which demands the corresponding income account for a specific item)
    

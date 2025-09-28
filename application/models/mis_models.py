@@ -682,7 +682,7 @@ class TblImvoice(MISBaseModel):
                         TblImvoice.pushed_by,
                         TblImvoice.pushed_date
                     )
-                    .order_by(TblImvoice.date.desc())
+                    .order_by(TblImvoice.invoice_date.desc())
                 )
 
                 total_records = query.count()
@@ -701,6 +701,7 @@ class TblImvoice(MISBaseModel):
                     }
                     for inv in invoices
                 ]
+                current_app.logger.info(f"Fetched {len(results)} invoices successfully.")
 
                 return {"total_records": total_records, "invoices": results}
         except Exception as e:
