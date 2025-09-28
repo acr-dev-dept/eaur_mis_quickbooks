@@ -682,7 +682,6 @@ class TblImvoice(MISBaseModel):
                         TblImvoice.pushed_by,
                         TblImvoice.pushed_date
                     )
-                    .order_by(TblImvoice.invoice_date.desc())
                 )
 
                 total_records = query.count()
