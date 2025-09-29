@@ -1316,7 +1316,19 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error updating QuickBooks status for applicant {tracking_id}: {str(e)}")
             return False
-
+    @staticmethod
+    def count_applicants():
+        """
+        Count total number of applicants
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblOnlineApplication).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting applicants: {str(e)}")
+            return 0
 
 
 

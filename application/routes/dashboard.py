@@ -1,5 +1,5 @@
 from flask  import Blueprint, render_template
-from application.models.mis_models import TblIncomeCategory, TblPersonalUg
+from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblOnlineApplication
 
 dashboard_route = Blueprint('dashboard', __name__)
 @dashboard_route.route('/', methods=['GET'])
@@ -11,5 +11,6 @@ def dashboard_page():
 
     numbers['active_categories'] = active_categories_count
     numbers['total_students'] = total_students
+    numbers['total_applicants'] = TblOnlineApplication.count_applicants()
 
     return render_template("dashboard/index.html", numbers=numbers)
