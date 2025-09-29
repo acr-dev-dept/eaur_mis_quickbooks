@@ -8,84 +8,65 @@
 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
   <!-- Applicants -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
-    <div class="p-4 rounded-full bg-indigo-100">
-      <i class="fi fi-rr-user-add text-indigo-600 text-2xl"></i>
+    <div class="p-3 rounded-xl bg-indigo-50">
+      <i class="fi fi-rr-upload text-indigo-600 text-2xl"></i>
     </div>
     <div>
-      <p class="text-gray-500 flex items-center space-x-1">
-        <span>Applicants</span>
-        <i class="fi fi-rr-check-circle text-green-500 text-sm"></i>
-      </p>
-      <h2 class="text-2xl font-bold text-indigo-600">
-        {{ numbers['total_applicants'] or '—' }}
-      </h2>
+      <p class="text-gray-500 text-sm">Applicants</p>
+      <h2 class="text-2xl font-bold text-indigo-600">{{ numbers['total_applicants'] }}</h2>
+      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_applicants'] if numbers['synced_applicants'] is not none else 0 }}</p>
     </div>
   </div>
 
   <!-- Students -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
-    <div class="p-4 rounded-full bg-green-100">
-      <i class="fi fi-rr-users-alt text-green-600 text-2xl"></i>
+    <div class="p-3 rounded-xl bg-green-50">
+      <i class="fi fi-rr-upload text-green-600 text-2xl"></i>
     </div>
     <div>
-      <p class="text-gray-500 flex items-center space-x-1">
-        <span>Students</span>
-        <i class="fi fi-rr-check-circle text-green-500 text-sm"></i>
-      </p>
-      <h2 class="text-2xl font-bold text-green-600">
-        {{ numbers['total_students'] or '—' }}
-      </h2>
+      <p class="text-gray-500 text-sm">Students</p>
+      <h2 class="text-2xl font-bold text-green-600">{{ numbers['total_students'] }}</h2>
+      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_students'] if numbers['synced_students'] is not none else 0 }}</p>
     </div>
   </div>
 
   <!-- Invoices -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
-    <div class="p-4 rounded-full bg-yellow-100">
-      <i class="fi fi-rr-file-invoice-dollar text-yellow-600 text-2xl"></i>
+    <div class="p-3 rounded-xl bg-yellow-50">
+      <i class="fi fi-rr-upload text-yellow-600 text-2xl"></i>
     </div>
     <div>
-      <p class="text-gray-500 flex items-center space-x-1">
-        <span>Invoices</span>
-        <i class="fi fi-rr-check-circle text-green-500 text-sm"></i>
-      </p>
-      <h2 class="text-2xl font-bold text-yellow-600">
-        {{ numbers['total_invoices'] or '—' }}
-      </h2>
+      <p class="text-gray-500 text-sm">Invoices</p>
+      <h2 class="text-2xl font-bold text-yellow-600">{{ numbers['total_invoices'] }}</h2>
+      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_invoices'] if numbers['synced_invoices'] is not none else 0 }}</p>
     </div>
   </div>
 
   <!-- Payments -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
-    <div class="p-4 rounded-full bg-red-100">
-      <i class="fi fi-rr-credit-card text-red-600 text-2xl"></i>
+    <div class="p-3 rounded-xl bg-red-50">
+      <i class="fi fi-rr-upload text-red-600 text-2xl"></i>
     </div>
     <div>
-      <p class="text-gray-500 flex items-center space-x-1">
-        <span>Payments</span>
-        <i class="fi fi-rr-check-circle text-green-500 text-sm"></i>
-      </p>
-      <h2 class="text-2xl font-bold text-red-600">
-        {{ numbers['total_payments'] or '—' }}
-      </h2>
+      <p class="text-gray-500 text-sm">Payments</p>
+      <h2 class="text-2xl font-bold text-red-600">{{ numbers['total_payments'] }}</h2>
+      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_payments'] if numbers['synced_payments'] is not none else 0 }}</p>
     </div>
   </div>
 
   <!-- Items -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
-    <div class="p-4 rounded-full bg-purple-100">
-      <i class="fi fi-rr-box-open text-purple-600 text-2xl"></i>
+    <div class="p-3 rounded-xl bg-purple-50">
+      <i class="fi fi-rr-upload text-purple-600 text-2xl"></i>
     </div>
     <div>
-      <p class="text-gray-500 flex items-center space-x-1">
-        <span>Items (Fees)</span>
-        <i class="fi fi-rr-check-circle text-green-500 text-sm"></i>
-      </p>
-      <h2 class="text-2xl font-bold text-purple-600">
-        {{ numbers['active_categories'] or '—' }}
-      </h2>
+      <p class="text-gray-500 text-sm">Items (Fees)</p>
+      <h2 class="text-2xl font-bold text-purple-600">{{ numbers['active_categories'] }}</h2>
+      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_items'] if numbers['synced_items'] is not none else 0 }}</p>
     </div>
   </div>
 </div>
+
 
 <!-- Sync History Chart -->
 <div class="bg-white rounded-2xl shadow p-6 mt-6">
