@@ -1,5 +1,5 @@
 from flask  import Blueprint, render_template
-from application.models.mis_models.TblIncomeCategory import TblIncomeCategory
+from application.models.mis_models import TblIncomeCategory
 
 dashboard_route = Blueprint('dashboard', __name__)
 @dashboard_route.route('/', methods=['GET'])
