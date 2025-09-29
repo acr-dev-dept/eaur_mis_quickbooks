@@ -10,7 +10,12 @@ celery.conf.beat_schedule = {
         "task": "application.tasks.quickbooks_sync.sync_payments",
         "schedule": 120.0,  # every 5 minutes
         "args": (),
-    }
+    },
+    "sync-customers-every-10-min": {
+        "task": "application.tasks.quickbooks_sync.sync_customers",
+        "schedule": 600.0,  # every 10 minutes
+        "args": (),
+    },
 }
 
 celery.conf.timezone = "Africa/Kigali"
