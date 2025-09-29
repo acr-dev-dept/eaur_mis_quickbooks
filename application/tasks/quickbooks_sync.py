@@ -83,7 +83,8 @@ def sync_applicants(self):
             tracking_id = applicant.get('tracking_id')
             try:
                 url = f"https://api.eaur.ac.rw/api/v1/sync/customers/applicant/{tracking_id}"
-                response = requests.post(url, timeout=15) 
+                payload = {"batch_size": 50}
+                response = requests.post(url, json=payload, timeout=15)
 
                 if response.status_code == 200:
                     succeeded += 1
