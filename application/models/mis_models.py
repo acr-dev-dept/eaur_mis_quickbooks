@@ -727,7 +727,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error fetching paginated invoices: {str(e)}")
             return 0, 0, []
     @staticmethod
-    def count_total_invoices():
+    def count_invoices():
         """Count total number of invoices in the database"""
         try:
             with MISBaseModel.get_session() as session:
