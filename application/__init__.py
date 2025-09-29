@@ -169,6 +169,7 @@ def register_blueprints(app):
     # Dashboard blueprint
     from application.routes.dashboard import dashboard_route
     from application.routes.invoice import invoices_route
+    from application.routes.payments import payments_route
     
 
     # Register blueprints
@@ -184,6 +185,10 @@ def register_blueprints(app):
     app.register_blueprint(bank_sync_bp, url_prefix='/api/v1/sync/banks') # Register bank sync blueprint
     app.register_blueprint(dashboard_route, url_prefix='/dashboard')
     app.register_blueprint(invoices_route, url_prefix='/mis_invoices')
+    app.register_blueprint(payments_route, url_prefix='/payments')
+
+
+
 def register_error_handlers(app):
     """Register application error handlers"""
 
