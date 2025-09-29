@@ -1979,6 +1979,64 @@ class TblPersonalUg(MISBaseModel):
             current_app.logger.error(f"Error counting students: {str(e)}")
             return 0
 
+    @staticmethod
+    def fetch_paginated_students(start: int = 0, length: int = 50, search: str = None):
+        """
+        Fetch paginated student records with optional search filter
+
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                query = session.query(
+                    TblPersonalUg.per_id_ug,
+                    TblPersonalUg.reg_no,
+                    TblPersonalUg.fname,
+                    TblPersonalUg.lname,
+                    TblPersonalUg.email1,
+                    TblPersonalUg.phone1,
+                    TblPersonalUg.QuickBk_Status,
+                    TblPersonalUg.qk_id
+                    TblPersonalUg.pushed_by,
+                    TblPersonalUg.pushed_date
+                )
+
+                if search:
+                    search_pattern = f"%{search}%"
+                    query = query.filter(
+                        or_(
+                            TblPersonalUg.reg_no.ilike(search_pattern),
+                            TblPersonalUg.fname.ilike(search_pattern),
+                            TblPersonalUg.lname.ilike(search_pattern),
+                            TblPersonalUg.email1.ilike(search_pattern),
+                            TblPersonalUg.phone1.ilike(search_pattern)
+                        )
+                    )
+                total_records = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
+                filtered_records = query.count()
+
+                students = query.order_by(TblPersonalUg.per_id_ug).offset(start).limit(length).all()
+                data = [
+                    {
+                        'per_id_ug': s.per_id_ug,
+                        'reg_no': s.reg_no,
+                        'fname': s.fname,
+                        'lname': s.lname,
+                        'email1': s.email1,
+                        'phone1': s.phone1,
+                        'quickbooks_status': s.QuickBk_Status,
+                        'qk_id': s.qk_id,
+                        'pushed_by': s.pushed_by,
+                        'pushed_date': s.pushed_date.isoformat() if s.pushed_date else None
+                    }
+                    for s in students
+                ]
+                return total_records, filtered_records, data
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated students: {str(e)}")
+            return 0, 0, []
+
+
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'

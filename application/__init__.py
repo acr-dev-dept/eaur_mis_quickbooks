@@ -170,6 +170,8 @@ def register_blueprints(app):
     from application.routes.dashboard import dashboard_route
     from application.routes.invoice import invoices_route
     from application.routes.payments import payments_route
+    from application.routes.items import items_route
+    from application.routes.students import students_route
     
 
     # Register blueprints
@@ -186,6 +188,9 @@ def register_blueprints(app):
     app.register_blueprint(dashboard_route, url_prefix='/dashboard')
     app.register_blueprint(invoices_route, url_prefix='/mis_invoices')
     app.register_blueprint(payments_route, url_prefix='/payments')
+    app.register_blueprint(items_route, url_prefix='/items')
+    app.register_blueprint(students_route, url_prefix='/students')
+    
 
 
 
