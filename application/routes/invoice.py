@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from application.models.mis_models import TblImvoice
 
+
 invoices_route = Blueprint('invoices_rte', __name__)
 
 @invoices_route.route('/get_mis_invoices', methods=['GET'])
@@ -34,7 +35,7 @@ def get_mis_invoices():
         })
 
 # HTML page route
-@invoices_route.route('/mis_invoices', methods=['GET'])
+@invoices_route.route('/', methods=['GET'])
 def invoices_page():
     """Render the invoices page with empty table skeleton"""
     return render_template("dashboard/invoices.html")
