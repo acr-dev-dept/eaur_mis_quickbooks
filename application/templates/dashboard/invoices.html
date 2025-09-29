@@ -52,9 +52,9 @@ $(document).ready(function() {
       { 
         data: 'QuickBk_Status',
         render: function(data) {
-          if (data == 1) return '<span class="text-green-600 font-semibold bg-green-100 rounded-md size-small font-medium">Synced</span>';
-          if (data == 2) return '<span class="text-red-600 font-semibold bg-red-100 rounded-md size-small font-medium">Failed</span>';
-          return '<span class="text-yellow-600 font-semibold bg-yellow-100 rounded-md size-small font-medium">Unsynced</span>';
+          if (data == 1) return '<span class="text-green-600 font-semibold bg-green-100 rounded-md size-6 font-medium" px-2 py-1 >Synced</span>';
+          if (data == 2) return '<span class="text-red-600 font-semibold bg-red-100 rounded-md size-6 font-medium" px-2 py-1 >Failed</span>';
+          return '<span class="text-yellow-600 font-semibold bg-yellow-100 rounded-md size-6 font-medium" px-2 py-1 >Unsynced</span>';
         }
       },
       { data: 'pushed_by', defaultContent: '-' },
