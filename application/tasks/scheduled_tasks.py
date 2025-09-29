@@ -19,3 +19,5 @@ celery.conf.beat_schedule = {
 }
 
 celery.conf.timezone = "Africa/Kigali"
+
+
