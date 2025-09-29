@@ -34,7 +34,7 @@ $(document).ready(function() {
         processing: true,
         serverSide: true,
         ajax: {
-            url: '/payments/get_payments', // your Flask endpoint returning DataTables JSON
+            url: '/payments/get_students', // your Flask endpoint returning DataTables JSON
             type: 'GET',
             data: function(d) {
                 // d.draw, d.start, d.length are automatically sent by DataTables
