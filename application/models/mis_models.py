@@ -284,6 +284,59 @@ class Payment(MISBaseModel):
             current_app.logger.error(f"Error counting payments: {str(e)}")
             return 0
 
+    @staticmethod
+    def fetch_paginated_payments(start: int = 0, length: int = 50, search: str = None):
+        """Fetch payments with pagination for DataTables server-side"""
+        try:
+            with MISBaseModel.get_session() as session:
+                query = session.query(
+                    Payment.id,
+                    Payment.reg_no,
+                    Payment.amount,
+                    Payment.external_transaction_id,
+                    Payment.date,
+                    Payment.QuickBk_Status,
+                    Payment.pushed_by,
+                    Payment.pushed_date,
+                    Payment.invoi_ref
+                )
+
+                if search:
+                    query = query.filter(
+                        Payment.reg_no.ilike(f"%{search}%") |
+                        Payment.external_transaction_id.ilike(f"%{search}%") |
+                        Payment.invoi_ref.ilike(f"%{search}%")
+                    )
+                total_payments = session.query(Payment.id).count()
+                filtered_payments = query.count()
+                payments = query.order_by(Payment.date.desc()).offset(start).limit(length).all()
+                data = [
+                    {
+                        "id": pay.id,
+                        "reg_no": pay.reg_no,
+                        "amount": pay.amount or 0,
+                        "external_transaction_id": pay.external_transaction_id or "-",
+                        "date": pay.date or "-",
+                        "invoi_ref": pay.invoi_ref or "-",
+                        "QuickBk_Status": pay.QuickBk_Status,
+                        "pushed_by": pay.pushed_by or "-",
+                        "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-"
+                    } for pay in payments
+                ]
+                return total_payments, filtered_payments, data
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
+            return 0, 0, []
+
+
+
+
+
+
+
+
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
     __tablename__ = 'tbl_bank'
