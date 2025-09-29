@@ -1877,6 +1877,23 @@ class TblPersonalUg(MISBaseModel):
             current_app.logger.error(f"Error getting student details for reg_no {reg_no}: {str(e)}")
             return []
 
+    @staticmethod
+    def count_students():
+        """
+        Count total number of students in tbl_personal_ug
+
+        Returns:
+            int: Total number of students
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                count = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting students: {str(e)}")
+            return 0
+
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'
