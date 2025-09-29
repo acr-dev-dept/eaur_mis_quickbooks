@@ -1,8 +1,8 @@
 
 {% extends "dashboard/layout.html" %}
 
-{% block title %}Invoices - Sync Dashboard{% endblock %}
-{% block page_title %}Invoices{% endblock %}
+{% block title %}Items - Sync Dashboard{% endblock %}
+{% block page_title %}Items{% endblock %}
 
 {% block content %}
 <div class="bg-white shadow rounded-lg p-6">
@@ -43,12 +43,9 @@ $(document).ready(function() {
         },
         columns: [
             { data: 'id' },
-            { data: 'item_name', defaultContent: '-' },
-            { data: 'item_type', defaultContent: '-' },
-            { data: 'sales_description', defaultContent: '-' },
-            { data: 'sales_price', defaultContent: 0 },
-            { data: 'income_account', defaultContent: '-' },
-            { data: 'quickbooks_status',
+            { data: 'name', defaultContent: '-' },
+            { data: 'amount', defaultContent: 0 },
+            { data: 'Quickbk_Status',
               render: function(data) {
                 if (data == 1) {
                   return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
