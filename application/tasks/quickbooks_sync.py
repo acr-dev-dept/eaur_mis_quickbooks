@@ -111,3 +111,51 @@ def sync_applicants(self):
     except Exception as e:
         flask_app.logger.error(f"Error during applicant sync process: {e}")
         return {"error": str(e)}
+    
+@celery.task(bind=True)
+def sync_students(self):
+    """
+    Celery task to synchronize students from MIS to QuickBooks.
+    """
+    try:
+        sync_service = CustomerSyncService()
+        unsynchronized_students = sync_service.get_unsynchronized_students()
+        flask_app.logger.info(
+            f"Retrieved {len(unsynchronized_students)} unsynchronized students "
+            f"and the type is {type(unsynchronized_students)}"
+        )
+        succeeded = 0
+        student_ids = []
+        for student in unsynchronized_students:
+            student = student.to_dict()
+            student_id = student.get('student_id')
+            try:
+                url = f"https://api.eaur.ac.rw/api/v1/sync/customers/student/{student_id}"
+                payload = {"batch_size": 50}
+                response = requests.post(url, json=payload, timeout=15)
+
+                if response.status_code == 200:
+                    succeeded += 1
+                    student_ids.append(student_id)
+                    flask_app.logger.info(
+                        f"Successfully synchronized student ID {student_id}, response: {response.text}"
+                    )
+                else:
+                    flask_app.logger.error(
+                        f"Failed to sync student ID {student_id}, status: {response.status_code}, body: {response.text}"
+                    )
+
+            except Exception as e:
+                flask_app.logger.error(f"Exception syncing student ID {student_id}: {e}")
+                continue
+        flask_app.logger.info(
+            f"Student sync completed: {succeeded}/{len(unsynchronized_students)} succeeded"
+        )
+        return {
+            "total_succeeded": succeeded,
+            "total_attempted": len(unsynchronized_students),
+            "successful_student_ids": student_ids,
+        }
+    except Exception as e:
+        flask_app.logger.error(f"Error during student sync process: {e}")
+        return {"error": str(e)}
