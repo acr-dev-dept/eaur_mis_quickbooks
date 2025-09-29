@@ -961,6 +961,46 @@ class TblIncomeCategory(MISBaseModel):
             current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
             return []
     
+    @staticmethod
+    def fetch_paginated_categories(start: int = 0, length: int = 50, search: str = None):
+        """Fetch income categories with pagination for DataTables server-side"""
+        try:
+            with MISBaseModel.get_session() as session:
+                query = session.query(
+                    TblIncomeCategory.id,
+                    TblIncomeCategory.name,
+                    TblIncomeCategory.amount,
+                    TblIncomeCategory.status_Id,
+                    TblIncomeCategory.Quickbk_Status,
+                    TblIncomeCategory.pushed_by,
+                    TblIncomeCategory.pushed_date
+                )
+
+                if search:
+                    query = query.filter(
+                        TblIncomeCategory.name.ilike(f"%{search}%") |
+                        TblIncomeCategory.description.ilike(f"%{search}%")
+                    )
+                total_categories = session.query(TblIncomeCategory.id).count()
+                filtered_categories = query.count()
+                categories = query.order_by(TblIncomeCategory.name.asc()).offset(start).limit(length).all()
+                data = [
+                    {
+                        "id": cat.id,
+                        "name": cat.name,
+                        "amount": cat.amount or 0,
+                        "status_Id": cat.status_Id,
+                        "Quickbk_Status": cat.Quickbk_Status,
+                        "pushed_by": cat.pushed_by or "-",
+                        "pushed_date": cat.pushed_date.isoformat() if cat.pushed_date else "-"
+                    } for cat in categories
+                ]
+                return total_categories, filtered_categories, data
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated income categories: {str(e)}")
+            return 0, 0, []
 
 class TblLevel(MISBaseModel):
     """Model for tbl_level table"""

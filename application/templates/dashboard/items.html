@@ -1,0 +1,68 @@
+
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Invoices - Sync Dashboard{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg p-6">
+  <h2 class="text-lg font-semibold mb-4">Items(Fees)</h2>
+    <table id="items-table" class="w-full table-auto border-collapse border border-gray-200">
+        <thead>
+        <tr class="bg-gray-100 text-left">
+            <th>#</th>
+            <th>Item Name</th>
+            <th>Item Type</th>
+            <th>Sales Description</th>
+            <th>Sales Price</th>
+            <th>Income Account</th>
+            <th>QBO Status</th>
+            <th>Pushed By</th>
+            <th>Pushed Date</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<!-- DataTables Scripts -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#items-table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/items/get_items', // your Flask endpoint returning DataTables JSON
+            type: 'GET',
+            data: function(d) {
+                // d.draw, d.start, d.length are automatically sent by DataTables
+                // You can add extra params here if needed
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'item_name', defaultContent: '-' },
+            { data: 'item_type', defaultContent: '-' },
+            { data: 'sales_description', defaultContent: '-' },
+            { data: 'sales_price', defaultContent: 0 },
+            { data: 'income_account', defaultContent: '-' },
+            { data: 'quickbooks_status',
+              render: function(data) {
+                if (data == 1) {
+                  return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
+                }
+                if (data == 2) {
+                  return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
+                }
+                return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
+              }
+            },
+            { data: 'pushed_by', defaultContent: '-' },
+            { data: 'pushed_date', defaultContent: '-' }
+        ]
+    });
+});
+</script>
+{% endblock %}
