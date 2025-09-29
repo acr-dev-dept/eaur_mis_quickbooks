@@ -12,7 +12,7 @@ celery.conf.beat_schedule = {
         "args": (),
     },
     "sync-customers-every-10-min": {
-        "task": "application.tasks.quickbooks_sync.sync_customers",
+        "task": "application.tasks.quickbooks_sync.sync_applicants",
         "schedule": 600.0,  # every 10 minutes
         "args": (),
     },
