@@ -273,6 +273,16 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting payment for ID {payment_id}: {str(e)}")
             return None
+    @staticmethod
+    def count_payments():
+        """Count total payments"""
+        try:
+            with MISBaseModel.get_session() as session:
+                return session.query(func.count(Payment.id)).scalar()
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting payments: {str(e)}")
+            return 0
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
@@ -716,7 +726,17 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated invoices: {str(e)}")
             return 0, 0, []
-
+    @staticmethod
+    def count_total_invoices():
+        """Count total number of invoices in the database"""
+        try:
+            with MISBaseModel.get_session() as session:
+                total_invoices = session.query(TblImvoice).count()
+                return total_invoices
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting total invoices: {str(e)}")
+            return 0
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
