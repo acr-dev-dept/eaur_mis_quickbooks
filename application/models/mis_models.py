@@ -1995,7 +1995,7 @@ class TblPersonalUg(MISBaseModel):
                     TblPersonalUg.email1,
                     TblPersonalUg.phone1,
                     TblPersonalUg.QuickBk_Status,
-                    TblPersonalUg.qk_id
+                    TblPersonalUg.qk_id,
                     TblPersonalUg.pushed_by,
                     TblPersonalUg.pushed_date
                 )
