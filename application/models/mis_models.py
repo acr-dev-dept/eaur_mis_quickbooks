@@ -828,6 +828,20 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting active income categories: {str(e)}")
             return []
+
+    @staticmethod
+    def count_active_categories():
+        """
+        Count income categories with status_id = 1
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblIncomeCategory).filter(TblIncomeCategory.status_Id == 1).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting active income categories: {str(e)}")
+            return 0
     @staticmethod
     def update_quickbooks_status(category_id, quickbooks_id, pushed_by):
         """
@@ -873,7 +887,7 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
             return []
-
+    
 
 class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
