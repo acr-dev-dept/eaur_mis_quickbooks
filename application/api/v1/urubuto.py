@@ -8,6 +8,7 @@ import traceback
 import jwt
 import os
 from application.services.payment_sync import PaymentSyncService
+import requests
 
 urubuto_bp = Blueprint('urubuto', __name__)
 # Initialize Urubuto Pay service
@@ -390,8 +391,13 @@ def payment_callback():
                     current_app.logger.info(f"Payment record created: {payment}")
                     #sync the payment to quickbooks
                     try:
-                        result = payment_sync_service.sync_single_payment(payment)
-                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {result}")
+                        payment_id = payment.get('id')
+                        # Use the endpoint to sync single payment
+                        url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
+
+                        response = requests.post(url, timeout=30)
+
+                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {response}")
                     except Exception as e:
                         current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
                         current_app.logger.error(traceback.format_exc())
@@ -428,8 +434,11 @@ def payment_callback():
                     current_app.logger.info(f"Payment record created: {payment}")
                     #sync the payment to quickbooks
                     try:
-                        result = payment_sync_service.sync_single_payment(payment)
-                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {result}")
+                        payment_id = payment.get('id')
+                        # Use the endpoint to sync single payment
+                        url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
+                        response = requests.post(url, timeout=30)
+                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {response}")
                     except Exception as e:
                         current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
                         current_app.logger.error(traceback.format_exc())
