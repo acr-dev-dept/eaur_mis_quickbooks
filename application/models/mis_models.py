@@ -802,6 +802,18 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error counting total invoices: {str(e)}")
             return 0
 
+    @staticmethod
+    def count_synced_invoices():
+        """Count total number of invoices synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                synced_invoices = session.query(TblImvoice).filter(TblImvoice.QuickBk_Status == 1, TblImvoice.quickbooks_id != None).count()
+                return synced_invoices
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced invoices: {str(e)}")
+            return 0
+
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
@@ -2097,7 +2109,22 @@ class TblPersonalUg(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated students: {str(e)}")
             return 0, 0, []
+    @staticmethod
+    def count_synced_students():
+        """
+        Count total number of students synced to QuickBooks
 
+        Returns:
+            int: Total number of synced students
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.qk_id.isnot(None)).scalar()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced students: {str(e)}")
+            return 0
 
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
