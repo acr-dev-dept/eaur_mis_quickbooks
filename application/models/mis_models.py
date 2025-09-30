@@ -960,7 +960,18 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
             return []
-    
+    @staticmethod
+    def count_synced_categories():
+        """Count income categories that have been synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblIncomeCategory).filter(TblIncomeCategory.Quickbk_Status == 1).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced income categories: {str(e)}")
+            return 0
+            
     @staticmethod
     def fetch_paginated_categories(start: int = 0, length: int = 50, search: str = None):
         """Fetch income categories with pagination for DataTables server-side"""

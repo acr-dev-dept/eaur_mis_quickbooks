@@ -14,5 +14,6 @@ def dashboard_page():
     numbers['total_applicants'] = TblOnlineApplication.count_applicants()
     numbers['total_invoices'] = TblImvoice.count_invoices()
     numbers['total_payments'] = Payment.count_payments()
+    numbers['synced_categories'] = TblIncomeCategory.count_synced_categories()
 
     return render_template("dashboard/index.html", numbers=numbers)
