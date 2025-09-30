@@ -621,11 +621,9 @@ def sync_single_invoice():
             status_code=500
         )
     
-
-
 @invoices_bp.route('/sync/<int:invoice_id>', methods=['GET'])
-"""Sync a single invoice by ID from MIS to QuickBooks."""
 def sync_invoice(invoice_id):
+    """Sync a single invoice by ID from MIS to QuickBooks."""
     try:
         # Validate QuickBooks connection
         is_connected, error_response = validate_quickbooks_connection()
