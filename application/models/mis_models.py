@@ -17,6 +17,7 @@ from application import db
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, foreign
 from flask import current_app
+from sqlalchemy import cast, String
 
 
 
@@ -743,7 +744,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def fetch_paginated_invoices(start: int = 0, length: int = 50, search = None):
+    def fetch_paginated_invoices(start: int = 0, length: int = 50, search:str = None):
         """Fetch invoices with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:
@@ -758,14 +759,13 @@ class TblImvoice(MISBaseModel):
                     TblImvoice.pushed_by,
                     TblImvoice.pushed_date
                 )
-
                 # Optional search filter
                 if search:
                     query = query.filter(
                         TblImvoice.reg_no.ilike(f"%{search}%") |
                         TblImvoice.reference_number.ilike(f"%{search}%") |
-                        TblImvoice.id.ilike(f"%{search}%") |
-                        TblImvoice.QuickBk_Status.ilike(f"%{search}%")
+                        cast(TblImvoice.balance, String).ilike(f"%{search}%") |
+                        cast(TblImvoice.dept, String).ilike(f"%{search}%")
                     )
 
                 total_records = session.query(TblImvoice.id).count()
