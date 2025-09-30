@@ -743,7 +743,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def fetch_paginated_invoices(start: int = 0, length: int = 50, search: str = None):
+    def fetch_paginated_invoices(start: int = 0, length: int = 50, search = None):
         """Fetch invoices with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:
@@ -763,7 +763,9 @@ class TblImvoice(MISBaseModel):
                 if search:
                     query = query.filter(
                         TblImvoice.reg_no.ilike(f"%{search}%") |
-                        TblImvoice.reference_number.ilike(f"%{search}%")
+                        TblImvoice.reference_number.ilike(f"%{search}%") |
+                        TblImvoice.id.ilike(f"%{search}%") |
+                        TblImvoice.QuickBk_Status.ilike(f"%{search}%")
                     )
 
                 total_records = session.query(TblImvoice.id).count()

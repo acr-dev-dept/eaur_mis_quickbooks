@@ -102,7 +102,7 @@ $(document).ready(function() {
         // reload just this row for freshness
         table.ajax.reload(null, false); 
       } else {
-        alert(`Sync failed: ${data.message}`);
+        alert(`Sync failed: ${data.details}`);
         btn.prop('disabled', false).text('Sync');
       }
     })

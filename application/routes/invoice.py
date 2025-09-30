@@ -13,6 +13,17 @@ def get_mis_invoices():
         length = int(request.args.get('length', 50))
         search_value = request.args.get('search[value]', None)
 
+        if search_value:
+            search_value = search_value.strip()
+            if search_value == 'synced':
+                search_value = 1
+            elif search_value == 'unsynced':
+                search_value = 0
+            elif search_value == 'failed':
+                search_value = 2
+            else:
+                search_value = None
+
         total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
             start=start, length=length, search=search_value
         )
