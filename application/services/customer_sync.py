@@ -38,7 +38,7 @@ class CustomerSyncStatus(Enum):
     FAILED = 2
     IN_PROGRESS = 3
 
-@dataclass
+@dataclass 
 class CustomerSyncStats:
     """Statistics for customer synchronization process"""
     total_applicants: int = 0

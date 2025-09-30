@@ -6,6 +6,7 @@ from flask import current_app
 from application.services.payment_sync import PaymentSyncService
 import requests
 from application.services.customer_sync import CustomerSyncService
+from application.services.invoice_sync import InvoiceSyncService
 
 flask_app = create_app(os.getenv('FLASK_ENV', 'development'))
 flask_app.logger.setLevel(logging.DEBUG)
@@ -165,27 +166,46 @@ def sync_invoices(self, batch_size=20):
     """
     Celery task to synchronize unsynchronized invoices from MIS to QuickBooks.
     """
-    sync_service = InvoiceSyncService()
-    total_succeeded = 0
-    total_failed = 0
-
     try:
-        
-        while True:
-            results = sync_service.sync_invoices_batch(batch_size=batch_size)
-
-            total_succeeded += results.get('total_succeeded', 0)
-            total_failed += results.get('total_failed', 0)
-
-            if results['total_processed'] == 0:  # nothing left
-                break
-            # Sleep or wait before the next batch if needed
+        sync_service = InvoiceSyncService()
+        unsynchronized_invoices = sync_service.get_unsynchronized_invoices(limit=batch_size)
         flask_app.logger.info(
-            f"Invoice sync completed: {total_succeeded} succeeded, {total_failed} failed"
+            f"Retrieved {len(unsynchronized_invoices)} unsynchronized invoices "
+            f"and the type is {type(unsynchronized_invoices)}"
         )
-        return {"total_succeeded": total_succeeded, "total_failed": total_failed}
-    except Exception as e:
-        flask_app.logger.error(f"Error during invoice sync process: {e}")
-        return {"error": str(e)}
+        succeeded = 0
+        invoice_ids = []
 
-        
+        for invoice in unsynchronized_invoices:
+            invoice = invoice.to_dict()
+            invoice_id = invoice.get('id')
+            try:
+                url = f"https://api.eaur.ac.rw/api/v1/sync/invoices/sync_invoice/{invoice_id}"
+                response = requests.post(url, timeout=30) 
+
+                if response.status_code == 200:
+                    succeeded += 1
+                    invoice_ids.append(invoice_id)
+                    flask_app.logger.info(
+                        f"Successfully synchronized invoice ID {invoice_id}, response: {response.text}"
+                    )
+                else:
+                    flask_app.logger.error(
+                        f"Failed to sync invoice ID {invoice_id}, status: {response.status_code}, body: {response.text}"
+                    )
+
+            except Exception as e:
+                flask_app.logger.error(f"Exception syncing invoice ID {invoice_id}: {e}")
+                continue
+        flask_app.logger.info(
+            f"Invoice sync completed: {succeeded}/{len(unsynchronized_invoices)} succeeded"
+        )
+        return {
+            "total_succeeded": succeeded,
+            "total_attempted": len(unsynchronized_invoices),
+            "invoice_ids": invoice_ids,
+        }
+    except Exception as e:
+         flask_app.logger.error(f"Error during invoice sync process: {e}")
+         return {"error": str(e)}
+    
