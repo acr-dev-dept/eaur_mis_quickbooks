@@ -179,9 +179,10 @@ def sync_invoices(self, batch_size=20):
         for invoice in unsynchronized_invoices:
             invoice = invoice.to_dict()
             invoice_id = invoice.get('id')
+            payload = {"invoice_id": invoice_id}
             try:
-                url = f"https://api.eaur.ac.rw/api/v1/sync/invoices/sync_invoice/{invoice_id}"
-                response = requests.post(url, timeout=30) 
+                url = f"https://api.eaur.ac.rw/api/v1/invoices/sync_single_invoice"
+                response = requests.post(url, json=payload, timeout=30)
 
                 if response.status_code == 200:
                     succeeded += 1
