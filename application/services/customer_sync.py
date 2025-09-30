@@ -992,29 +992,29 @@ class CustomerSyncService:
         current_app.logger.info(f"Syncing single applicant: {applicant} and the type is {type(applicant)}")
         try:
            # Mark applicant as in progress
-            self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.IN_PROGRESS.value)
+            self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
 
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
+            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.get('appl_Id')}: {qb_customer_data}")
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-            current_app.logger.info(f"QuickBooks response for applicant {applicant.appl_Id}: {response}")
+            current_app.logger.info(f"QuickBooks response for applicant {applicant.get('appl_Id')}: {response}")
             if 'Customer' in response:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_applicant_sync_status(
-                    applicant.appl_Id,
+                    applicant.get('appl_Id'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
 
                 # Log successful sync
-                self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
+                self._log_customer_sync_auditapplicant.get('appl_id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
                     customer_id=applicant.tracking_id,
@@ -1039,8 +1039,8 @@ class CustomerSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_applicant_sync_status(applicant.appl_Id, CustomerSyncStatus.FAILED.value)
-            self._log_customer_sync_audit(applicant.appl_Id, 'Applicant', 'ERROR', error_msg)
+            self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.FAILED.value)
+            self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'ERROR', error_msg)
 
             return CustomerSyncResult(
                 customer_id=applicant.tracking_id,
