@@ -11,7 +11,7 @@ from application.services.invoice_sync import InvoiceSyncService
 from datetime import datetime
 from application.models.mis_models import TblImvoice
 from flask import render_template
-from application.models.central import QuickbooksAuditLog
+from application.models.central_models import QuickbooksAuditLog
 
 invoices_bp = Blueprint('invoices', __name__)
 
