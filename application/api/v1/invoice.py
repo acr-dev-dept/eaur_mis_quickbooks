@@ -652,6 +652,8 @@ def sync_invoice(invoice_id):
 
         invoice_sync_service = InvoiceSyncService()
         invoice_data = invoice_sync_service.fetch_invoice_data(invoice_id)
+        current_app.logger.info(f'Fetched invoice data: {invoice_data} and the type is {type(invoice_data)}')
+
         
         result = invoice_sync_service.sync_single_invoice(invoice_data)
         
