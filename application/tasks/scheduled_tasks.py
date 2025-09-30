@@ -11,11 +11,11 @@ celery.conf.beat_schedule = {
         "schedule": 120.0,  # every 2 minutes
         "args": (),
     },
-    "sync-customers-every-4-min": {
-        "task": "application.tasks.quickbooks_sync.sync_applicants",
-        "schedule": 240.0,  # every 4 minutes
-        "args": (),
-    },
+    #"sync-customers-every-4-min": {
+        #"task": "application.tasks.quickbooks_sync.sync_applicants",
+        #"schedule": 240.0,  # every 4 minutes
+        #"args": (),
+    #},
     "sync-invoices-every-2-min": {
         "task": "application.tasks.quickbooks_sync.sync_invoices",
         "schedule": 120.0,  # every 2 minutes
