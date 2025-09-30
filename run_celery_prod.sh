@@ -1,6 +1,7 @@
 #!/bin/bash
-# run_celery_prod.sh
+# run_celery_prod_async.sh
 # Production-ready Celery setup for EAUR MIS-QuickBooks Integration
+# Async tasks with gevent + standalone Beat + Flower
 
 # === CONFIGURATION ===
 APP_MODULE="application.tasks.scheduled_tasks.celery"
@@ -10,6 +11,9 @@ FLASK_ENV=${FLASK_ENV:-production}
 CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://localhost:6379/0}
 CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://localhost:6379/0}
 FLOWER_PORT=${FLOWER_PORT:-5555}
+
+# Number of concurrent greenlets for async tasks
+ASYNC_CONCURRENCY=${ASYNC_CONCURRENCY:-50}
 
 # === CREATE LOG AND PID DIRECTORIES ===
 mkdir -p "$LOG_DIR"
@@ -27,20 +31,31 @@ kill_existing() {
     fi
 }
 
-# Stop any running Celery worker, beat, or Flower
+# Stop any running Celery worker, Beat, or Flower
 kill_existing "celery_worker"
+kill_existing "celery_beat"
 kill_existing "flower"
 
 # === ACTIVATE VIRTUAL ENVIRONMENT ===
 source /home/eaur/eaur_mis_quickbooks/venv/bin/activate
 
-# === START CELERY WORKER + BEAT ===
-echo "Starting Celery worker + beat..."
+# === START CELERY WORKER (async with gevent) ===
+echo "Starting Celery worker (async with gevent)..."
 celery -A $APP_MODULE worker \
-    --beat \
+    --pool=gevent \
+    --concurrency=$ASYNC_CONCURRENCY \
     --loglevel=info \
     --logfile="$LOG_DIR/celery_worker.log" \
     --pidfile="$PID_DIR/celery_worker.pid" &
+
+sleep 5
+
+# === START STANDALONE CELERY BEAT ===
+echo "Starting standalone Celery Beat..."
+celery -A $APP_MODULE beat \
+    --loglevel=info \
+    --logfile="$LOG_DIR/celery_beat.log" \
+    --pidfile="$PID_DIR/celery_beat.pid" &
 
 sleep 5
 
@@ -52,5 +67,6 @@ celery -A $APP_MODULE flower \
     --pidfile="$PID_DIR/flower.pid" \
     --logfile="$LOG_DIR/flower.log" &
 
-echo "✅ Celery worker + beat started."
+echo "✅ Celery worker started (async mode)"
+echo "✅ Standalone Beat started"
 echo "✅ Flower monitoring started at http://localhost:$FLOWER_PORT"
