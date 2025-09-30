@@ -285,6 +285,17 @@ class Payment(MISBaseModel):
             return 0
 
     @staticmethod
+    def count_synced_payments():
+        """Count total payments synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                return session.query(func.count(Payment.id)).filter(Payment.QuickBk_Status == 1, Payment.qk_id != None).scalar()
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced payments: {str(e)}")
+            return 0
+
+    @staticmethod
     def fetch_paginated_payments(start: int = 0, length: int = 50, search: str = None):
         """Fetch payments with pagination for DataTables server-side"""
         try:
@@ -791,6 +802,18 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error counting total invoices: {str(e)}")
             return 0
 
+    @staticmethod
+    def count_synced_invoices():
+        """Count total number of invoices synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                synced_invoices = session.query(TblImvoice).filter(TblImvoice.QuickBk_Status == 1, TblImvoice.quickbooks_id != None).count()
+                return synced_invoices
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced invoices: {str(e)}")
+            return 0
+
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
@@ -960,7 +983,58 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
             return []
-    
+    @staticmethod
+    def count_synced_categories():
+        """Count income categories that have been synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblIncomeCategory).filter(TblIncomeCategory.Quickbk_Status == 1).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced income categories: {str(e)}")
+            return 0
+
+    @staticmethod
+    def fetch_paginated_categories(start: int = 0, length: int = 50, search: str = None):
+        """Fetch income categories with pagination for DataTables server-side"""
+        try:
+            with MISBaseModel.get_session() as session:
+                query = session.query(
+                    TblIncomeCategory.id,
+                    TblIncomeCategory.name,
+                    TblIncomeCategory.amount,
+                    TblIncomeCategory.status_Id,
+                    TblIncomeCategory.Quickbk_Status,
+                    TblIncomeCategory.pushed_by,
+                    TblIncomeCategory.pushed_date
+                )
+
+                if search:
+                    query = query.filter(
+                        TblIncomeCategory.name.ilike(f"%{search}%") |
+                        TblIncomeCategory.description.ilike(f"%{search}%")
+                    )
+                total_categories = session.query(TblIncomeCategory.id).count()
+                filtered_categories = query.count()
+                categories = query.order_by(TblIncomeCategory.name.asc()).offset(start).limit(length).all()
+                data = [
+                    {
+                        "id": cat.id,
+                        "name": cat.name,
+                        "amount": cat.amount or 0,
+                        "status_Id": cat.status_Id,
+                        "Quickbk_Status": cat.Quickbk_Status,
+                        "pushed_by": cat.pushed_by or "-",
+                        "pushed_date": cat.pushed_date.isoformat() if cat.pushed_date else "-"
+                    } for cat in categories
+                ]
+                return total_categories, filtered_categories, data
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated income categories: {str(e)}")
+            return 0, 0, []
 
 class TblLevel(MISBaseModel):
     """Model for tbl_level table"""
@@ -1403,7 +1477,19 @@ class TblOnlineApplication(MISBaseModel):
             current_app.logger.error(f"Error counting applicants: {str(e)}")
             return 0
 
-
+    @staticmethod
+    def count_synced_applicants():
+        """
+        Count total number of applicants synced to QuickBooks
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblOnlineApplication).filter(TblOnlineApplication.QuickBk_Status == 1, TblOnlineApplication.quickbooks_id != None).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced applicants: {str(e)}")
+            return 0
 
 
 class TblPersonalUg(MISBaseModel):
@@ -1977,6 +2063,79 @@ class TblPersonalUg(MISBaseModel):
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error counting students: {str(e)}")
+            return 0
+
+    @staticmethod
+    def fetch_paginated_students(start: int = 0, length: int = 50, search: str = None):
+        """
+        Fetch paginated student records with optional search filter
+
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                query = session.query(
+                    TblPersonalUg.per_id_ug,
+                    TblPersonalUg.reg_no,
+                    TblPersonalUg.fname,
+                    TblPersonalUg.lname,
+                    TblPersonalUg.email1,
+                    TblPersonalUg.phone1,
+                    TblPersonalUg.QuickBk_Status,
+                    TblPersonalUg.qk_id,
+                    TblPersonalUg.pushed_by,
+                    TblPersonalUg.pushed_date
+                )
+
+                if search:
+                    search_pattern = f"%{search}%"
+                    query = query.filter(
+                        or_(
+                            TblPersonalUg.reg_no.ilike(search_pattern),
+                            TblPersonalUg.fname.ilike(search_pattern),
+                            TblPersonalUg.lname.ilike(search_pattern),
+                            TblPersonalUg.email1.ilike(search_pattern),
+                            TblPersonalUg.phone1.ilike(search_pattern)
+                        )
+                    )
+                total_records = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
+                filtered_records = query.count()
+
+                students = query.order_by(TblPersonalUg.per_id_ug).offset(start).limit(length).all()
+                data = [
+                    {
+                        'per_id_ug': s.per_id_ug,
+                        'reg_no': s.reg_no,
+                        'fname': s.fname,
+                        'lname': s.lname,
+                        'email1': s.email1,
+                        'phone1': s.phone1,
+                        'quickbooks_status': s.QuickBk_Status,
+                        'qk_id': s.qk_id,
+                        'pushed_by': s.pushed_by,
+                        'pushed_date': s.pushed_date.isoformat() if s.pushed_date else None
+                    }
+                    for s in students
+                ]
+                return total_records, filtered_records, data
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching paginated students: {str(e)}")
+            return 0, 0, []
+    @staticmethod
+    def count_synced_students():
+        """
+        Count total number of students synced to QuickBooks
+
+        Returns:
+            int: Total number of synced students
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.qk_id.isnot(None)).scalar()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced students: {str(e)}")
             return 0
 
 class TblRegisterProgramUg(MISBaseModel):

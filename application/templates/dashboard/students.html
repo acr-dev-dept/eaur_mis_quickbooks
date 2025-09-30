@@ -24,19 +24,17 @@
         <tbody></tbody>
     </table>
 </div>
-
 <!-- DataTables Scripts -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
 <script>
 $(document).ready(function() {
     $('#payments-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
-            url: '/payments/get_payments', // your Flask endpoint returning DataTables JSON
+            url: '/payments/get_students', // your Flask endpoint returning DataTables JSON
             type: 'GET',
             data: function(d) {
                 // d.draw, d.start, d.length are automatically sent by DataTables
@@ -44,28 +42,26 @@ $(document).ready(function() {
             }
         },
         columns: [
-            { data: 'id' },
+            { data: 'per_id_ug' },
             { data: 'reg_no' },
-            { data: 'reference_number', defaultContent: '-' },
-            { data: 'amount', defaultContent: 0 },
-            { data: 'transaction_id', defaultContent: '-' },
-            { data: 'payment_date', defaultContent: '-' },
-            {
-                data: 'QuickBk_Status',
-                render: function(data) {
+            { data: 'fname', defaultContent: '-' },
+            { data: 'lname', defaultContent: '-' },
+            { data: 'email1', defaultContent: '-' },
+            { data: 'phone1', defaultContent: '-' },
+            { data: 'quickbooks_status',
+              render: function(data) {
                 if (data == 1) {
-                    return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
+                  return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
                 }
                 if (data == 2) {
-                    return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
+                  return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                 }
                 return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
-                }
+              }
             },
             { data: 'pushed_by', defaultContent: '-' },
             { data: 'pushed_date', defaultContent: '-' }
-        ],
-        order: [[0, 'desc']] // Order by ID descending by default
+        ]
     });
 });
 </script>

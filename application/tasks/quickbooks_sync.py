@@ -159,3 +159,33 @@ def sync_students(self):
     except Exception as e:
         flask_app.logger.error(f"Error during student sync process: {e}")
         return {"error": str(e)}
+
+@celery.task(bind=True)
+def sync_invoices(self, batch_size=20):
+    """
+    Celery task to synchronize unsynchronized invoices from MIS to QuickBooks.
+    """
+    sync_service = InvoiceSyncService()
+    total_succeeded = 0
+    total_failed = 0
+
+    try:
+        
+        while True:
+            results = sync_service.sync_invoices_batch(batch_size=batch_size)
+
+            total_succeeded += results.get('total_succeeded', 0)
+            total_failed += results.get('total_failed', 0)
+
+            if results['total_processed'] == 0:  # nothing left
+                break
+            # Sleep or wait before the next batch if needed
+        flask_app.logger.info(
+            f"Invoice sync completed: {total_succeeded} succeeded, {total_failed} failed"
+        )
+        return {"total_succeeded": total_succeeded, "total_failed": total_failed}
+    except Exception as e:
+        flask_app.logger.error(f"Error during invoice sync process: {e}")
+        return {"error": str(e)}
+
+        

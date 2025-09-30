@@ -1,21 +1,21 @@
 
 {% extends "dashboard/layout.html" %}
 
-{% block title %}Invoices - Sync Dashboard{% endblock %}
-{% block page_title %}Invoices{% endblock %}
+{% block title %}Items - Sync Dashboard{% endblock %}
+{% block page_title %}Items{% endblock %}
 
 {% block content %}
 <div class="bg-white shadow rounded-lg p-6">
-  <h2 class="text-lg font-semibold mb-4">Payments</h2>
-    <table id="payments-table" class="w-full table-auto border-collapse border border-gray-200">
+  <h2 class="text-lg font-semibold mb-4">Items(Fees)</h2>
+    <table id="items-table" class="w-full table-auto border-collapse border border-gray-200">
         <thead>
         <tr class="bg-gray-100 text-left">
             <th>#</th>
-            <th>Reg No</th>
-            <th>Reference</th>
-            <th>Amount</th>
-            <th>Transaction ID</th>
-            <th>Payment Date</th>
+            <th>Item Name</th>
+            <th>Item Type</th>
+            <th>Sales Description</th>
+            <th>Sales Price</th>
+            <th>Income Account</th>
             <th>QBO Status</th>
             <th>Pushed By</th>
             <th>Pushed Date</th>
@@ -24,19 +24,17 @@
         <tbody></tbody>
     </table>
 </div>
-
 <!-- DataTables Scripts -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
 <script>
 $(document).ready(function() {
-    $('#payments-table').DataTable({
+    $('#items-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
-            url: '/payments/get_payments', // your Flask endpoint returning DataTables JSON
+            url: '/items/get_items', // your Flask endpoint returning DataTables JSON
             type: 'GET',
             data: function(d) {
                 // d.draw, d.start, d.length are automatically sent by DataTables
@@ -45,27 +43,22 @@ $(document).ready(function() {
         },
         columns: [
             { data: 'id' },
-            { data: 'reg_no' },
-            { data: 'reference_number', defaultContent: '-' },
+            { data: 'name', defaultContent: '-' },
             { data: 'amount', defaultContent: 0 },
-            { data: 'transaction_id', defaultContent: '-' },
-            { data: 'payment_date', defaultContent: '-' },
-            {
-                data: 'QuickBk_Status',
-                render: function(data) {
+            { data: 'Quickbk_Status',
+              render: function(data) {
                 if (data == 1) {
-                    return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
+                  return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
                 }
                 if (data == 2) {
-                    return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
+                  return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                 }
                 return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
-                }
+              }
             },
             { data: 'pushed_by', defaultContent: '-' },
             { data: 'pushed_date', defaultContent: '-' }
-        ],
-        order: [[0, 'desc']] // Order by ID descending by default
+        ]
     });
 });
 </script>

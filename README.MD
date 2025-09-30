@@ -317,6 +317,7 @@ requirements needed:
 ## Pre-requirements
    1. We found that there are some existing customers, items, and invoices already there in EAUR's quickbooks.
    2. We found that only applicants are not there, so they need to be synced, with quickbooks_id, and quickbooks_status
+   3. Date formats to match the local format
 
 
 ## Requirements
