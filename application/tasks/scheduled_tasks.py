@@ -6,14 +6,19 @@ from celery.schedules import crontab
 celery = payment_celery  # you can also make a dedicated celery instance if you prefer
 
 celery.conf.beat_schedule = {
-    "sync-payments-every-5-min": {
+    "sync-payments-every-2-min": {
         "task": "application.tasks.quickbooks_sync.sync_payments",
-        "schedule": 120.0,  # every 5 minutes
+        "schedule": 120.0,  # every 2 minutes
         "args": (),
     },
-    "sync-customers-every-10-min": {
+    "sync-customers-every-4-min": {
         "task": "application.tasks.quickbooks_sync.sync_applicants",
-        "schedule": 600.0,  # every 10 minutes
+        "schedule": 240.0,  # every 4 minutes
+        "args": (),
+    },
+    "sync-invoices-every-3-min": {
+        "task": "application.tasks.quickbooks_sync.sync_invoices",
+        "schedule": 180.0,  # every 3 minutes
         "args": (),
     },
 }
