@@ -50,7 +50,7 @@
     <div>
       <p class="text-gray-500 text-sm">Payments</p>
       <h2 class="text-2xl font-bold text-red-600">{{ numbers['total_payments'] }}</h2>
-      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_payments'] if numbers['synced_payments'] is not none else 0 }}</p>
+      <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_payments'] if numbers['synced_payments'] is not none else 0 }}</p>
     </div>
   </div>
 
@@ -62,7 +62,7 @@
     <div>
       <p class="text-gray-500 text-sm">Items (Fees)</p>
       <h2 class="text-2xl font-bold text-purple-600">{{ numbers['active_categories'] }}</h2>
-      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_categories'] if numbers['synced_categories'] is not none else 0 }}</p>
+      <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_categories'] if numbers['synced_categories'] is not none else 0 }}</p>
     </div>
   </div>
 </div>

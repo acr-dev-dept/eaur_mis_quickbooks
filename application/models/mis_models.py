@@ -285,6 +285,17 @@ class Payment(MISBaseModel):
             return 0
 
     @staticmethod
+    def count_synced_payments():
+        """Count total payments synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                return session.query(func.count(Payment.id)).filter(Payment.QuickBk_Status == 1, Payment.qk_id != None).scalar()
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced payments: {str(e)}")
+            return 0
+
+    @staticmethod
     def fetch_paginated_payments(start: int = 0, length: int = 50, search: str = None):
         """Fetch payments with pagination for DataTables server-side"""
         try:
@@ -971,7 +982,7 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error counting synced income categories: {str(e)}")
             return 0
-            
+
     @staticmethod
     def fetch_paginated_categories(start: int = 0, length: int = 50, search: str = None):
         """Fetch income categories with pagination for DataTables server-side"""

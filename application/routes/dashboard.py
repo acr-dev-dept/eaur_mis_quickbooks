@@ -15,5 +15,6 @@ def dashboard_page():
     numbers['total_invoices'] = TblImvoice.count_invoices()
     numbers['total_payments'] = Payment.count_payments()
     numbers['synced_categories'] = TblIncomeCategory.count_synced_categories()
+    numbers['synced_payments'] = Payment.count_synced_payments()
 
     return render_template("dashboard/index.html", numbers=numbers)
