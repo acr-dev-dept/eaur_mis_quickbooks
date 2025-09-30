@@ -143,7 +143,7 @@ class InvoiceSyncService:
                     joinedload(TblImvoice.fee_category_rel),
                     joinedload(TblImvoice.module),
                 joinedload(TblImvoice.intake)
-            ).filter(TblImvoice.id == invoice_id).first()
+            ).filter(TblImvoice.id == invoice_id, TblImvoice.QuickBk_Status != 1).first()
             
             if not invoice:
                 raise Exception(f"Invoice with ID {invoice_id} not found")
@@ -152,7 +152,7 @@ class InvoiceSyncService:
             
         except Exception as e:
             logger.error(f"Error fetching invoice {invoice_id}: {e}")
-            raise
+            raise Exception(f"The invoice with ID {invoice_id} could not be found or is already synchronized.") from e
         finally:
             if 'session' in locals():
                 session.close()
