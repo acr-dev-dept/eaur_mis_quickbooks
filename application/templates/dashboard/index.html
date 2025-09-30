@@ -14,10 +14,9 @@
     <div>
       <p class="text-gray-500 text-sm">Applicants</p>
       <h2 class="text-2xl font-bold text-indigo-600">{{ numbers['total_applicants'] }}</h2>
-      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_applicants'] if numbers['synced_applicants'] is not none else 0 }}</p>
+      <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_applicants'] if numbers['synced_applicants'] is not none else 0 }}</p>
     </div>
   </div>
-
   <!-- Students -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
     <div class="p-3 rounded-xl bg-green-50">
@@ -26,7 +25,7 @@
     <div>
       <p class="text-gray-500 text-sm">Students</p>
       <h2 class="text-2xl font-bold text-green-600">{{ numbers['total_students'] }}</h2>
-      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_students'] if numbers['synced_students'] is not none else 0 }}</p>
+      <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_students'] if numbers['synced_students'] is not none else 0 }}</p>
     </div>
   </div>
 
@@ -38,10 +37,9 @@
     <div>
       <p class="text-gray-500 text-sm">Invoices</p>
       <h2 class="text-2xl font-bold text-yellow-600">{{ numbers['total_invoices'] }}</h2>
-      <p class="text-xs text-gray-400">Synced: {{ numbers['synced_invoices'] if numbers['synced_invoices'] is not none else 0 }}</p>
+      <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_invoices'] if numbers['synced_invoices'] is not none else 0 }}</p>
     </div>
   </div>
-
   <!-- Payments -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
     <div class="p-3 rounded-xl bg-red-50">
@@ -53,7 +51,6 @@
       <p class="text-xs text-gray-400 font-bold">Synced: {{ numbers['synced_payments'] if numbers['synced_payments'] is not none else 0 }}</p>
     </div>
   </div>
-
   <!-- Items -->
   <div class="bg-white rounded-2xl shadow p-6 flex items-center space-x-4">
     <div class="p-3 rounded-xl bg-purple-50">
