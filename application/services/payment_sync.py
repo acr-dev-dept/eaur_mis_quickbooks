@@ -512,8 +512,13 @@ class PaymentSyncService:
                     success=False,
                     error_message=map_error
                 )
-
+            # Log the payload being sent
+            self.logger.info(f"sending a payment with invoice ref {payment.invoice_ref} to QuickBooks and data mapped is {qb_payment_data}")
             response = qb_service.create_payment(qb_service.realm_id, qb_payment_data)
+            # I wanna write this response to the log file
+            with open('quickbooks_response.log', 'a') as log_file:
+                log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Response: {response}\n")
+                log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Request: {qb_payment_data}\n")
             self.logger.debug(f"QuickBooks response for payment {payment.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
 
             if 'Payment' in response and response['Payment'].get('Id'):
