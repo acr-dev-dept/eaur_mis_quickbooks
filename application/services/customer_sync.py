@@ -38,7 +38,7 @@ class CustomerSyncStatus(Enum):
     FAILED = 2
     IN_PROGRESS = 3
 
-@dataclass 
+@dataclass
 class CustomerSyncStats:
     """Statistics for customer synchronization process"""
     total_applicants: int = 0
@@ -999,7 +999,7 @@ class CustomerSyncService:
 
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.get('appl_Id')}: {qb_customer_data}")
+            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
@@ -1014,7 +1014,7 @@ class CustomerSyncService:
                 )
 
                 # Log successful sync
-                self._log_customer_sync_auditapplicant.get('appl_id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
+                self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
                     customer_id=applicant.tracking_id,
