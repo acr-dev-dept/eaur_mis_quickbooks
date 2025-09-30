@@ -16,11 +16,11 @@ celery.conf.beat_schedule = {
         "schedule": 240.0,  # every 4 minutes
         "args": (),
     },
-    "sync-invoices-every-3-min": {
+    "sync-invoices-every-2-min": {
         "task": "application.tasks.quickbooks_sync.sync_invoices",
-        "schedule": 180.0,  # every 3 minutes
+        "schedule": 120.0,  # every 2 minutes
         "args": (),
-    },
+    }
 }
 
 celery.conf.timezone = "Africa/Kigali"
