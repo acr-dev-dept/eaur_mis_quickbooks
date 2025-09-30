@@ -184,5 +184,8 @@ def sync_invoices(self, batch_size=20):
             f"Invoice sync completed: {total_succeeded} succeeded, {total_failed} failed"
         )
         return {"total_succeeded": total_succeeded, "total_failed": total_failed}
+    except Exception as e:
+        flask_app.logger.error(f"Error during invoice sync process: {e}")
+        return {"error": str(e)}
 
         
