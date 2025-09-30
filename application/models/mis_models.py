@@ -759,16 +759,16 @@ class TblImvoice(MISBaseModel):
                     TblImvoice.pushed_by,
                     TblImvoice.pushed_date
                 )
+                total_records = session.query(func.count(TblImvoice.id)).scalar()
                 # Optional search filter
                 if search:
                     query = query.filter(
                         TblImvoice.reg_no.ilike(f"%{search}%") |
                         TblImvoice.reference_number.ilike(f"%{search}%") |
-                        cast(TblImvoice.balance, String).ilike(f"%{search}%") |
-                        cast(TblImvoice.dept, String).ilike(f"%{search}%")
+                        cast(TblImvoice.id, String).ilike(f"%{search}%") |
+                        cast(TblImvoice.QuickBk_Status, String).ilike(f"%{search}%")
                     )
 
-                total_records = session.query(TblImvoice.id).count()
                 filtered_records = query.count()
 
                 invoices = query.order_by(TblImvoice.invoice_date.desc()).offset(start).limit(length).all()
