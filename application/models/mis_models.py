@@ -1477,7 +1477,19 @@ class TblOnlineApplication(MISBaseModel):
             current_app.logger.error(f"Error counting applicants: {str(e)}")
             return 0
 
-
+    @staticmethod
+    def count_synced_applicants():
+        """
+        Count total number of applicants synced to QuickBooks
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(TblOnlineApplication).filter(TblOnlineApplication.QuickBk_Status == 1, TblOnlineApplication.quickbooks_id != None).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting synced applicants: {str(e)}")
+            return 0
 
 
 class TblPersonalUg(MISBaseModel):
