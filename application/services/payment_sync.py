@@ -513,7 +513,7 @@ class PaymentSyncService:
                     error_message=map_error
                 )
             # Log the payload being sent
-            self.logger.info(f"sending a payment with invoice ref {payment.invoice_ref} to QuickBooks and data mapped is {qb_payment_data}")
+            self.logger.info(f"sending a payment with invoice ref {payment.invoi_ref} to QuickBooks and data mapped is {qb_payment_data}")
             response = qb_service.create_payment(qb_service.realm_id, qb_payment_data)
             # I wanna write this response to the log file
             log_path = "/var/log/hrms/quickbooks_response.log"
