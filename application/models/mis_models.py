@@ -763,26 +763,41 @@ class TblImvoice(MISBaseModel):
                 # Optional search filter
                 if search:
                     mapping = {
-                        "synced": 1,
-                        "unsynced": 0,
-                        "failed": 2
+                        "synced": {
+                            "nbr": 1,
+                            "quickbooks_id_not_null": True
+                        },
+                        "unsynced": {
+                            "nbr": 0,
+                            "quickbooks_id_not_null": False
+                        },
+                        "failed": {
+                            "nbr": 2,
+                            "quickbooks_id_not_null": False
+                        }
                     }
 
                     # normalize search
                     search_str = str(search).strip().lower()
 
                     if search_str in mapping:  
-                        # text like "synced"
-                        query = query.filter(TblImvoice.QuickBk_Status == mapping[search_str])
+                        status_filter = mapping[search_str]
+                        cond = [TblImvoice.QuickBk_Status == status_filter["nbr"]]
+
+                        if status_filter["quickbooks_id_not_null"]:
+                            cond.append(TblImvoice.quickbooks_id.isnot(None))
+                        elif status_filter["quickbooks_id_not_null"] is False:
+                            cond.append(TblImvoice.quickbooks_id.is_(None))
+
+                        query = query.filter(*cond)
                     elif search_str.isdigit():
-                        # numeric 0,1,2
                         query = query.filter(TblImvoice.QuickBk_Status == int(search_str))
+
                     else:
-                        # fallback to other text fields
                         query = query.filter(
                             TblImvoice.reg_no.ilike(f"%{search}%") |
                             TblImvoice.reference_number.ilike(f"%{search}%") |
-                            cast(TblImvoice.id, String).ilike(f"%{search}%") 
+                            cast(TblImvoice.balance, String).ilike(f"%{search}%")
                         )
 
                 total_records = db.session.query(func.count(TblImvoice.id)).scalar()
