@@ -764,8 +764,8 @@ class TblImvoice(MISBaseModel):
                 if search:
 
                     # exact qbo status filter
-                    if isinstance(search, int) and search in [0,1,2]:
-                        query = query.filter(TblImvoice.QuickBk_Status == search)
+                    if search is not None and str(search).isdigit():
+                        query = query.filter(TblImvoice.QuickBk_Status == int(search))
                     else:
                         query = query.filter(
                             TblImvoice.reg_no.ilike(f"%{search}%") |
