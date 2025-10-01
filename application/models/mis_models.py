@@ -762,21 +762,38 @@ class TblImvoice(MISBaseModel):
                 total_records = session.query(func.count(TblImvoice.id)).scalar()
                 # Optional search filter
                 if search:
+                    mapping = {
+                        "synced": 1,
+                        "unsynced": 0,
+                        "failed": 2
+                    }
 
-                    # exact qbo status filter
-                    if search is not None and str(search).isdigit():
-                        query = query.filter(TblImvoice.QuickBk_Status == int(search))
+                    # normalize search
+                    search_str = str(search).strip().lower()
+
+                    if search_str in mapping:  
+                        # text like "synced"
+                        query = query.filter(TblImvoice.QuickBk_Status == mapping[search_str])
+                    elif search_str.isdigit():
+                        # numeric 0,1,2
+                        query = query.filter(TblImvoice.QuickBk_Status == int(search_str))
                     else:
+                        # fallback to other text fields
                         query = query.filter(
                             TblImvoice.reg_no.ilike(f"%{search}%") |
                             TblImvoice.reference_number.ilike(f"%{search}%") |
                             cast(TblImvoice.id, String).ilike(f"%{search}%") 
                         )
-                        
 
+                total_records = db.session.query(func.count(TblImvoice.id)).scalar()
                 filtered_records = query.count()
 
-                invoices = query.order_by(TblImvoice.invoice_date.desc()).offset(start).limit(length).all()
+                invoices = (
+                    query.order_by(TblImvoice.id.desc())
+                    .offset(start)
+                    .limit(length)
+                    .all()
+                )
 
                 data = [
                     {
