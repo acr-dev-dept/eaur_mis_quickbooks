@@ -762,12 +762,17 @@ class TblImvoice(MISBaseModel):
                 total_records = session.query(func.count(TblImvoice.id)).scalar()
                 # Optional search filter
                 if search:
-                    query = query.filter(
-                        TblImvoice.reg_no.ilike(f"%{search}%") |
-                        TblImvoice.reference_number.ilike(f"%{search}%") |
-                        cast(TblImvoice.id, String).ilike(f"%{search}%") |
-                        cast(TblImvoice.QuickBk_Status, String).ilike(f"%{search}%")
-                    )
+
+                    # exact qbo status filter
+                    if isinstance(search, int) and search in [0,1,2]:
+                        query = query.filter(TblImvoice.QuickBk_Status == search)
+                    else:
+                        query = query.filter(
+                            TblImvoice.reg_no.ilike(f"%{search}%") |
+                            TblImvoice.reference_number.ilike(f"%{search}%") |
+                            cast(TblImvoice.id, String).ilike(f"%{search}%") 
+                        )
+                        
 
                 filtered_records = query.count()
 
