@@ -50,10 +50,12 @@ $(document).ready(function() {
                 if (data == 1) {
                   return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
                 }
-                if (data == 2) {
+                if (data == 2 || data == 3) {
                   return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                 }
-                return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
+                if (data == 0 || data == null) {
+                  return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
+                }
               }
             },
             { data: 'pushed_by', defaultContent: '-' },

@@ -297,7 +297,7 @@ class Payment(MISBaseModel):
             return 0
 
     @staticmethod
-    def fetch_paginated_payments(start: int = 0, length: int = 50, search: str = None):
+    def fetch_paginated_payments(start: int = 0, length: int = 50, search=None):
         """Fetch payments with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:
@@ -314,40 +314,75 @@ class Payment(MISBaseModel):
                 )
 
                 if search:
-                    query = query.filter(
-                        Payment.reg_no.ilike(f"%{search}%") |
-                        Payment.external_transaction_id.ilike(f"%{search}%") |
-                        Payment.invoi_ref.ilike(f"%{search}%")
-                    )
-                total_payments = session.query(Payment.id).count()
-                filtered_payments = query.count()
-                payments = query.order_by(Payment.date.desc()).offset(start).limit(length).all()
+                    mapping = {
+                        "synced": {
+                            "status": 1,
+                            "qk_id_not_null": True
+                        },
+                        "unsynced": {
+                            "status": 0,
+                            "qk_id_not_null": False
+                        },
+                        "failed": {
+                            "status": 2 or 3,
+                        }
+
+                    }
+                    search_str = str(search).strip().lower()
+
+                    if search_str in mapping:
+                        status_filter = mapping[search_str]
+                        conditions = [Payment.QuickBk_Status == status_filter["status"]]
+
+                        if status_filter.get("qk_id_not_null") is True:
+                            conditions.append(Payment.external_transaction_id.isnot(None))
+                        elif status_filter.get("qk_id_not_null") is False:
+                            conditions.append(Payment.external_transaction_id.is_(None))
+
+                        query = query.filter(*conditions)
+
+                    elif str(search).isdigit():
+                        query = query.filter(Payment.QuickBk_Status == int(search))
+
+                    else:
+                        query = query.filter(
+                            Payment.reg_no.ilike(f"%{search}%") |
+                            Payment.external_transaction_id.ilike(f"%{search}%") |
+                            cast(Payment.id, String).ilike(f"%{search}%") |
+                            cast(Payment.amount, String).ilike(f"%{search}%")
+                        )
+
+                total_records = session.query(func.count(Payment.id)).scalar()
+                filtered_records = query.count()
+
+                payments = (
+                    query.order_by(Payment.date.desc())
+                    .offset(start)
+                    .limit(length)
+                    .all()
+                )
+
                 data = [
                     {
-                        "id": pay.id,
-                        "reg_no": pay.reg_no,
-                        "amount": pay.amount or 0,
-                        "external_transaction_id": pay.external_transaction_id or "-",
-                        "date": pay.date or "-",
-                        "invoi_ref": pay.invoi_ref or "-",
-                        "QuickBk_Status": pay.QuickBk_Status,
-                        "pushed_by": pay.pushed_by or "-",
-                        "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-"
-                    } for pay in payments
+                        "id": p.id,
+                        "reg_no": p.reg_no,
+                        "amount": p.amount,
+                        "external_transaction_id": p.external_transaction_id or "-",
+                        "date": p.date.isoformat() if p.date else "-",
+                        "QuickBk_Status": p.QuickBk_Status,
+                        "pushed_by": p.pushed_by or "-",
+                        "pushed_date": p.pushed_date.isoformat() if p.pushed_date else "-",
+                        "invoi_ref": p.invoi_ref or "-"
+                    }
+                    for p in payments
                 ]
-                return total_payments, filtered_payments, data
+
+                return total_records, filtered_records, data
 
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
-
-
-
-
-
-
-
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
