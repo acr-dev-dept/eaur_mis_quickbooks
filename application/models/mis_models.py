@@ -744,7 +744,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def fetch_paginated_invoices(start: int = 0, length: int = 50, search:str = None):
+    def fetch_paginated_invoices(start: int = 0, length: int = 50, search= None):
         """Fetch invoices with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:

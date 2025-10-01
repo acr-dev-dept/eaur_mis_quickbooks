@@ -12,7 +12,7 @@ def get_mis_invoices():
         start = int(request.args.get('start', 0))
         length = int(request.args.get('length', 50))
         search_value = request.args.get('search[value]', None)
-        
+        """
         if search_value:
             current_app.logger.debug(f"Original search value: {search_value} with type {type(search_value)}")
             val = search_value.strip()
@@ -24,6 +24,7 @@ def get_mis_invoices():
                 search_value = 2
             else:
                 search_value = val
+        """
 
         total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
             start=start, length=length, search=search_value
