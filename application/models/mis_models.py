@@ -324,9 +324,11 @@ class Payment(MISBaseModel):
                             "qk_id_not_null": False
                         },
                         "failed": {
-                            "status": 2 or 3,
+                            "status": 2
+                        },
+                        "in progress": {
+                            "status": 3
                         }
-
                     }
                     search_str = str(search).strip().lower()
 
