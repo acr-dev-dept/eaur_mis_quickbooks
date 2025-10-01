@@ -314,26 +314,15 @@ class Payment(MISBaseModel):
                 )
 
                 if search:
-                    mapping = {
-                        'synced':{
-                            'QuickBk_Status': 1,
-                            'qk_id': True
-                        },
-                        'unsynced':{
-                            'QuickBk_Status': {0, None},
-                            'qk_id': None
-                        },
-                        'failed':{
-                            'QuickBk_Status': 2,
-                        },
-                        'in progress':{
-                            'QuickBk_Status': 3,
-                        }
-                    }
-
-                total_payments = session.query(func.count(Payment.id)).scalar()
+                    query = query.filter(
+                        Payment.reg_no.ilike(f"%{search}%") |
+                        Payment.external_transaction_id.ilike(f"%{search}%") |
+                        Payment.invoi_ref.ilike(f"%{search}%")
+                    )
+                
+                total_payments = session.query(Payment.id).count()
                 filtered_payments = query.count()
-                payments = query.order_by(Payment.date.desc()).offset(start).limit(length).all()
+                payments = query.order_by(Payment.pushed_date.desc()).offset(start).limit(length).all()
                 data = [
                     {
                         "id": pay.id,
