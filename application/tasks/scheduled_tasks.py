@@ -15,7 +15,22 @@ celery.conf.beat_schedule = {
         "task": "application.tasks.quickbooks_sync.sync_invoices",
         "schedule": 15.0,  # every 15 seconds
         "args": (),
-    }
+    },
+    "sync-payments-every-15-sec": {
+        "task": "application.tasks.quickbooks_sync.sync_payments",
+        "schedule": 15.0,  # every 15 seconds
+        "args": (),
+    },
+    "sync-applicants-every-15-sec": {
+        "task": "application.tasks.quickbooks_sync.sync_applicants",
+        "schedule": 15.0,  # every 15 seconds
+        "args": (),
+    },
+    "sync-students-every-15-sec": {
+        "task": "application.tasks.quickbooks_sync.sync_students",
+        "schedule": 15.0,  # every 15 seconds
+        "args": (),
+    },
 }
 
 celery.conf.timezone = "Africa/Kigali"
