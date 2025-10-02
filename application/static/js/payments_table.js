@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    // Initialize DataTable
     let table = $('#payments-table').DataTable({
         processing: true,
         serverSide: true,
@@ -6,8 +7,8 @@ $(document).ready(function() {
             url: '/payments/get_payments',
             type: 'GET',
             data: function(d) {
-                // Send the status filter value to Flask
-                d.search = $('#status-filter').val(); // send as `search` so backend mapping works
+                // Send the selected status filter to Flask
+                d.search = $('#status-filter-input').val() || '';
             }
         },
         columns: [
@@ -20,14 +21,16 @@ $(document).ready(function() {
             {
                 data: 'status',
                 render: function(data) {
-                    if (data.toLowerCase() === 'synced') {
-                        return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
-                    } else if (data.toLowerCase() === 'unsynced') {
-                        return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
-                    } else if (data.toLowerCase() === 'failed') {
-                        return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
-                    } else {
-                        return '<span class="badge badge-secondary">' + data + '</span>';
+                    if (!data) return '-';
+                    switch(data.toLowerCase()) {
+                        case 'synced':
+                            return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
+                        case 'unsynced':
+                            return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
+                        case 'failed':
+                            return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
+                        default:
+                            return '<span class="badge badge-secondary">' + data + '</span>';
                     }
                 }
             },
@@ -37,30 +40,21 @@ $(document).ready(function() {
         order: [[0, 'desc']]
     });
 
-    // hidden input to store selected status
-    $("body").append('<input type="hidden" id="status-filter-input">');
-
-    // buttons click → update hidden input + reload table
-    $(".status-filter").on("click", function() {
-        var status = $(this).data("status"); // gets "" / "synced" / "unsynced" / "failed"
-        $("#status-filter-input").val(status);
-        table.ajax.reload();
-    });
-
-        // Add hidden input to store selected status
-    $("body").append('<input type="hidden" id="status-filter-input">');
+    // Hidden input to store selected status
+    if ($('#status-filter-input').length === 0) {
+        $("body").append('<input type="hidden" id="status-filter-input">');
+    }
 
     // Status button click → set active & reload table
     $(".status-filter").on("click", function() {
-        // Remove active from all buttons
+        // Remove active ring from all buttons
         $(".status-filter").removeClass("ring-2 ring-blue-500");
 
-        // Add active state to clicked button
+        // Add active ring to clicked button
         $(this).addClass("ring-2 ring-blue-500");
 
         // Update hidden input and reload table
-        var status = $(this).data("status");
-        $("#status-filter-input").val(status);
+        $("#status-filter-input").val($(this).data("status") || '');
         table.ajax.reload();
     });
 });
