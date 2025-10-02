@@ -37,8 +37,30 @@ $(document).ready(function() {
         order: [[0, 'desc']]
     });
 
-    // Reload table when filter changes
-    $('#status-filter').on('change', function() {
+    // hidden input to store selected status
+    $("body").append('<input type="hidden" id="status-filter-input">');
+
+    // buttons click → update hidden input + reload table
+    $(".status-filter").on("click", function() {
+        var status = $(this).data("status"); // gets "" / "synced" / "unsynced" / "failed"
+        $("#status-filter-input").val(status);
+        table.ajax.reload();
+    });
+
+        // Add hidden input to store selected status
+    $("body").append('<input type="hidden" id="status-filter-input">');
+
+    // Status button click → set active & reload table
+    $(".status-filter").on("click", function() {
+        // Remove active from all buttons
+        $(".status-filter").removeClass("ring-2 ring-blue-500");
+
+        // Add active state to clicked button
+        $(this).addClass("ring-2 ring-blue-500");
+
+        // Update hidden input and reload table
+        var status = $(this).data("status");
+        $("#status-filter-input").val(status);
         table.ajax.reload();
     });
 });
