@@ -28,7 +28,7 @@ $(document).ready(function() {
   $('#logsTable').DataTable({
     processing: true,
     serverSide: true,
-    ajax: "{{ url_for('qb_logs.logs_data') }}",
+    ajax: "{{ url_for('error_logs.logs_data') }}",
     columns: [
       { data: 0 },
       { data: 1 },
