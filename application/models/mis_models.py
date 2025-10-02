@@ -325,7 +325,7 @@ class Payment(MISBaseModel):
                             "qk_id_not_null": False
                         },
                         "failed": {
-                            "QuickBk_Status": 2,
+                            "QuickBk_Status": 2 or 3,
                             "qk_id_not_null": True
                         }
                     }
@@ -336,6 +336,9 @@ class Payment(MISBaseModel):
                     if search_str in mapping:  
                         status_filter = mapping[search_str]
                         cond = [Payment.QuickBk_Status == status_filter["QuickBk_Status"]]
+
+                        if status_filter == "unsynced":
+                            cond=[]
 
                         if status_filter["qk_id_not_null"]:
                             cond.append(Payment.qk_id.isnot(None))
