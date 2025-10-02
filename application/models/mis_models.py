@@ -381,8 +381,8 @@ class Payment(MISBaseModel):
                         "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-",
                         "status": (
                             "Synced" if pay.QuickBk_Status == 1 and pay.qk_id
-                            else "Unsynced" if (pay.QuickBk_Status in [0, None] or pay.qk_id is None)
-                            else "Failed" if (pay.QuickBk_Status in [2, 3] and pay.qk_id is None)
+                            else "Unsynced" if (pay.QuickBk_Status in [0, None])
+                            else "Failed" if (pay.QuickBk_Status in [2, 3])
                             else "Unknown"
                         )
                     } for pay in payments
