@@ -402,12 +402,6 @@ class Payment(MISBaseModel):
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
 
-
-
-
-
-
-
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
     __tablename__ = 'tbl_bank'

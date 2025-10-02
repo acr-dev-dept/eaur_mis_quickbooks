@@ -9,7 +9,7 @@ def get_payments():
         draw = int(request.args.get('draw', 1))
         start = int(request.args.get('start', 0))
         length = int(request.args.get('length', 50))
-        search_value = request.args.get('search[value]', None)
+        search_value = request.args.get('search', None)
 
         total_records, filtered_records, payments = Payment.fetch_paginated_payments(
             start=start, length=length, search=search_value
