@@ -76,7 +76,7 @@ $(document).ready(function() {
 
         btn.prop('disabled', true).text('Syncing...');
 
-        fetch(`/api/v1/payments/sync_payment/${recordId}`, {
+        fetch(`/api/v1/sync/payments/sync_payment/${recordId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: recordId })
