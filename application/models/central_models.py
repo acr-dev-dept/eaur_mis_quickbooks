@@ -13,6 +13,7 @@ import jwt
 import traceback
 from flask import current_app
 from application import db
+from sqlalchemy import or_, and_, cast, String
 
 # Use Flask-SQLAlchemy's Model base class
 class BaseModel(db.Model):
@@ -74,6 +75,12 @@ class QuickBooksConfig(BaseModel):
         config = cls.get_config()
         return config and config.is_active and config.access_token and config.refresh_token
 
+    @classmethod
+    def get_error_log(cls):
+        """Retrieve the latest error log from QuickBooks operations"""
+        return QuickbooksAuditLog.query.filter_by(operation_status='Failure').order_by(QuickbooksAuditLog.created_at.desc()).first()
+
+    
 class QuickbooksAuditLog(BaseModel):
     """Audit logs for QuickBooks operations"""
     __tablename__ = 'quickbooks_audit_logs'
@@ -103,6 +110,23 @@ class QuickbooksAuditLog(BaseModel):
         except Exception as e:
             db.session.rollback()
             raise e
+        
+    @classmethod
+    def fetch_paginated_logs(cls, start=0, length=10, search=None):
+        """Fetch logs for DataTables pagination"""
+        query = cls.query
+
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                (cls.action_type.ilike(search_filter)) |
+                (cls.error_message.ilike(search_filter))
+            )
+
+        total_records = query.count()
+        logs = query.order_by(cls.id.desc()).offset(start).limit(length).all()
+
+        return logs, total_records
 
 class SystemConfiguration(BaseModel):
     """System-wide configuration settings"""

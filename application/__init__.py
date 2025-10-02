@@ -190,6 +190,8 @@ def register_blueprints(app):
     app.register_blueprint(payments_route, url_prefix='/payments')
     app.register_blueprint(items_route, url_prefix='/items')
     app.register_blueprint(students_route, url_prefix='/students')
+    from application.routes.error_logs import error_logs_bp
+    app.register_blueprint(qb_bp)  # No prefix, routes define their own
     
 
 
