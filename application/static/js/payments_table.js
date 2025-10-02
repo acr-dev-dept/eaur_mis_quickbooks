@@ -17,7 +17,20 @@ $(document).ready(function() {
             { data: 'amount', defaultContent: 0 },
             { data: 'transaction_id', defaultContent: '-' },
             { data: 'payment_date', defaultContent: '-' },
-            { data: 'status', defaultContent: '-' },
+            {
+                data: 'status',
+                render: function(data) {
+                    if (data.toLowerCase() === 'synced') {
+                        return '<span class="badge badge-success">Synced</span>';
+                    } else if (data.toLowerCase() === 'unsynced') {
+                        return '<span class="badge badge-warning">Unsynced</span>';
+                    } else if (data.toLowerCase() === 'failed') {
+                        return '<span class="badge badge-danger">Failed</span>';
+                    } else {
+                        return '<span class="badge badge-secondary">' + data + '</span>';
+                    }
+                }
+            },
             { data: 'pushed_by', defaultContent: '-' },
             { data: 'pushed_date', defaultContent: '-' }
         ],
