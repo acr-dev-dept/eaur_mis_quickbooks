@@ -1,4 +1,3 @@
-
 {% extends "dashboard/layout.html" %}
 
 {% block title %}Invoices - Sync Dashboard{% endblock %}
@@ -6,7 +5,16 @@
 
 {% block content %}
 <div class="bg-white shadow rounded-lg p-6">
-  <h2 class="text-lg font-semibold mb-4">Invoices</h2>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-semibold">Invoices</h2>
+    <!-- Status Filter Buttons -->
+    <div class="space-x-2">
+      <button class="status-filter px-3 py-1 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200" data-status="">All</button>
+      <button class="status-filter px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200" data-status="synced">Synced</button>
+      <button class="status-filter px-3 py-1 rounded-md text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200" data-status="unsynced">Unsynced</button>
+      <button class="status-filter px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200" data-status="failed">Failed</button>
+    </div>
+  </div>
 
   <table id="invoices-table" class="w-full table-auto border-collapse border border-gray-200">
     <thead>
@@ -32,87 +40,6 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-<script>
-$(document).ready(function() {
-  const table = $('#invoices-table').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-      url: '/mis_invoices/get_mis_invoices', // Flask endpoint returning DataTables JSON
-      type: 'GET',
-      data: function(d) {
-        // d.draw, d.start, d.length are automatically sent by DataTables
-      }
-    },
-    columns: [
-      { data: 'id' },
-      { data: 'reg_no' },
-      { data: 'reference_number', defaultContent: '-' },
-      { data: 'dept', defaultContent: 0 },
-      { data: 'balance', defaultContent: 0 },
-      { data: 'invoice_date', defaultContent: '-' },
-      {
-        data: 'QuickBk_Status',
-        render: function(data) {
-          if (data == 1) {
-            return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
-          }
-          if (data == 2) {
-            return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
-          }
-          return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
-        }
-      },
-      { data: 'pushed_by', defaultContent: '-' },
-      { data: 'pushed_date', defaultContent: '-' },
-      { 
-        data: null,
-        orderable: false,
-        render: function(data, type, row) {
-          if (row.QuickBk_Status != 1) {
-            return `<button class="sync-btn bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium" data-id="${row.id}">Sync</button>`;
-          } else {
-            return '<span class="text-gray-500 text-sm">N/A</span>';
-          }
-        }
-      }
-    ],
-    order: [[4, 'desc']], // order by balance desc (check if intended)
-    lengthMenu: [[10, 25, 50], [10, 25, 50]],
-    pageLength: 50
-  });
-
-  // ✅ Event delegation for sync button
-  $('#invoices-table').on('click', '.sync-btn', function () {
-    const btn = $(this);
-    const recordId = btn.data('id');
-
-    btn.prop('disabled', true).text('Syncing...');
-
-    fetch(`/api/v1/invoices/sync/${recordId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ id: recordId })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        // reload just this row for freshness
-        table.ajax.reload(null, false); 
-      } else {
-        alert(`Sync failed: ${data.details}`);
-        btn.prop('disabled', false).text('Sync');
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      alert('Something went wrong while syncing.');
-      btn.prop('disabled', false).text('Sync');
-    });
-  });
-});
-</script>
-
+<!-- External JS for Invoices -->
+<script src="{{ url_for('static', filename='js/invoices_table.js') }}"></script>
 {% endblock %}

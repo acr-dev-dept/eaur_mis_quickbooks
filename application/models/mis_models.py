@@ -864,7 +864,13 @@ class TblImvoice(MISBaseModel):
                         "invoice_date": inv.invoice_date.isoformat() if inv.invoice_date else "-",
                         "QuickBk_Status": inv.QuickBk_Status,
                         "pushed_by": inv.pushed_by or "-",
-                        "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else "-"
+                        "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else "-",
+                        "status": (
+                            "Synced" if inv.QuickBk_Status == 1 and inv.quickbooks_id
+                            else "Unsynced" if (inv.QuickBk_Status in [0, None])
+                            else "Failed" if (inv.QuickBk_Status == 2)
+                            else "Unknown"
+                        )
                     }
                     for inv in invoices
                 ]
