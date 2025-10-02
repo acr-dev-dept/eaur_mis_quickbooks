@@ -21,11 +21,11 @@ $(document).ready(function() {
                 data: 'status',
                 render: function(data) {
                     if (data.toLowerCase() === 'synced') {
-                        return '<span class="badge badge-success">Synced</span>';
+                        return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
                     } else if (data.toLowerCase() === 'unsynced') {
-                        return '<span class="badge badge-warning">Unsynced</span>';
+                        return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
                     } else if (data.toLowerCase() === 'failed') {
-                        return '<span class="badge badge-danger">Failed</span>';
+                        return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                     } else {
                         return '<span class="badge badge-secondary">' + data + '</span>';
                     }
