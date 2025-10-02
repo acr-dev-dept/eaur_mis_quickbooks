@@ -310,63 +310,72 @@ class Payment(MISBaseModel):
                     Payment.QuickBk_Status,
                     Payment.pushed_by,
                     Payment.pushed_date,
-                    Payment.invoi_ref
+                    Payment.invoi_ref,
+                    Payment.qk_id
                 )
+
                 total_payments = session.query(func.count(Payment.id)).scalar()
+
+                # Status mapping
+                mapping = {
+                    "synced": {
+                        "QuickBk_Status": 1,
+                        "qk_id_not_null": True
+                    },
+                    "unsynced": {
+                        "QuickBk_Status": 0,
+                        "qk_id_not_null": False,
+                        "include_null_status": True  # unsynced also covers NULL status
+                    },
+                    "failed": {
+                        "QuickBk_Status": [2, 3],
+                        "qk_id_not_null": False
+                    }
+                }
+
                 # Optional search filter
                 if search:
-                    mapping = {
-                        "synced": {
-                            "QuickBk_Status": 1,
-                            "qk_id_not_null": True
-                        },
-                        "unsynced": {
-                            "QuickBk_Status": 0,
-                            "qk_id_not_null": False
-                        },
-                        "failed": {
-                            "QuickBk_Status": [2,3],
-                            "qk_id_not_null": False
-                        }
-                    }
-                    # normalize search
                     search_str = str(search).strip().lower()
-
 
                     if search_str in mapping:  
                         status_filter = mapping[search_str]
                         cond = []
 
-                        # handle quickbooks status
+                        # Handle QuickBooks status
                         if search_str == "unsynced":
                             cond.append(or_(
                                 Payment.QuickBk_Status == status_filter["QuickBk_Status"],
-                                Payment.QuickBk_Status.is_(None)
+                                Payment.QuickBk_Status.is_(None)  # NULL is also unsynced
                             ))
                         elif isinstance(status_filter["QuickBk_Status"], list):
                             cond.append(Payment.QuickBk_Status.in_(status_filter["QuickBk_Status"]))
                         else:
                             cond.append(Payment.QuickBk_Status == status_filter["QuickBk_Status"])
                         
-                        # handle qk_id null/not null
-                        if status_filter["qk_id_not_null"]:
+                        # Handle qk_id null/not null
+                        if status_filter.get("qk_id_not_null") is True:
                             cond.append(Payment.qk_id.isnot(None))
-                        elif status_filter["qk_id_not_null"] is False:
+                        elif status_filter.get("qk_id_not_null") is False:
                             cond.append(Payment.qk_id.is_(None))
 
-                        if cond:
-                            query = query.filter(*cond)
-                        
+                        query = query.filter(and_(*cond))
+
                     elif search_str.isdigit():
+                        # Direct numeric search on QuickBk_Status
                         query = query.filter(Payment.QuickBk_Status == int(search_str))
                     else:
+                        # Free-text search
                         query = query.filter(
-                            Payment.reg_no.ilike(f"%{search_str}%") |
-                            Payment.external_transaction_id.ilike(f"%{search_str}%") |
-                            Payment.invoi_ref.ilike(f"%{search_str}%")
-                    )
+                            or_(
+                                Payment.reg_no.ilike(f"%{search_str}%"),
+                                Payment.external_transaction_id.ilike(f"%{search_str}%"),
+                                Payment.invoi_ref.ilike(f"%{search_str}%")
+                            )
+                        )
+
                 filtered_payments = query.count()
                 payments = query.order_by(Payment.pushed_date.desc()).offset(start).limit(length).all()
+
                 data = [
                     {
                         "id": pay.id,
@@ -377,7 +386,13 @@ class Payment(MISBaseModel):
                         "invoi_ref": pay.invoi_ref or "-",
                         "QuickBk_Status": pay.QuickBk_Status,
                         "pushed_by": pay.pushed_by or "-",
-                        "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-"
+                        "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-",
+                        "status": (
+                            "Synced" if pay.QuickBk_Status == 1 and pay.qk_id
+                            else "Unsynced" if (pay.QuickBk_Status in [0, None] and pay.qk_id is None)
+                            else "Failed" if (pay.QuickBk_Status in [2, 3] and pay.qk_id is None)
+                            else "Unknown"
+                        )
                     } for pay in payments
                 ]
                 return total_payments, filtered_payments, data
@@ -386,7 +401,6 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
-
 
 
 

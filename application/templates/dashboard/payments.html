@@ -1,74 +1,53 @@
-
 {% extends "dashboard/layout.html" %}
 
-{% block title %}Invoices - Sync Dashboard{% endblock %}
+{% block title %}Payments - Sync Dashboard{% endblock %}
 {% block page_title %}Payments{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow rounded-lg p-6">
-  <h2 class="text-lg font-semibold mb-4">Payments</h2>
-    <table id="payments-table" class="w-full table-auto border-collapse border border-gray-200">
-        <thead>
-        <tr class="bg-gray-100 text-left">
-            <th>#</th>
-            <th>Reg No</th>
-            <th>Reference</th>
-            <th>Amount</th>
-            <th>Transaction ID</th>
-            <th>Payment Date</th>
-            <th>QBO Status</th>
-            <th>Pushed By</th>
-            <th>Pushed Date</th>
+<div class="bg-white shadow-lg rounded-xl p-6">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    <h2 class="text-2xl font-semibold text-gray-800">Payments</h2>
+
+    <!-- Status Filters -->
+    <div class="flex flex-wrap gap-2">
+        <button class="status-filter px-4 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300 transition" data-status="">All</button>
+        <button class="status-filter px-4 py-2 rounded-md text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition" data-status="synced">Synced</button>
+        <button class="status-filter px-4 py-2 rounded-md text-sm font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition" data-status="unsynced">Unsynced</button>
+        <button class="status-filter px-4 py-2 rounded-md text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition" data-status="failed">Failed</button>
+    </div>
+  </div>
+
+  <!-- Payments Table -->
+  <div class="overflow-x-auto">
+    <table id="payments-table" class="min-w-full divide-y divide-gray-200 table-auto">
+        <thead class="bg-gray-50">
+        <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reg No</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment Date</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">QBO Status</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pushed By</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pushed Date</th>
         </tr>
         </thead>
-        <tbody></tbody>
+        <tbody class="bg-white divide-y divide-gray-200"></tbody>
     </table>
+  </div>
 </div>
+
 <!-- DataTables Scripts -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="{{ url_for('static', filename='js/payments_table.js') }}"></script>
 
-<script>
-$(document).ready(function() {
-    $('#payments-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '/payments/get_payments', // your Flask endpoint returning DataTables JSON
-            type: 'GET',
-            data: function(d) {
-                // d.draw, d.start, d.length are automatically sent by DataTables
-                // You can add extra params here if needed
-            }
-        },
-        columns: [
-            { data: 'id' },
-            { data: 'reg_no' },
-            { data: 'reference_number', defaultContent: '-' },
-            { data: 'amount', defaultContent: 0 },
-            { data: 'transaction_id', defaultContent: '-' },
-            { data: 'payment_date', defaultContent: '-' },
-            {
-                data: 'QuickBk_Status',
-                qbId: 'qk_id',
-                render: function(data) {
-                    if (data == 1 && this.qbId != null) {
-                        return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
-                    }
-                    if ((data == 2 || data == 3) && this.qbId === null) {
-                        return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
-                    }
-                    if (data == null || data == 0 || (this.qbId === null)) {
-                        return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
-                    }
-                },
-            },
-            { data: 'pushed_by', defaultContent: '-' },
-            { data: 'pushed_date', defaultContent: '-' }
-        ],
-        order: [[0, 'desc']] // Order by ID descending by default
-    });
-});
-</script>
+<style>
+    /* Hover effect for table rows */
+    #payments-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+</style>
 {% endblock %}
