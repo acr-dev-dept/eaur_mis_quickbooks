@@ -312,15 +312,45 @@ class Payment(MISBaseModel):
                     Payment.pushed_date,
                     Payment.invoi_ref
                 )
-
+                total_payments = session.query(func.count(Payment.id)).scalar()
+                # Optional search filter
                 if search:
-                    query = query.filter(
-                        Payment.reg_no.ilike(f"%{search}%") |
-                        Payment.external_transaction_id.ilike(f"%{search}%") |
-                        Payment.invoi_ref.ilike(f"%{search}%")
+                    mapping = {
+                        "synced": {
+                            "QuickBk_Status": 1,
+                            "qk_id_not_null": True
+                        },
+                        "unsynced": {
+                            "QuickBk_Status": 0,
+                            "qk_id_not_null": False
+                        },
+                        "failed": {
+                            "QuickBk_Status": 2,
+                            "qk_id_not_null": True
+                        }
+                    }
+                    # normalize search
+                    search_str = str(search).strip().lower()
+
+
+                    if search_str in mapping:  
+                        status_filter = mapping[search_str]
+                        cond = [Payment.QuickBk_Status == status_filter["QuickBk_Status"]]
+
+                        if status_filter["qk_id_not_null"]:
+                            cond.append(Payment.qk_id.isnot(None))
+                        elif status_filter["qk_id_not_null"] is False:
+                            cond.append(Payment.qk_id.is_(None))
+
+                        query = query.filter(*cond)
+                    elif search_str.isdigit():
+                        query = query.filter(Payment.QuickBk_Status == int(search_str))
+                    else:
+                        query = query.filter(
+                            Payment.reg_no.ilike(f"%{search_str}%") |
+                            Payment.external_transaction_id.ilike(f"%{search_str}%") |
+                            Payment.invoi_ref.ilike(f"%{search_str}%")
                     )
-                
-                total_payments = session.query(Payment.id).count()
                 filtered_payments = query.count()
                 payments = query.order_by(Payment.pushed_date.desc()).offset(start).limit(length).all()
                 data = [
@@ -801,7 +831,6 @@ class TblImvoice(MISBaseModel):
                             cast(TblImvoice.balance, String).ilike(f"%{search}%")
                         )
 
-                total_records = db.session.query(func.count(TblImvoice.id)).scalar()
                 filtered_records = query.count()
 
                 invoices = (
