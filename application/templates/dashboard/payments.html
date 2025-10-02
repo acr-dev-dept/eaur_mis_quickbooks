@@ -51,14 +51,15 @@ $(document).ready(function() {
             { data: 'payment_date', defaultContent: '-' },
             {
                 data: 'QuickBk_Status',
+                qbId: 'qk_id',
                 render: function(data) {
-                    if (data == 1) {
+                    if (data == 1 && this.qbId != null) {
                         return '<span class="text-green-600 bg-green-100 px-2 py-1 rounded-md text-sm font-medium">Synced</span>';
                     }
-                    if (data == 2 || data == 3) {
+                    if ((data == 2 || data == 3) && this.qbId === null) {
                         return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                     }
-                    if (data == null || data == 0) {    
+                    if (data == null || data == 0 || (this.qbId === null)) {
                         return '<span class="text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md text-sm font-medium">Unsynced</span>';
                     }
                 },
