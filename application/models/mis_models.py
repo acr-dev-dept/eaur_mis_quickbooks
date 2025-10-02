@@ -14,7 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from application.utils.database import db_manager
 from application import db
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, foreign
 from flask import current_app
 from sqlalchemy import cast, String
@@ -325,8 +325,8 @@ class Payment(MISBaseModel):
                             "qk_id_not_null": False
                         },
                         "failed": {
-                            "QuickBk_Status": 2 or 3,
-                            "qk_id_not_null": True
+                            "QuickBk_Status": [2,3],
+                            "qk_id_not_null": False
                         }
                     }
                     # normalize search
@@ -335,17 +335,28 @@ class Payment(MISBaseModel):
 
                     if search_str in mapping:  
                         status_filter = mapping[search_str]
-                        cond = [Payment.QuickBk_Status == status_filter["QuickBk_Status"]]
+                        cond = []
 
-                        if status_filter == "unsynced":
-                            cond=[]
-
+                        # handle quickbooks status
+                        if search_str == "unsynced":
+                            cond.append(or_(
+                                Payment.QuickBk_Status == status_filter["QuickBk_Status"],
+                                Payment.QuickBk_Status.is_(None)
+                            ))
+                        elif isinstance(status_filter["QuickBk_Status"], list):
+                            cond.append(Payment.QuickBk_Status.in_(status_filter["QuickBk_Status"]))
+                        else:
+                            cond.append(Payment.QuickBk_Status == status_filter["QuickBk_Status"])
+                        
+                        # handle qk_id null/not null
                         if status_filter["qk_id_not_null"]:
                             cond.append(Payment.qk_id.isnot(None))
                         elif status_filter["qk_id_not_null"] is False:
                             cond.append(Payment.qk_id.is_(None))
 
-                        query = query.filter(*cond)
+                        if cond:
+                            query = query.filter(*cond)
+                        
                     elif search_str.isdigit():
                         query = query.filter(Payment.QuickBk_Status == int(search_str))
                     else:
