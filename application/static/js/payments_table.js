@@ -1,6 +1,10 @@
 $(document).ready(function() {
-    // Initialize DataTable
-    let table = $('#payments-table').DataTable({
+    // Ensure the hidden input exists only once
+    if ($('#status-filter-input').length === 0) {
+        $("body").append('<input type="hidden" id="status-filter-input">');
+    }
+
+    const table = $('#payments-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
@@ -35,15 +39,22 @@ $(document).ready(function() {
                 }
             },
             { data: 'pushed_by', defaultContent: '-' },
-            { data: 'pushed_date', defaultContent: '-' }
+            { data: 'pushed_date', defaultContent: '-' },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    // Add Sync button only for non-synced rows
+                    if (row.status.toLowerCase() !== 'synced') {
+                        return `<button class="sync-btn bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium" data-id="${row.id}">Sync</button>`;
+                    } else {
+                        return '<span class="text-gray-500 text-sm">N/A</span>';
+                    }
+                }
+            }
         ],
         order: [[0, 'desc']]
     });
-
-    // Hidden input to store selected status
-    if ($('#status-filter-input').length === 0) {
-        $("body").append('<input type="hidden" id="status-filter-input">');
-    }
 
     // Status button click → set active & reload table
     $(".status-filter").on("click", function() {
@@ -57,4 +68,33 @@ $(document).ready(function() {
         $("#status-filter-input").val($(this).data("status") || '');
         table.ajax.reload();
     });
+
+    // Event delegation for Sync button
+    $('#payments-table').on('click', '.sync-btn', function () {
+        const btn = $(this);
+        const recordId = btn.data('id');
+
+        btn.prop('disabled', true).text('Syncing...');
+
+        fetch(`/api/v1/payments/sync_payment/${recordId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: recordId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                table.ajax.reload(null, false); // reload only table rows
+            } else {
+                alert(`Sync failed: ${data.error || 'Mapping error'}`);
+                btn.prop('disabled', false).text('Sync');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Something went wrong while syncing.');
+            btn.prop('disabled', false).text('Sync');
+        });
+    });
+
 });
