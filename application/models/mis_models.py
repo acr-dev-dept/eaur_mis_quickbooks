@@ -810,7 +810,7 @@ class TblImvoice(MISBaseModel):
                     mapping = {
                         "synced": {
                             "nbr": 1,
-                            "quickbooks_id_not_null": True
+                            "quickbooks_id_not_null": False
                         },
                         "unsynced": {
                             "nbr": 0,
@@ -837,7 +837,6 @@ class TblImvoice(MISBaseModel):
                         query = query.filter(*cond)
                     elif search_str.isdigit():
                         query = query.filter(TblImvoice.QuickBk_Status == int(search_str))
-
                     else:
                         query = query.filter(
                             TblImvoice.reg_no.ilike(f"%{search}%") |
@@ -866,7 +865,7 @@ class TblImvoice(MISBaseModel):
                         "pushed_by": inv.pushed_by or "-",
                         "pushed_date": inv.pushed_date.isoformat() if inv.pushed_date else "-",
                         "status": (
-                            "Synced" if inv.QuickBk_Status == 1 and inv.quickbooks_id
+                            "Synced" if inv.QuickBk_Status == 1
                             else "Unsynced" if (inv.QuickBk_Status in [0, None])
                             else "Failed" if (inv.QuickBk_Status == 2)
                             else "Unknown"
