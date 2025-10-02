@@ -323,9 +323,7 @@ class Payment(MISBaseModel):
                         "qk_id_not_null": True
                     },
                     "unsynced": {
-                        "QuickBk_Status": 0,
                         "qk_id_not_null": False,
-                        "include_null_status": True  # unsynced also covers NULL status
                     },
                     "failed": {
                         "QuickBk_Status": [2, 3],
@@ -341,13 +339,7 @@ class Payment(MISBaseModel):
                         status_filter = mapping[search_str]
                         cond = []
 
-                        # Handle QuickBooks status
-                        if search_str == "unsynced":
-                            cond.append(or_(
-                                Payment.QuickBk_Status == status_filter["QuickBk_Status"],
-                                Payment.QuickBk_Status.is_(None)  # NULL is also unsynced
-                            ))
-                        elif isinstance(status_filter["QuickBk_Status"], list):
+                        if isinstance(status_filter["QuickBk_Status"], list):
                             cond.append(Payment.QuickBk_Status.in_(status_filter["QuickBk_Status"]))
                         else:
                             cond.append(Payment.QuickBk_Status == status_filter["QuickBk_Status"])
@@ -389,7 +381,7 @@ class Payment(MISBaseModel):
                         "pushed_date": pay.pushed_date.isoformat() if pay.pushed_date else "-",
                         "status": (
                             "Synced" if pay.QuickBk_Status == 1 and pay.qk_id
-                            else "Unsynced" if (pay.QuickBk_Status in [0, None] and pay.qk_id is None)
+                            else "Unsynced" if (pay.QuickBk_Status in [0, None] or pay.qk_id is None)
                             else "Failed" if (pay.QuickBk_Status in [2, 3] and pay.qk_id is None)
                             else "Unknown"
                         )
