@@ -11,7 +11,7 @@ def get_mis_invoices():
         draw = int(request.args.get('draw', 1))
         start = int(request.args.get('start', 0))
         length = int(request.args.get('length', 50))
-        search_value = request.args.get('search', None)
+        search_value = request.args.get('search[value]', None)
         """
         if search_value:
             current_app.logger.debug(f"Original search value: {search_value} with type {type(search_value)}")
