@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    // Ensure status hidden input exists
+    // Ensure hidden status filter input exists
     if ($('#status-filter-input').length === 0) {
         $("body").append('<input type="hidden" id="status-filter-input">');
     }
@@ -11,7 +11,11 @@ $(document).ready(function() {
             url: '/mis_invoices/get_mis_invoices',
             type: 'GET',
             data: function(d) {
-                d.search = $('#status-filter-input').val() || '';
+                // ✅ Keep DataTables search untouched
+                d.search_value = d.search.value;  
+
+                // ✅ Add separate status filter
+                d.status_filter = $('#status-filter-input').val() || '';
             }
         },
         columns: [
@@ -33,7 +37,7 @@ $(document).ready(function() {
                         case 'failed':
                             return '<span class="text-red-600 bg-red-100 px-2 py-1 rounded-md text-sm font-medium">Failed</span>';
                         default:
-                            return '<span class="badge badge-secondary">' + data + '</span>';
+                            return '<span class="text-gray-500">' + data + '</span>';
                     }
                 }
             },
@@ -46,14 +50,14 @@ $(document).ready(function() {
                     if (row.status && row.status.toLowerCase() !== 'synced') {
                         return `<button class="sync-btn bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium" data-id="${row.id}">Sync</button>`;
                     }
-                    return '<span class="text-gray-500 text-sm">N/A</span>';
+                    return '<span class="text-gray-400 text-sm">N/A</span>';
                 }
             }
         ],
         order: [[0, 'desc']]
     });
 
-    // Status filter buttons
+    // ✅ Status filter buttons
     $(".status-filter").on("click", function() {
         $(".status-filter").removeClass("ring-2 ring-blue-500");
         $(this).addClass("ring-2 ring-blue-500");
@@ -62,7 +66,7 @@ $(document).ready(function() {
         table.ajax.reload();
     });
 
-    // Sync button handler
+    // ✅ Sync button handler
     $('#invoices-table').on('click', '.sync-btn', function () {
         const btn = $(this);
         const recordId = btn.data('id');

@@ -789,7 +789,7 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
             return False
     @staticmethod
-    def fetch_paginated_invoices(start: int = 0, length: int = 50, search=None):
+    def fetch_paginated_invoices(start: int = 0, length: int = 50, search=None, status_filter=None):
         """Fetch invoices with pagination for DataTables server-side"""
         try:
             with MISBaseModel.get_session() as session:
@@ -806,43 +806,27 @@ class TblImvoice(MISBaseModel):
                 )
                 total_records = session.query(func.count(TblImvoice.id)).scalar()
                 # Optional search filter
-                if search:
+                if status_filter:
                     mapping = {
-                        "synced": {
-                            "nbr": 1,
-                            "quickbooks_id_not_null": False
-                        },
-                        "unsynced": {
-                            "nbr": 0,
-                            "quickbooks_id_not_null": False
-                        },
-                        "failed": {
-                            "nbr": 2,
-                            "quickbooks_id_not_null": False
-                        }
+                        "synced": {"nbr": 1, "quickbooks_id_not_null": None},
+                        "unsynced": {"nbr": 0, "quickbooks_id_not_null": False},
+                        "failed": {"nbr": 2, "quickbooks_id_not_null": False}
                     }
-
-                    # normalize search
-                    search_str = str(search).strip().lower()
-
-                    if search_str in mapping:  
-                        status_filter = mapping[search_str]
-                        cond = [TblImvoice.QuickBk_Status == status_filter["nbr"]]
-
-                        if status_filter["quickbooks_id_not_null"]:
+                    if status_filter in mapping:
+                        f = mapping[status_filter]
+                        cond = [TblImvoice.QuickBk_Status == f["nbr"]]
+                        if f["quickbooks_id_not_null"] is True:
                             cond.append(TblImvoice.quickbooks_id.isnot(None))
-                        elif status_filter["quickbooks_id_not_null"] is False:
+                        elif f["quickbooks_id_not_null"] is False:
                             cond.append(TblImvoice.quickbooks_id.is_(None))
-
                         query = query.filter(*cond)
-                    elif search_str.isdigit():
-                        query = query.filter(TblImvoice.QuickBk_Status == int(search_str))
-                    else:
-                        query = query.filter(
-                            TblImvoice.reg_no.ilike(f"%{search}%") |
-                            TblImvoice.reference_number.ilike(f"%{search}%") |
-                            cast(TblImvoice.balance, String).ilike(f"%{search}%")
-                        )
+
+                if search:
+                    query = query.filter(
+                        TblImvoice.reg_no.ilike(f"%{search}%") |
+                        TblImvoice.reference_number.ilike(f"%{search}%") |
+                        cast(TblImvoice.balance, String).ilike(f"%{search}%")
+                    )
 
                 filtered_records = query.count()
 

@@ -11,23 +11,11 @@ def get_mis_invoices():
         draw = int(request.args.get('draw', 1))
         start = int(request.args.get('start', 0))
         length = int(request.args.get('length', 50))
-        search_value = request.args.get('search', None)
-        """
-        if search_value:
-            current_app.logger.debug(f"Original search value: {search_value} with type {type(search_value)}")
-            val = search_value.strip()
-            if val.lower() == 'synced':
-                search_value = 1
-            elif val.lower() == 'unsynced':
-                search_value = 0
-            elif val.lower() == 'failed':
-                search_value = 2
-            else:
-                search_value = val
-        """
+        search_value = request.args.get('search_value', '').strip()
+        status_filter = request.args.get('status_filter', '').strip().lower()
 
         total_records, filtered_records, invoices = TblImvoice.fetch_paginated_invoices(
-            start=start, length=length, search=search_value
+            start=start, length=length, search=search_value, status=status_filter       
         )
 
         return jsonify({
