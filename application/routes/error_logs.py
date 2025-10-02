@@ -6,7 +6,7 @@ error_logs_bp = Blueprint("error_logs", __name__)
 @error_logs_bp.route("/quickbooks/logs")
 def logs_page():
     """Render the logs page"""
-    return render_template("dashboard/quickbooks_logs.html")
+    return render_template("dashboard/error_logs.html")
 
 @error_logs_bp.route("/quickbooks/logs/data")
 def logs_data():
