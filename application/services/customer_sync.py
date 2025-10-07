@@ -513,7 +513,7 @@ class CustomerSyncService:
             filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
 
             email = applicant_data.get('email')
-            if not self.is_valid_email(email):
+            if not self.is_valid_email(str(email)):
                 email = None
 
             # Build sparse update payload
