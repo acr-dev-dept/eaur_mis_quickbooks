@@ -642,7 +642,7 @@ def update_single_applicant(tracking_id: int):
                 applicant=applicant,
                 qb_customer_id=quickbooks_id,
                 sparse=True,
-                SyncToken=fetch_result['data']['Customer']['SyncToken'] if fetch_result['data']['Customer'].get('SyncToken') else None
+                SyncToken=fetch_result['data']['Customer']['SyncToken']
             )
 
 
