@@ -1146,7 +1146,7 @@ class CustomerSyncService:
         """
         try:
             qb_service = self._get_qb_service()
-            response = qb_service.update_customer(qb_service.realm_id, qb_customer_id, qb_customer_data)
+            response = qb_service.update_customer(realm_id=qb_service.realm_id, customer_data=qb_customer_data)
             current_app.logger.info(f"QuickBooks update response for customer {qb_customer_id}: {response}")
             return response
         except Exception as e:

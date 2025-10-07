@@ -287,14 +287,14 @@ class QuickBooks:
             query += " WHERE " + " AND ".join(f"{k}='{v}'" for k, v in params.items())
         return self.make_request(endpoint, method="GET", params={"query": query})
 
-    def update_customer(self, realm_id, customer_id, customer_data):
+    def update_customer(self, realm_id, customer_data):
         """Update an existing customer in QuickBooks."""
-        endpoint = f"/{realm_id}/customer/{customer_id}"
+        endpoint = f"/{realm_id}/customer"
         return self.make_request(endpoint, method="POST", data=customer_data)
     
     def get_customer(self, realm_id, customer_id):
         """Retrieve a specific customer by ID, including custom fields."""
-        endpoint = f"{realm_id}/customer/"
+        endpoint = f"{realm_id}/customer/{customer_id}"
         params = {
             "minorversion": "75",  # Updated to the latest minor version
             "include": "enhancedAllCustomFields"
