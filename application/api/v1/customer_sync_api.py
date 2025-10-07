@@ -642,9 +642,9 @@ def update_single_applicant(tracking_id: int):
                 applicant=applicant,
                 qb_customer_id=quickbooks_id,
                 sparse=True,
-                SyncToken=fetch_result['data']['customer'].get('SyncToken') if fetch_result['success'] else None
+                SyncToken=fetch_result['data']['customer'].get('SyncToken') if fetch_result['data']['success'] else None
             )
-            
+
 
             result = sync_service.update_quickbooks_customer(qb_customer_id=quickbooks_id, qb_customer_data=qb_payload)
             current_app.logger.info(f"Update result for applicant {tracking_id}: {result}")
