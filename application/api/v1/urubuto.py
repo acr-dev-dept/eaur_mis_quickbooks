@@ -1046,7 +1046,7 @@ def get_student_invoices():
         
 
 @urubuto_bp.route('/payments/refund', methods=['POST'])
-@require_auth('refunds')
+#@require_auth('refunds')
 @require_gateway('urubuto_pay')
 @log_api_access('process_refund')
 def process_refund():

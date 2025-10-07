@@ -604,6 +604,73 @@ def sync_single_applicant(tracking_id: int):
             status_code=500
         )
 
+@customer_sync_bp.route('/applicant/update/<int:tracking_id>', methods=['POST'])
+def update_single_applicant(tracking_id: int):
+    """
+    Update an existing QuickBooks customer for a single applicant by tracking_id.
+    Performs a sparse update to avoid overwriting existing fields.
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sync_service = CustomerSyncService()
+
+        with db_manager.get_mis_session() as db:
+            applicant = TblOnlineApplication.get_applicant_details(tracking_id)
+            if not applicant:
+                return create_response(
+                    success=False,
+                    error=f"Applicant {tracking_id} not found",
+                    status_code=404
+                )
+
+            quickbooks_id = getattr(applicant, 'quickbooks_id', None)
+            if not quickbooks_id:
+                return create_response(
+                    success=False,
+                    error=f"Applicant {tracking_id} has not been synced to QuickBooks yet",
+                    status_code=400
+                )
+
+            qb_payload = sync_service.map_applicant_to_quickbooks_customer_update(
+                applicant=applicant,
+                qb_customer_id=quickbooks_id,
+                sparse=True
+            )
+
+            result = sync_service.update_quickbooks_customer(qb_payload)
+            current_app.logger.info(f"Update result for applicant {tracking_id}: {result}")
+
+            if result.success:
+                return create_response(
+                    success=True,
+                    data={
+                        'applicant_id': tracking_id,
+                        'quickbooks_id': quickbooks_id
+                    },
+                    message=f"Applicant {tracking_id} updated successfully in QuickBooks"
+                )
+            else:
+                return create_response(
+                    success=False,
+                    error=f"Failed to update applicant {tracking_id} in QuickBooks",
+                    details=result.error_message,
+                    status_code=500
+                )
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating applicant {tracking_id}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f"Error updating applicant {tracking_id}",
+            details=str(e),
+            status_code=500
+        )
+
 
 @customer_sync_bp.route('/students', methods=['POST'])
 def sync_students():

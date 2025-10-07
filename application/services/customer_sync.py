@@ -478,6 +478,89 @@ class CustomerSyncService:
         except Exception as e:
             logger.error(f"Error mapping applicant {applicant['appl_Id']} to QuickBooks format: {e}")
 
+    def map_applicant_to_quickbooks_customer_update(
+        self, 
+        applicant: TblOnlineApplication,
+        qb_customer_id: str,
+        sparse: bool = True
+    ) -> Dict:
+        """
+        Map MIS applicant data to QuickBooks customer update format (sparse update).
+
+        Args:
+            applicant: MIS applicant object
+            qb_customer_id: QuickBooks Customer Id to update
+            sparse: Whether to perform a sparse update (only changed fields)
+
+        Returns:
+            Dictionary formatted for QuickBooks Customer Update API
+        """
+        current_app.logger.info(f"Mapping applicant {applicant} for QuickBooks update")
+
+        applicant_data = applicant if isinstance(applicant, dict) else applicant.to_dict_for_quickbooks()
+
+        try:
+            # Prepare custom fields
+            custom_fields_list = [
+                {"DefinitionId": "1000000001", "StringValue": "Applicant"},
+                {"DefinitionId": "1000000002", "StringValue": str(applicant_data['tracking_id'])},
+                {"DefinitionId": "1000000003", "StringValue": applicant_data['sex']},
+                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": applicant_data['national_id']},
+                {"DefinitionId": "1000000005", "StringValue": applicant_data['campus_name']},
+                {"DefinitionId": "8", "Name": "Intake", "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")},
+                {"DefinitionId": "1000000009", "StringValue": applicant_data['program_mode']}
+            ]
+
+            filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
+
+            email = applicant_data.get('email')
+            if not self.is_valid_email(email):
+                email = None
+
+            # Build sparse update payload
+            qb_customer_update = {
+                "Id": qb_customer_id,
+                "sparse": sparse
+            }
+
+            if sparse:
+                if applicant_data.get('first_name'):
+                    qb_customer_update["GivenName"] = applicant_data['first_name']
+                if applicant_data.get('last_name'):
+                    qb_customer_update["FamilyName"] = applicant_data['last_name']
+                if applicant_data.get('middle_name'):
+                    qb_customer_update["MiddleName"] = applicant_data['middle_name']
+                if email:
+                    qb_customer_update["PrimaryEmailAddr"] = {"Address": email}
+                if applicant_data.get('phone'):
+                    qb_customer_update["PrimaryPhone"] = {"FreeFormNumber": applicant_data['phone']}
+                if filtered_custom_fields:
+                    qb_customer_update["CustomField"] = filtered_custom_fields
+                qb_customer_update["Notes"] = f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
+            else:
+                # Full update logic if ever needed
+                qb_customer_update.update({
+                    "DisplayName": applicant_data['tracking_id'],
+                    "GivenName": applicant_data['first_name'],
+                    "FamilyName": applicant_data['last_name'],
+                    "MiddleName": applicant_data['middle_name'],
+                    "CompanyName": f"{applicant_data['first_name']} {applicant_data['last_name']}",
+                    "PrimaryPhone": {"FreeFormNumber": applicant_data['phone']} if applicant_data.get('phone') else None,
+                    "PrimaryEmailAddr": {"Address": email} if email else None,
+                    "CustomerTypeRef": {"value": "528730", "name": "applicant"},
+                    "CustomField": filtered_custom_fields,
+                    "Notes": f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
+                })
+                qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
+
+            return qb_customer_update
+
+        except Exception as e:
+            current_app.logger.error(f"Error mapping applicant {applicant_data.get('tracking_id')} for QuickBooks update: {e}")
+            raise
+
+
+
     def is_valid_email(self, email: str) -> bool:
         """
         Validate email format using email_validator library

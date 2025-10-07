@@ -318,7 +318,8 @@ requirements needed:
    1. We found that there are some existing customers, items, and invoices already there in EAUR's quickbooks.
    2. We found that only applicants are not there, so they need to be synced, with quickbooks_id, and quickbooks_status
    3. With students who are already synced, we'll consider the qkbooks_id during sync and skip those with quickbooks_id not null
-   4. Date formats to match the local format
+   4. Date formats to match the local format.
+   5. Syncing Applicants Starting from Jan 01 2025
 
 
 ## Requirements
@@ -329,8 +330,13 @@ requirements needed:
 
 ## Order of Syncing
    0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis
+
+
    1. Customers (Applicants and students)
    2. Income Accounts
    3. Items (dependent on Income accounts ref)
    4. Invoices (dependent on Items and income accounts)
       1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync
+
+Concerns
+1. Deleting and updating student information when some data changes in MIS to directly change inside quickbooks too

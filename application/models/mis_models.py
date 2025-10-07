@@ -557,7 +557,6 @@ class TblCampus(MISBaseModel):
 class TblImvoice(MISBaseModel):
     """Model for tbl_imvoice table"""
     __tablename__ = 'tbl_imvoice'
-
     id = db.Column(db.Integer, nullable=False, primary_key=True)
     reg_no = db.Column(db.String(200))
     level_id = db.Column(db.Integer, ForeignKey("tbl_level.level_id"))
