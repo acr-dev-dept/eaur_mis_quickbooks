@@ -642,7 +642,7 @@ def update_single_applicant(tracking_id: int):
                 sparse=True
             )
 
-            result = sync_service.update_quickbooks_customer(qb_payload)
+            result = sync_service.update_quickbooks_customer(qb_customer_id=quickbooks_id, qb_customer_data=qb_payload)
             current_app.logger.info(f"Update result for applicant {tracking_id}: {result}")
 
             if result.success:

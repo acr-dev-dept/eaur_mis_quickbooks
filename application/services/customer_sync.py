@@ -1130,6 +1130,30 @@ class CustomerSyncService:
                 success=False,
                 error_message=error_msg
             )
+    def update_quickbooks_customer(self, qb_customer_id: str, qb_customer_data: Dict) -> Dict:
+        """
+        Update an existing QuickBooks customer
+
+        Args:
+            qb_customer_id: QuickBooks Customer Id to update
+            qb_customer_data: Data to update in QuickBooks format
+
+        Returns:
+            Dictionary response from QuickBooks API
+        """
+        try:
+            qb_service = self._get_qb_service()
+            response = qb_service.update_customer(qb_service.realm_id, qb_customer_id, qb_customer_data)
+            current_app.logger.info(f"QuickBooks update response for customer {qb_customer_id}: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating QuickBooks customer {qb_customer_id}: {e}")
+            raise
+
+        
+
+
+
 
     def _update_applicant_sync_status(self, appl_id: int, status: int, quickbooks_id: Optional[str] = None):
         """
