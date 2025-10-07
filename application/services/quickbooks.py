@@ -289,7 +289,7 @@ class QuickBooks:
 
     def update_customer(self, realm_id, customer_id, customer_data):
         """Update an existing customer in QuickBooks."""
-        endpoint = f"/company/{realm_id}/customer/{customer_id}"
+        endpoint = f"/{realm_id}/customer/{customer_id}"
         return self.make_request(endpoint, method="POST", data=customer_data)
     
     def get_customer(self, realm_id, customer_id):
