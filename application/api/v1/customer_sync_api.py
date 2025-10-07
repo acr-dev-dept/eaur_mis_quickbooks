@@ -641,7 +641,8 @@ def update_single_applicant(tracking_id: int):
             qb_payload = sync_service.map_applicant_to_quickbooks_customer_update(
                 applicant=applicant,
                 qb_customer_id=quickbooks_id,
-                sparse=True
+                sparse=True,
+                SyncToken=fetch_result.get('SyncToken')
             )
 
             result = sync_service.update_quickbooks_customer(qb_customer_id=quickbooks_id, qb_customer_data=qb_payload)
