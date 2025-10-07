@@ -551,7 +551,7 @@ class CustomerSyncService:
                     "PrimaryEmailAddr": {"Address": email} if email else None,
                     "CustomerTypeRef": {"value": "528730", "name": "applicant"},
                     "CustomField": filtered_custom_fields,
-                    "Notes": f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
+                    "Notes": f"Applicant Updated from MIS - Tracking ID: {applicant_data['tracking_id']}"
                 })
                 qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
 

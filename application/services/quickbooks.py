@@ -294,7 +294,7 @@ class QuickBooks:
     
     def get_customer(self, realm_id, customer_id):
         """Retrieve a specific customer by ID, including custom fields."""
-        endpoint = f"{realm_id}/customer/{customer_id}"
+        endpoint = f"{realm_id}/customer/"
         params = {
             "minorversion": "75",  # Updated to the latest minor version
             "include": "enhancedAllCustomFields"
