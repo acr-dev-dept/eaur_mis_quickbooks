@@ -482,7 +482,8 @@ class CustomerSyncService:
         self, 
         applicant: TblOnlineApplication,
         qb_customer_id: str,
-        sparse: bool = True
+        sparse: bool = True,
+        SyncToken: str = None
     ) -> Dict:
         """
         Map MIS applicant data to QuickBooks customer update format (sparse update).
@@ -520,7 +521,7 @@ class CustomerSyncService:
             qb_customer_update = {
                 "Id": qb_customer_id,
                 "sparse": sparse,
-                "SyncToken": applicant_data.get('sync_token')  # QuickBooks requires SyncToken for updates
+                "SyncToken": applicant_data.get('sync_token') if applicant_data.get('sync_token') else SyncToken  # QuickBooks requires SyncToken for updates
             }
 
             if sparse:
@@ -537,6 +538,7 @@ class CustomerSyncService:
                 if filtered_custom_fields:
                     qb_customer_update["CustomField"] = filtered_custom_fields
                 qb_customer_update["Notes"] = f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
+
             else:
                 # Full update logic if ever needed
                 qb_customer_update.update({
