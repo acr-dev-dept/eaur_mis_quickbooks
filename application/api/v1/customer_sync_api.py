@@ -637,12 +637,15 @@ def update_single_applicant(tracking_id: int):
                 )
 
             fetch_result = sync_service.get_customer_by_quickbooks_id(quickbooks_id)
+            customer_data = fetch_result.get('data', fetch_result).get('Customer', {})
+            sync_token = customer_data.get('SyncToken')
+
             current_app.logger.info(f"Fetched QuickBooks customer for applicant {tracking_id}: {fetch_result} with type {type(fetch_result)}")
             qb_payload = sync_service.map_applicant_to_quickbooks_customer_update(
                 applicant=applicant,
                 qb_customer_id=quickbooks_id,
                 sparse=True,
-                SyncToken=fetch_result['data']['Customer']['SyncToken']
+                SyncToken=sync_token if sync_token else None  # Default to "0" if SyncToken is missing
             )
 
 
