@@ -529,9 +529,9 @@ class CustomerSyncService:
                 qb_customer_update.update({
                     "DisplayName": applicant_data['tracking_id'],
                     "GivenName": applicant_data['first_name'],
-                    "FamilyName": applicant_data['last_name'],
+                    "FamilyName": applicant_data['family_name'],
                     "MiddleName": applicant_data['middle_name'],
-                    "CompanyName": f"{applicant_data['first_name']} {applicant_data['last_name']}",
+                    "CompanyName": f"{applicant_data['first_name']} {applicant_data['family_name']}",
                     "PrimaryPhone": {"FreeFormNumber": applicant_data['phone']} if applicant_data.get('phone') else None,
                     "PrimaryEmailAddr": {"Address": email} if email else None,
                     "CustomerTypeRef": {"value": "528730", "name": "applicant"},
