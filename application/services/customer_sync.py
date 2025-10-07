@@ -505,7 +505,7 @@ class CustomerSyncService:
                 {"DefinitionId": "1000000001", "StringValue": "Applicant"},
                 {"DefinitionId": "1000000002", "StringValue": str(applicant_data['tracking_id'])},
                 {"DefinitionId": "1000000003", "StringValue": applicant_data['sex']},
-                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": applicant_data['national_id']},
+                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": applicant_data['nation_Id_passPort_no']},
                 {"DefinitionId": "1000000005", "StringValue": applicant_data['campus_name']},
                 {"DefinitionId": "8", "Name": "Intake", "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")},
                 {"DefinitionId": "1000000009", "StringValue": applicant_data['program_mode']}
