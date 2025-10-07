@@ -507,7 +507,7 @@ class CustomerSyncService:
                 {"DefinitionId": "1000000003", "StringValue": applicant_data['sex']},
                 {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": applicant_data['nation_Id_passPort_no']},
                 {"DefinitionId": "1000000005", "StringValue": applicant_data['camp_id']},
-                {"DefinitionId": "1000000009", "StringValue": applicant_data['program_mode']}
+                {"DefinitionId": "1000000009", "StringValue": applicant_data['prg_mode_id']}
             ]
 
             filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
