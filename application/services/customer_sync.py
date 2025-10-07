@@ -521,25 +521,10 @@ class CustomerSyncService:
             qb_customer_update = {
                 "Id": qb_customer_id,
                 "sparse": sparse,
-                "SyncToken": applicant_data.get('sync_token') if applicant_data.get('sync_token') else SyncToken  # QuickBooks requires SyncToken for updates
+                "SyncToken": applicant_data.get('sync_token') if applicant_data.get('sync_token') else SyncToken, # Use provided SyncToken if available
             }
 
             if sparse:
-                if applicant_data.get('first_name'):
-                    qb_customer_update["GivenName"] = applicant_data['first_name']
-                if applicant_data.get('last_name'):
-                    qb_customer_update["FamilyName"] = applicant_data['last_name']
-                if applicant_data.get('middle_name'):
-                    qb_customer_update["MiddleName"] = applicant_data['middle_name']
-                if email:
-                    qb_customer_update["PrimaryEmailAddr"] = {"Address": email}
-                if applicant_data.get('phone'):
-                    qb_customer_update["PrimaryPhone"] = {"FreeFormNumber": applicant_data['phone']}
-                if filtered_custom_fields:
-                    qb_customer_update["CustomField"] = filtered_custom_fields
-                qb_customer_update["Notes"] = f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
-
-            else:
                 # Full update logic if ever needed
                 qb_customer_update.update({
                     "DisplayName": applicant_data['tracking_id'],
