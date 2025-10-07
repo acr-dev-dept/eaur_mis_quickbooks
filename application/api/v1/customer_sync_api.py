@@ -627,7 +627,8 @@ def update_single_applicant(tracking_id: int):
                     status_code=404
                 )
 
-            quickbooks_id = getattr(applicant, 'quickbooks_id', None)
+            quickbooks_id = applicant['quickbooks_id']
+            current_app.logger.info(f"Fetched applicant {tracking_id} with QuickBooks ID: {quickbooks_id}")
             if not quickbooks_id:
                 return create_response(
                     success=False,
