@@ -519,7 +519,8 @@ class CustomerSyncService:
             # Build sparse update payload
             qb_customer_update = {
                 "Id": qb_customer_id,
-                "sparse": sparse
+                "sparse": sparse,
+                "SyncToken": applicant_data.get('sync_token')  # QuickBooks requires SyncToken for updates
             }
 
             if sparse:
@@ -1150,7 +1151,7 @@ class CustomerSyncService:
             current_app.logger.error(f"Error updating QuickBooks customer {qb_customer_id}: {e}")
             raise
 
-        
+
 
 
 
@@ -1237,3 +1238,22 @@ class CustomerSyncService:
             logger.error(f"Error logging customer sync audit: {e}")
             if db.session:
                 db.session.rollback()
+
+    def get_customer_by_quickbooks_id(self, quickbooks_id: str) -> Optional[Dict]:
+        """
+        Retrieve a customer from QuickBooks by their QuickBooks ID
+
+        Args:
+            quickbooks_id: QuickBooks Customer Id to retrieve
+
+        Returns:
+            Dictionary representation of the QuickBooks customer, or None if not found
+        """
+        try:
+            qb_service = self._get_qb_service()
+            customer = qb_service.get_customer(qb_service.realm_id, quickbooks_id)
+            current_app.logger.info(f"Retrieved QuickBooks customer {quickbooks_id}: {customer}")
+            return customer
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving QuickBooks customer {quickbooks_id}: {e}")
+            return None
