@@ -611,7 +611,7 @@ class CustomerSyncService:
                         "name": "student"
                     },
                     "CustomField": filtered_custom_fields,
-                        "Notes": f"Student Updated from MIS - Tracking ID: {student_data['tracking_id']}"
+                        "Notes": f"Student Updated from MIS - Reg_No: {student_data.get('reg_no', '')}"
                 })
                 qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
 
