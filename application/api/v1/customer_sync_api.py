@@ -791,7 +791,7 @@ def update_single_student():
                     status_code=404
                 )
 
-            quickbooks_id = student['quickbooks_id']
+            quickbooks_id = student['qk_id']
             current_app.logger.info(f"Fetched student {reg_no} with QuickBooks ID: {quickbooks_id}")
             if not quickbooks_id:
                 return create_response(
