@@ -518,13 +518,13 @@ class InvoiceSyncService:
             SyncResult: Result of the update attempt
         """
         if not invoice.get('quickbooks_id'):
-            logger.info(f"Invoice {invoice.id} has not been synced yet, cannot update.")
-            raise Exception(f"Invoice {invoice.id} has not been synchronized with QuickBooks yet.")
+            logger.info(f"Invoice {invoice.get('id')} has not been synced yet, cannot update.")
+            raise Exception(f"Invoice {invoice.get('id')} has not been synchronized with QuickBooks yet.")
 
         try:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
-            self._update_invoice_sync_status(invoice.id, SyncStatus.IN_PROGRESS.value)
+            self._update_invoice_sync_status(invoice.get('id'), SyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
@@ -534,14 +534,14 @@ class InvoiceSyncService:
 
             qb_item_id = self.map_invoice_to_quickbooks_update(invoice)[2]
             if not qb_item_id:
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
             
             qb_customer_id = self.map_invoice_to_quickbooks_update(invoice)[1]
             if not qb_customer_id:
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
 
             # Update invoice in QuickBooks
-            response = qb_service.update_invoice(qb_service.realm_id, invoice.quickbooks_id, qb_invoice_data)
+            response = qb_service.update_invoice(qb_service.realm_id, invoice.get('quickbooks_id'), qb_invoice_data)
 
             if 'Invoice' in response:
                 # Success - update sync status
