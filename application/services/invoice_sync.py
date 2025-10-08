@@ -517,6 +517,7 @@ class InvoiceSyncService:
         Returns:
             SyncResult: Result of the update attempt
         """
+        current_app.logger.info(f"Invoice data for update: {invoice}")
         if not invoice.get('quickbooks_id'):
             logger.info(f"Invoice {invoice.get('id')} has not been synced yet, cannot update.")
             raise Exception(f"Invoice {invoice.get('id')} has not been synchronized with QuickBooks yet.")
