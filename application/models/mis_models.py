@@ -912,7 +912,7 @@ class TblImvoice(MISBaseModel):
         try:
             with MISBaseModel.get_session() as session:
                 invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
-                return invoice
+                return invoice.to_dict() if invoice else None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
