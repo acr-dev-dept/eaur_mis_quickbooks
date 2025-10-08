@@ -723,7 +723,7 @@ def sync_invoice(invoice_id):
         )
 
 @invoices_bp.route('/update/<int:invoice_id>', methods=['POST'])
-def update_invoice(invoice_id):
+def update_invoice_qb(invoice_id):
     """Update an existing invoice in QuickBooks by ID from MIS."""
     try:
         # Validate QuickBooks connection
