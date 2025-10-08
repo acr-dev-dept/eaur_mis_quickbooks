@@ -766,12 +766,14 @@ def sync_students():
             status_code=500
         )
 
-@customer_sync_bp.route('/student/update/<string:reg_no>', methods=['POST'])
-def update_single_student(reg_no: str):
+@customer_sync_bp.route('/student/update/', methods=['POST'])
+def update_single_student():
     """
     Update an existing QuickBooks customer for a single student by reg_no.
     Performs a sparse update to avoid overwriting existing fields.
     """
+    data = request.get_json() or {}
+    reg_no = data.get('reg_no')
     try:
         # Validate QuickBooks connection
         is_connected, error_response = validate_quickbooks_connection()
