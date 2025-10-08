@@ -898,6 +898,25 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error counting synced invoices: {str(e)}")
             return 0
+    @staticmethod
+    def get_invoice_by_id(invoice_id):
+        """
+        Get invoice by ID
+
+        Args:
+            invoice_id (int): Invoice ID
+
+        Returns:
+            TblImvoice: Invoice record or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
+                return invoice
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
+            return None
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
