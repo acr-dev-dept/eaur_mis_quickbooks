@@ -336,63 +336,63 @@ class InvoiceSyncService:
         """
         try:
             # Calculate amounts
-            amount = float(invoice.dept or 0) - float(invoice.credit or 0)
+            amount = float(invoice.get('dept') or 0) - float(invoice.get('credit') or 0)
             if amount <= 0:
-                amount = float(invoice.dept or 0)  # Use debit amount if calculation results in zero/negative
+                amount = float(invoice.get('dept') or 0)  # Use debit amount if calculation results in zero/negative
 
             # Get fee category description
             fee_description = "Tuition Fee"  # Default
-            if invoice.fee_category_rel:
-                fee_description = getattr(invoice.fee_category_rel, 'name', 'Tuition Fee')
-                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
+            if invoice.get('fee_category_rel'):
+                fee_description = invoice.get('fee_category_rel', {}).get('name', 'Tuition Fee')
+                current_app.logger.debug(f"Fee category for invoice {invoice.get('id')}: {fee_description}")
             # Format invoice date
-            invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
+            invoice_date = invoice.get('invoice_date').strftime('%Y-%m-%d') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
 
             # Get fee category for item mapping
-            if invoice.fee_category:
-                category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
-                quickbooks_id = category['QuickBk_ctgId'] if category else None
+            if invoice.get('fee_category'):
+                category = TblIncomeCategory.get_category_by_id(invoice.get('fee_category'))
+                quickbooks_id = category.get('QuickBk_ctgId') if category else None
             
 
             # if no category found
             if not quickbooks_id:
-                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
 
-            reg_no = invoice.reg_no
-            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
+            reg_no = invoice.get('reg_no')
+            current_app.logger.info(f"Mapping invoice {invoice.get('id')} for student {reg_no}")
 
 
             # Attempt to find student or applicant reference by registration number
-            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
-            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
+            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.get('reg_no'))
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.get('reg_no'))
             customer_id = None
             
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
-                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
+                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.get('reg_no')}")
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
-                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
+                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.get('reg_no')}")
 
             # Log a warning if no customer reference is found
             else:
-                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.get('reg_no')}")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
 
             sync_token = getattr(invoice, 'sync_token', None)
             # If sync token is missing, pull it from QuickBooks
             if not sync_token:
-                invoice_qb = self._get_qb_service().get_invoice(invoice.quickbooks_id)
-                current_app.logger.info(f"Fetched invoice {invoice.id} from QuickBooks for SyncToken retrieval: {invoice_qb}")
+                invoice_qb = self._get_qb_service().get_invoice(invoice.get('quickbooks_id'))
+                current_app.logger.info(f"Fetched invoice {invoice.get('id')} from QuickBooks for SyncToken retrieval: {invoice_qb}")
                 sync_token = invoice_qb.get('SyncToken') if invoice_qb else None
                 if not sync_token:
-                    raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.id} from QuickBooks.")
+                    raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.get('id')} from QuickBooks.")
             # Create QuickBooks invoice structure
-            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+            current_app.logger.info(f"Customer ID for invoice {invoice.get('id')}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
             qb_invoice = {
                 "Line": [
                     {
@@ -412,9 +412,9 @@ class InvoiceSyncService:
                     "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
                 "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
-                "DocNumber": f"MIS-{invoice.id}",
+                "DocNumber": f"MIS-{invoice.get('id')}",
                 "SyncToken": f"{sync_token}",
-                "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
+                "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
 
@@ -576,11 +576,11 @@ class InvoiceSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
-            self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+            self._update_invoice_sync_status(invoice.get('id'), SyncStatus.FAILED.value)
+            self._log_sync_audit(invoice.get('id'), 'ERROR', error_msg)
 
             return SyncResult(
-                invoice_id=invoice.id,
+                invoice_id=invoice.get('id'),
                 success=False,
                 error_message=error_msg
             )
