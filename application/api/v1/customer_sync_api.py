@@ -635,10 +635,10 @@ def update_single_applicant(tracking_id: int):
                     error=f"Applicant {tracking_id} has not been synced to QuickBooks yet",
                     status_code=400
                 )
-
-            fetch_result = sync_service.get_customer_by_quickbooks_id(quickbooks_id)
-            customer_data = fetch_result.get('data', fetch_result).get('Customer', {})
-            sync_token = customer_data.get('SyncToken')
+            if not applicant['sync_token']:
+                fetch_result = sync_service.get_customer_by_quickbooks_id(quickbooks_id)
+                customer_data = fetch_result.get('data', fetch_result).get('Customer', {})
+                sync_token = customer_data.get('SyncToken')
 
             current_app.logger.info(f"Fetched QuickBooks customer for applicant {tracking_id}: {fetch_result} with type {type(fetch_result)}")
             qb_payload = sync_service.map_applicant_to_quickbooks_customer_update(
@@ -766,6 +766,78 @@ def sync_students():
             status_code=500
         )
 
+@customer_sync_bp.route('/student/update/<string:reg_no>', methods=['POST'])
+def update_single_student(reg_no: str):
+    """
+    Update an existing QuickBooks customer for a single student by reg_no.
+    Performs a sparse update to avoid overwriting existing fields.
+    """
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sync_service = CustomerSyncService()
+
+        with db_manager.get_mis_session() as db:
+            student = TblPersonalUg.get_student_details(reg_no)
+            if not student:
+                return create_response(
+                    success=False,
+                    error=f"Student {reg_no} not found",
+                    status_code=404
+                )
+
+            quickbooks_id = student['quickbooks_id']
+            current_app.logger.info(f"Fetched student {reg_no} with QuickBooks ID: {quickbooks_id}")
+            if not quickbooks_id:
+                return create_response(
+                    success=False,
+                    error=f"Student {reg_no} has not been synced to QuickBooks yet",
+                    status_code=400
+                )
+            if not student['sync_token']:
+                fetch_result = sync_service.get_customer_by_quickbooks_id(quickbooks_id)
+                customer_data = fetch_result.get('data', fetch_result).get('Customer', {})
+                sync_token = customer_data.get('SyncToken')
+
+            current_app.logger.info(f"Fetched QuickBooks customer for student {reg_no}: {fetch_result} with type {type(fetch_result)}")
+            qb_payload = sync_service.map_student_to_quickbooks_customer_update(
+                student=student,
+                qb_customer_id=quickbooks_id,
+                sparse=True,
+                SyncToken=sync_token if sync_token else None  # Default to "0" if SyncToken is missing
+            )
+
+            result = sync_service.update_quickbooks_customer(qb_customer_id=quickbooks_id, qb_customer_data=qb_payload)
+            current_app.logger.info(f"Update result for student {reg_no}: {result}")
+
+            if result.get('Customer'):
+                return create_response(
+                    success=True,
+                    data={
+                        'student_reg_no': reg_no,
+                        'quickbooks_id': quickbooks_id
+                    },
+                    message=f"Student {reg_no} updated successfully in QuickBooks"
+                )
+            else:
+                return create_response(
+                    success=False,
+                    error=f"Failed to update student {reg_no} in QuickBooks",
+                    details=result.error_message,
+                    status_code=500
+                )
+    except Exception as e:
+        current_app.logger.error(f"Error updating student {reg_no}: {e}")
+        current_app.logger.error(traceback.format_exc())
+        return create_response(
+            success=False,
+            error=f"Error updating student {reg_no}",
+            details=str(e),
+            status_code=500
+        )
 
 @customer_sync_bp.route('/all', methods=['POST'])
 def sync_all_customers():

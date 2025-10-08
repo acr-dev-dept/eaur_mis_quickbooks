@@ -546,7 +546,80 @@ class CustomerSyncService:
             current_app.logger.error(f"Error mapping applicant {applicant_data.get('tracking_id')} for QuickBooks update: {e}")
             raise
 
+    def map_student_to_quickbooks_customer_update(
+        self,
+        student: TblPersonalUg,
+        qb_customer_id: str,
+        sparse: bool = True,
+        SyncToken: str = None
+    ) -> Dict:
+        """
+        Map MIS student data to QuickBooks customer update format (sparse update).
 
+        Args:
+            student: MIS student object
+            qb_customer_id: QuickBooks Customer Id to update
+            sparse: Whether to perform a sparse update (only changed fields)
+
+        Returns:
+            Dictionary formatted for QuickBooks Customer Update API
+        """
+        current_app.logger.info(f"Mapping student {student} for QuickBooks update")
+
+        student_data = student if isinstance(student, dict) else student.to_dict_for_quickbooks()
+
+        try:
+            # Prepare custom fields
+            custom_fields_list = [
+                {"DefinitionId": "1000000001", "StringValue": "Student"},
+                {"DefinitionId": "1000000002", "StringValue": str(student_data.get('reg_no', ''))},
+                {"DefinitionId": "1000000003", "StringValue": student_data.get('sex', '')},
+                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": student_data.get('national_id', '')},
+                {"DefinitionId": "1000000005", "StringValue": student_data.get('campus_name', '')},
+                {"DefinitionId": "1000000006", "Name": "Intake", "StringValue": str(student_data.get('intake_details', ''))},
+                {"DefinitionId": "1000000009", "StringValue": student_data.get('program_type', '')}
+
+            ]
+            filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
+            
+            email = student_data.get('email1')
+            if not self.is_valid_email(str(email)):
+                email = None
+
+            qb_customer_update = {
+                "Id": qb_customer_id,
+                "sparse": sparse,
+                "SyncToken": student_data.get('sync_token') if student_data.get('sync_token') else SyncToken,  # Use provided SyncToken if available
+            }
+
+            if sparse:
+                # Full update logic if ever needed
+                qb_customer_update.update({
+                    "DisplayName": student_data.get('reg_no', ''),
+                    "GivenName": student_data.get('first_name'),
+                    "FamilyName": student_data.get('last_name'),
+                    "MiddleName": student_data.get('middle_name'),
+                    "CompanyName": f"{student_data.get('first_name', '')} {student_data.get('last_name', '')}",
+                    "PrimaryPhone": {
+                        "FreeFormNumber": student_data.get('phone')
+                    } if student_data.get('phone') else None,
+                    "PrimaryEmailAddr": {
+                        "Address": email
+                    } if email else None,
+                    "CustomerTypeRef": {
+                        "value": "528694",
+                        "name": "student"
+                    },
+                    "CustomField": filtered_custom_fields,
+                        "Notes": f"Student Updated from MIS - Tracking ID: {student_data['tracking_id']}"
+                })
+                qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
+
+            return qb_customer_update
+
+        except Exception as e:
+            current_app.logger.error(f"Error mapping student {student_data.get('tracking_id')} for QuickBooks update: {e}")
+            raise
 
     def is_valid_email(self, email: str) -> bool:
         """
