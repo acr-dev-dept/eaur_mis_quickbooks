@@ -722,3 +722,80 @@ def sync_invoice(invoice_id):
             status_code=500
         )
 
+@invoices_bp.route('/update/<int:invoice_id>', methods=['POST'])
+def update_invoice(invoice_id):
+    """Update an existing invoice in QuickBooks by ID from MIS."""
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            QuickbooksAuditLog.add_audit_log(
+                action_type="Validate QuickBooks connection",
+                operation_status=500,
+                error_message="QuickBooks not connected",
+            )
+            return error_response
+
+        if not invoice_id:
+            QuickbooksAuditLog.add_audit_log(
+                action_type="Validate invoice_id",
+                operation_status=400,
+                error_message="Invoice ID is required",
+            )
+            return create_response(
+                success=False,
+                error='Invoice ID is required',
+                message='Please provide a valid invoice ID',
+                status_code=400
+            )
+
+        current_app.logger.info(f'Updating invoice in QuickBooks with ID: {invoice_id}')
+
+        invoice_sync_service = InvoiceSyncService()
+        invoice_data = invoice_sync_service.fetch_invoice_data(invoice_id)
+        current_app.logger.info(f'Fetched invoice data: {invoice_data} and the type is {type(invoice_data)}')
+
+
+        result = invoice_sync_service.update_invoice(invoice_data)
+
+        current_app.logger.info(f'Update result: {result}')
+
+        if not result.success:
+            QuickbooksAuditLog.add_audit_log(
+                action_type="Update single invoice",
+                operation_status=400,
+                error_message=result.error_message or "Failed to update invoice",
+            )
+            return create_response(
+                success=False,
+                error='Failed to update invoice',
+                details=result.error_message or 'Unknown error',
+                status_code=400
+            )
+
+        current_app.logger.info("Invoice updated successfully")
+        QuickbooksAuditLog.add_audit_log(
+            action_type="Update single invoice",
+            operation_status=200,
+            error_message=None,
+        )
+        return create_response(
+            success=True,
+            data=result.details or {},
+            message='Invoice updated successfully'
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating invoice: {e}")
+        current_app.logger.error(traceback.format_exc())
+        QuickbooksAuditLog.add_audit_log(
+            action_type="Update single invoice",
+            operation_status=500,
+            error_message=str(e),
+        )
+        return create_response(
+            success=False,
+            error='Error updating invoice',
+            details=str(e),
+            status_code=500
+        )

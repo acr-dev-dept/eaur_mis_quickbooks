@@ -5,7 +5,7 @@ Handles synchronization of applicants and students from MIS to QuickBooks as cus
 
 from flask import Blueprint, request, jsonify, current_app
 from application.services.customer_sync import CustomerSyncService
-from application.models.central_models import QuickBooksConfig
+from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 import traceback
 from datetime import datetime
 from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg
@@ -653,6 +653,11 @@ def update_single_applicant(tracking_id: int):
             current_app.logger.info(f"Update result for applicant {tracking_id}: {result}")
 
             if result.get('Customer'):
+                QuickbooksAuditLog.add_audit_log(
+                    action_type="Update single applicant",
+                    operation_status=200,
+                    error_message=result.get('Error', "Something went wrong"),
+                )
                 return create_response(
                     success=True,
                     data={
@@ -662,6 +667,11 @@ def update_single_applicant(tracking_id: int):
                     message=f"Applicant {tracking_id} updated successfully in QuickBooks"
                 )
             else:
+                QuickbooksAuditLog.add_audit_log(
+                    action_type="Update single applicant",
+                    operation_status=500,
+                    error_message=result.error_message,
+                )
                 return create_response(
                     success=False,
                     error=f"Failed to update applicant {tracking_id} in QuickBooks",
@@ -792,6 +802,7 @@ def update_single_student():
                 )
 
             quickbooks_id = student['qk_id']
+            current_app
             current_app.logger.info(f"Fetched student {reg_no} with QuickBooks ID: {quickbooks_id}")
             if not quickbooks_id:
                 return create_response(
@@ -816,6 +827,11 @@ def update_single_student():
             current_app.logger.info(f"Update result for student {reg_no}: {result}")
 
             if result.get('Customer'):
+                QuickbooksAuditLog.add_audit_log(
+                    action_type="Update single student",
+                    operation_status=200,
+                    error_message=None,
+                )
                 return create_response(
                     success=True,
                     data={
@@ -825,6 +841,11 @@ def update_single_student():
                     message=f"Student {reg_no} updated successfully in QuickBooks"
                 )
             else:
+                QuickbooksAuditLog.add_audit_log(
+                    action_type="Update single student",
+                    operation_status=500,
+                    error_message=result.error_message,
+                )
                 return create_response(
                     success=False,
                     error=f"Failed to update student {reg_no} in QuickBooks",

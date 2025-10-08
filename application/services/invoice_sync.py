@@ -324,6 +324,107 @@ class InvoiceSyncService:
             logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
             raise
 
+    def map_invoice_to_quickbooks_update(self, invoice: TblImvoice) -> Dict:
+        """
+        Map MIS invoice data to QuickBooks invoice format
+
+        Args:
+            invoice: MIS invoice object
+
+        Returns:
+            Dictionary formatted for QuickBooks API
+        """
+        try:
+            # Calculate amounts
+            amount = float(invoice.dept or 0) - float(invoice.credit or 0)
+            if amount <= 0:
+                amount = float(invoice.dept or 0)  # Use debit amount if calculation results in zero/negative
+
+            # Get fee category description
+            fee_description = "Tuition Fee"  # Default
+            if invoice.fee_category_rel:
+                fee_description = getattr(invoice.fee_category_rel, 'name', 'Tuition Fee')
+                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
+            # Format invoice date
+            invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
+
+            # Get fee category for item mapping
+            if invoice.fee_category:
+                category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
+                quickbooks_id = category['QuickBk_ctgId'] if category else None
+            
+
+            # if no category found
+            if not quickbooks_id:
+                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+
+            reg_no = invoice.reg_no
+            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
+
+
+            # Attempt to find student or applicant reference by registration number
+            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
+            customer_id = None
+            
+            # Check if the student reference exists and extract the QuickBooks customer ID
+            if student_ref:
+                customer_id = student_ref.qk_id
+                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
+
+            # If no student reference, check the applicant reference
+            elif applicant_ref:
+                customer_id = applicant_ref.get('quickbooks_id')
+                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
+
+            # Log a warning if no customer reference is found
+            else:
+                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+
+            sync_token = invoice.sync_token if invoice.sync_token else None
+            # If sync token is missing, pull it from QuickBooks
+            if not sync_token:
+                invoice_qb = self._get_qb_service().get_invoice(invoice.quickbooks_id)
+                current_app.logger.info(f"Fetched invoice {invoice.id} from QuickBooks for SyncToken retrieval: {invoice_qb}")
+                sync_token = invoice_qb.get('SyncToken') if invoice_qb else None
+                if not sync_token:
+                    raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.id} from QuickBooks.")
+            # Create QuickBooks invoice structure
+            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+            qb_invoice = {
+                "Line": [
+                    {
+                        "Amount": float(amount),
+                        "DetailType": "SalesItemLineDetail",
+                        "SalesItemLineDetail": {
+                            "ItemRef": {
+                                "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
+                            },
+                            "Qty": 1,
+                            "UnitPrice": float(amount)
+                        },
+                        "Description": f"{fee_description} - {invoice.comment or 'Student Fee'}"
+                    }
+                ],
+                "CustomerRef": {
+                    "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
+                },
+                "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
+                "DocNumber": f"MIS-{invoice.id}",
+                "SyncToken": f"{sync_token}",
+                "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
+            }
+
+
+            return qb_invoice, customer_id, quickbooks_id
+
+        except Exception as e:
+            logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
+            raise
+
+
     def sync_single_invoice(self, invoice: TblImvoice) -> SyncResult:
         """
         Synchronize a single invoice to QuickBooks
@@ -406,6 +507,83 @@ class InvoiceSyncService:
                 error_message=error_msg
             )
 
+    def update_single_invoice(self, invoice: TblImvoice) -> SyncResult:
+        """
+        Update a single invoice in QuickBooks
+
+        Args:
+            invoice: MIS invoice object to update
+
+        Returns:
+            SyncResult: Result of the update attempt
+        """
+        if not invoice.quickbooks_id:
+            logger.info(f"Invoice {invoice.id} has not been synced yet, cannot update.")
+            raise Exception(f"Invoice {invoice.id} has not been synchronized with QuickBooks yet.")
+
+        try:
+            # Mark invoice as in progress
+            current_app.logger.info(f"Invoice data: {invoice}")
+            self._update_invoice_sync_status(invoice.id, SyncStatus.IN_PROGRESS.value)
+
+            # Get QuickBooks service
+            qb_service = self._get_qb_service()
+
+            # Map invoice data for update
+            qb_invoice_data = self.map_invoice_to_quickbooks_update(invoice)[0]
+
+            qb_item_id = self.map_invoice_to_quickbooks_update(invoice)[2]
+            if not qb_item_id:
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+            
+            qb_customer_id = self.map_invoice_to_quickbooks_update(invoice)[1]
+            if not qb_customer_id:
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+
+            # Update invoice in QuickBooks
+            response = qb_service.update_invoice(qb_service.realm_id, invoice.quickbooks_id, qb_invoice_data)
+
+            if 'Invoice' in response:
+                # Success - update sync status
+                qb_invoice_id = response['Invoice']['Id']
+                self._update_invoice_sync_status(
+                    invoice.id,
+                    SyncStatus.SYNCED.value,
+                    quickbooks_id=qb_invoice_id
+                )
+
+                # Log successful sync
+                self._log_sync_audit(invoice.id, 'SUCCESS', f"Updated in QuickBooks ID: {qb_invoice_id}")
+
+                return SyncResult(
+                    invoice_id=invoice.id,
+                    success=True,
+                    quickbooks_id=qb_invoice_id,
+                    details=response
+                )
+            else:
+                # Handle API error
+                error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
+                self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+                self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+
+                return SyncResult(
+                    invoice_id=invoice.id,
+                    success=False,
+                    error_message=error_msg,
+                    details=response
+                )
+        except Exception as e:
+            # Handle exception
+            error_msg = str(e)
+            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+            self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+
+            return SyncResult(
+                invoice_id=invoice.id,
+                success=False,
+                error_message=error_msg
+            )
 
     def sync_invoices_batch(self, batch_size: Optional[int] = None) -> Dict:
         """
@@ -557,7 +735,6 @@ class InvoiceSyncService:
 
         try:
             batch_count = 0
-
             while True:
                 # Check if we've reached max batches
                 if max_batches and batch_count >= max_batches:
