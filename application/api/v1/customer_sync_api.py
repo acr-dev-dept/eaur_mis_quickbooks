@@ -799,8 +799,7 @@ def update_single_student():
                     error=f"Student {reg_no} has not been synced to QuickBooks yet",
                     status_code=400
                 )
-            sync_token = student['sync_token'] or None
-            if not sync_token:
+            if not student.get('sync_token'):
                 fetch_result = sync_service.get_customer_by_quickbooks_id(quickbooks_id)
                 customer_data = fetch_result.get('data', fetch_result).get('Customer', {})
                 sync_token = customer_data.get('SyncToken')
