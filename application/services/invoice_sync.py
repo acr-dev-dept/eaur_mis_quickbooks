@@ -415,7 +415,11 @@ class InvoiceSyncService:
                 "CustomerRef": {
                     "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
-                "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
+                "TxnDate": (
+                    invoice_date.strftime("%Y-%m-%d")
+                    if hasattr(invoice_date, "strftime")
+                    else str(invoice_date)
+                ),
                 "DocNumber": f"MIS-{invoice.get('id')}",
                 "SyncToken": f"{sync_token}",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
