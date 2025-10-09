@@ -394,7 +394,7 @@ class InvoiceSyncService:
             sync_token = getattr(invoice, 'sync_token', None)
             # If sync token is missing, pull it from QuickBooks
             if not sync_token:
-                invoice_qb = self._get_qb_service().get_invoice(invoice.get('quickbooks_id'))
+                invoice_qb = self._get_qb_service().get_invoice(invoice_id=invoice.get('quickbooks_id'))
                 current_app.logger.info(f"Fetched invoice {invoice.get('id')} from QuickBooks for SyncToken retrieval: {invoice_qb}")
                 sync_token = invoice_qb.get('SyncToken') if invoice_qb else None
                 if not sync_token:
