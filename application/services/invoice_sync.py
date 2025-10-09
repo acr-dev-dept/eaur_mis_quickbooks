@@ -334,6 +334,10 @@ class InvoiceSyncService:
         Returns:
             Dictionary formatted for QuickBooks API
         """
+        invoice_id = getattr(invoice, 'id', None) or invoice.get('id')
+        if not invoice_id:
+            raise ValueError("Invoice ID is required for mapping.")
+        current_app.logger.info(f"Mapping invoice for update__: {invoice}")
         try:
             # Calculate amounts
             amount = float(invoice.get('dept') or 0) - float(invoice.get('credit') or 0)
@@ -421,7 +425,7 @@ class InvoiceSyncService:
             return qb_invoice, customer_id, quickbooks_id
 
         except Exception as e:
-            logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
+            logger.error(f"Error mapping invoice {invoice.get('id')} to QuickBooks format: {e}")
             raise
 
 
@@ -548,7 +552,7 @@ class InvoiceSyncService:
 
             # Update invoice in QuickBooks
             response = qb_service.update_invoice(realm_id=qb_service.realm_id, invoice_data=qb_invoice_data)
-
+            
             if 'Invoice' in response:
                 # Success - update sync status
                 qb_invoice_id = response['Invoice']['Id']
