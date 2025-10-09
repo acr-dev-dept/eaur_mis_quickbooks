@@ -478,7 +478,8 @@ class InvoiceSyncService:
                 self._update_invoice_sync_status(
                     invoice.id,
                     SyncStatus.SYNCED.value,
-                    quickbooks_id=qb_invoice_id
+                    quickbooks_id=qb_invoice_id,
+                    sync_token=response['Invoice'].get('SyncToken')
                 )
 
                 # Log successful sync
@@ -563,7 +564,8 @@ class InvoiceSyncService:
                 self._update_invoice_sync_status(
                     invoice.get('id'),
                     SyncStatus.SYNCED.value,
-                    quickbooks_id=qb_invoice_id
+                    quickbooks_id=qb_invoice_id,
+                    sync_token=response['Invoice'].get('SyncToken')
                 )
 
                 # Log successful sync
@@ -667,7 +669,7 @@ class InvoiceSyncService:
             results['errors'].append({'general_error': str(e)})
             return results
 
-    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[int] = None):
+    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[int] = None, sync_token: Optional[str] = None):
         """
         Update invoice synchronization status in MIS database
 
@@ -683,7 +685,8 @@ class InvoiceSyncService:
                     invoice.QuickBk_Status = status
                     invoice.pushed_date = datetime.now()
                     invoice.pushed_by = "InvoiceSyncService",
-                    invoice.quickbooks_id = quickbooks_id if quickbooks_id else invoice.quickbooks_id
+                    invoice.quickbooks_id = quickbooks_id if quickbooks_id else invoice.quickbooks_id,
+                    invoice.sync_token = sync_token if sync_token else invoice.sync_token
 
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
