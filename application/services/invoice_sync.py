@@ -414,7 +414,7 @@ class InvoiceSyncService:
                             "Qty": 1,
                             "UnitPrice": float(amount)
                         },
-                        "Description": f"{fee_description} - {invoice.comment or 'Student Fee'}"
+                        "Description": f"{fee_description} - {invoice.get('comment') or 'Student Fee'}"
                     }
                 ],
                 "CustomerRef": {
