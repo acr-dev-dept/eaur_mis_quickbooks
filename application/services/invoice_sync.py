@@ -397,7 +397,7 @@ class InvoiceSyncService:
                 qb_service = self._get_qb_service()
                 invoice_qb = qb_service.get_invoice(invoice_id=invoice.get('quickbooks_id'), realm_id=qb_service.realm_id)
                 current_app.logger.info(f"Fetched invoice {invoice.get('id')} from QuickBooks for SyncToken retrieval: {invoice_qb}")
-                sync_token = invoice_qb.get('SyncToken') if invoice_qb else None
+                sync_token = invoice_qb.get('Invoice', {}).get('SyncToken')
                 if not sync_token:
                     raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.get('id')} from QuickBooks.")
             # Create QuickBooks invoice structure
