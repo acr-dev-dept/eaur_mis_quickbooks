@@ -670,7 +670,7 @@ class InvoiceSyncService:
                     invoice.QuickBk_Status = status
                     invoice.pushed_date = datetime.now()
                     invoice.pushed_by = "InvoiceSyncService",
-                    invoice.quickbooks_id = quickbooks_id
+                    invoice.quickbooks_id = quickbooks_id if quickbooks_id else invoice.quickbooks_id
 
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:

@@ -320,6 +320,7 @@ requirements needed:
    3. With students who are already synced, we'll consider the qkbooks_id during sync and skip those with quickbooks_id not null
    4. Date formats to match the local format.
    5. Syncing Applicants Starting from Jan 01 2025
+   6. Application of reference number (Urubuto, Invoices,Payments)
 
 
 ## Requirements
