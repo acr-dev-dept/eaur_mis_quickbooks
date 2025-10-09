@@ -507,7 +507,7 @@ class InvoiceSyncService:
                 error_message=error_msg
             )
 
-    def update_single_invoice(self, invoice) -> SyncResult:
+    def update_single_invoice(self, invoice):
         """
         Update a single invoice in QuickBooks
 
@@ -517,6 +517,13 @@ class InvoiceSyncService:
         Returns:
             SyncResult: Result of the update attempt
         """
+        quickbooks_id = getattr(invoice, 'quickbooks_id', None) or invoice.get('quickbooks_id')
+        if not quickbooks_id:
+            return SyncResult(False, "Missing QuickBooks ID for update")
+
+        sync_token = getattr(invoice, 'sync_token', None) or invoice.get('sync_token')
+        if not sync_token:
+            current_app.logger.info(f"Fetching SyncToken for invoice {invoice.get('id')}")
         current_app.logger.info(f"Invoice data for update: {invoice}")
         if not invoice.get('quickbooks_id'):
             logger.info(f"Invoice {invoice.get('id')} has not been synced yet, cannot update.")
