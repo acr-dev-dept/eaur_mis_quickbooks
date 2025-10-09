@@ -758,7 +758,7 @@ def update_invoice_qb(invoice_id):
 
         result = invoice_sync_service.update_single_invoice(invoice_data)
 
-        current_app.logger.info(f'Update result: {result}')
+        current_app.logger.info(f'Update result test: {result}')
 
         if not result.success:
             QuickbooksAuditLog.add_audit_log(

@@ -526,15 +526,11 @@ class InvoiceSyncService:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
             self._update_invoice_sync_status(invoice.get('id'), SyncStatus.IN_PROGRESS.value)
-
-            
-
             # Get QuickBooks service
             qb_service = self._get_qb_service()
 
             # Map invoice data for update
             qb_invoice_data = self.map_invoice_to_quickbooks_update(invoice)[0]
-            current_app.logger.info(f"Mapped QuickBooks invoice data for update: {qb_invoice_data}")
             qb_item_id = self.map_invoice_to_quickbooks_update(invoice)[2]
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
