@@ -753,6 +753,8 @@ def update_invoice_qb(invoice_id):
 
         invoice_sync_service = InvoiceSyncService()
         invoice_data = TblImvoice.get_invoice_by_id(invoice_id)
+        invoice_datas = invoice_sync_service.fetch_invoice_data(invoice_id)
+        current_app.logger.info(f'Fetched invoice datas: {invoice_datas} and the type is {type(invoice_datas)}')
         current_app.logger.info(f'Fetched invoice data: {invoice_data} and the type is {type(invoice_data)}')
 
 
