@@ -335,6 +335,9 @@ class InvoiceSyncService:
             Dictionary formatted for QuickBooks API
         """
         invoice_id = getattr(invoice, 'id', None) or invoice.get('id')
+        current_app.logger.info(f"Mapping invoice for update with ID: {invoice_id}")
+        invoice_date = invoice.get('invoice_date').strftime('%Y-%m-%d') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
+        current_app.logger.info(f"Invoice date for invoice {invoice.get('id')}: {invoice_date} with type {type(invoice_date)}")
         if not invoice_id:
             raise ValueError("Invoice ID is required for mapping.")
         current_app.logger.info(f"Mapping invoice for update__: {invoice}")
