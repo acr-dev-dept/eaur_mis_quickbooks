@@ -507,7 +507,7 @@ class InvoiceSyncService:
                 error_message=error_msg
             )
 
-    def update_single_invoice(self, invoice: TblImvoice) -> SyncResult:
+    def update_single_invoice(self, invoice) -> SyncResult:
         """
         Update a single invoice in QuickBooks
 
