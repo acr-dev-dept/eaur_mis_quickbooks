@@ -548,16 +548,16 @@ class InvoiceSyncService:
                 # Success - update sync status
                 qb_invoice_id = response['Invoice']['Id']
                 self._update_invoice_sync_status(
-                    invoice.id,
+                    invoice.get('id'),
                     SyncStatus.SYNCED.value,
                     quickbooks_id=qb_invoice_id
                 )
 
                 # Log successful sync
-                self._log_sync_audit(invoice.id, 'SUCCESS', f"Updated in QuickBooks ID: {qb_invoice_id}")
+                self._log_sync_audit(invoice.get('id'), 'SUCCESS', f"Updated in QuickBooks ID: {qb_invoice_id}")
 
                 return SyncResult(
-                    invoice_id=invoice.id,
+                    invoice_id=invoice.get('id'),
                     success=True,
                     quickbooks_id=qb_invoice_id,
                     details=response
@@ -565,11 +565,11 @@ class InvoiceSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
-                self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+                self._update_invoice_sync_status(invoice.get('id'), SyncStatus.FAILED.value)
+                self._log_sync_audit(invoice.get('id'), 'ERROR', error_msg)
 
                 return SyncResult(
-                    invoice_id=invoice.id,
+                    invoice_id=invoice.get('id'),
                     success=False,
                     error_message=error_msg,
                     details=response
