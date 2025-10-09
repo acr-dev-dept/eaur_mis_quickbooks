@@ -756,7 +756,7 @@ def update_invoice_qb(invoice_id):
         current_app.logger.info(f'Fetched invoice data: {invoice_data} and the type is {type(invoice_data)}')
 
 
-        result = invoice_sync_service.update_single_invoice(invoice_data)
+        result = invoice_sync_service.update_single_invoice(invoice=invoice_data)
 
         current_app.logger.info(f'Update result test: {result}')
 
