@@ -776,6 +776,33 @@ class QuickBooks:
                     ]
                 }
             }
+    def update_invoice(self, realm_id, invoice_data):
+        """
+        Update an existing invoice in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            invoice_data (dict): The updated data for the invoice, must include 'Id' and 'SyncToken'.
+        """
+        endpoint = f"{realm_id}/invoice"
+        try:
+            current_app.logger.info(f"Updating invoice with data: {invoice_data}")
+            response = self.make_request(endpoint, method="POST", data=invoice_data)
+            current_app.logger.info(f"Invoice updated successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error updating invoice: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
     def get_invoice(self, realm_id, invoice_id):
         """
         Retrieve an invoice by ID from QuickBooks.
@@ -931,7 +958,6 @@ class QuickBooks:
                     ]
                 }
             }
-
     def send_invoice_to_a_given_email(self, realm_id, invoice_id, email):
         """ send an invoice to the given email address.
         Args:

@@ -547,7 +547,7 @@ class InvoiceSyncService:
                 raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
 
             # Update invoice in QuickBooks
-            response = qb_service.update_invoice(qb_service.realm_id, invoice.get('quickbooks_id'), qb_invoice_data)
+            response = qb_service.update_invoice(realm_id=qb_service.realm_id, invoice_data=qb_invoice_data)
 
             if 'Invoice' in response:
                 # Success - update sync status
