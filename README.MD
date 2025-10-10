@@ -316,7 +316,7 @@ requirements needed:
 
 ## Pre-requirements
    1. We found that there are some existing customers, items, and invoices already there in EAUR's quickbooks.
-   2. We found that only applicants are not there, so they need to be synced, with quickbooks_id, and quickbooks_status
+   2. We found that only applicants are not there, so they need to be synced, with quickbooks_id, and quickbooks_status, and Sync token
    3. With students who are already synced, we'll consider the qkbooks_id during sync and skip those with quickbooks_id not null
    4. Date formats to match the local format.
    5. Syncing Applicants Starting from Jan 01 2025
@@ -330,10 +330,10 @@ requirements needed:
    3. IncomeAccountRef while referencing syncing Payments to QB
 
 ## Order of Syncing
-   0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis
+   0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
 
 
-   1. Customers (Applicants and students)
+   1. Customers (Applicants and students), Inspect to add the address as in East African University live account
    2. Income Accounts
    3. Items (dependent on Income accounts ref)
    4. Invoices (dependent on Items and income accounts)
