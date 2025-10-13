@@ -79,8 +79,6 @@ class QuickBooksConfig(BaseModel):
     def get_error_log(cls):
         """Retrieve the latest error log from QuickBooks operations"""
         return QuickbooksAuditLog.query.filter_by(operation_status='Failure').order_by(QuickbooksAuditLog.created_at.desc()).first()
-
-    
 class QuickbooksAuditLog(BaseModel):
     """Audit logs for QuickBooks operations"""
     __tablename__ = 'quickbooks_audit_logs'

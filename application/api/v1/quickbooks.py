@@ -41,7 +41,6 @@ def get_accounts():
         # Check if QuickBooks is configured
         if not QuickBooksConfig.is_connected():
             return jsonify({'error': 'QuickBooks not connected'}), 400
-
         qb = QuickBooks()
         current_app.logger.info('Getting accounts')
         accounts = qb.get_accounts(qb.realm_id)
@@ -76,7 +75,7 @@ def get_auth_url():
         current_app.logger.info("QuickBooks client initialized")
 
         auth_url = qb.get_authorization_url()
-        current_app.logger.info(f"Authorization URL generated")
+        current_app.logger.info(f"Authorization URL generated: {auth_url}")
 
         # TODO: Add audit logging after database models are implemented
 
@@ -94,7 +93,7 @@ def disconnect():
             return jsonify({'error': 'QuickBooks not connected'}), 400
 
         qb = QuickBooks()
-        current_app.logger.info("QuickBooks client initialized")
+        current_app.logger.info(f"QuickBooks client initialized")
 
         qb.disconnect_app()
         message = "QuickBooks integration disconnected successfully!"
@@ -141,6 +140,9 @@ def webhook():
                 realm_id=realm_id,
                 is_active=True
             )
+            if not config:
+                current_app.logger.error("Failed to update QuickBooks configuration")
+                return jsonify({'error': 'Failed to update QuickBooks configuration'}), 400
             current_app.logger.info("Updated QuickBooks configuration successfully")
             return jsonify({'success': True, 'message': 'QuickBooks integration successful'}), 200
         except Exception as e:
