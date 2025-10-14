@@ -1554,6 +1554,8 @@ def setup_quickbooks_from_env():
     access_token = os.getenv("QUICK_BOOKS_ACCESS_TOKEN")
     refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
     authorization_code = os.getenv("QUICK_BOOKS_AUTHORIZATION_CODE")
+    from application.models.central_models import QuickBooksConfig
+
     
     if not all([client_id, client_secret, realm_id]):
         return {"success": False, "error": "Missing required environment variables"}
