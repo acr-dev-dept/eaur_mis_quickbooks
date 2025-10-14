@@ -8,8 +8,10 @@ import logging
 import urllib.parse  # For URL encoding
 import re  # For regular expressions
 from flask import current_app
-from helpers.quickbooks_helpers import QuickBooksHelper
+from application.helpers.quickbooks_helpers import QuickBooksHelper
 from application.helpers.json_encoder import EnhancedJSONEncoder
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 load_dotenv()
 
