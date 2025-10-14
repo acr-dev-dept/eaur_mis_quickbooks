@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}EAUR MIS{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+  </head>
+  <body class="flex flex-col min-h-screen bg-gray-50 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <!-- Logo / Brand -->
+        <div class="flex items-center space-x-3">
+          <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
+               alt="EAUR Logo" 
+               class="h-10 w-10 object-contain rounded-full bg-gray-100" />
+          <h1 class="text-xl font-semibold text-gray-800 tracking-tight">
+            EAUR MIS Integration
+          </h1>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="hidden md:flex space-x-6">
+          <a href="/" class="text-gray-600 hover:text-indigo-600 transition">Home</a>
+          <a href="/privacy-policy" class="text-gray-600 hover:text-indigo-600 transition">Privacy Policy</a>
+          <a href="/eula" class="text-gray-600 hover:text-indigo-600 transition">EULA</a>
+          <a href="/contact" class="text-gray-600 hover:text-indigo-600 transition">Contact</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-grow py-12 px-6 sm:px-10 lg:px-20">
+      <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8">
+        {% block content %}
+        <!-- Page-specific content goes here -->
+        {% endblock %}
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid md:grid-cols-3 gap-8">
+
+        <!-- Logo & Short Description -->
+        <div>
+          <div class="flex items-center space-x-2 mb-3">
+            <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
+                 alt="EAUR Logo" 
+                 class="h-8 w-8 object-contain bg-gray-100 rounded-full" />
+            <span class="font-semibold text-white text-lg">EAUR MIS</span>
+          </div>
+          <p class="text-sm leading-relaxed">
+            A secure integration between EAUR’s Management Information System and QuickBooks Online
+            to streamline accounting operations and enhance financial accuracy.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h3 class="text-white font-semibold mb-3">Quick Links</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/" class="hover:text-indigo-400">Home</a></li>
+            <li><a href="/privacy-policy" class="hover:text-indigo-400">Privacy Policy</a></li>
+            <li><a href="/eula" class="hover:text-indigo-400">End-User License Agreement</a></li>
+            <li><a href="/support" class="hover:text-indigo-400">Support</a></li>
+          </ul>
+        </div>
+
+        <!-- Developer Credit -->
+        <div class="text-sm">
+          <h3 class="text-white font-semibold mb-3">About</h3>
+          <p class="leading-relaxed">
+            This integration is maintained under EAUR’s ICT Department.  
+            <span class="block mt-3 text-indigo-400 font-medium">Developed by ACR</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 text-center py-4 text-xs text-gray-500">
+        © {{ current_year or 2025 }} EAUR MIS. All rights reserved.
+      </div>
+    </footer>
+
+  </body>
+</html>
