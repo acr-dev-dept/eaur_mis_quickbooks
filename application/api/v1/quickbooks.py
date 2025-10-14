@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, session, flash, redirect, url_for
-from application.services.quickbooks import QuickBooks
+from application.services.quickbooks import QuickBooks, setup_quickbooks_from_env
 from application.helpers.quickbooks_helpers import QuickBooksHelper
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 import os
@@ -16,6 +16,11 @@ load_dotenv()
 
 quickbooks_bp = Blueprint('quickbooks', __name__)
 
+@quickbooks_bp.route('/setup', methods=['POST'])
+def setup_quickbooks():
+    result = setup_quickbooks_from_env()
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 @quickbooks_bp.route('/get_company_info', methods=['GET'])
 def get_company_info():

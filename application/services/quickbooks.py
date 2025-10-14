@@ -1546,6 +1546,41 @@ class QuickBooks:
                     ]
                 }
             }
+def setup_quickbooks_from_env():
+    """Read QuickBooks env variables, store in DB, initialize client, and test API."""
+    client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
+    client_secret = os.getenv("QUICK_BOOKS_SECRET")
+    realm_id = os.getenv("QUICK_BOOKS_REALM_ID")
+    access_token = os.getenv("QUICK_BOOKS_ACCESS_TOKEN")
+    refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
+    authorization_code = os.getenv("QUICK_BOOKS_AUTHORIZATION_CODE")
+    
+    if not all([client_id, client_secret, realm_id]):
+        return {"success": False, "error": "Missing required environment variables"}
+    
+    # Save config to DB
+    config = QuickBooksConfig.get_config() or QuickBooksConfig()
+    if access_token:
+        config.access_token = QuickBooksHelper.encrypt(access_token)
+    if refresh_token:
+        config.refresh_token = QuickBooksHelper.encrypt(refresh_token)
+    if authorization_code:
+        config.authorization_code = QuickBooksHelper.encrypt(authorization_code)
+    config.realm_id = realm_id
+    config.is_active = True
+    
+    db.session.add(config)
+    db.session.commit()
+    
+    # Initialize QuickBooks client and test connection
+    from application.services.quickbooks import QuickBooks
+    qb = QuickBooks()
+    try:
+        accounts = qb.get_account_types(realm_id)
+        return {"success": True, "message": f"Retrieved {len(accounts)} accounts"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 if __name__ == "__main__":
     # Import Flask app factory to create application context
