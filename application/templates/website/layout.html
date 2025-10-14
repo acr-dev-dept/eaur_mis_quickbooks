@@ -1,144 +1,112 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}EAUR MIS{% endblock %}</title>
-    <link href="{{ url_for('static', filename='css/tailwind.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/3.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <script>
-      // Load saved theme
-      if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.classList.add('dark');
-      }
-    </script>
-  </head>
 
-  <body class="flex flex-col min-h-screen bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-300">
+{% extends "website/layout.html" %}
+{% block title %}EAUR–QuickBooks Integration{% endblock %}
 
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        
-        <!-- Logo / Brand -->
-        <div class="flex items-center space-x-3">
-          <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
-               alt="EAUR Logo" 
-               class="h-10 w-10 object-contain rounded-full bg-gray-100 dark:bg-gray-700" />
-          <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100 tracking-tight">
-            EAUR MIS Integration
-          </h1>
-        </div>
+{% block content %}
+<section class="text-gray-800">
+  <!-- Hero Section -->
+  <div class="container mx-auto text-center py-16 px-6">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-blue-700">
+      EAUR – QuickBooks Integration
+    </h1>
+    <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+      Bridging EAUR’s Management Information System (MIS) with QuickBooks Online for 
+      seamless financial synchronization, automation, and real-time decision-making.
+    </p>
+  </div>
 
-        <!-- Navigation (Desktop) -->
-        <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
-          <a href="/" class="hover:text-indigo-600 dark:hover:text-indigo-400">Home</a>
-          <a href="/privacy-policy" class="hover:text-indigo-600 dark:hover:text-indigo-400">Privacy Policy</a>
-          <a href="/eula" class="hover:text-indigo-600 dark:hover:text-indigo-400">EULA</a>
-          <a href="/contact" class="hover:text-indigo-600 dark:hover:text-indigo-400">Contact</a>
-        </nav>
-
-        <!-- Theme toggle + Mobile menu -->
-        <div class="flex items-center space-x-3">
-          <!-- Dark mode toggle -->
-          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 3.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 3.22zM4.03 5.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L4.03 6.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM10 6.72a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5zm6.03 3.53a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM10 15.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM4.03 13.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06L4.03 14.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0z"/>
-            </svg>
-            <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M17.293 13.293a8 8 0 1 1-10.586-10.586 8.001 8.001 0 0 0 10.586 10.586z"/>
-            </svg>
-          </button>
-
-          <!-- Mobile menu toggle -->
-          <button id="menuToggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" id="menuIcon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Nav -->
-      <nav id="mobileMenu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-        <div class="px-4 py-4 space-y-2 text-sm font-medium">
-          <a href="/" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Home</a>
-          <a href="/privacy-policy" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Privacy Policy</a>
-          <a href="/eula" class="block hover:text-indigo-600 dark:hover:text-indigo-400">EULA</a>
-          <a href="/contact" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Contact</a>
-        </div>
-      </nav>
-    </header>
-
-    <!-- Main content -->
-    <main class="flex-grow py-12 px-6 sm:px-10 lg:px-20">
-      <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
-        {% block content %}
-        {% endblock %}
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid md:grid-cols-3 gap-8">
-        <!-- Brand -->
-        <div>
-          <div class="flex items-center space-x-2 mb-3">
-            <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
-                 alt="EAUR Logo" 
-                 class="h-8 w-8 object-contain bg-gray-100 rounded-full" />
-            <span class="font-semibold text-white text-lg">EAUR MIS</span>
+  <!-- Primary Objectives -->
+  <section class="py-14">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Primary Objectives</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% set primary = [
+          {"icon":"fi fi-rr-sync-alt","title":"Real-Time Financial Sync","text":"Instant, bidirectional synchronization between MIS and QuickBooks for all financial data.","color":"text-red-500"},
+          {"icon":"fi fi-rr-graduation-cap","title":"Student Lifecycle Management","text":"Automate financial tracking from student application to graduation.","color":"text-blue-500"},
+          {"icon":"fi fi-rr-credit-card","title":"Advanced Payment Processing","text":"Integrate USSD-based payments with advanced fraud prevention mechanisms.","color":"text-green-500"},
+          {"icon":"fi fi-rr-tasks","title":"Operational Excellence","text":"Eliminate manual data entry and reduce processing errors to zero.","color":"text-yellow-500"},
+          {"icon":"fi fi-rr-balance-scale","title":"Regulatory Compliance","text":"Maintain complete audit trails and ensure financial reporting compliance.","color":"text-purple-500"}
+        ] %}
+        {% for item in primary %}
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="mb-4 text-3xl {{ item.color }}">
+            <i class="{{ item.icon }}"></i>
           </div>
-          <p class="text-sm leading-relaxed">
-            Secure QuickBooks Online integration designed for EAUR’s MIS.
-          </p>
+          <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
         </div>
-
-        <!-- Links -->
-        <div>
-          <h3 class="text-white font-semibold mb-3">Quick Links</h3>
-          <ul class="space-y-2 text-sm">
-            <li><a href="/" class="hover:text-indigo-400">Home</a></li>
-            <li><a href="/privacy-policy" class="hover:text-indigo-400">Privacy Policy</a></li>
-            <li><a href="/eula" class="hover:text-indigo-400">EULA</a></li>
-            <li><a href="/support" class="hover:text-indigo-400">Support</a></li>
-          </ul>
-        </div>
-
-        <!-- Developer Credit -->
-        <div class="text-sm">
-          <h3 class="text-white font-semibold mb-3">About</h3>
-          <p class="leading-relaxed">
-            This integration is maintained by EAUR ICT Department.  
-            <span class="block mt-3 text-indigo-400 font-medium">Developed by ACR</span>
-          </p>
-        </div>
+        {% endfor %}
       </div>
+    </div>
+  </section>
 
-      <div class="border-t border-gray-800 text-center py-4 text-xs text-gray-500">
-        © {{ current_year or 2025 }} EAUR MIS. All rights reserved.
+  <!-- Technical Objectives -->
+  <section class="py-14 bg-gray-100">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Technical Objectives</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% set technical = [
+          {"icon":"fi fi-rr-database","title":"Database Modernization","text":"Rearchitect database for real-time operations and scalability.","color":"text-red-500"},
+          {"icon":"fi fi-rr-network-wired","title":"Microservices","text":"Deploy Flask-based enterprise integration layer.","color":"text-blue-500"},
+          {"icon":"fi fi-rr-mobile","title":"Payment Gateway Integration","text":"Integrate USSD with School Gear and Urubuto Pay.","color":"text-green-500"},
+          {"icon":"fi fi-rr-shield-alt","title":"Security Enhancement","text":"Implement fraud detection and duplicate prevention.","color":"text-yellow-500"},
+          {"icon":"fi fi-rr-rocket","title":"Performance Optimization","text":"Ensure 10x scalability and responsiveness.","color":"text-purple-500"}
+        ] %}
+        {% for item in technical %}
+        <div class="p-6 bg-white rounded-2xl shadow hover:shadow-md transition">
+          <div class="mb-4 text-3xl {{ item.color }}">
+            <i class="{{ item.icon }}"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
       </div>
-    </footer>
+    </div>
+  </section>
 
-    <script>
-      // Dark mode toggle
-      const themeToggle = document.getElementById('themeToggle');
-      const sunIcon = document.getElementById('sunIcon');
-      const moonIcon = document.getElementById('moonIcon');
+  <!-- Business Impact -->
+  <section class="py-14 bg-white">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Business Impact Goals</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% set business = [
+          {"icon":"fi fi-rr-clock","title":"Cost Reduction","text":"Save over 40 hours/week by eliminating manual entry.","color":"text-green-500"},
+          {"icon":"fi fi-rr-shield-check","title":"Revenue Protection","text":"Prevent duplicate or fraudulent payments.","color":"text-red-500"},
+          {"icon":"fi fi-rr-chart-line","title":"Decision Making","text":"Enable QuickBooks dashboards for real-time management insights.","color":"text-blue-500"},
+          {"icon":"fi fi-rr-user-check","title":"Student Experience","text":"Provide instant payment confirmation for students.","color":"text-yellow-500"},
+          {"icon":"fi fi-rr-file-alt","title":"Audit Readiness","text":"Maintain complete, automated audit trails.","color":"text-purple-500"}
+        ] %}
+        {% for item in business %}
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <div class="mb-4 text-3xl {{ item.color }}">
+            <i class="{{ item.icon }}"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
 
-      themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      });
-
-      // Mobile menu toggle
-      const menuToggle = document.getElementById('menuToggle');
-      const mobileMenu = document.getElementById('mobileMenu');
-      menuToggle.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-      });
-    </script>
-  </body>
-</html>
+  <!-- System Overview -->
+  <section class="py-14 bg-gray-100">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">System Overview & Current Challenges</h2>
+      <div class="bg-white rounded-2xl shadow p-8 max-w-4xl mx-auto text-gray-700 leading-relaxed">
+        <ul class="list-disc pl-6 space-y-2">
+          <li>Current MIS: PHP-based, hosted on a single DigitalOcean droplet.</li>
+          <li>Database: MySQL, co-hosted on the same server.</li>
+          <li>QuickBooks: Not yet integrated with MIS.</li>
+          <li>Payments: USSD-based, but disconnected from financial reporting.</li>
+        </ul>
+        <p class="mt-4 text-gray-600">
+          The integration aims to modernize this architecture with a microservices approach and 
+          real-time QuickBooks synchronization.
+        </p>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}
