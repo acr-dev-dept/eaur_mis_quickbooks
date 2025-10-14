@@ -108,8 +108,8 @@ def disconnect():
         message = "Error disconnecting from QuickBooks"
         return jsonify({'success': False, 'message': message}), 500
 
-@quickbooks_bp.route('/webhook', methods=['GET'])
-def webhook():
+@quickbooks_bp.route('/callback', methods=['GET'])
+def callback():
     """Callback route for QuickBooks OAuth2."""
     try:
         code = request.args.get('code')
