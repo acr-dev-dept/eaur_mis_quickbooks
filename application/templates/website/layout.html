@@ -1,50 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}EAUR MIS{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+      // Load saved theme
+      if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
-  <body class="flex flex-col min-h-screen bg-gray-50 text-gray-800">
+
+  <body class="flex flex-col min-h-screen bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-300">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm">
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        
         <!-- Logo / Brand -->
         <div class="flex items-center space-x-3">
           <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
                alt="EAUR Logo" 
-               class="h-10 w-10 object-contain rounded-full bg-gray-100" />
-          <h1 class="text-xl font-semibold text-gray-800 tracking-tight">
+               class="h-10 w-10 object-contain rounded-full bg-gray-100 dark:bg-gray-700" />
+          <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100 tracking-tight">
             EAUR MIS Integration
           </h1>
         </div>
 
-        <!-- Navigation -->
-        <nav class="hidden md:flex space-x-6">
-          <a href="/" class="text-gray-600 hover:text-indigo-600 transition">Home</a>
-          <a href="/privacy-policy" class="text-gray-600 hover:text-indigo-600 transition">Privacy Policy</a>
-          <a href="/eula" class="text-gray-600 hover:text-indigo-600 transition">EULA</a>
-          <a href="/contact" class="text-gray-600 hover:text-indigo-600 transition">Contact</a>
+        <!-- Navigation (Desktop) -->
+        <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <a href="/" class="hover:text-indigo-600 dark:hover:text-indigo-400">Home</a>
+          <a href="/privacy-policy" class="hover:text-indigo-600 dark:hover:text-indigo-400">Privacy Policy</a>
+          <a href="/eula" class="hover:text-indigo-600 dark:hover:text-indigo-400">EULA</a>
+          <a href="/contact" class="hover:text-indigo-600 dark:hover:text-indigo-400">Contact</a>
         </nav>
+
+        <!-- Theme toggle + Mobile menu -->
+        <div class="flex items-center space-x-3">
+          <!-- Dark mode toggle -->
+          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+            <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 3.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 3.22zM4.03 5.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L4.03 6.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM10 6.72a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5zm6.03 3.53a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM10 15.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM4.03 13.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06L4.03 14.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0z"/>
+            </svg>
+            <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M17.293 13.293a8 8 0 1 1-10.586-10.586 8.001 8.001 0 0 0 10.586 10.586z"/>
+            </svg>
+          </button>
+
+          <!-- Mobile menu toggle -->
+          <button id="menuToggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" id="menuIcon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
       </div>
+
+      <!-- Mobile Nav -->
+      <nav id="mobileMenu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+        <div class="px-4 py-4 space-y-2 text-sm font-medium">
+          <a href="/" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Home</a>
+          <a href="/privacy-policy" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Privacy Policy</a>
+          <a href="/eula" class="block hover:text-indigo-600 dark:hover:text-indigo-400">EULA</a>
+          <a href="/contact" class="block hover:text-indigo-600 dark:hover:text-indigo-400">Contact</a>
+        </div>
+      </nav>
     </header>
 
     <!-- Main content -->
     <main class="flex-grow py-12 px-6 sm:px-10 lg:px-20">
-      <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm p-8">
+      <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8">
         {% block content %}
-        <!-- Page-specific content goes here -->
         {% endblock %}
       </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300">
+    <footer class="bg-gray-900 text-gray-300 mt-auto">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid md:grid-cols-3 gap-8">
-
-        <!-- Logo & Short Description -->
+        <!-- Brand -->
         <div>
           <div class="flex items-center space-x-2 mb-3">
             <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
@@ -53,18 +90,17 @@
             <span class="font-semibold text-white text-lg">EAUR MIS</span>
           </div>
           <p class="text-sm leading-relaxed">
-            A secure integration between EAUR’s Management Information System and QuickBooks Online
-            to streamline accounting operations and enhance financial accuracy.
+            Secure QuickBooks Online integration designed for EAUR’s MIS.
           </p>
         </div>
 
-        <!-- Quick Links -->
+        <!-- Links -->
         <div>
           <h3 class="text-white font-semibold mb-3">Quick Links</h3>
           <ul class="space-y-2 text-sm">
             <li><a href="/" class="hover:text-indigo-400">Home</a></li>
             <li><a href="/privacy-policy" class="hover:text-indigo-400">Privacy Policy</a></li>
-            <li><a href="/eula" class="hover:text-indigo-400">End-User License Agreement</a></li>
+            <li><a href="/eula" class="hover:text-indigo-400">EULA</a></li>
             <li><a href="/support" class="hover:text-indigo-400">Support</a></li>
           </ul>
         </div>
@@ -73,7 +109,7 @@
         <div class="text-sm">
           <h3 class="text-white font-semibold mb-3">About</h3>
           <p class="leading-relaxed">
-            This integration is maintained under EAUR’s ICT Department.  
+            This integration is maintained by EAUR ICT Department.  
             <span class="block mt-3 text-indigo-400 font-medium">Developed by ACR</span>
           </p>
         </div>
@@ -84,5 +120,24 @@
       </div>
     </footer>
 
+    <script>
+      // Dark mode toggle
+      const themeToggle = document.getElementById('themeToggle');
+      const sunIcon = document.getElementById('sunIcon');
+      const moonIcon = document.getElementById('moonIcon');
+
+      themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        const isDark = document.documentElement.classList.contains('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      });
+
+      // Mobile menu toggle
+      const menuToggle = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      menuToggle.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    </script>
   </body>
 </html>

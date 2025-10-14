@@ -192,6 +192,8 @@ def register_blueprints(app):
     app.register_blueprint(students_route, url_prefix='/students')
     from application.routes.error_logs import error_logs_bp
     app.register_blueprint(error_logs_bp)  # No prefix, routes define their own
+    from application.routes.website.web import web_route
+    app.register_blueprint(web_route)  # No prefix, routes define their own
     
 
 

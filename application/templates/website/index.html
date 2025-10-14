@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+{% block title %}EAUR–QuickBooks Integration{% endblock %}
+
+{% block content %}
+<section class="bg-gray-50 text-gray-800">
+  <!-- Hero Section -->
+  <div class="container mx-auto text-center py-16 px-6">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-blue-700">
+      EAUR – QuickBooks Integration
+    </h1>
+    <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+      Bridging EAUR’s Management Information System (MIS) with QuickBooks Online for 
+      seamless financial synchronization, automation, and real-time decision-making.
+    </p>
+  </div>
+
+  <!-- Primary Objectives -->
+  <section class="bg-white py-14">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Primary Objectives</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas fa-sync-alt"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">Real-Time Financial Sync</h3>
+          <p>Instant, bidirectional synchronization between MIS and QuickBooks for all financial data.</p>
+        </div>
+
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas fa-user-graduate"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">Student Lifecycle Management</h3>
+          <p>Automate financial tracking from student application to graduation.</p>
+        </div>
+
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas fa-credit-card"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">Advanced Payment Processing</h3>
+          <p>Integrate USSD-based payments with advanced fraud prevention mechanisms.</p>
+        </div>
+
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">Operational Excellence</h3>
+          <p>Eliminate manual data entry and reduce processing errors to zero.</p>
+        </div>
+
+        <div class="p-6 bg-blue-50 rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas fa-balance-scale"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">Regulatory Compliance</h3>
+          <p>Maintain complete audit trails and ensure financial reporting compliance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Objectives -->
+  <section class="py-14 bg-gray-100">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Technical Objectives</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% set technical = [
+          {"icon":"fa-database","title":"Database Modernization","text":"Rearchitect database for real-time operations and scalability."},
+          {"icon":"fa-network-wired","title":"Microservices","text":"Deploy Flask-based enterprise integration layer."},
+          {"icon":"fa-mobile-alt","title":"Payment Gateway Integration","text":"Integrate USSD with School Gear and Urubuto Pay."},
+          {"icon":"fa-shield-alt","title":"Security Enhancement","text":"Implement fraud detection and duplicate prevention."},
+          {"icon":"fa-rocket","title":"Performance Optimization","text":"Ensure 10x scalability and responsiveness."}
+        ] %}
+        {% for item in technical %}
+        <div class="p-6 bg-white rounded-2xl shadow hover:shadow-md transition">
+          <div class="text-blue-600 mb-4 text-3xl">
+            <i class="fas {{ item.icon }}"></i>
+          </div>
+          <h3 class="font-semibold text-xl mb-2">{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Business Impact -->
+  <section class="py-14 bg-white">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">Business Impact Goals</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <i class="fas fa-clock text-green-600 text-3xl mb-4"></i>
+          <h3 class="font-semibold text-xl mb-2">Cost Reduction</h3>
+          <p>Save over 40 hours/week by eliminating manual entry.</p>
+        </div>
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <i class="fas fa-shield-check text-green-600 text-3xl mb-4"></i>
+          <h3 class="font-semibold text-xl mb-2">Revenue Protection</h3>
+          <p>Prevent duplicate or fraudulent payments.</p>
+        </div>
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <i class="fas fa-chart-line text-green-600 text-3xl mb-4"></i>
+          <h3 class="font-semibold text-xl mb-2">Decision Making</h3>
+          <p>Enable QuickBooks dashboards for real-time management insights.</p>
+        </div>
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <i class="fas fa-user-check text-green-600 text-3xl mb-4"></i>
+          <h3 class="font-semibold text-xl mb-2">Student Experience</h3>
+          <p>Provide instant payment confirmation for students.</p>
+        </div>
+        <div class="p-6 bg-green-50 rounded-2xl shadow">
+          <i class="fas fa-file-alt text-green-600 text-3xl mb-4"></i>
+          <h3 class="font-semibold text-xl mb-2">Audit Readiness</h3>
+          <p>Maintain complete, automated audit trails.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- System Overview -->
+  <section class="py-14 bg-gray-100">
+    <div class="container mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-blue-700 mb-10">System Overview & Current Challenges</h2>
+      <div class="bg-white rounded-2xl shadow p-8 max-w-4xl mx-auto text-gray-700 leading-relaxed">
+        <ul class="list-disc pl-6 space-y-2">
+          <li>Current MIS: PHP-based, hosted on a single DigitalOcean droplet.</li>
+          <li>Database: MySQL, co-hosted on the same server.</li>
+          <li>QuickBooks: Not yet integrated with MIS.</li>
+          <li>Payments: USSD-based, but disconnected from financial reporting.</li>
+        </ul>
+        <p class="mt-4 text-gray-600">
+          The integration aims to modernize this architecture with a microservices approach and 
+          real-time QuickBooks synchronization.
+        </p>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}
