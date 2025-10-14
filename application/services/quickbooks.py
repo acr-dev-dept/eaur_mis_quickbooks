@@ -1555,6 +1555,8 @@ def setup_quickbooks_from_env():
     refresh_token = os.getenv("QUICK_BOOKS_REFRESH_TOKEN")
     authorization_code = os.getenv("QUICK_BOOKS_AUTHORIZATION_CODE")
     from application.models.central_models import QuickBooksConfig
+    from application.helpers.quickbooks_helpers import QuickBooksHelper
+    from application import db
 
     
     if not all([client_id, client_secret, realm_id]):
