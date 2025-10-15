@@ -12,7 +12,7 @@ def privacy_policy_page():
     """Render the privacy policy page"""
     return render_template("website/privacy_policy.html")
 
-@web_route.route('/eula', methods=['GET'])
-def eula_page():
-    """Render the EULA page"""
-    return render_template("website/eula.html")
+@web_route.route('/terms_of_use', methods=['GET'])
+def terms_of_use_page():
+    """Render the Terms of Use page"""
+    return render_template("website/terms_of_use.html")
