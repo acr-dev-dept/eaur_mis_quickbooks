@@ -25,7 +25,7 @@
         
         <!-- Logo / Brand -->
         <div class="flex items-center space-x-3">
-          <img src="{{ url_for('static', filename='images/logo-placeholder.png') }}" 
+          <img src="{{ url_for('static', filename='images/eaur_logo.png') }}" 
                alt="EAUR Logo" 
                class="h-10 w-10 object-contain rounded-full bg-gray-100 dark:bg-gray-700" />
           <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100 tracking-tight">
@@ -43,15 +43,6 @@
 
         <!-- Theme toggle + Mobile menu -->
         <div class="flex items-center space-x-3">
-          <!-- Dark mode toggle -->
-          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 3.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 3.22zM4.03 5.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L4.03 6.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM10 6.72a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5zm6.03 3.53a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM10 15.22a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zM4.03 13.47a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06L4.03 14.53a.75.75 0 0 1 0-1.06zm11.94 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0z"/>
-            </svg>
-            <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M17.293 13.293a8 8 0 1 1-10.586-10.586 8.001 8.001 0 0 0 10.586 10.586z"/>
-            </svg>
-          </button>
 
           <!-- Mobile menu toggle -->
           <button id="menuToggle" class="md:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">
@@ -128,12 +119,6 @@
       const themeToggle = document.getElementById('themeToggle');
       const sunIcon = document.getElementById('sunIcon');
       const moonIcon = document.getElementById('moonIcon');
-
-      themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      });
 
       // Mobile menu toggle
       const menuToggle = document.getElementById('menuToggle');
