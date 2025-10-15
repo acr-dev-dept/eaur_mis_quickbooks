@@ -3,15 +3,16 @@
 
 {% block content %}
     <div class="flex-grow">
-    <h2 class="text-gray-900 text-lg title-font font-medium mb-3">Contact</h2>
-    <p class="leading-relaxed text-base">
-        For inquiries, support, or feedback regarding the EAUR–QuickBooks Integration, 
-        please reach out to the EAUR ICT Department at 
-        <a href="mailto:info@netpipo.com">Send email</a>
-    <a class="mt-3 text-indigo-500 inline-flex items-center">Learn More
-        <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-2" viewBox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7"></path>
-        </svg>
-    </a>
+        <h2 class="text-gray-900 text-lg title-font font-medium mb-3">Contact</h2>
+
+        <p class="leading-relaxed text-gray-600 mb-5">
+            For inquiries, support, or feedback regarding the EAUR–QuickBooks Integration, 
+            please reach out to the EAUR ICT Department at 
+            <a href="mailto:info@netpipo.com">Send email</a>
+        </p>
+        <a class="mt-3 text-indigo-500 inline-flex items-center">Read more
+            <i class="fi fi-rr-arrow-right ml-2"></i>
+            href="{{ url_for('web_route.index') }}"
+        </a>
     </div>
 {% endblock %}
