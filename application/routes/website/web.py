@@ -16,3 +16,8 @@ def privacy_policy_page():
 def terms_of_use_page():
     """Render the Terms of Use page"""
     return render_template("website/terms_of_use.html")
+
+@web_route.route('/contact', methods=['GET'])
+def contact_page():
+    """Render the contact page"""
+    return render_template("website/contact.html")
