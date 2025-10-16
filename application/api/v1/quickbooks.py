@@ -1582,3 +1582,67 @@ def get_customer_types():
             'details': str(e)
         }), 500
     
+@quickbooks_bp.route('/create_customer_type', methods=['POST'])
+def create_customer_type():
+    """Create a new customer type.
+    
+    Example:
+    {
+        "Name": "Student",
+        "Description": "Customer type for students"
+    }
+    """
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide customer type data in JSON format'
+            }), 400
+
+        customer_type_data = request.json
+
+        # Basic validation for required fields
+        if 'Name' not in customer_type_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: Name',
+                'message': 'Customer type must have a name'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new customer type')
+
+        result = qb.create_customer_type(qb.realm_id, customer_type_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create customer type',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Customer type created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Customer type created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating customer type: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating customer type',
+            'details': str(e)
+        }), 500
