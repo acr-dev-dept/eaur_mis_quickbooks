@@ -367,72 +367,6 @@ def sync_student():
     6. Handles exceptions and logs errors.
     Args:
         reg_no: Student registration number to synchronize
-    200:
-        description: Student synchronized successfully
-        content:
-            application/json:
-                schema:
-                    type: object
-                    properties:
-                        success:
-                            type: boolean
-                            example: true
-                        data:
-                            type: object
-                            properties:
-                                student_id:
-                                    type: string
-                                    example: "REG12345"
-                                quickbooks_id:
-                                    type: string
-                                    example: "1234567890"
-                        message:
-                            type: string
-                            example: "Student REG12345 synchronized successfully"
-    400:
-        description: Bad request, e.g. QuickBooks not connected
-        content:
-            application/json:
-                schema:           type: object
-                    properties:
-                        success:
-                            type: boolean
-                            example: false
-                        error:
-                            type: string
-                            example: "QuickBooks not connected"
-                        message:
-                            type: string
-                            example: "Please authenticate with QuickBooks first"
-    404:
-        description: Student not found
-        content:
-            application/json:
-                schema:
-                    type: object
-                    properties:
-                        success:
-                            type: boolean
-                            example: false
-                        error:
-                            type: string
-                            example: "Student with reg_no REG12345 not found"
-    500:
-        description: Internal server error
-        content:
-            application/json:
-                schema:
-                    type: object
-                    properties:
-                        success:
-                            type: boolean
-                            example: false
-                        error:
-                            type: string
-                            example: "Error synchronizing student REG12345"
-                        details:
-                            type: string
-                            example: "Detailed error message"
     """
     data = request.get_json() or {}
     reg_no = data.get('reg_no')
@@ -467,6 +401,15 @@ def sync_student():
                 error=f"Student with reg_no {reg_no} not found",
                 status_code=404
             )
+        
+        # check if student has already been synced
+        if student.QuickBk_Status == 1:
+            return create_response(
+                success=False,
+                error=f"Student with reg_no {reg_no} has already been synchronized to QuickBooks",
+                status_code=400
+            )
+
     except Exception as e:
         current_app.logger.error(f"Error fetching student {reg_no}: {e}")
         current_app.logger.debug(f"Traceback: {traceback.format_exc()}")

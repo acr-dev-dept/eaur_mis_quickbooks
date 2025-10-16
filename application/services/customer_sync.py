@@ -735,7 +735,7 @@ class CustomerSyncService:
         try:
             # Mark student as in progress
             self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
-
+            
             # Get QuickBooks service
             qb_service = self._get_qb_service()
 
@@ -752,7 +752,8 @@ class CustomerSyncService:
                 self._update_student_sync_status(
                     student.get('per_id_ug'),
                     CustomerSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_customer_id
+                    quickbooks_id=qb_customer_id,
+                    sync_token=response['Customer'].get('SyncToken')
                 )
 
                 # Log successful sync
@@ -1244,7 +1245,7 @@ class CustomerSyncService:
             with db_manager.get_mis_session() as session:
                 session.rollback()
 
-    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None):
+    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
         """
         Update student synchronization status in MIS database
 
@@ -1265,6 +1266,10 @@ class CustomerSyncService:
                     # Store QuickBooks ID in existing qk_id field
                     if quickbooks_id and status == CustomerSyncStatus.SYNCED.value:
                         student.qk_id = quickbooks_id
+
+                    # Store sync token if available
+                    if sync_token:
+                        student.sync_token = sync_token
 
                     session.commit()
                     logger.info(f"Updated student {per_id_ug} sync status to {status}")

@@ -1655,6 +1655,7 @@ class TblPersonalUg(MISBaseModel):
     qk_id = db.Column(db.String)
     pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
+    sync_token = db.Column(db.String(50))
     
 
     # QuickBooks sync tracking field (additional to existing fields)
@@ -1730,7 +1731,8 @@ class TblPersonalUg(MISBaseModel):
             'qk_id': self.qk_id,
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-            'quickbooks_status': self.QuickBk_Status
+            'quickbooks_status': self.QuickBk_Status,
+            'sync_token': self.sync_token
         }
 
     def to_dict_for_quickbooks(self):
