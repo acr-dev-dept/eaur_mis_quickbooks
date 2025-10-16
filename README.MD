@@ -334,6 +334,7 @@ requirements needed:
 
 
    1. Customers (Applicants and students), Inspect to add the address as in East African University live account
+      - Create new customer types (Student, applicant)
    2. Income Accounts
    3. Items (dependent on Income accounts ref)
    4. Invoices (dependent on Items and income accounts)

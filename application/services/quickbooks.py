@@ -623,6 +623,8 @@ class QuickBooks:
             logging.error(f"Error fetching account types: {str(e)}")
             return []
 
+    
+
     def get_authorization_url(self, state="Lion Of Judah", scopes=None):
         """
         Generate the QuickBooks OAuth2 authorization URL.
@@ -1541,6 +1543,35 @@ class QuickBooks:
                     "Error": [
                         {
                             "Message": f"Error making batch request: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+    def create_customer_type(self, realm_id, customer_type_data):
+        """
+        Create a customer type in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            customer_type_data (dict): The data for the customer type.
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/customertype"
+        try:
+            current_app.logger.info(f"Creating customer type with data: {customer_type_data}")
+            response = self.make_request(endpoint, method="POST", data=customer_type_data)
+            current_app.logger.info(f"Customer type created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating customer type: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating customer type: {str(e)}",
                             "Detail": traceback.format_exc()
                         }
                     ]
