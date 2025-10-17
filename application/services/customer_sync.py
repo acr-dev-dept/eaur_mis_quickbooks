@@ -693,7 +693,7 @@ class CustomerSyncService:
 
             # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "DisplayName": student_data.get('reg_no', ''),
+                "DisplayName": f"{student_data.get('reg_no', '')} - Student",
                 "GivenName": student_data.get('first_name'),
                 "FamilyName": student_data.get('last_name'),
                 "MiddleName": student_data.get('middle_name'),
@@ -704,10 +704,6 @@ class CustomerSyncService:
                 "PrimaryEmailAddr": {
                     "Address": email
                 } if email else None,
-                "CustomerTypeRef": {
-                    "value": "528694",
-                    "name": "student"
-                },
                 "CustomField": filtered_custom_fields,
                 "Notes": f"Student synchronized from MIS - Registration Number: {student_data.get('reg_no', '')}"
             }
