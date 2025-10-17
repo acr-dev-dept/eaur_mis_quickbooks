@@ -1367,7 +1367,7 @@ class TblOnlineApplication(MISBaseModel):
                 'application_date': self.appl_date.isoformat() if self.appl_date else '',
 
                 # Sync tracking
-                'quickbooks_status': self.QuickBk_Status or 0,
+                'quickbooks_status': self.QuickBk_status or 0,
                 'pushed_by': self.pushed_by or 'System Auto Push',
                 'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
                 'quickbooks_id': self.quickbooks_id or ''
@@ -1659,7 +1659,7 @@ class TblPersonalUg(MISBaseModel):
     
 
     # QuickBooks sync tracking field (additional to existing fields)
-    QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
+    QuickBk_status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
 
     # Relationships will be added after analyzing foreign keys
     country = relationship("TblCountry", backref="personal_ugs", lazy='joined')
@@ -1731,7 +1731,7 @@ class TblPersonalUg(MISBaseModel):
             'qk_id': self.qk_id,
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-            'quickbooks_status': self.QuickBk_Status,
+            'quickbooks_status': self.QuickBk_status,
             'sync_token': self.sync_token
         }
 
@@ -1801,7 +1801,7 @@ class TblPersonalUg(MISBaseModel):
                 'registration_date': self.reg_date.isoformat() if self.reg_date else '',
 
                 # Sync tracking
-                'quickbooks_status': self.QuickBk_Status or 0,
+                'quickbooks_status': self.QuickBk_status or 0,
                 'pushed_by': self.pushed_by or 'System Auto Push',
                 'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
                 'qk_id': self.qk_id or ''
