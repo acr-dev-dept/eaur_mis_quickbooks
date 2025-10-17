@@ -1104,7 +1104,7 @@ class CustomerSyncService:
                 )
 
                 # Log successful sync
-                self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
+                self._log_customer_sync_audit(applicant.get('tracking_id'), 'Applicant', 'SUCCESS', f"Synced to QuickBooks ID: {qb_customer_id}")
 
                 return CustomerSyncResult(
                     customer_id=applicant.tracking_id,
