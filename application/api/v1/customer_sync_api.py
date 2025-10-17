@@ -451,41 +451,6 @@ def sync_student():
             status_code=500
         )
 
-@customer_sync_bp.route('/applicants/<int:appl_id>', methods=['POST'])
-def map_applicant(appl_id: int):
-    """
-    Map a single MIS applicant into QuickBooks Customer format
-    without syncing, just preview the payload.
-    """
-    try:
-        # Get DB session safely
-        with db_manager.get_mis_session() as db:  
-            applicant = db.query(TblOnlineApplication).filter_by(appl_Id=appl_id).first()
-            
-            if not applicant:
-                return jsonify({
-                    "success": False,
-                    "error": f"Applicant {appl_id} not found"
-                }), 404
-
-            # Use your mapping function from service
-            sync_service = CustomerSyncService()
-            qb_customer_payload = sync_service.map_applicant_to_quickbooks_customer(applicant)
-
-            return jsonify({
-                "success": True,
-                "data": qb_customer_payload,
-                "message": f"Applicant {appl_id} mapped successfully"
-            }), 200
-
-    except Exception as e:
-        current_app.logger.error(f"Error mapping applicant {appl_id}: {e}")
-        return jsonify({
-            "success": False,
-            "error": f"Error mapping applicant {appl_id}",
-            "details": str(e)
-        }), 500
-
 @customer_sync_bp.route('/applicant/<int:tracking_id>', methods=['POST'])
 def sync_single_applicant(tracking_id: int):
     """

@@ -472,7 +472,7 @@ class CustomerSyncService:
             return qb_customer
 
         except Exception as e:
-            logger.error(f"Error mapping applicant {applicant['appl_Id']} to QuickBooks format: {e}")
+            current_app.logger.error(f"Error mapping applicant {applicant['tracking_id']} to QuickBooks format: {e}")
 
     def map_applicant_to_quickbooks_customer_update(
         self, 
