@@ -1204,28 +1204,29 @@ class CustomerSyncService:
 
 
 
-    def _update_applicant_sync_status(self, appl_id: int, status: int, quickbooks_id: Optional[str] = None):
+    def _update_applicant_sync_status(self, tracking_id: str, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
         """
         Update applicant synchronization status in MIS database
 
         Args:
-            appl_id: MIS applicant ID
+            tracking_id: MIS applicant tracking ID
             status: Sync status (0=not synced, 1=synced, 2=failed, 3=in progress)
             quickbooks_id: QuickBooks customer ID if successfully synced
         """
         try:
             with db_manager.get_mis_session() as session:
 
-                    applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.appl_Id == appl_id).first()
+                    applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
                     if applicant:
                         applicant.QuickBk_Status = status
                         applicant.pushed_date = datetime.now()
                         applicant.pushed_by = "CustomerSyncService"
+                        applicant.sync_token = sync_token if sync_token else applicant.sync_token
                         # Store QuickBooks ID in existing quickbooks_id field
                         if quickbooks_id and status == CustomerSyncStatus.SYNCED.value:
                             applicant.quickbooks_id = quickbooks_id
                         session.commit()
-                        logger.info(f"Updated applicant {appl_id} sync status to {status}")
+                        logger.info(f"Updated applicant {tracking_id} sync status to {status}")
 
         except Exception as e:
             logger.error(f"Error updating applicant sync status: {e}")
