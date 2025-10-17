@@ -1089,7 +1089,7 @@ class CustomerSyncService:
 
             # Map applicant data
             qb_customer_data = self.map_applicant_to_quickbooks_customer(applicant)
-            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.appl_Id}: {qb_customer_data}")
+            current_app.logger.info(f"QuickBooks customer data for applicant {applicant.get('tracking_id')}: {qb_customer_data}")
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
