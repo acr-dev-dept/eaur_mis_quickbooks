@@ -263,7 +263,7 @@ class CustomerSyncService:
                 ).order_by(TblPersonalUg.reg_date.desc())
                 """
                 query = session.query(TblPersonalUg).filter(
-                    TblPersonalUg.QuickBk_status != 1
+                    TblPersonalUg.QuickBk_Status != 1
                 ).order_by(TblPersonalUg.reg_date.desc())
 
                 if limit:
