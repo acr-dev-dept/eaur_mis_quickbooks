@@ -115,31 +115,31 @@ class CustomerSyncService:
                 # Analyze applicants
                 total_applicants = session.query(func.count(TblOnlineApplication.appl_Id)).scalar()
                 applicants_not_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                    or_(TblOnlineApplication.QuickBk_Status == 0, TblOnlineApplication.QuickBk_Status.is_(None))
+                    or_(TblOnlineApplication.QuickBk_status == 0, TblOnlineApplication.QuickBk_status.is_(None))
                 ).scalar()
                 applicants_synced = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                    TblOnlineApplication.QuickBk_Status == 1
+                    TblOnlineApplication.QuickBk_status == 1
                 ).scalar()
                 applicants_failed = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                    TblOnlineApplication.QuickBk_Status == 2
+                    TblOnlineApplication.QuickBk_status == 2
                 ).scalar()
                 applicants_in_progress = session.query(func.count(TblOnlineApplication.appl_Id)).filter(
-                    TblOnlineApplication.QuickBk_Status == 3
+                    TblOnlineApplication.QuickBk_status == 3
                 ).scalar()
 
                 # Analyze students
                 total_students = session.query(func.count(TblPersonalUg.per_id_ug)).scalar()
                 students_not_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                    or_(TblPersonalUg.QuickBk_Status == 0, TblPersonalUg.QuickBk_Status.is_(None))
+                    or_(TblPersonalUg.QuickBk_status == 0, TblPersonalUg.QuickBk_status.is_(None))
                 ).scalar()
                 students_synced = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                    TblPersonalUg.QuickBk_Status == 1
+                    TblPersonalUg.QuickBk_status == 1
                 ).scalar()
                 students_failed = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                    TblPersonalUg.QuickBk_Status == 2
+                    TblPersonalUg.QuickBk_status == 2
                 ).scalar()
                 students_in_progress = session.query(func.count(TblPersonalUg.per_id_ug)).filter(
-                    TblPersonalUg.QuickBk_Status == 3
+                    TblPersonalUg.QuickBk_status == 3
                 ).scalar()
 
                 stats = CustomerSyncStats(
@@ -263,7 +263,7 @@ class CustomerSyncService:
                 ).order_by(TblPersonalUg.reg_date.desc())
                 """
                 query = session.query(TblPersonalUg).filter(
-                    TblPersonalUg.QuickBk_Status != 1
+                    TblPersonalUg.QuickBk_status != 1
                 ).order_by(TblPersonalUg.reg_date.desc())
 
                 if limit:
