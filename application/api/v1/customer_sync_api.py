@@ -403,7 +403,7 @@ def sync_student():
             )
         
         # check if student has already been synced
-        if student.get("QuickBk_Status") == 1:
+        if student.get("quickbooks_status") == 1:
             return create_response(
                 success=False,
                 error=f"Student with reg_no {reg_no} has already been synchronized to QuickBooks",
