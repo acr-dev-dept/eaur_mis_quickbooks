@@ -1174,7 +1174,7 @@ class CustomerSyncService:
             self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'ERROR', error_msg)
 
             return CustomerSyncResult(
-                customer_id=applicant.tracking_id,
+                customer_id=applicant.get('tracking_id'),
                 customer_type='Applicant',
                 success=False,
                 error_message=error_msg
