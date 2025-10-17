@@ -466,7 +466,7 @@ class QuickBooks:
             dict: The response from the QuickBooks API, or an error message.
         """
         # Relative endpoint for the query
-        query = "SELECT * FROM Department WHERE Active = true"
+        query = "SELECT * FROM Department"
         endpoint = f"{realm_id}/query"
 
         # Query parameters
