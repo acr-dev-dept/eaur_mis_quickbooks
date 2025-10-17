@@ -516,7 +516,8 @@ def sync_single_applicant(tracking_id: int):
                     tracking_id=tracking_id,
                     quickbooks_id=result.quickbooks_id,
                     pushed_by="ApplicantSyncService",
-                    QuickBk_Status=1
+                    QuickBk_status=1,
+                    sync_token=result.sync_token
                 )
                 if not update:
                     current_app.logger.warning(f"Failed to update QuickBooks status for applicant {tracking_id} after sync.")
@@ -719,7 +720,7 @@ def sync_students():
             status_code=500
         )
 
-@customer_sync_bp.route('/student/update/', methods=['POST'])
+@customer_sync_bp.route('/student/update', methods=['POST'])
 def update_single_student():
     """
     Update an existing QuickBooks customer for a single student by reg_no.
@@ -775,6 +776,13 @@ def update_single_student():
                     operation_status=200,
                     error_message=None,
                 )
+
+                # update the synctoken to match the current one
+                student.sync_token = result["Customer"]["SyncToken"]
+                # add
+                db.session.add(student)
+                db.session.commit()
+
                 return create_response(
                     success=True,
                     data={
@@ -784,6 +792,7 @@ def update_single_student():
                     message=f"Student {reg_no} updated successfully in QuickBooks"
                 )
             else:
+                db.session.rollback()
                 QuickbooksAuditLog.add_audit_log(
                     action_type="Update single student",
                     operation_status=500,

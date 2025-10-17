@@ -1206,7 +1206,7 @@ class TblOnlineApplication(MISBaseModel):
     serious_illness_comment = db.Column(Text)
 
     # QuickBooks sync tracking fields
-    QuickBk_Status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
+    QuickBk_status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
     pushed_by = db.Column(db.String(200), default='System Auto Push', nullable=True)
     pushed_date = db.Column(DateTime, nullable=True)
     blood_pressure = db.Column(db.String(20))
@@ -1242,6 +1242,7 @@ class TblOnlineApplication(MISBaseModel):
     response_comment = db.Column(Text)
     status = db.Column(db.Integer)
     quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Customer ID
+    sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
 
     # Relationships for performance optimization
     intake = relationship("TblIntake", backref="applications", lazy='select')
@@ -1308,10 +1309,12 @@ class TblOnlineApplication(MISBaseModel):
             'response_date': self.response_date.isoformat() if self.response_date else None,
             'response_comment': self.response_comment,
             'status': self.status,
-            'quickbooks_status': self.QuickBk_Status,
+            'quickbooks_status': self.QuickBk_status,
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-            'quickbooks_id': self.quickbooks_id
+            'quickbooks_id': self.quickbooks_id,
+            'sync_token': self.sync_token
+
         }
 
     def to_dict_for_quickbooks(self):
@@ -1370,7 +1373,8 @@ class TblOnlineApplication(MISBaseModel):
                 'quickbooks_status': self.QuickBk_status or 0,
                 'pushed_by': self.pushed_by or 'System Auto Push',
                 'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-                'quickbooks_id': self.quickbooks_id or ''
+                'quickbooks_id': self.quickbooks_id or '',
+                'sync_token': self.sync_token or ''
             }
         except Exception as e:
             # Fallback to basic data if enrichment fails
@@ -1391,7 +1395,7 @@ class TblOnlineApplication(MISBaseModel):
                 'campus_name': str(self.camp_id) if self.camp_id else '',
                 'intake_details': str(self.intake_id) if self.intake_id else '',
                 'program_name': str(self.opt_1) if self.opt_1 else '',
-                'quickbooks_status': self.QuickBk_Status or 0
+                'quickbooks_status': self.QuickBk_status or 0
             }
 
     def _get_enriched_campus_name(self):
@@ -1546,7 +1550,7 @@ class TblOnlineApplication(MISBaseModel):
             current_app.logger.error(f"Error getting applicant details for reg no {reg_no}: {str(e)}")
             return []
     @classmethod
-    def update_applicant_quickbooks_status(cls, tracking_id, quickbooks_id, pushed_by, QuickBk_Status):
+    def update_applicant_quickbooks_status(cls, tracking_id, quickbooks_id, pushed_by, QuickBk_status, sync_token=None):
         """
         Update QuickBooks sync status for an applicant
 
@@ -1563,10 +1567,11 @@ class TblOnlineApplication(MISBaseModel):
             with cls.get_session() as session:
                 applicant = session.query(cls).filter(cls.tracking_id == tracking_id).first()
                 if applicant:
-                    applicant.QuickBk_Status = QuickBk_Status
+                    applicant.QuickBk_status = QuickBk_status
                     applicant.quickbooks_id = quickbooks_id
                     applicant.pushed_by = pushed_by
                     applicant.pushed_date = datetime.now()
+                    applicant.sync_token = sync_token
                     session.commit()
                     return True
                 return False
@@ -1804,7 +1809,8 @@ class TblPersonalUg(MISBaseModel):
                 'quickbooks_status': self.QuickBk_status or 0,
                 'pushed_by': self.pushed_by or 'System Auto Push',
                 'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-                'qk_id': self.qk_id or ''
+                'qk_id': self.qk_id or '',
+                'sync_token': self.sync_token
             }
         except Exception as e:
             # Fallback to basic data if enrichment fails
