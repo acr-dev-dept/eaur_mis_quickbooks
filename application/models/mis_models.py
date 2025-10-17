@@ -2257,6 +2257,24 @@ class TblPersonalUg(MISBaseModel):
             current_app.logger.error(f"Error counting synced students: {str(e)}")
             return 0
 
+    @staticmethod
+    def count_unsynced_students():
+        """
+        Count total number of students not yet synced to QuickBooks
+
+        Returns:
+            int: Total number of unsynced students
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.qk_id.is_(None)).scalar()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting unsynced students: {str(e)}")
+            return 0
+
+
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
     __tablename__ = 'tbl_register_program_ug'

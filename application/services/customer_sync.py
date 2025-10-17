@@ -265,7 +265,7 @@ class CustomerSyncService:
                 query = session.query(TblPersonalUg).filter(
                     TblPersonalUg.QuickBk_Status != 1
                 ).order_by(TblPersonalUg.reg_date.desc())
-                
+
                 if limit:
                     query = query.limit(limit)
                 if offset:
@@ -388,6 +388,29 @@ class CustomerSyncService:
         finally:
             if 'session' in locals():
                 session.close()
+
+    def get_unsynchronized_students_stream(self, chunk_size=100):
+        """
+        Stream unsynchronized students in chunks to avoid memory issues.
+        
+        Args:
+            chunk_size: Number of records to fetch per chunk
+            
+        Yields:
+            TblPersonalUg: Student records one at a time
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                query = session.query(TblPersonalUg).filter(
+                    TblPersonalUg.qk_id.is_(None)
+                ).yield_per(chunk_size)
+                
+                for student in query:
+                    yield student
+                    
+        except Exception as e:
+            current_app.logger.error(f"Error streaming students: {e}")
+            raise
 
     def map_applicant_to_quickbooks_customer(self, applicant: TblOnlineApplication) -> Dict:
         """

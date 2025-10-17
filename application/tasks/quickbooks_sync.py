@@ -11,6 +11,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import traceback
 import requests
 from flask import current_app as flask_app
+from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg
+
 
 flask_app = create_app(os.getenv('FLASK_ENV', 'development'))
 flask_app.logger.setLevel(logging.DEBUG)
@@ -118,107 +120,132 @@ def sync_applicants(self):
         return {"error": str(e)}
     
 @celery.task(bind=True)
-def sync_students(self):
+@celery.task(bind=True)
+def sync_students(self, batch_size=100):
     """
-    Celery task to synchronize unsynchronized students from MIS to QuickBooks
-    by calling the /sync_student endpoint for each student in parallel.
+    Celery task to synchronize unsynchronized students in batches.
+    Uses streaming to handle thousands of records efficiently.
     """
     try:
         sync_service = CustomerSyncService()
-        unsynchronized_students = sync_service.get_unsynchronized_students()
-        total_students = len(unsynchronized_students)
-        flask_app.logger.info(
-            f"Retrieved {total_students} unsynchronized students "
-            f"of type {type(unsynchronized_students)}"
-        )
+        
+        # Get total count first (fast query)
+        total_students = TblPersonalUg.count_unsynced_students()
+        flask_app.logger.info(f"Found {total_students} unsynchronized students")
 
         if total_students == 0:
-            flask_app.logger.info("No unsynchronized students found. Exiting sync process.")
             return {"message": "No unsynchronized students found."}
 
-        # Adjust the thread pool size dynamically (max 20 workers)
-        max_workers = min(20, max(5, total_students // 5))
-
-        local_sync_url = "https://api.eaur.ac.rw/api/v1/sync/customers/sync_student"
         succeeded = 0
         failed = 0
-        successful_students = []
         failed_students = []
-
-        def sync_single_student(student):
-            """Helper function for threading — sync one student."""
-            try:
-                reg_no = student.get("reg_no")
-                student_id = student.get("student_id")
-
-                if not reg_no:
-                    flask_app.logger.warning(f"Student ID {student_id} has no reg_no; skipping.")
-                    return (student_id, reg_no, False, "Missing registration number")
-
-                response = requests.post(local_sync_url, json={"reg_no": reg_no}, timeout=20)
-
-                if response.status_code == 200:
-                    res_json = response.json()
-                    if res_json.get("success"):
-                        flask_app.logger.info(
-                            f" Student {reg_no} ({student_id}) synchronized successfully."
-                        )
-                        return (student_id, reg_no, True, None)
-                    else:
-                        flask_app.logger.error(
-                            f" Student {reg_no} sync failed: {res_json.get('error', 'Unknown error')}"
-                        )
-                        return (student_id, reg_no, False, res_json.get("error"))
-                else:
-                    flask_app.logger.error(
-                        f" HTTP {response.status_code} while syncing {reg_no}: {response.text}"
-                    )
-                    return (student_id, reg_no, False, f"HTTP {response.status_code}")
-            except requests.exceptions.Timeout:
-                flask_app.logger.error(f"⏱ Timeout syncing student {student.get('reg_no')}")
-                return (student.get("student_id"), student.get("reg_no"), False, "Timeout")
-            except Exception as e:
-                flask_app.logger.error(f" Exception syncing student {student.get('reg_no')}: {e}")
-                flask_app.logger.debug(traceback.format_exc())
-                return (student.get("student_id"), student.get("reg_no"), False, str(e))
-
-        # Run all syncs concurrently
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(sync_single_student, student.to_dict()): student
-                for student in unsynchronized_students
-            }
-
-            for future in as_completed(futures):
-                try:
-                    student_id, reg_no, success, error = future.result()
-                    if success:
-                        succeeded += 1
-                        successful_students.append(reg_no)
-                    else:
-                        failed += 1
-                        failed_students.append({"reg_no": reg_no, "error": error})
-                except Exception as e:
-                    failed += 1
-                    flask_app.logger.error(f"Unexpected future exception: {e}")
+        current_batch = []
+        
+        # Stream students and process in batches
+        for idx, student in enumerate(sync_service.get_unsynchronized_students_stream()):
+            current_batch.append(student)
+            
+            # Process batch when full or at end
+            if len(current_batch) >= batch_size or idx == total_students - 1:
+                # Update progress
+                progress = int(((idx + 1) / total_students) * 100)
+                self.update_state(
+                    state='PROGRESS',
+                    meta={
+                        'current': idx + 1,
+                        'total': total_students,
+                        'percent': progress,
+                        'succeeded': succeeded,
+                        'failed': failed
+                    }
+                )
+                
+                # Process current batch
+                batch_results = _sync_student_batch(current_batch)
+                succeeded += batch_results['succeeded']
+                failed += batch_results['failed']
+                failed_students.extend(batch_results['failed_students'])
+                
+                flask_app.logger.info(
+                    f"Processed {idx + 1}/{total_students}: "
+                    f"{batch_results['succeeded']} succeeded, {batch_results['failed']} failed"
+                )
+                
+                # Clear batch for next iteration
+                current_batch = []
 
         flask_app.logger.info(
-            f"🎓 Student sync summary: {succeeded} succeeded, {failed} failed, total {total_students}"
+            f"Final summary: {succeeded} succeeded, {failed} failed of {total_students}"
         )
 
         return {
             "total_succeeded": succeeded,
             "total_failed": failed,
             "total_attempted": total_students,
-            "successful_reg_nos": successful_students,
-            "failed_students": failed_students,
+            "failed_count": len(failed_students),
+            "failed_students": failed_students[:100]  # Limit in response
         }
 
     except Exception as e:
         flask_app.logger.error(f"Critical error during student sync: {e}")
         flask_app.logger.debug(traceback.format_exc())
-        return {"error": str(e)}
+        raise
 
+
+def _sync_student_batch(students, max_retries=3):
+    """Sync a batch of students with retry logic."""
+    max_workers = min(20, max(5, len(students) // 5))
+    succeeded = 0
+    failed = 0
+    failed_students = []
+    
+    def sync_with_retry(student_dict, retries=0):
+        """Sync single student with retry logic."""
+        try:
+            # Call sync service directly instead of HTTP
+            sync_service = CustomerSyncService()
+            result = sync_service.sync_single_student(student_dict['reg_no'])
+            
+            if result['success']:
+                return (student_dict['student_id'], student_dict['reg_no'], True, None)
+            else:
+                # Retry on failure
+                if retries < max_retries:
+                    flask_app.logger.warning(
+                        f"Retrying {student_dict['reg_no']} (attempt {retries + 1})"
+                    )
+                    return sync_with_retry(student_dict, retries + 1)
+                return (student_dict['student_id'], student_dict['reg_no'], 
+                       False, result.get('error'))
+                       
+        except Exception as e:
+            if retries < max_retries:
+                return sync_with_retry(student_dict, retries + 1)
+            return (student_dict['student_id'], student_dict['reg_no'], False, str(e))
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(sync_with_retry, student.to_dict()): student
+            for student in students
+        }
+        
+        for future in as_completed(futures):
+            try:
+                student_id, reg_no, success, error = future.result()
+                if success:
+                    succeeded += 1
+                else:
+                    failed += 1
+                    failed_students.append({"reg_no": reg_no, "error": error})
+            except Exception as e:
+                failed += 1
+                flask_app.logger.error(f"Unexpected future exception: {e}")
+    
+    return {
+        'succeeded': succeeded,
+        'failed': failed,
+        'failed_students': failed_students
+    }
 
 @celery.task(bind=True)
 def sync_invoices(self, batch_size=20):
