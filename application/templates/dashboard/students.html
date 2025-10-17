@@ -1,45 +1,41 @@
-
 {% extends "dashboard/layout.html" %}
 
-{% block title %}Invoices - Sync Dashboard{% endblock %}
-{% block page_title %}Invoices{% endblock %}
+{% block title %}Students - Dashboard{% endblock %}
+{% block page_title %}Students{% endblock %}
 
 {% block content %}
 <div class="bg-white shadow rounded-lg p-6">
-  <h2 class="text-lg font-semibold mb-4">Payments</h2>
-    <table id="payments-table" class="w-full table-auto border-collapse border border-gray-200">
+  <h2 class="text-lg font-semibold mb-4">Students</h2>
+    <table id="students-table" class="w-full table-auto border-collapse border border-gray-200">
         <thead>
         <tr class="bg-gray-100 text-left">
-            <th>#</th>
-            <th>Reg No</th>
-            <th>Reference</th>
-            <th>Amount</th>
-            <th>Transaction ID</th>
-            <th>Payment Date</th>
-            <th>QBO Status</th>
-            <th>Pushed By</th>
-            <th>Pushed Date</th>
+            <th class="border border-gray-200 px-4 py-2">ID</th>
+            <th class="border border-gray-200 px-4 py-2">Reg No</th>
+            <th class="border border-gray-200 px-4 py-2">First Name</th>
+            <th class="border border-gray-200 px-4 py-2">Last Name</th>
+            <th class="border border-gray-200 px-4 py-2">Email</th>
+            <th class="border border-gray-200 px-4 py-2">Phone</th>
+            <th class="border border-gray-200 px-4 py-2">QBO Status</th>
+            <th class="border border-gray-200 px-4 py-2">Pushed By</th>
+            <th class="border border-gray-200 px-4 py-2">Pushed Date</th>
         </tr>
         </thead>
         <tbody></tbody>
     </table>
 </div>
+
 <!-- DataTables Scripts -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('#payments-table').DataTable({
+    $('#students-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
-            url: '/payments/get_students', // your Flask endpoint returning DataTables JSON
-            type: 'GET',
-            data: function(d) {
-                // d.draw, d.start, d.length are automatically sent by DataTables
-                // You can add extra params here if needed
-            }
+            url: '/students/get_students', // Fixed endpoint
+            type: 'GET'
         },
         columns: [
             { data: 'per_id_ug' },
