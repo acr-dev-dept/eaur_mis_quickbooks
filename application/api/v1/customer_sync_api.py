@@ -778,7 +778,8 @@ def update_single_student():
                 )
 
                 # update the synctoken to match the current one
-                student['sync_token'] = result["Customer"]["SyncToken"]
+                student = TblPersonalUg.get_student_by_reg_no(reg_no)
+                student.sync_token = result["Customer"]["SyncToken"]
                 # add
                 db.add(student)
                 db.commit()
