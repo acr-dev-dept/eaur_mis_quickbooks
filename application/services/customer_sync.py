@@ -451,7 +451,7 @@ class CustomerSyncService:
 
             # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "DisplayName": applicant_data['tracking_id'],
+                "DisplayName": f"{applicant_data['tracking_id']} - Applicant",
                 "GivenName": applicant_data['first_name'],
                 "FamilyName": applicant_data['last_name'],
                 "MiddleName": applicant_data['middle_name'],
@@ -462,10 +462,6 @@ class CustomerSyncService:
                 "PrimaryEmailAddr": {
                     "Address": email
                 } if email else None,
-                "CustomerTypeRef": {
-                    "value": "528730",
-                    "name": "applicant"
-                },
                 "CustomField": filtered_custom_fields,
                 "Notes": f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
             }
@@ -527,14 +523,13 @@ class CustomerSyncService:
             if sparse:
                 # Full update logic if ever needed
                 qb_customer_update.update({
-                    "DisplayName": applicant_data['tracking_id'],
+                    "DisplayName": f"{applicant_data['tracking_id'] } - Applicant",
                     "GivenName": applicant_data['first_name'],
                     "FamilyName": applicant_data['family_name'],
                     "MiddleName": applicant_data['middlename'],
                     "CompanyName": f"{applicant_data['first_name']} {applicant_data['family_name']}",
                     "PrimaryPhone": {"FreeFormNumber": applicant_data['phone']} if applicant_data.get('phone') else None,
                     "PrimaryEmailAddr": {"Address": email} if email else None,
-                    "CustomerTypeRef": {"value": "528730", "name": "applicant"},
                     "CustomField": filtered_custom_fields,
                     "Notes": f"Applicant Updated from MIS - Tracking ID: {applicant_data['tracking_id']}"
                 })
@@ -595,7 +590,7 @@ class CustomerSyncService:
             if sparse:
                 # Full update logic if ever needed
                 qb_customer_update.update({
-                    "DisplayName": student_data.get('reg_no', ''),
+                    "DisplayName": f"{student_data.get('reg_no', '')} - Student",
                     "GivenName": student_data.get('first_name'),
                     "FamilyName": student_data.get('last_name'),
                     "MiddleName": student_data.get('middle_name'),
@@ -606,10 +601,6 @@ class CustomerSyncService:
                     "PrimaryEmailAddr": {
                         "Address": email
                     } if email else None,
-                    "CustomerTypeRef": {
-                        "value": "528694",
-                        "name": "student"
-                    },
                     "CustomField": filtered_custom_fields,
                         "Notes": f"Student Updated from MIS - Reg_No: {student_data.get('reg_no', '')}"
                 })
