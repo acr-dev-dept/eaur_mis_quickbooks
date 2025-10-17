@@ -466,7 +466,7 @@ class QuickBooks:
             dict: The response from the QuickBooks API, or an error message.
         """
         # Relative endpoint for the query
-        query = "SELECT * FROM Department"
+        query = "select * from Department"
         endpoint = f"{realm_id}/query"
 
         # Query parameters
@@ -476,11 +476,11 @@ class QuickBooks:
 
         try:
             # Make the GET request using the helper method
-            response = self.make_request(endpoint, method="GET", params=params)
-            current_app.logger.info(f"Departments (Classes): {response}")
+            response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            current_app.logger.info(f"Departments: {response}")
             return response
         except Exception as e:
-            current_app.logger.error(f"Error getting departments (classes): {str(e)}")
+            current_app.logger.error(f"Error getting departments: {str(e)}")
             return {"error": "Error getting departments", "details": str(e)}
 
     def create_department(self, realm_id, department_data):
