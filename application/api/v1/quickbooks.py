@@ -1687,3 +1687,67 @@ def get_classes():
             'error': 'Error getting classes',
             'details': str(e)
         }), 500
+
+@quickbooks_bp.route('/create_class', methods=['POST'])
+def create_class():
+    """Create a new class.
+    
+    Example:
+    {
+        "Name": "Online Sales",
+    }
+    """
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide class data in JSON format'
+            }), 400
+
+        class_data = request.json
+
+        # Basic validation for required fields
+        if 'Name' not in class_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: Name',
+                'message': 'Class must have a name'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new class')
+
+        result = qb.create_class(qb.realm_id, class_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create class',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Class created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Class created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating class: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating class',
+            'details': str(e)
+        }), 500

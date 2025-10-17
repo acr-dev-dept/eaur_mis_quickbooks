@@ -1600,7 +1600,38 @@ class QuickBooks:
             current_app.logger.error(f"Error fetching classes: {str(e)}")
             return []
 
-            
+    def create_class(self, realm_id, class_data):
+        """
+        Create a class in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            class_data (dict): The data for the class.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/class"
+        try:
+            current_app.logger.info(f"Creating class with data: {class_data}")
+            response = self.make_request(endpoint, method="POST", data=class_data)
+            current_app.logger.info(f"Class created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating class: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating class: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""
     client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
