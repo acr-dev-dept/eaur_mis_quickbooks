@@ -403,46 +403,6 @@ class CustomerSyncService:
             current_app.logger.info(f"applicant is not a dict {applicant}")
             applicant_data = applicant.to_dict_for_quickbooks()
         try:
-            # Create QuickBooks customer structure
-
-            custom_fields_list = [
-                {
-                    "DefinitionId": "1000000001",
-                    "StringValue": "Applicant"
-                },
-                {
-                    "DefinitionId": "1000000002",
-                    "StringValue": str(applicant_data['tracking_id'])
-                },
-                {
-                    "DefinitionId": "1000000003",
-                    "StringValue": applicant_data['sex']
-                },
-                {
-                    "DefinitionId": "1000000008",
-                    "Name": "NationalID",
-                    "StringValue": applicant_data['national_id']
-                },
-                {
-                    "DefinitionId": "1000000005",
-                    "StringValue": applicant_data['campus_name']
-                },
-                {
-                    "DefinitionId": "8",
-                    "Name": "Intake",
-                    "StringValue": safe_stringify(applicant_data['intake_details'], field_name="Intake")
-                },
-                {
-                    "DefinitionId": "1000000009",
-                    "StringValue": applicant_data['program_mode']
-                }
-            ]
-            current_app.logger.info(f"custom fields {custom_fields_list}")
-
-            # Filter out custom fields with no value
-            filtered_custom_fields = [
-                field for field in custom_fields_list if field.get('StringValue')
-            ]
 
             # quickbooks require a valid email format, if email is invalid, set to None
             email = applicant_data.get('email')
@@ -462,7 +422,6 @@ class CustomerSyncService:
                 "PrimaryEmailAddr": {
                     "Address": email
                 } if email else None,
-                "CustomField": filtered_custom_fields,
                 "Notes": f"Applicant synchronized from MIS - Tracking ID: {applicant_data['tracking_id']}"
             }
 
