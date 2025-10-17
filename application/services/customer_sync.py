@@ -920,7 +920,7 @@ class CustomerSyncService:
                     if "Customer" in item_response and item_response['Customer'].get('Id'):
                         # Success
                         quickbooks_id = item_response['Customer']['Id']
-                        self._update_student_sync_status(per_id_ug, CustomerSyncStatus.SYNCED.value, quickbooks_id=quickbooks_id)
+                        self._update_student_sync_status(per_id_ug, CustomerSyncStatus.SYNCED.value, quickbooks_id=quickbooks_id, sync_token=item_response['Customer'].get('SyncToken'))
                         self._log_customer_sync_audit(per_id_ug, 'Student', 'SUCCESS', f"Synced to QuickBooks ID: {quickbooks_id}")
                         all_results.append(CustomerSyncResult(
                             customer_id=reg_no, customer_type='Student', success=True, quickbooks_id=quickbooks_id,
