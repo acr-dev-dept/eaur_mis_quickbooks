@@ -257,10 +257,15 @@ class CustomerSyncService:
         try:
             with db_manager.get_mis_session() as session:
                 # Step 1: Get base students
+                """
                 query = session.query(TblPersonalUg).filter(
                     or_(TblPersonalUg.QuickBk_Status != 1, TblPersonalUg.QuickBk_Status.is_(None))
                 ).order_by(TblPersonalUg.reg_date.desc())
-
+                """
+                query = session.query(TblPersonalUg).filter(
+                    TblPersonalUg.QuickBk_Status != 1
+                ).order_by(TblPersonalUg.reg_date.desc())
+                
                 if limit:
                     query = query.limit(limit)
                 if offset:

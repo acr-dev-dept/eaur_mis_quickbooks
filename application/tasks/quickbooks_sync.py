@@ -7,6 +7,10 @@ from application.services.payment_sync import PaymentSyncService
 import requests
 from application.services.customer_sync import CustomerSyncService
 from application.services.invoice_sync import InvoiceSyncService
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import traceback
+import requests
+from flask import current_app as flask_app
 
 flask_app = create_app(os.getenv('FLASK_ENV', 'development'))
 flask_app.logger.setLevel(logging.DEBUG)
@@ -116,50 +120,105 @@ def sync_applicants(self):
 @celery.task(bind=True)
 def sync_students(self):
     """
-    Celery task to synchronize students from MIS to QuickBooks.
+    Celery task to synchronize unsynchronized students from MIS to QuickBooks
+    by calling the /sync_student endpoint for each student in parallel.
     """
     try:
         sync_service = CustomerSyncService()
         unsynchronized_students = sync_service.get_unsynchronized_students()
+        total_students = len(unsynchronized_students)
         flask_app.logger.info(
-            f"Retrieved {len(unsynchronized_students)} unsynchronized students "
-            f"and the type is {type(unsynchronized_students)}"
+            f"Retrieved {total_students} unsynchronized students "
+            f"of type {type(unsynchronized_students)}"
         )
+
+        if total_students == 0:
+            flask_app.logger.info("No unsynchronized students found. Exiting sync process.")
+            return {"message": "No unsynchronized students found."}
+
+        # Adjust the thread pool size dynamically (max 20 workers)
+        max_workers = min(20, max(5, total_students // 5))
+
+        local_sync_url = "https://api.eaur.ac.rw/api/v1/sync/customers/sync_student"
         succeeded = 0
-        student_ids = []
-        for student in unsynchronized_students:
-            student = student.to_dict()
-            student_id = student.get('student_id')
+        failed = 0
+        successful_students = []
+        failed_students = []
+
+        def sync_single_student(student):
+            """Helper function for threading — sync one student."""
             try:
-                url = f"https://api.eaur.ac.rw/api/v1/sync/customers/student/{student_id}"
-                payload = {"batch_size": 50}
-                response = requests.post(url, json=payload, timeout=15)
+                reg_no = student.get("reg_no")
+                student_id = student.get("student_id")
+
+                if not reg_no:
+                    flask_app.logger.warning(f"Student ID {student_id} has no reg_no; skipping.")
+                    return (student_id, reg_no, False, "Missing registration number")
+
+                response = requests.post(local_sync_url, json={"reg_no": reg_no}, timeout=20)
 
                 if response.status_code == 200:
-                    succeeded += 1
-                    student_ids.append(student_id)
-                    flask_app.logger.info(
-                        f"Successfully synchronized student ID {student_id}, response: {response.text}"
-                    )
+                    res_json = response.json()
+                    if res_json.get("success"):
+                        flask_app.logger.info(
+                            f" Student {reg_no} ({student_id}) synchronized successfully."
+                        )
+                        return (student_id, reg_no, True, None)
+                    else:
+                        flask_app.logger.error(
+                            f" Student {reg_no} sync failed: {res_json.get('error', 'Unknown error')}"
+                        )
+                        return (student_id, reg_no, False, res_json.get("error"))
                 else:
                     flask_app.logger.error(
-                        f"Failed to sync student ID {student_id}, status: {response.status_code}, body: {response.text}"
+                        f" HTTP {response.status_code} while syncing {reg_no}: {response.text}"
                     )
-
+                    return (student_id, reg_no, False, f"HTTP {response.status_code}")
+            except requests.exceptions.Timeout:
+                flask_app.logger.error(f"⏱ Timeout syncing student {student.get('reg_no')}")
+                return (student.get("student_id"), student.get("reg_no"), False, "Timeout")
             except Exception as e:
-                flask_app.logger.error(f"Exception syncing student ID {student_id}: {e}")
-                continue
+                flask_app.logger.error(f" Exception syncing student {student.get('reg_no')}: {e}")
+                flask_app.logger.debug(traceback.format_exc())
+                return (student.get("student_id"), student.get("reg_no"), False, str(e))
+
+        # Run all syncs concurrently
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(sync_single_student, student.to_dict()): student
+                for student in unsynchronized_students
+            }
+
+            for future in as_completed(futures):
+                try:
+                    student_id, reg_no, success, error = future.result()
+                    if success:
+                        succeeded += 1
+                        successful_students.append(reg_no)
+                    else:
+                        failed += 1
+                        failed_students.append({"reg_no": reg_no, "error": error})
+                except Exception as e:
+                    failed += 1
+                    flask_app.logger.error(f"Unexpected future exception: {e}")
+
         flask_app.logger.info(
-            f"Student sync completed: {succeeded}/{len(unsynchronized_students)} succeeded"
+            f"🎓 Student sync summary: {succeeded} succeeded, {failed} failed, total {total_students}"
         )
+
         return {
             "total_succeeded": succeeded,
-            "total_attempted": len(unsynchronized_students),
-            "successful_student_ids": student_ids,
+            "total_failed": failed,
+            "total_attempted": total_students,
+            "successful_reg_nos": successful_students,
+            "failed_students": failed_students,
         }
+
     except Exception as e:
-        flask_app.logger.error(f"Error during student sync process: {e}")
+        flask_app.logger.error(f"Critical error during student sync: {e}")
+        flask_app.logger.debug(traceback.format_exc())
         return {"error": str(e)}
+
 
 @celery.task(bind=True)
 def sync_invoices(self, batch_size=20):
