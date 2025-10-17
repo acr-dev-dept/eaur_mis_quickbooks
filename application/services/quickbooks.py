@@ -1577,6 +1577,30 @@ class QuickBooks:
                     ]
                 }
             }
+        
+    def get_classes(self, realm_id):
+        """
+        Fetch all classes from QuickBooks.
+
+        Args:
+            realm_id (str): The QuickBooks company ID.
+
+        Returns:
+            list: A list of classes.
+        """
+        query = "SELECT * FROM Class"
+        current_app.logger.info(f"Fetching classes with query: {query}")
+        try:
+            # Query to fetch all classes
+            classes_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            current_app.logger.info(f"Classes fetched successfully: {classes_response}")
+            classes = classes_response.get("QueryResponse", {}).get("Class", [])
+            return classes
+        except Exception as e:
+            current_app.logger.error(f"Error fetching classes: {str(e)}")
+            return []
+
+            
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""
     client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")

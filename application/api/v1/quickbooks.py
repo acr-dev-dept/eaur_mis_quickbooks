@@ -1646,3 +1646,44 @@ def create_customer_type():
             'error': 'Error creating customer type',
             'details': str(e)
         }), 500
+
+@quickbooks_bp.route('/get_classes', methods=['GET'])
+def get_classes():
+    """Get all classes."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting classes')
+
+        classes = qb.get_classes(qb.realm_id)
+        current_app.logger.info(f"Classes retrieved successfully: {classes}")
+
+        # Check for errors in the response
+        if 'error' in classes:
+            return jsonify({
+                'success': False,
+                'error': classes['error'],
+                'details': classes.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_classes': len(classes) if isinstance(classes, list) else 0,
+            'data': classes,
+            'message': 'Classes retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting classes: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting classes',
+            'details': str(e)
+        }), 500
