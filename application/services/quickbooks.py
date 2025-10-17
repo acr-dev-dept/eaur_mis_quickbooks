@@ -455,7 +455,7 @@ class QuickBooks:
 
     def get_departments(self, realm_id):
         """
-        Fetch all departments (classes) from QuickBooks Online using the Query endpoint.
+        Fetch all departments from QuickBooks Online using the Query endpoint.
 
         In QuickBooks, departments are represented as "Classes".
 
@@ -482,6 +482,26 @@ class QuickBooks:
         except Exception as e:
             current_app.logger.error(f"Error getting departments (classes): {str(e)}")
             return {"error": "Error getting departments", "details": str(e)}
+
+    def create_department(self, realm_id, department_data):
+        """
+        Create a new department (Class) in QuickBooks.
+
+        Args:
+            realm_id (str): The QuickBooks company ID.
+            department_data (dict): The data for the new department.
+        Returns:
+            dict: The response from the QuickBooks API, or an error message.
+        """
+        endpoint = f"{realm_id}/class"
+        try:
+            current_app.logger.info(f"Creating department with data: {department_data}")
+            response = self.make_request(endpoint, method="POST", data=department_data)
+            current_app.logger.info(f"Department created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating department: {str(e)}")
+            return {"error": "Error creating department", "details": str(e)}
 
     def get_locations(self, realm_id):
         """

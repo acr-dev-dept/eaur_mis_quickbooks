@@ -1751,3 +1751,44 @@ def create_class():
             'error': 'Error creating class',
             'details': str(e)
         }), 500
+
+@quickbooks_bp.route('/departments', methods=['GET'])
+def get_departments():
+    """Get all departments."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting departments')
+
+        departments = qb.get_departments(qb.realm_id)
+        current_app.logger.info(f"Departments retrieved successfully: {departments}")
+
+        # Check for errors in the response
+        if 'error' in departments:
+            return jsonify({
+                'success': False,
+                'error': departments['error'],
+                'details': departments.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_departments': len(departments) if isinstance(departments, list) else 0,
+            'data': departments,
+            'message': 'Departments retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting departments: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting departments',
+            'details': str(e)
+        }), 500
