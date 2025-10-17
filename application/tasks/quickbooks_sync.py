@@ -120,7 +120,6 @@ def sync_applicants(self):
         return {"error": str(e)}
     
 @celery.task(bind=True)
-@celery.task(bind=True)
 def sync_students(self, batch_size=100):
     """
     Celery task to synchronize unsynchronized students in batches.

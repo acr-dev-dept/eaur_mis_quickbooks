@@ -1689,7 +1689,7 @@ class TblPersonalUg(MISBaseModel):
         return {
             'per_id_ug': self.per_id_ug,
             'reg_no': self.reg_no,
-            'prg_type': self.prg_type.to_dict() if self.prg_type else [],
+            'prg_type': self.prg_type if self.prg_type else None,
             'sex': self.sex,
             'fname': self.fname,
             'middlename': self.middlename,
