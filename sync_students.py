@@ -15,7 +15,7 @@ def sync_students():
     try:
         with app.app_context():  # <-- push context here
             sync_service = CustomerSyncService()
-            results = sync_service.sync_all_unsynchronized_students_in_batches(15)
+            results = sync_service.sync_all_unsynchronized_students_in_batches(50)
             app.logger.info(
                 f"Student sync process completed successfully: "
                 f"{results['total_succeeded']} students synchronized."
