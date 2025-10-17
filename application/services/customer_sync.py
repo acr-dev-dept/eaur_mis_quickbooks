@@ -1123,7 +1123,7 @@ class CustomerSyncService:
         current_app.logger.info(f"Syncing single applicant: {applicant} and the type is {type(applicant)}")
         try:
            # Mark applicant as in progress
-            self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.IN_PROGRESS.value)
+            self._update_applicant_sync_status(applicant.get('tracking_id'), CustomerSyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()
@@ -1134,12 +1134,12 @@ class CustomerSyncService:
 
             # Create customer in QuickBooks
             response = qb_service.create_customer(qb_service.realm_id, qb_customer_data)
-            current_app.logger.info(f"QuickBooks response for applicant {applicant.get('appl_Id')}: {response}")
+            current_app.logger.info(f"QuickBooks response for applicant {applicant.get('tracking_id')}: {response}")
             if 'Customer' in response:
                 # Success - update sync status
                 qb_customer_id = response['Customer']['Id']
                 self._update_applicant_sync_status(
-                    applicant.get('appl_Id'),
+                    applicant.get('tracking_id'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id
                 )
@@ -1157,11 +1157,11 @@ class CustomerSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_applicant_sync_status(applicant.get('appl_Id'), CustomerSyncStatus.FAILED.value)
-                self._log_customer_sync_audit(applicant.get('appl_Id'), 'Applicant', 'ERROR', error_msg)
+                self._update_applicant_sync_status(applicant.get('tracking_id'), CustomerSyncStatus.FAILED.value)
+                self._log_customer_sync_audit(applicant.get('tracking_id'), 'Applicant', 'ERROR', error_msg)
 
                 return CustomerSyncResult(
-                    customer_id=applicant.tracking_id,
+                    customer_id=applicant.get('tracking_id'),
                     customer_type='Applicant',
                     success=False,
                     error_message=error_msg,
