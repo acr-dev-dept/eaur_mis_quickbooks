@@ -778,7 +778,7 @@ def update_single_student():
                 )
 
                 # update the synctoken to match the current one
-                student.sync_token = result["Customer"]["SyncToken"]
+                student.get('sync_token') = result["Customer"]["SyncToken"]
                 # add
                 db.session.add(student)
                 db.session.commit()
