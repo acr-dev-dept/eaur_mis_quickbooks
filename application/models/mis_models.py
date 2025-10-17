@@ -2228,7 +2228,7 @@ class TblPersonalUg(MISBaseModel):
                         'lname': s.lname,
                         'email1': s.email1,
                         'phone1': s.phone1,
-                        'quickbooks_status': s.QuickBk_Status,
+                        'quickbooks_status': s.QuickBk_status,
                         'qk_id': s.qk_id,
                         'pushed_by': s.pushed_by,
                         'pushed_date': s.pushed_date.isoformat() if s.pushed_date else None
