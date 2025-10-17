@@ -485,7 +485,7 @@ class QuickBooks:
 
     def create_department(self, realm_id, department_data):
         """
-        Create a new department (Class) in QuickBooks.
+        Create a new department in QuickBooks.
 
         Args:
             realm_id (str): The QuickBooks company ID.
@@ -493,7 +493,7 @@ class QuickBooks:
         Returns:
             dict: The response from the QuickBooks API, or an error message.
         """
-        endpoint = f"{realm_id}/class"
+        endpoint = f"{realm_id}/department"
         try:
             current_app.logger.info(f"Creating department with data: {department_data}")
             response = self.make_request(endpoint, method="POST", data=department_data)
