@@ -2199,7 +2199,7 @@ class TblPersonalUg(MISBaseModel):
                     TblPersonalUg.lname,
                     TblPersonalUg.email1,
                     TblPersonalUg.phone1,
-                    TblPersonalUg.QuickBk_Status,
+                    TblPersonalUg.QuickBk_status,
                     TblPersonalUg.qk_id,
                     TblPersonalUg.pushed_by,
                     TblPersonalUg.pushed_date
