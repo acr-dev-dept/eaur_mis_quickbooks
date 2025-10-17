@@ -389,7 +389,7 @@ class CustomerSyncService:
         Map MIS applicant data to QuickBooks customer format
 
         Args:
-            applicant: MIS applicant object
+            applicant: MIS applicant object dictionary
 
         Returns:
             Dictionary formatted for QuickBooks Customer API
@@ -401,7 +401,7 @@ class CustomerSyncService:
             applicant_data = applicant
         else:
             current_app.logger.info(f"applicant is not a dict {applicant}")
-            applicant_data = applicant.to_dict_for_quickbooks()
+            applicant_data = applicant
         try:
 
             # quickbooks require a valid email format, if email is invalid, set to None

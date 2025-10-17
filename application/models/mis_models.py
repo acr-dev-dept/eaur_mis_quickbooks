@@ -1525,7 +1525,7 @@ class TblOnlineApplication(MISBaseModel):
         try:
             with TblOnlineApplication.get_session() as session:
                 applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
-                return applicant.to_dict() if applicant else None
+                return applicant.to_quickbooks_dict() if applicant else None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for tracking ID {tracking_id}: {str(e)}")
