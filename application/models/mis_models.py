@@ -1700,7 +1700,8 @@ class TblPersonalUg(MISBaseModel):
             'mother_name': self.mother_name,
             'national_id': self.national_id,
             'cntr_id': self.cntr_id,
-            'VISA_Expiration_date': self.VISA_Expiration_date.isoformat() if self.VISA_Expiration_date else None,
+            'VISA_Expiration_date': self.VISA_Expiration_date.isoformat()
+            if self.VISA_Expiration_date and hasattr(self.VISA_Expiration_date, 'isoformat') else self.VISA_Expiration_date,
             'b_province': self.b_province.to_dict() if self.b_province else [],
 
             'b_district': self.b_district.to_dict() if self.b_district else [],
