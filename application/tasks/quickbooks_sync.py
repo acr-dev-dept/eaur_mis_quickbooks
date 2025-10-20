@@ -130,7 +130,7 @@ def sync_students(self, batch_size=100):
         
         # Get total count first (fast query)
         total_students = TblPersonalUg.count_unsynced_students()
-        flask_app.logger.info(f"Found {total_students} unsynchronized students")
+        current_app.logger.info(f"Found {total_students} unsynchronized students")
 
         if total_students == 0:
             return {"message": "No unsynchronized students found."}

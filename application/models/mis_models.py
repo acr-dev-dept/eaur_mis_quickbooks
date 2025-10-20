@@ -2270,13 +2270,12 @@ class TblPersonalUg(MISBaseModel):
             with TblPersonalUg.get_session() as session:
                 count = (
                     session.query(func.count(TblPersonalUg.per_id_ug))
-                    .filter(or_(TblPersonalUg.QuickBk_status != 1, TblPersonalUg.QuickBk_status.is_(None)))
+                    .filter(TblPersonalUg.QuickBk_status.is_(None))
                     .scalar()
                 )
-                current_app.logger.info(f"Unsynced students count: {count}")
                 return int(count or 0)
-        except Exception:
-            current_app.logger.exception("Error counting unsynced students")
+        except Exception as e:
+            current_app.logger.error(f"Error counting NULL QuickBk_status: {str(e)}")
             return 0
 
 
