@@ -2261,18 +2261,21 @@ class TblPersonalUg(MISBaseModel):
     @staticmethod
     def count_unsynced_students():
         """
-        Count total number of students not yet synced to QuickBooks
+        Count total number of students not yet synced to QuickBooks.
 
         Returns:
             int: Total number of unsynced students
         """
         try:
             with TblPersonalUg.get_session() as session:
-                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.QuickBk_status != 1).scalar()
-                return count
-        except Exception as e:
-            from flask import current_app
-            current_app.logger.error(f"Error counting unsynced students: {str(e)}")
+                count = (
+                    session.query(func.count(TblPersonalUg.per_id_ug))
+                    .filter(or_(TblPersonalUg.QuickBk_status != 1, TblPersonalUg.QuickBk_status.is_(None)))
+                    .scalar()
+                )
+                return int(count or 0)
+        except Exception:
+            current_app.logger.exception("Error counting unsynced students")
             return 0
 
 
