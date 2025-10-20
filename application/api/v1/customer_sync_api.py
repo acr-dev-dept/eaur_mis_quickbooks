@@ -1258,3 +1258,21 @@ def sync_unsynchronized_students_batch():
             details=str(e),
             status_code=500
         )
+
+@customer_sync_bp.route('/count_all_students', methods=['GET'])
+def count_all_students():
+    """
+    Count all students in the MIS database.
+    """
+    synced_students = 0
+    unsynced_students = 0
+    try:
+        synced_students = TblPersonalUg.count_synced_students()
+        unsynced_students = TblPersonalUg.count_unsynced_students()
+    except Exception as e:
+        current_app.logger.error(f"Error counting students: {str(e)}")
+    return jsonify({
+        'synced_students': synced_students,
+        'unsynced_students': unsynced_students,
+        'total_students': synced_students + unsynced_students
+    })
