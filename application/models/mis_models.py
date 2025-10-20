@@ -2273,6 +2273,7 @@ class TblPersonalUg(MISBaseModel):
                     .filter(or_(TblPersonalUg.QuickBk_status != 1, TblPersonalUg.QuickBk_status.is_(None)))
                     .scalar()
                 )
+                current_app.logger.info(f"Unsynced students count: {count}")
                 return int(count or 0)
         except Exception:
             current_app.logger.exception("Error counting unsynced students")
