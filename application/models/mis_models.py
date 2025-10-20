@@ -2268,7 +2268,7 @@ class TblPersonalUg(MISBaseModel):
         """
         try:
             with TblPersonalUg.get_session() as session:
-                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.qk_id.is_(None)).scalar()
+                count = session.query(func.count(TblPersonalUg.per_id_ug)).filter(TblPersonalUg.QuickBk_status != 1).scalar()
                 return count
         except Exception as e:
             from flask import current_app
