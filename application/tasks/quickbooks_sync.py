@@ -201,12 +201,12 @@ def _sync_student_batch(students, max_retries=3):
     def sync_with_retry(student_dict, retries=0):
         """Sync single student with retry logic."""
         try:
-            # Call sync service directly instead of HTTP
+            # Call sync service with the full student dictionary
             sync_service = CustomerSyncService()
-            result = sync_service.sync_single_student(student_dict['reg_no'])
+            result = sync_service.sync_single_student(student_dict)  # Pass dict, not just reg_no
             
             if result['success']:
-                return (student_dict['student_id'], student_dict['reg_no'], True, None)
+                return (student_dict['per_id_ug'], student_dict['reg_no'], True, None)
             else:
                 # Retry on failure
                 if retries < max_retries:
@@ -214,13 +214,13 @@ def _sync_student_batch(students, max_retries=3):
                         f"Retrying {student_dict['reg_no']} (attempt {retries + 1})"
                     )
                     return sync_with_retry(student_dict, retries + 1)
-                return (student_dict['student_id'], student_dict['reg_no'], 
-                       False, result.get('error'))
-                       
+                return (student_dict['per_id_ug'], student_dict['reg_no'], 
+                    False, result.get('error'))
+                    
         except Exception as e:
             if retries < max_retries:
                 return sync_with_retry(student_dict, retries + 1)
-            return (student_dict['student_id'], student_dict['reg_no'], False, str(e))
+            return (student_dict['per_id_ug'], student_dict['reg_no'], False, str(e))
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -230,7 +230,7 @@ def _sync_student_batch(students, max_retries=3):
         
         for future in as_completed(futures):
             try:
-                student_id, reg_no, success, error = future.result()
+                per_id_ug, reg_no, success, error = future.result()
                 if success:
                     succeeded += 1
                 else:
