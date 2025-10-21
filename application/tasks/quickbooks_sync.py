@@ -346,14 +346,14 @@ def process_student_batch(reg_nos, batch_num, total_batches):
             
             if result.success:
                 results['synced'] += 1
-                flask_app.logger.debug(f"Successfully synced student {reg_no}")
+                current_app.logger.debug(f"Successfully synced student {reg_no}")
             else:
                 results['failed'] += 1
                 results['errors'].append({
                     'reg_no': reg_no,
                     'error': result.error_message
                 })
-                flask_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
+                current_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
                 
         except Exception as e:
             results['failed'] += 1
