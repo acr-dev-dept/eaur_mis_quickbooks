@@ -2278,6 +2278,47 @@ class TblPersonalUg(MISBaseModel):
             current_app.logger.error(f"Error counting NULL QuickBk_status: {str(e)}")
             return 0
 
+    @staticmethod
+    def get_unsynced_students(limit: int = 100):
+        """
+        Get a list of students not yet synced to QuickBooks.
+
+        Args:
+            limit (int): Maximum number of records to retrieve
+
+        Returns:
+            list: List of unsynced student records
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                students = (
+                    session.query(TblPersonalUg)
+                    .filter(TblPersonalUg.QuickBk_status.is_(None))
+                    .order_by(TblPersonalUg.per_id_ug)
+                    .limit(limit)
+                    .all()
+                )
+                return students.to_dict_for_quickbooks() if students else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching unsynced students: {str(e)}")
+            return []
+        
+    def get_all_students():
+        """
+        Get all student records from tbl_personal_ug
+
+        Returns:
+            list: List of all student records
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                students = session.query(TblPersonalUg).all()
+                return students.to_dict_for_quickbooks() if students else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error fetching all students: {str(e)}")
+            return []
 
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""

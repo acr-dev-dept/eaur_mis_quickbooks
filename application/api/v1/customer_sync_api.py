@@ -1276,3 +1276,27 @@ def count_all_students():
         'unsynced_students': unsynced_students,
         'total_students': synced_students + unsynced_students
     })
+
+@customer_sync_bp.route('/reg_nos_check', methods=['GET'])
+def check_reg_nos_existence():
+    try:
+        students = TblPersonalUg.get_unsynced_students()
+        reg_nos = [s.get('reg_no') for s in students if s.get('reg_no')]
+        if not reg_nos:
+            return jsonify({
+                'success': True,
+                'message': 'No unsynced students found',
+                'reg_nos': []
+            })
+        return jsonify({
+            'success': True,
+            'message': 'Unsynced students found',
+            'reg_nos': reg_nos
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error checking registration numbers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error checking registration numbers',
+            'error': str(e)
+        })  
