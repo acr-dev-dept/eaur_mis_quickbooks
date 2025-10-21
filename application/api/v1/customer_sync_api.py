@@ -1281,11 +1281,17 @@ def count_all_students():
 def check_reg_nos_existence():
     try:
         students = TblPersonalUg.get_unsynced_students()
+        if not students:
+            return jsonify({
+                'success': True,
+                'message': 'No unsynced students found',
+                'reg_nos': []
+            })
         reg_nos = [s.get('reg_no') for s in students if s.get('reg_no')]
         if not reg_nos:
             return jsonify({
                 'success': True,
-                'message': 'No unsynced students found',
+                'message': 'No reg nos found',
                 'reg_nos': []
             })
         return jsonify({
