@@ -15,7 +15,6 @@ from flask import current_app
 from application import db
 from sqlalchemy import or_, and_, cast, String
 
-from application.api.v1.customer_sync_api import create_response
 
 # Use Flask-SQLAlchemy's Model base class
 class BaseModel(db.Model):
@@ -87,12 +86,12 @@ class QuickBooksConfig(BaseModel):
     def validate_quickbooks_connection(cls):
         """Validate QuickBooks connection"""
         if not cls.is_connected():
-            return False, create_response(
-                    success=False,
-            error='QuickBooks not connected',
-            message='Please authenticate with QuickBooks first',
-            status_code=400
-        )
+            return False, {
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please authenticate with QuickBooks first',
+                'status_code': 400
+            }
         return True, None
 
 
