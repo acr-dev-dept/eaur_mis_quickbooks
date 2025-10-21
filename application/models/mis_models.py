@@ -1774,7 +1774,7 @@ class TblPersonalUg(MISBaseModel):
 
                 # Personal information
                 'sex': self.sex or '',
-                'dob': self.dob.isoformat() if self.dob else '',
+                'dob': self.dob.isoformat() if hasattr(self.dob, 'isoformat') else self.dob or '',
                 'national_id': self.national_id or '',
                 'nationality': country_name,
                 'marital_status': self.marital_status or '',
@@ -1838,7 +1838,7 @@ class TblPersonalUg(MISBaseModel):
                 'program_name': '',
                 'intake_details': '',
                 'program_type': '',
-                'quickbooks_status': self.QuickBk_Status or 0,
+                'quickbooks_status': self.QuickBk_status or 0,
                 'error_occurred': True,
                 'error_message': str(e)
             }
@@ -2279,7 +2279,7 @@ class TblPersonalUg(MISBaseModel):
             return 0
 
     @staticmethod
-    def get_unsynced_students(limit: int = 100):
+    def get_unsynced_students(limit: int = 20):
         """
         Get a list of students not yet synced to QuickBooks.
 
