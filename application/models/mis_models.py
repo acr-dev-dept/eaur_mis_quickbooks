@@ -15,7 +15,7 @@ from sqlalchemy.orm import relationship
 from application.utils.database import db_manager
 from application import db
 from sqlalchemy import or_, and_
-from sqlalchemy.orm import joinedload, foreign
+from sqlalchemy.orm import joinedload, foreign, load_only
 from flask import current_app
 from sqlalchemy import cast, String
 
@@ -2290,7 +2290,13 @@ class TblPersonalUg(MISBaseModel):
             list: List of unsynced student records
         """
         try:
-            students = TblPersonalUg.query.filter(TblPersonalUg.QuickBk_status.is_(None)).limit(limit).all()
+            students = (
+                TblPersonalUg.query
+                .filter(TblPersonalUg.QuickBk_status.is_(None))
+                .options(load_only('reg_no', 'fname', 'lname', 'email'))  # Only fetch needed columns
+                .limit(limit)
+                .all()
+            )
             return [student.to_dict_for_quickbooks() for student in students] if students else []
         
         except Exception as e:
