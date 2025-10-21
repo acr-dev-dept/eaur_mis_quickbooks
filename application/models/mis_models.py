@@ -2291,7 +2291,7 @@ class TblPersonalUg(MISBaseModel):
         """
         try:
             students = TblPersonalUg.query.filter(TblPersonalUg.QuickBk_status.is_(None)).limit(limit).all()
-            return students.to_dict_for_quickbooks() if students else []
+            return [student.to_dict_for_quickbooks() for student in students] if students else []
         
         except Exception as e:
             from flask import current_app
