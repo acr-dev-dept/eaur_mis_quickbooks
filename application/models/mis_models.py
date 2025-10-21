@@ -2298,7 +2298,9 @@ class TblPersonalUg(MISBaseModel):
                     .limit(limit)
                     .all()
                 )
-                return students.to_dict_for_quickbooks() if students else []
+                if students:
+                    return students.to_dict_for_quickbooks()
+                return []
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error fetching unsynced students: {str(e)}")
