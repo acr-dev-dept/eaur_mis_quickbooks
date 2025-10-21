@@ -2293,7 +2293,7 @@ class TblPersonalUg(MISBaseModel):
             students = (
                 TblPersonalUg.query
                 .filter(TblPersonalUg.QuickBk_status.is_(None))
-                .options(load_only('reg_no', 'fname', 'lname', 'email'))  # Only fetch needed columns
+                .options(load_only(TblPersonalUg.reg_no, TblPersonalUg.fname, TblPersonalUg.lname, TblPersonalUg.email1))  # Only fetch needed columns
                 .limit(limit)
                 .all()
             )
