@@ -1294,6 +1294,7 @@ def check_reg_nos_existence():
                 'message': 'No reg nos found',
                 'reg_nos': []
             })
+        current_app.logger.info(f"Found {len(reg_nos)} unsynced students' reg_nos.")
         return jsonify({
             'success': True,
             'message': f'Found {len(reg_nos)} unsynced students',
