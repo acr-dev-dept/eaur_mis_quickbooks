@@ -1296,13 +1296,15 @@ def check_reg_nos_existence():
             })
         return jsonify({
             'success': True,
-            'message': 'Unsynced students found',
+            'message': f'Found {len(reg_nos)} unsynced students',
             'reg_nos': reg_nos
         })
     except Exception as e:
-        current_app.logger.error(f"Error checking registration numbers: {str(e)}")
+        error_msg = f"Error checking reg nos: {str(e)}"
+        current_app.logger.error(error_msg)
+        current_app.logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
-            'message': 'Error checking registration numbers',
-            'error': str(e)
-        })  
+            'error': error_msg,
+            'details': traceback.format_exc()
+        }), 500
