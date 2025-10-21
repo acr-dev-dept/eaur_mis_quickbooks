@@ -2299,7 +2299,7 @@ class TblPersonalUg(MISBaseModel):
                     .all()
                 )
                 if students:
-                    return students.to_dict_for_quickbooks()
+                    return students.to_dict()
                 return []
         except Exception as e:
             from flask import current_app
