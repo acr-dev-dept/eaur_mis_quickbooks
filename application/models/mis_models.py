@@ -2290,17 +2290,9 @@ class TblPersonalUg(MISBaseModel):
             list: List of unsynced student records
         """
         try:
-            with TblPersonalUg.get_session() as session:
-                students = (
-                    session.query(TblPersonalUg)
-                    .filter(TblPersonalUg.QuickBk_status.is_(None))
-                    .order_by(TblPersonalUg.per_id_ug)
-                    .limit(limit)
-                    .all()
-                )
-                if students:
-                    return students.to_dict()
-                return []
+            students = TblPersonalUg.query.filter(TblPersonalUg.QuickBk_status.is_(None)).limit(limit).all()
+            return students.to_dict_for_quickbooks() if students else []
+        
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error fetching unsynced students: {str(e)}")
