@@ -30,8 +30,8 @@ celery.conf.beat_schedule = {
     #    "args": (),
     #},
     "sync-students-every-15-sec": {
-        "task": "application.tasks.quickbooks_sync.sync_students",
-        "schedule": 5.0,  # every 15 seconds
+        "task": "application.tasks.quickbooks_sync.bulk_sync_students_task",
+        "schedule": 15.0,  # every 15 seconds
         "args": (),
     },
 }
