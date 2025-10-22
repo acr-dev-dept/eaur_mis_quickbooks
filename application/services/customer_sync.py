@@ -727,7 +727,9 @@ class CustomerSyncService:
                     student.get('per_id_ug'),
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id,
-                    sync_token=response['Customer'].get('SyncToken')
+                    sync_token=response['Customer'].get('SyncToken'),
+                    status=1
+
                 )
 
                 # Log successful sync
@@ -1220,7 +1222,7 @@ class CustomerSyncService:
             with db_manager.get_mis_session() as session:
                 session.rollback()
 
-    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
+    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None, QuickBk_status: Optional[int] = None):
         """
         Update student synchronization status in MIS database
 
@@ -1234,7 +1236,7 @@ class CustomerSyncService:
 
                 student = session.query(TblPersonalUg).filter(TblPersonalUg.per_id_ug == per_id_ug).first()
                 if student:
-                    student.QuickBk_Status = status
+                    student.QuickBk_status = status
                     student.pushed_date = datetime.now()
                     student.pushed_by = "CustomerSyncService"
 
