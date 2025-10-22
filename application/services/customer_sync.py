@@ -1222,7 +1222,7 @@ class CustomerSyncService:
             with db_manager.get_mis_session() as session:
                 session.rollback()
 
-    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None, QuickBk_status: Optional[int] = None):
+    def _update_student_sync_status(self, per_id_ug: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
         """
         Update student synchronization status in MIS database
 
