@@ -728,7 +728,6 @@ class CustomerSyncService:
                     CustomerSyncStatus.SYNCED.value,
                     quickbooks_id=qb_customer_id,
                     sync_token=response['Customer'].get('SyncToken'),
-                    status=1
 
                 )
 
