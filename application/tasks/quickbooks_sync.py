@@ -423,69 +423,70 @@ def sync_single_applicant_task(self, tracking_id):
     Returns:
         dict: Result with success status and details
     """
-    sync_service = CustomerSyncService()
-    
-    try:
-        # Validate QuickBooks connection
-        if not QuickBooksConfig.is_connected():
-            return {
-                'success': False,
-                'tracking_id': tracking_id,
-                'error': 'QuickBooks not connected'
-            }
-
-        # Fetch applicant details
-        applicant = TblOnlineApplication.get_applicant_details(tracking_id)
-
-        if not applicant:
-            return {
-                'success': False,
-                'tracking_id': tracking_id,
-                'error': f"Applicant with tracking_id {tracking_id} not found"
-            }
+    with flask_app.app_context():
+        sync_service = CustomerSyncService()
         
-        # Check if already synced
-        if applicant.get("quickbooks_status") == 1:
-            return {
-                'success': False,
-                'tracking_id': tracking_id,
-                'error': f"Applicant already synchronized",
-                'skipped': True
-            }
-        
-        # Perform synchronization
-        result = sync_service.sync_single_applicant(applicant)
-        
-        if result.success:
-            return {
-                'success': True,
-                'tracking_id': tracking_id,
-                'applicant_id': result.customer_id,
-                'quickbooks_id': result.quickbooks_id,
-                'applicant_name': f"{applicant.get('first_name')} {applicant.get('last_name')}"
-            }
-        else:
-            return {
-                'success': False,
-                'tracking_id': tracking_id,
-                'error': result.error_message
-            }
-            
-    except Exception as e:
-        # Log error and retry
-        error_msg = f"Error syncing applicant {tracking_id}: {str(e)}"
-        flask_app.logger.error(error_msg)
-        flask_app.logger.error(traceback.format_exc())
-        
-        # Retry the task
         try:
-            raise self.retry(exc=e)
-        except self.MaxRetriesExceededError:
-            return {
-                'success': False,
-                'tracking_id': tracking_id,
-                'error': f"Max retries exceeded: {str(e)}"
-            }
+            # Validate QuickBooks connection
+            if not QuickBooksConfig.is_connected():
+                return {
+                    'success': False,
+                    'tracking_id': tracking_id,
+                    'error': 'QuickBooks not connected'
+                }
+
+            # Fetch applicant details
+            applicant = TblOnlineApplication.get_applicant_details(tracking_id)
+
+            if not applicant:
+                return {
+                    'success': False,
+                    'tracking_id': tracking_id,
+                    'error': f"Applicant with tracking_id {tracking_id} not found"
+                }
+            
+            # Check if already synced
+            if applicant.get("quickbooks_status") == 1:
+                return {
+                    'success': False,
+                    'tracking_id': tracking_id,
+                    'error': f"Applicant already synchronized",
+                    'skipped': True
+                }
+            
+            # Perform synchronization
+            result = sync_service.sync_single_applicant(applicant)
+            
+            if result.success:
+                return {
+                    'success': True,
+                    'tracking_id': tracking_id,
+                    'applicant_id': result.customer_id,
+                    'quickbooks_id': result.quickbooks_id,
+                    'applicant_name': f"{applicant.get('first_name')} {applicant.get('last_name')}"
+                }
+            else:
+                return {
+                    'success': False,
+                    'tracking_id': tracking_id,
+                    'error': result.error_message
+                }
+                
+        except Exception as e:
+            # Log error and retry
+            error_msg = f"Error syncing applicant {tracking_id}: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            # Retry the task
+            try:
+                raise self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                return {
+                    'success': False,
+                    'tracking_id': tracking_id,
+                    'error': f"Max retries exceeded: {str(e)}"
+                }
 
 
 @celery.task(bind=True)
@@ -501,79 +502,79 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
         dict: Summary of the bulk sync operation
     """
     start_time = datetime.now()
-    
-    try:
-        # Get list of applicants to sync
-        if tracking_ids is None:
-            # Fetch all applicants (or unsynced applicants)
-            if filter_unsynced:
-                applicants = TblOnlineApplication.get_unsynced_applicants()
-            else:
-                applicants = TblOnlineApplication.get_all_applicants()
+    with flask_app.app_context():
+        try:
+            # Get list of applicants to sync
+            if tracking_ids is None:
+                # Fetch all applicants (or unsynced applicants)
+                if filter_unsynced:
+                    applicants = TblOnlineApplication.get_unsynced_applicants()
+                else:
+                    applicants = TblOnlineApplication.get_all_applicants()
 
-            tracking_ids = [a.get('tracking_id') for a in applicants if a.get('tracking_id')]
+                tracking_ids = [a.get('tracking_id') for a in applicants if a.get('tracking_id')]
 
-        total_applicants = len(tracking_ids)
+            total_applicants = len(tracking_ids)
 
-        if total_applicants == 0:
+            if total_applicants == 0:
+                return {
+                    'success': True,
+                    'message': 'No applicants to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0
+                }
+            
+            # Create batches
+            batches = [tracking_ids[i:i + batch_size] for i in range(0, len(tracking_ids), batch_size)]
+
+            flask_app.logger.info(f"Starting bulk sync of {total_applicants} applicants in {len(batches)} batches")
+
+            # Process batches using Celery groups
+            job = group(
+                process_applicants_batch.s(batch, batch_idx, len(batches))
+                for batch_idx, batch in enumerate(batches, 1)
+            )
+            
+            # Execute and wait for results
+            result = job.apply_async()
+            batch_results = result.get()
+            
+            # Aggregate results
+            total_synced = sum(r['synced'] for r in batch_results)
+            total_failed = sum(r['failed'] for r in batch_results)
+            total_skipped = sum(r['skipped'] for r in batch_results)
+            
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            flask_app.logger.info(
+                f"Bulk sync completed: {total_synced} synced, {total_failed} failed, "
+                f"{total_skipped} skipped in {duration:.2f} seconds"
+            )
+            
             return {
                 'success': True,
-                'message': 'No applicants to sync',
-                'total': 0,
-                'synced': 0,
-                'failed': 0,
-                'skipped': 0
+                'message': f'Bulk sync completed in {duration:.2f} seconds',
+                'total': total_applicants,
+                'synced': total_synced,
+                'failed': total_failed,
+                'skipped': total_skipped,
+                'batches_processed': len(batches),
+                'duration_seconds': duration
             }
-        
-        # Create batches
-        batches = [tracking_ids[i:i + batch_size] for i in range(0, len(tracking_ids), batch_size)]
-
-        flask_app.logger.info(f"Starting bulk sync of {total_applicants} applicants in {len(batches)} batches")
-
-        # Process batches using Celery groups
-        job = group(
-            process_applicants_batch.s(batch, batch_idx, len(batches))
-            for batch_idx, batch in enumerate(batches, 1)
-        )
-        
-        # Execute and wait for results
-        result = job.apply_async()
-        batch_results = result.get()
-        
-        # Aggregate results
-        total_synced = sum(r['synced'] for r in batch_results)
-        total_failed = sum(r['failed'] for r in batch_results)
-        total_skipped = sum(r['skipped'] for r in batch_results)
-        
-        end_time = datetime.now()
-        duration = (end_time - start_time).total_seconds()
-        
-        flask_app.logger.info(
-            f"Bulk sync completed: {total_synced} synced, {total_failed} failed, "
-            f"{total_skipped} skipped in {duration:.2f} seconds"
-        )
-        
-        return {
-            'success': True,
-            'message': f'Bulk sync completed in {duration:.2f} seconds',
-            'total': total_applicants,
-            'synced': total_synced,
-            'failed': total_failed,
-            'skipped': total_skipped,
-            'batches_processed': len(batches),
-            'duration_seconds': duration
-        }
-        
-    except Exception as e:
-        error_msg = f"Error in bulk sync: {str(e)}"
-        flask_app.logger.error(error_msg)
-        flask_app.logger.error(traceback.format_exc())
-        
-        return {
-            'success': False,
-            'error': error_msg,
-            'details': traceback.format_exc()
-        }
+            
+        except Exception as e:
+            error_msg = f"Error in bulk sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'details': traceback.format_exc()
+            }
 
 
 @celery.task
