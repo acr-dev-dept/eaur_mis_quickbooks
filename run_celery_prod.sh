@@ -31,10 +31,24 @@ kill_existing() {
     fi
 }
 
-# Stop any running Celery worker, Beat, or Flower
+# === KILL ALL RUNNING CELERY PROCESSES SYSTEM-WIDE ===
+echo "Killing all Celery processes..."
+pkill -9 -f 'celery'
+sleep 3
+
+# Stop specific managed services if any PID files exist
 kill_existing "celery_worker"
 kill_existing "celery_beat"
 kill_existing "flower"
+
+# === CLEAR REDIS DATA ===
+echo "Flushing Redis database..."
+if command -v redis-cli > /dev/null 2>&1; then
+    redis-cli -u $CELERY_BROKER_URL flushall
+    echo "✅ Redis cleared successfully."
+else
+    echo "⚠️ redis-cli not found. Skipping Redis cleanup."
+fi
 
 # === ACTIVATE VIRTUAL ENVIRONMENT ===
 source /home/eaur/eaur_mis_quickbooks/venv/bin/activate
@@ -70,3 +84,4 @@ celery -A $APP_MODULE flower \
 echo "✅ Celery worker started (async mode)"
 echo "✅ Standalone Beat started"
 echo "✅ Flower monitoring started at http://localhost:$FLOWER_PORT"
+echo "All Celery services are up and running."
