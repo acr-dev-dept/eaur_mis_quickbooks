@@ -1631,7 +1631,7 @@ class TblOnlineApplication(MISBaseModel):
             return 0
 
     @staticmethod
-    def get_unsynced_applicants(limit: int = 50, offset: int = 20):
+    def get_unsynced_applicants(limit: int = 50, offset: int = 50):
         """
         Get applicants that have not been synced to QuickBooks with pagination.
 
@@ -1656,7 +1656,6 @@ class TblOnlineApplication(MISBaseModel):
                         ),
                         TblOnlineApplication.appl_date >= last_year_september,
                     )
-                    .order_by(TblOnlineApplication.appl_date.desc())
                     .limit(limit)
                     .offset(offset)  # Add offset to skip already processed records
                     .all()
