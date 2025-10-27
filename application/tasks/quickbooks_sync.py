@@ -1,4 +1,3 @@
-# application/tasks/customer_sync_tasks.py
 from application.api.v1.customer_sync_api import create_response
 from application.models.central_models import QuickBooksConfig
 from application.utils.celery_utils import make_celery
@@ -297,14 +296,14 @@ def process_student_batch(reg_nos, batch_num, total_batches):
             
             if result.success:
                 results['synced'] += 1
-                current_app.logger.debug(f"Successfully synced student {reg_no}")
+                flask_app.logger.debug(f"Successfully synced student {reg_no}")
             else:
                 results['failed'] += 1
                 results['errors'].append({
                     'reg_no': reg_no,
                     'error': result.error_message
                 })
-                current_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
+                flask_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
                 
         except Exception as e:
             results['failed'] += 1
@@ -634,14 +633,14 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
             
             if result.success:
                 results['synced'] += 1
-                current_app.logger.debug(f"Successfully synced applicant {tracking_id}")
+                flask_app.logger.debug(f"Successfully synced applicant {tracking_id}")
             else:
                 results['failed'] += 1
                 results['errors'].append({
                     'tracking_id': tracking_id,
                     'error': result.error_message
                 })
-                current_app.logger.error(f"Failed to sync applicant {tracking_id}: {result.error_message}")
+                flask_app.logger.error(f"Failed to sync applicant {tracking_id}: {result.error_message}")
 
         except Exception as e:
             results['failed'] += 1
@@ -649,10 +648,10 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
                 'tracking_id': tracking_id,
                 'error': str(e)
             })
-            current_app.logger.error(f"Exception syncing applicant {tracking_id}: {str(e)}")
-            current_app.logger.error(traceback.format_exc())
+            flask_app.logger.error(f"Exception syncing applicant {tracking_id}: {str(e)}")
+            flask_app.logger.error(traceback.format_exc())
     
-    current_app.logger.info(
+    flask_app.logger.info(
         f"Batch {batch_num} completed: {results['synced']} synced, "
         f"{results['failed']} failed, {results['skipped']} skipped"
     )
