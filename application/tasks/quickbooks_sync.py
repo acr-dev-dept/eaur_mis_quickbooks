@@ -85,69 +85,70 @@ def sync_single_student_task(self, reg_no):
     Returns:
         dict: Result with success status and details
     """
-    sync_service = CustomerSyncService()
-    
-    try:
-        # Validate QuickBooks connection
-        if not QuickBooksConfig.is_connected():
-            return {
-                'success': False,
-                'reg_no': reg_no,
-                'error': 'QuickBooks not connected'
-            }
+    with flask_app.app_context():
+        sync_service = CustomerSyncService()
         
-        # Fetch student details
-        student = TblPersonalUg.get_student_details(reg_no)
-        
-        if not student:
-            return {
-                'success': False,
-                'reg_no': reg_no,
-                'error': f"Student with reg_no {reg_no} not found"
-            }
-        
-        # Check if already synced
-        if student.get("quickbooks_status") == 1:
-            return {
-                'success': False,
-                'reg_no': reg_no,
-                'error': f"Student already synchronized",
-                'skipped': True
-            }
-        
-        # Perform synchronization
-        result = sync_service.sync_single_student(student)
-        
-        if result.success:
-            return {
-                'success': True,
-                'reg_no': reg_no,
-                'student_id': result.customer_id,
-                'quickbooks_id': result.quickbooks_id,
-                'student_name': f"{student.get('first_name')} {student.get('last_name')}"
-            }
-        else:
-            return {
-                'success': False,
-                'reg_no': reg_no,
-                'error': result.error_message
-            }
-            
-    except Exception as e:
-        # Log error and retry
-        error_msg = f"Error syncing student {reg_no}: {str(e)}"
-        flask_app.logger.error(error_msg)
-        flask_app.logger.error(traceback.format_exc())
-        
-        # Retry the task
         try:
-            raise self.retry(exc=e)
-        except self.MaxRetriesExceededError:
-            return {
-                'success': False,
-                'reg_no': reg_no,
-                'error': f"Max retries exceeded: {str(e)}"
-            }
+            # Validate QuickBooks connection
+            if not QuickBooksConfig.is_connected():
+                return {
+                    'success': False,
+                    'reg_no': reg_no,
+                    'error': 'QuickBooks not connected'
+                }
+            
+            # Fetch student details
+            student = TblPersonalUg.get_student_details(reg_no)
+            
+            if not student:
+                return {
+                    'success': False,
+                    'reg_no': reg_no,
+                    'error': f"Student with reg_no {reg_no} not found"
+                }
+            
+            # Check if already synced
+            if student.get("quickbooks_status") == 1:
+                return {
+                    'success': False,
+                    'reg_no': reg_no,
+                    'error': f"Student already synchronized",
+                    'skipped': True
+                }
+            
+            # Perform synchronization
+            result = sync_service.sync_single_student(student)
+            
+            if result.success:
+                return {
+                    'success': True,
+                    'reg_no': reg_no,
+                    'student_id': result.customer_id,
+                    'quickbooks_id': result.quickbooks_id,
+                    'student_name': f"{student.get('first_name')} {student.get('last_name')}"
+                }
+            else:
+                return {
+                    'success': False,
+                    'reg_no': reg_no,
+                    'error': result.error_message
+                }
+                
+        except Exception as e:
+            # Log error and retry
+            error_msg = f"Error syncing student {reg_no}: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            # Retry the task
+            try:
+                raise self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                return {
+                    'success': False,
+                    'reg_no': reg_no,
+                    'error': f"Max retries exceeded: {str(e)}"
+                }
 
 
 @celery.task(bind=True)
@@ -164,79 +165,79 @@ def bulk_sync_students_task(self, reg_nos=None, batch_size=50, filter_unsynced=T
         dict: Summary of the bulk sync operation
     """
     start_time = datetime.now()
-    
-    try:
-        # Get list of students to sync
-        if reg_nos is None:
-            # Fetch all students (or unsynced students)
-            if filter_unsynced:
-                students = TblPersonalUg.get_unsynced_students()
-            else:
-                students = TblPersonalUg.get_all_students()
+    with flask_app.app_context():
+        try:
+            # Get list of students to sync
+            if reg_nos is None:
+                # Fetch all students (or unsynced students)
+                if filter_unsynced:
+                    students = TblPersonalUg.get_unsynced_students()
+                else:
+                    students = TblPersonalUg.get_all_students()
+                
+                reg_nos = [s.get('reg_no') for s in students if s.get('reg_no')]
             
-            reg_nos = [s.get('reg_no') for s in students if s.get('reg_no')]
-        
-        total_students = len(reg_nos)
-        
-        if total_students == 0:
+            total_students = len(reg_nos)
+            
+            if total_students == 0:
+                return {
+                    'success': True,
+                    'message': 'No students to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0
+                }
+            
+            # Create batches
+            batches = [reg_nos[i:i + batch_size] for i in range(0, len(reg_nos), batch_size)]
+            
+            flask_app.logger.info(f"Starting bulk sync of {total_students} students in {len(batches)} batches")
+            
+            # Process batches using Celery groups
+            job = group(
+                process_student_batch.s(batch, batch_idx, len(batches))
+                for batch_idx, batch in enumerate(batches, 1)
+            )
+            
+            # Execute and wait for results
+            result = job.apply_async()
+            batch_results = result.get()
+            
+            # Aggregate results
+            total_synced = sum(r['synced'] for r in batch_results)
+            total_failed = sum(r['failed'] for r in batch_results)
+            total_skipped = sum(r['skipped'] for r in batch_results)
+            
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            flask_app.logger.info(
+                f"Bulk sync completed: {total_synced} synced, {total_failed} failed, "
+                f"{total_skipped} skipped in {duration:.2f} seconds"
+            )
+            
             return {
                 'success': True,
-                'message': 'No students to sync',
-                'total': 0,
-                'synced': 0,
-                'failed': 0,
-                'skipped': 0
+                'message': f'Bulk sync completed in {duration:.2f} seconds',
+                'total': total_students,
+                'synced': total_synced,
+                'failed': total_failed,
+                'skipped': total_skipped,
+                'batches_processed': len(batches),
+                'duration_seconds': duration
             }
-        
-        # Create batches
-        batches = [reg_nos[i:i + batch_size] for i in range(0, len(reg_nos), batch_size)]
-        
-        flask_app.logger.info(f"Starting bulk sync of {total_students} students in {len(batches)} batches")
-        
-        # Process batches using Celery groups
-        job = group(
-            process_student_batch.s(batch, batch_idx, len(batches))
-            for batch_idx, batch in enumerate(batches, 1)
-        )
-        
-        # Execute and wait for results
-        result = job.apply_async()
-        batch_results = result.get()
-        
-        # Aggregate results
-        total_synced = sum(r['synced'] for r in batch_results)
-        total_failed = sum(r['failed'] for r in batch_results)
-        total_skipped = sum(r['skipped'] for r in batch_results)
-        
-        end_time = datetime.now()
-        duration = (end_time - start_time).total_seconds()
-        
-        flask_app.logger.info(
-            f"Bulk sync completed: {total_synced} synced, {total_failed} failed, "
-            f"{total_skipped} skipped in {duration:.2f} seconds"
-        )
-        
-        return {
-            'success': True,
-            'message': f'Bulk sync completed in {duration:.2f} seconds',
-            'total': total_students,
-            'synced': total_synced,
-            'failed': total_failed,
-            'skipped': total_skipped,
-            'batches_processed': len(batches),
-            'duration_seconds': duration
-        }
-        
-    except Exception as e:
-        error_msg = f"Error in bulk sync: {str(e)}"
-        flask_app.logger.error(error_msg)
-        flask_app.logger.error(traceback.format_exc())
-        
-        return {
-            'success': False,
-            'error': error_msg,
-            'details': traceback.format_exc()
-        }
+            
+        except Exception as e:
+            error_msg = f"Error in bulk sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'details': traceback.format_exc()
+            }
 
 
 @celery.task
@@ -252,74 +253,75 @@ def process_student_batch(reg_nos, batch_num, total_batches):
     Returns:
         dict: Summary of batch processing
     """
-    flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(reg_nos)} students")
-    
-    sync_service = CustomerSyncService()
-    
-    results = {
-        'batch_num': batch_num,
-        'synced': 0,
-        'failed': 0,
-        'skipped': 0,
-        'errors': []
-    }
-    
-    for reg_no in reg_nos:
-        try:
-            # Validate QuickBooks connection
-            if not QuickBooksConfig.is_connected():
-                results['failed'] += 1
-                results['errors'].append({
-                    'reg_no': reg_no,
-                    'error': 'QuickBooks not connected'
-                })
-                continue
-            
-            # Fetch student details
-            student = TblPersonalUg.get_student_details(reg_no)
-            
-            if not student:
-                results['failed'] += 1
-                results['errors'].append({
-                    'reg_no': reg_no,
-                    'error': f"Student with reg_no {reg_no} not found"
-                })
-                continue
-            
-            # Check if already synced
-            if student.get("quickbooks_status") == 1:
-                results['skipped'] += 1
-                continue
-            
-            # Perform synchronization
-            result = sync_service.sync_single_student(student)
-            
-            if result.success:
-                results['synced'] += 1
-                flask_app.logger.debug(f"Successfully synced student {reg_no}")
-            else:
-                results['failed'] += 1
-                results['errors'].append({
-                    'reg_no': reg_no,
-                    'error': result.error_message
-                })
-                flask_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
+    with flask_app.app_context():
+        flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(reg_nos)} students")
+        
+        sync_service = CustomerSyncService()
+        
+        results = {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': []
+        }
+        
+        for reg_no in reg_nos:
+            try:
+                # Validate QuickBooks connection
+                if not QuickBooksConfig.is_connected():
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'reg_no': reg_no,
+                        'error': 'QuickBooks not connected'
+                    })
+                    continue
                 
-        except Exception as e:
-            results['failed'] += 1
-            results['errors'].append({
-                'reg_no': reg_no,
-                'error': str(e)
-            })
-            flask_app.logger.error(f"Exception syncing student {reg_no}: {str(e)}")
-            flask_app.logger.error(traceback.format_exc())
-    
-    flask_app.logger.info(
-        f"Batch {batch_num} completed: {results['synced']} synced, "
-        f"{results['failed']} failed, {results['skipped']} skipped"
-    )
-    
-    return results
+                # Fetch student details
+                student = TblPersonalUg.get_student_details(reg_no)
+                
+                if not student:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'reg_no': reg_no,
+                        'error': f"Student with reg_no {reg_no} not found"
+                    })
+                    continue
+                
+                # Check if already synced
+                if student.get("quickbooks_status") == 1:
+                    results['skipped'] += 1
+                    continue
+                
+                # Perform synchronization
+                result = sync_service.sync_single_student(student)
+                
+                if result.success:
+                    results['synced'] += 1
+                    flask_app.logger.debug(f"Successfully synced student {reg_no}")
+                else:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'reg_no': reg_no,
+                        'error': result.error_message
+                    })
+                    flask_app.logger.error(f"Failed to sync student {reg_no}: {result.error_message}")
+                    
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'reg_no': reg_no,
+                    'error': str(e)
+                })
+                flask_app.logger.error(f"Exception syncing student {reg_no}: {str(e)}")
+                flask_app.logger.error(traceback.format_exc())
+        
+        flask_app.logger.info(
+            f"Batch {batch_num} completed: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+        
+        return results
 
 
 @celery.task(bind=True)
