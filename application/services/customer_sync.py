@@ -1141,7 +1141,6 @@ class CustomerSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_applicant_sync_status(applicant.get('tracking_id'), CustomerSyncStatus.FAILED.value)
                 self._log_customer_sync_audit(applicant.get('tracking_id'), 'Applicant', 'ERROR', error_msg)
 
                 return CustomerSyncResult(
