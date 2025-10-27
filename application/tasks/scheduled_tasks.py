@@ -1,10 +1,9 @@
 from celery import Celery
 from application.tasks.quickbooks_sync import celery as payment_celery
+from application.tasks.applicant_sync import celery as applicant_celery
 from celery.schedules import crontab
 
-# Pick one Celery instance to configure beat (usually the main one)
-celery = payment_celery  # you can also make a dedicated celery instance if you prefer
-
+celery = Celery('scheduled_tasks')
 celery.conf.beat_schedule = {
     #"sync-payments-every-15-sec": {
         #"task": "application.tasks.quickbooks_sync.sync_payments",
@@ -25,7 +24,7 @@ celery.conf.beat_schedule = {
     #"""
 
     "sync-applicants-every-5-sec": {
-        "task": "application.tasks.applicant_sync.bulk_sync_applicants_task",
+        "task": "application.tasks.quickbooks_sync.bulk_sync_applicants_task",
         "schedule": 5.0,  # every 5 seconds
         "args": (),
     },
