@@ -1607,6 +1607,77 @@ class TblOnlineApplication(MISBaseModel):
             current_app.logger.error(f"Error counting synced applicants: {str(e)}")
             return 0
 
+    @staticmethod
+    def get_unsynced_applicants(limit: int = 20):
+        """
+        Get applicants that have not been synced to QuickBooks,
+        created from last year's September onward.
+
+        Args:
+            limit (int): Maximum number of records to fetch
+
+        Returns:
+            list: List of unsynced applicant records as dictionaries
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                # Determine last year's September 1st
+                now = datetime.now()
+                last_year_september = datetime(year=now.year - 1, month=9, day=1)
+
+                unsynced_applicants = (
+                    session.query(TblOnlineApplication)
+                    .filter(
+                        or_(
+                            TblOnlineApplication.QuickBk_status != 1,  # not pushed
+                            TblOnlineApplication.QuickBk_status.is_(None),  # not synced
+                        ),
+                        TblOnlineApplication.appl_date >= last_year_september,  # created from last year's Sept
+                    )
+                    .order_by(TblOnlineApplication.appl_date.desc())
+                    .limit(limit)
+                    .all()
+                )
+                return [applicant.to_dict() for applicant in unsynced_applicants] if unsynced_applicants else []
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced applicants: {str(e)}")
+            return []
+
+    @staticmethod
+    def get_all_applicants(limit: int = 20):
+        """
+        Get all applicants from last year september with a limit for processing
+
+        Args:
+            limit (int): Maximum number of records to fetch
+        Returns:
+            list: List of applicant records as dictionaries
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                # Determine last year's September 1st
+                now = datetime.now()
+                last_year_september = datetime(year=now.year - 1, month=9, day=1)
+
+                applicants = (
+                    session.query(TblOnlineApplication)
+                    .filter(
+                        TblOnlineApplication.appl_date >= last_year_september,  # created from last year's Sept
+                    )
+                    .order_by(TblOnlineApplication.appl_date.desc())
+                    .limit(limit)
+                    .all()
+                )
+
+                return [applicant.to_dict() for applicant in applicants] if applicants else []
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting all applicants: {str(e)}")
+            return []
+        
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""

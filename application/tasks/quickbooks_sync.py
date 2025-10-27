@@ -75,55 +75,6 @@ def sync_payments(self, limit=50, offset=0):
         return {"error": str(e)}
 
 
-@celery.task(bind=True)
-def sync_applicants(self):
-    """
-    Celery task to synchronize applicants from MIS to QuickBooks.
-    """
-    try:
-        sync_service = CustomerSyncService()
-        unsynchronized_applicants = sync_service.get_unsynchronized_applicants()
-        flask_app.logger.info(
-            f"Retrieved {len(unsynchronized_applicants)} unsynchronized applicants "
-            f"and the type is {type(unsynchronized_applicants)}"
-        )
-        succeeded = 0
-        tracking_ids = []
-        for applicant in unsynchronized_applicants:
-            applicant = applicant.to_dict()
-            tracking_id = applicant.get('tracking_id')
-            try:
-                url = f"https://api.eaur.ac.rw/api/v1/sync/customers/applicant/{tracking_id}"
-                payload = {"batch_size": 50}
-                response = requests.post(url, json=payload, timeout=15)
-
-                if response.status_code == 200:
-                    succeeded += 1
-                    tracking_ids.append(tracking_id)
-                    flask_app.logger.info(
-                        f"Successfully synchronized applicant ID {tracking_id}, response: {response.text}"
-                    )
-                else:
-                    flask_app.logger.error(
-                        f"Failed to sync applicant ID {tracking_id}, status: {response.status_code}, body: {response.text}"
-                    )
-
-            except Exception as e:
-                flask_app.logger.error(f"Exception syncing applicant ID {tracking_id}: {e}")
-                continue
-        flask_app.logger.info(
-            f"Applicant sync completed: {succeeded}/{len(unsynchronized_applicants)} succeeded"
-        )
-        return {
-            "total_succeeded": succeeded,
-            "total_attempted": len(unsynchronized_applicants),
-            "successful_tracking_ids": tracking_ids,
-        }
-    except Exception as e:
-        flask_app.logger.error(f"Error during applicant sync process: {e}")
-        return {"error": str(e)}
-
-
 @celery.task(bind=True, max_retries=3, default_retry_delay=60)
 def sync_single_student_task(self, reg_no):
     """

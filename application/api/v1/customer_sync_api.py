@@ -1298,3 +1298,36 @@ def check_reg_nos_existence():
             'error': error_msg,
             'details': traceback.format_exc()
         }), 500
+    
+@customer_sync_bp.route('/tracking_ids_check', methods=['GET'])
+def check_tracking_ids_existence():
+    try:
+        applicants = TblOnlineApplication.get_unsynced_applicants()
+        if not applicants:
+            return jsonify({
+                'success': True,
+                'message': 'No unsynced applicants found',
+                'tracking_ids': []
+            })
+        tracking_ids = [a.get('tracking_id') for a in applicants if a.get('tracking_id')]
+        if not tracking_ids:
+            return jsonify({
+                'success': True,
+                'message': 'No tracking ids found',
+                'tracking_ids': []
+            })
+        current_app.logger.info(f"Found {len(tracking_ids)} unsynced applicants' tracking_ids.")
+        return jsonify({
+            'success': True,
+            'message': f'Found {len(tracking_ids)} unsynced applicants',
+            'tracking_ids': tracking_ids
+        })
+    except Exception as e:
+        error_msg = f"Error checking tracking ids: {str(e)}"
+        current_app.logger.error(error_msg)
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'details': traceback.format_exc()
+        }), 500
