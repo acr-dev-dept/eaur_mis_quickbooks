@@ -33,7 +33,7 @@ kill_existing() {
 
 # === KILL ALL RUNNING CELERY PROCESSES SYSTEM-WIDE ===
 echo "Killing all Celery processes..."
-pkill -9 -f 'celery'
+pkill -f 'celery'
 sleep 3
 
 # Stop specific managed services if any PID files exist
@@ -44,7 +44,7 @@ kill_existing "flower"
 # === CLEAR REDIS DATA ===
 echo "Flushing Redis database..."
 if command -v redis-cli > /dev/null 2>&1; then
-    redis-cli -u $CELERY_BROKER_URL flushall
+    redis-cli flushall
     echo "✅ Redis cleared successfully."
 else
     echo "⚠️ redis-cli not found. Skipping Redis cleanup."
