@@ -1207,7 +1207,7 @@ class CustomerSyncService:
 
                     applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
                     if applicant:
-                        applicant.QuickBk_Status = status
+                        applicant.QuickBk_status = status
                         applicant.pushed_date = datetime.now()
                         applicant.pushed_by = "CustomerSyncService"
                         applicant.sync_token = sync_token if sync_token else applicant.sync_token
