@@ -487,17 +487,6 @@ def sync_single_applicant(tracking_id: int):
             
             current_app.logger.info(f"Synchronization result for applicant {tracking_id}: {result}")
             if result.success:
-                customer_data = result.get('data', {}).get('Customer', {})
-                sync_token = customer_data.get('SyncToken')
-                update = TblOnlineApplication.update_applicant_quickbooks_status(
-                    tracking_id=tracking_id,
-                    quickbooks_id=result.quickbooks_id,
-                    pushed_by="ApplicantSyncService",
-                    QuickBk_status=1,
-                    sync_token=sync_token
-                )
-                if not update:
-                    current_app.logger.warning(f"Failed to update QuickBooks status for applicant {tracking_id} after sync.")
                 return create_response(
                     success=True,
                     data={

@@ -1129,7 +1129,8 @@ class CustomerSyncService:
                 self._update_applicant_sync_status(
                     applicant.get('tracking_id'),
                     CustomerSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_customer_id
+                    quickbooks_id=qb_customer_id,
+                    sync_token=response['Customer'].get('SyncToken')
                 )
 
                 # Log successful sync
