@@ -589,71 +589,72 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
     Returns:
         dict: Summary of batch processing
     """
-    flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(tracking_ids)} students")
-    
-    sync_service = CustomerSyncService()
-    
-    results = {
-        'batch_num': batch_num,
-        'synced': 0,
-        'failed': 0,
-        'skipped': 0,
-        'errors': []
-    }
+    with flask_app.app_context():
+        flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(tracking_ids)} students")
+        
+        sync_service = CustomerSyncService()
+        
+        results = {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': []
+        }
 
-    for tracking_id in tracking_ids:
-        try:
-            # Validate QuickBooks connection
-            if not QuickBooksConfig.is_connected():
+        for tracking_id in tracking_ids:
+            try:
+                # Validate QuickBooks connection
+                if not QuickBooksConfig.is_connected():
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'tracking_id': tracking_id,
+                        'error': 'QuickBooks not connected'
+                    })
+                    continue
+
+                # Fetch applicant details
+                applicant = TblOnlineApplication.get_applicant_details(tracking_id)
+
+                if not applicant:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'tracking_id': tracking_id,
+                        'error': f"Applicant with tracking_id {tracking_id} not found"
+                    })
+                    continue
+                
+                # Check if already synced
+                if applicant.get("quickbooks_status") == 1:
+                    results['skipped'] += 1
+                    continue
+                
+                # Perform synchronization
+                result = sync_service.sync_single_applicant(applicant)
+                
+                if result.success:
+                    results['synced'] += 1
+                    flask_app.logger.debug(f"Successfully synced applicant {tracking_id}")
+                else:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'tracking_id': tracking_id,
+                        'error': result.error_message
+                    })
+                    flask_app.logger.error(f"Failed to sync applicant {tracking_id}: {result.error_message}")
+
+            except Exception as e:
                 results['failed'] += 1
                 results['errors'].append({
                     'tracking_id': tracking_id,
-                    'error': 'QuickBooks not connected'
+                    'error': str(e)
                 })
-                continue
-
-            # Fetch applicant details
-            applicant = TblOnlineApplication.get_applicant_details(tracking_id)
-
-            if not applicant:
-                results['failed'] += 1
-                results['errors'].append({
-                    'tracking_id': tracking_id,
-                    'error': f"Applicant with tracking_id {tracking_id} not found"
-                })
-                continue
-            
-            # Check if already synced
-            if applicant.get("quickbooks_status") == 1:
-                results['skipped'] += 1
-                continue
-            
-            # Perform synchronization
-            result = sync_service.sync_single_applicant(applicant)
-            
-            if result.success:
-                results['synced'] += 1
-                flask_app.logger.debug(f"Successfully synced applicant {tracking_id}")
-            else:
-                results['failed'] += 1
-                results['errors'].append({
-                    'tracking_id': tracking_id,
-                    'error': result.error_message
-                })
-                flask_app.logger.error(f"Failed to sync applicant {tracking_id}: {result.error_message}")
-
-        except Exception as e:
-            results['failed'] += 1
-            results['errors'].append({
-                'tracking_id': tracking_id,
-                'error': str(e)
-            })
-            flask_app.logger.error(f"Exception syncing applicant {tracking_id}: {str(e)}")
-            flask_app.logger.error(traceback.format_exc())
-    
-    flask_app.logger.info(
-        f"Batch {batch_num} completed: {results['synced']} synced, "
-        f"{results['failed']} failed, {results['skipped']} skipped"
-    )
-    
-    return results
+                flask_app.logger.error(f"Exception syncing applicant {tracking_id}: {str(e)}")
+                flask_app.logger.error(traceback.format_exc())
+        
+        flask_app.logger.info(
+            f"Batch {batch_num} completed: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+        
+        return results
