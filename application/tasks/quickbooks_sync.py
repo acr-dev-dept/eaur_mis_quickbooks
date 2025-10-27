@@ -590,7 +590,7 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
     Returns:
         dict: Summary of batch processing
     """
-    flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(reg_nos)} students")
+    flask_app.logger.info(f"Processing batch {batch_num}/{total_batches} with {len(tracking_ids)} students")
     
     sync_service = CustomerSyncService()
     
