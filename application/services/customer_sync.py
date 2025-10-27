@@ -707,8 +707,6 @@ class CustomerSyncService:
             CustomerSyncResult: Result of the synchronization attempt
         """
         try:
-            # Mark student as in progress
-            self._update_student_sync_status(student.get('per_id_ug'), CustomerSyncStatus.IN_PROGRESS.value)
             
             # Get QuickBooks service
             qb_service = self._get_qb_service()
@@ -1110,9 +1108,6 @@ class CustomerSyncService:
         """
         current_app.logger.info(f"Syncing single applicant: {applicant} and the type is {type(applicant)}")
         try:
-           # Mark applicant as in progress
-            self._update_applicant_sync_status(applicant.get('tracking_id'), CustomerSyncStatus.IN_PROGRESS.value)
-
             # Get QuickBooks service
             qb_service = self._get_qb_service()
 
@@ -1128,7 +1123,7 @@ class CustomerSyncService:
                 qb_customer_id = response['Customer']['Id']
                 self._update_applicant_sync_status(
                     applicant.get('tracking_id'),
-                    CustomerSyncStatus.SYNCED.value,
+                    1,  # SYNCED
                     quickbooks_id=qb_customer_id,
                     sync_token=response['Customer'].get('SyncToken')
                 )
