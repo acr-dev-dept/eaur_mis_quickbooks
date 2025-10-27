@@ -15,6 +15,16 @@ from application.models.mis_models import TblOnlineApplication, TblCountry, TblP
 from datetime import datetime
 from celery import group, shared_task
 
+import redis
+
+# Initialize Redis client (add this at the top of your file with other imports)
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'),
+    port=int(os.getenv('REDIS_PORT', 6379)),
+    db=int(os.getenv('REDIS_DB', 0)),
+    decode_responses=True
+)
+
 flask_app = create_app(os.getenv('FLASK_ENV', 'development'))
 flask_app.logger.setLevel(logging.DEBUG)
 flask_app.logger.info("Starting QuickBooks sync task")
@@ -491,47 +501,77 @@ def sync_single_applicant_task(self, tracking_id):
                 }
 
 
+
 @celery.task(bind=True)
-def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_unsynced=True):
+def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
     """
-    Celery task to synchronize multiple applicants in batches
+    Celery task to synchronize multiple applicants in batches with offset tracking
 
     Args:
         tracking_ids: List of applicant tracking IDs (optional, fetches all if None)
         batch_size: Number of applicants to process in each batch
         filter_unsynced: Only sync applicants not already in QuickBooks
+        reset_offset: If True, reset the offset to 0 and start from beginning
     Returns:
         dict: Summary of the bulk sync operation
     """
     start_time = datetime.now()
+    offset_key = 'applicant_sync:offset'
+    
     with flask_app.app_context():
         try:
+            # Handle offset
+            if reset_offset:
+                redis_client.set(offset_key, 0)
+                flask_app.logger.info("Sync offset reset to 0")
+            
+            # Get current offset from Redis
+            current_offset = int(redis_client.get(offset_key) or 0)
+            
             # Get list of applicants to sync
             if tracking_ids is None:
-                # Fetch all applicants (or unsynced applicants)
+                # Fetch applicants with offset
                 if filter_unsynced:
-                    applicants = TblOnlineApplication.get_unsynced_applicants()
+                    applicants = TblOnlineApplication.get_unsynced_applicants(
+                        limit=batch_size,
+                        offset=current_offset
+                    )
                 else:
-                    applicants = TblOnlineApplication.get_all_applicants()
+                    applicants = TblOnlineApplication.get_all_applicants(
+                        limit=batch_size,
+                        offset=current_offset
+                    )
 
                 tracking_ids = [a.get('tracking_id') for a in applicants if a.get('tracking_id')]
+            else:
+                # If specific tracking_ids provided, don't use offset
+                current_offset = None
 
             total_applicants = len(tracking_ids)
 
             if total_applicants == 0:
+                # Reset offset when no more records found
+                if current_offset is not None:
+                    redis_client.set(offset_key, 0)
+                    flask_app.logger.info("No more applicants to sync. Offset reset to 0.")
+                
                 return {
                     'success': True,
                     'message': 'No applicants to sync',
                     'total': 0,
                     'synced': 0,
                     'failed': 0,
-                    'skipped': 0
+                    'skipped': 0,
+                    'offset': current_offset,
+                    'offset_reset': True
                 }
             
             # Create batches
             batches = [tracking_ids[i:i + batch_size] for i in range(0, len(tracking_ids), batch_size)]
 
-            flask_app.logger.info(f"Starting bulk sync of {total_applicants} applicants in {len(batches)} batches")
+            flask_app.logger.info(
+                f"Starting bulk sync at offset {current_offset} with {total_applicants} applicants in {len(batches)} batches"
+            )
 
             # Process batches using Celery groups
             job = group(
@@ -548,6 +588,19 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
             total_failed = sum(r['failed'] for r in batch_results)
             total_skipped = sum(r['skipped'] for r in batch_results)
             
+            # Update offset in Redis (only if we used offset-based fetching)
+            if current_offset is not None:
+                # Increment offset by successfully processed records (synced + skipped)
+                # Don't count failed records so they can be retried
+                new_offset = current_offset + total_synced + total_skipped
+                redis_client.set(offset_key, new_offset)
+                
+                flask_app.logger.info(
+                    f"Updated sync offset from {current_offset} to {new_offset}"
+                )
+            else:
+                new_offset = None
+            
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
             
@@ -555,6 +608,9 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
                 f"Bulk sync completed: {total_synced} synced, {total_failed} failed, "
                 f"{total_skipped} skipped in {duration:.2f} seconds"
             )
+            
+            # Check if we should trigger next batch
+            has_more = len(applicants) == batch_size if tracking_ids is None else False
             
             return {
                 'success': True,
@@ -564,7 +620,10 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
                 'failed': total_failed,
                 'skipped': total_skipped,
                 'batches_processed': len(batches),
-                'duration_seconds': duration
+                'duration_seconds': duration,
+                'offset': current_offset,
+                'new_offset': new_offset,
+                'has_more': has_more
             }
             
         except Exception as e:
@@ -575,9 +634,140 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
             return {
                 'success': False,
                 'error': error_msg,
-                'details': traceback.format_exc()
+                'details': traceback.format_exc(),
+                'offset': current_offset if 'current_offset' in locals() else None
             }
 
+
+@celery.task
+def continuous_sync_applicants_task(batch_size=50, max_batches=None):
+    """
+    Continuously sync applicants in batches until all are synced
+    
+    Args:
+        batch_size: Number of applicants per batch
+        max_batches: Maximum number of batches to process (None = unlimited)
+    
+    Returns:
+        dict: Summary of all batches processed
+    """
+    with flask_app.app_context():
+        flask_app.logger.info(f"Starting continuous sync with batch_size={batch_size}")
+        
+        all_synced = 0
+        all_failed = 0
+        all_skipped = 0
+        batches_processed = 0
+        
+        try:
+            while True:
+                # Check if we've reached max batches
+                if max_batches and batches_processed >= max_batches:
+                    flask_app.logger.info(f"Reached max batches limit: {max_batches}")
+                    break
+                
+                # Process one batch
+                result = bulk_sync_applicants_task(
+                    batch_size=batch_size,
+                    filter_unsynced=True,
+                    reset_offset=False
+                )
+                
+                if not result.get('success'):
+                    flask_app.logger.error(f"Batch failed: {result.get('error')}")
+                    break
+                
+                # Accumulate results
+                all_synced += result.get('synced', 0)
+                all_failed += result.get('failed', 0)
+                all_skipped += result.get('skipped', 0)
+                batches_processed += 1
+                
+                # Check if there are more records
+                if not result.get('has_more', False):
+                    flask_app.logger.info("No more applicants to sync")
+                    break
+                
+                # Wait a bit before next batch to avoid overwhelming the system
+                import time
+                time.sleep(2)
+            
+            return {
+                'success': True,
+                'message': f'Continuous sync completed',
+                'total_batches': batches_processed,
+                'total_synced': all_synced,
+                'total_failed': all_failed,
+                'total_skipped': all_skipped
+            }
+            
+        except Exception as e:
+            error_msg = f"Error in continuous sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'batches_processed': batches_processed,
+                'total_synced': all_synced,
+                'total_failed': all_failed,
+                'total_skipped': all_skipped
+            }
+
+
+@celery.task
+def reset_applicant_sync_offset():
+    """
+    Reset the sync offset to start from beginning
+    
+    Returns:
+        dict: Confirmation message
+    """
+    with flask_app.app_context():
+        try:
+            redis_client.set('applicant_sync:offset', 0)
+            flask_app.logger.info("Applicant sync offset reset to 0")
+            return {
+                'success': True,
+                'message': 'Sync offset reset to 0'
+            }
+        except Exception as e:
+            flask_app.logger.error(f"Error resetting offset: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+
+@celery.task
+def get_sync_progress():
+    """
+    Get current sync progress information
+    
+    Returns:
+        dict: Current offset and unsynced count
+    """
+    with flask_app.app_context():
+        try:
+            current_offset = int(redis_client.get('applicant_sync:offset') or 0)
+            
+            # Get total unsynced count
+            total_unsynced = TblOnlineApplication.count_unsynced_applicants()
+            
+            return {
+                'success': True,
+                'current_offset': current_offset,
+                'total_unsynced': total_unsynced,
+                'remaining': max(0, total_unsynced - current_offset)
+            }
+        except Exception as e:
+            flask_app.logger.error(f"Error getting sync progress: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+        
 
 @celery.task
 def process_applicants_batch(tracking_ids, batch_num, total_batches):
@@ -638,6 +828,8 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
                 if result.success:
                     results['synced'] += 1
                     flask_app.logger.debug(f"Successfully synced applicant {tracking_id}")
+                    # Update applicant status to synced
+                    TblOnlineApplication.update_applicant_status(tracking_id, 1)
                 else:
                     results['failed'] += 1
                     results['errors'].append({

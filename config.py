@@ -61,6 +61,16 @@ class Config:
     task_track_started = True
     task_time_limit = 30 * 60  # 30 minutes per task
 
+    import redis
+
+    # Initialize Redis client (add this at the top of your file with other imports)
+    redis_client = redis.Redis(
+        host=os.getenv('REDIS_HOST', 'localhost'),
+        port=int(os.getenv('REDIS_PORT', 6379)),
+        db=int(os.getenv('REDIS_DB', 0)),
+        decode_responses=True
+    )
+
     
     # Logging Configuration
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')

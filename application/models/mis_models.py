@@ -1606,22 +1606,44 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error counting synced applicants: {str(e)}")
             return 0
+        
+    @staticmethod
+    def count_unsynced_applicants():
+        """
+        Count total number of applicants not yet synced to QuickBooks
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                now = datetime.now()
+                last_year_september = datetime(year=now.year - 1, month=9, day=1)
+
+                count = session.query(TblOnlineApplication).filter(
+                    or_(
+                        TblOnlineApplication.QuickBk_status != 1,
+                        TblOnlineApplication.QuickBk_status.is_(None),
+                    ),
+                    TblOnlineApplication.appl_date >= last_year_september,
+                ).count()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting unsynced applicants: {str(e)}")
+            return 0
 
     @staticmethod
-    def get_unsynced_applicants(limit: int = 20):
+    def get_unsynced_applicants(limit: int = 50, offset: int = 20):
         """
-        Get applicants that have not been synced to QuickBooks,
-        created from last year's September onward.
+        Get applicants that have not been synced to QuickBooks with pagination.
 
         Args:
             limit (int): Maximum number of records to fetch
+            offset (int): Number of records to skip
 
         Returns:
             list: List of unsynced applicant records as dictionaries
         """
         try:
             with MISBaseModel.get_session() as session:
-                # Determine last year's September 1st
                 now = datetime.now()
                 last_year_september = datetime(year=now.year - 1, month=9, day=1)
 
@@ -1629,13 +1651,14 @@ class TblOnlineApplication(MISBaseModel):
                     session.query(TblOnlineApplication)
                     .filter(
                         or_(
-                            TblOnlineApplication.QuickBk_status != 1,  # not pushed
-                            TblOnlineApplication.QuickBk_status.is_(None),  # not synced
+                            TblOnlineApplication.QuickBk_status != 1,
+                            TblOnlineApplication.QuickBk_status.is_(None),
                         ),
-                        TblOnlineApplication.appl_date >= last_year_september,  # created from last year's Sept
+                        TblOnlineApplication.appl_date >= last_year_september,
                     )
                     .order_by(TblOnlineApplication.appl_date.desc())
                     .limit(limit)
+                    .offset(offset)  # Add offset to skip already processed records
                     .all()
                 )
                 return [applicant.to_dict() for applicant in unsynced_applicants] if unsynced_applicants else []
@@ -1677,7 +1700,30 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting all applicants: {str(e)}")
             return []
-        
+    
+    @staticmethod
+    def update_applicant_status(tracking_id, status):
+        """
+        Update application status for an applicant
+
+        Args:
+            tracking_id (str): Applicant tracking ID
+            status (int): New application status
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with TblOnlineApplication.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
+                if applicant:
+                    applicant.status = status
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating application status for applicant {tracking_id}: {str(e)}")
+            return False
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
