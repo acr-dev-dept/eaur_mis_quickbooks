@@ -57,7 +57,7 @@ def get_accounts():
 
 
 @quickbooks_bp.route('/create_account_in_chart', methods=['POST'])
-def create_account():
+def create_account_in_chart():
     """Create a new account.
         payload = {
             "Name": "New Account",
