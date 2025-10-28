@@ -74,10 +74,10 @@ def sync_income_category():
         
         return jsonify({
             'success': True,
-            'data': {'synced': result},
+            'data': {'synced': result.to_dict() if hasattr(result, "to_dict") else str(result)},
             'message': 'Income category synchronization completed'
+        }), 200
 
-        })
     except Exception as e:
         current_app.logger.error(f"Exception in sync_income_category API: {str(e)}")
         traceback_str = traceback.format_exc()

@@ -39,6 +39,14 @@ class IncomeSyncResult:
     qb_sync_token: int
     status: IncomeSyncStatus
 
+    def to_dict(self):
+        return {
+            "category_id": self.category_id,
+            "qb_account_id": self.qb_account_id,
+            "qb_sync_token": self.qb_sync_token,
+            "status": self.status.name  # Convert Enum to string (e.g. "SYNCED")
+        }
+    
 class IncomeSyncService:
     """Service to handle income category synchronization with QuickBooks."""
 
