@@ -32,11 +32,12 @@ celery.conf.beat_schedule = {
         }
 
     },
-    "sync-students-every-15-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_students_task",
-        "schedule": 15.0,  # every 15 seconds
-        "args": (),
-    },
+
+    #"sync-students-every-15-sec": {
+    #    "task": "application.tasks.quickbooks_sync.bulk_sync_students_task",
+    #    "schedule": 15.0,  # every 15 seconds
+    #    "args": (),
+    #},
 }
 
 celery.conf.timezone = "Africa/Kigali"
