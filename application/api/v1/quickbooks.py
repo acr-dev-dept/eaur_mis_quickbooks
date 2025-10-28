@@ -123,6 +123,8 @@ def create_account_in_chart():
         }), 500
     
 
+
+
 @quickbooks_bp.route('/get_vendors', methods=['GET'])
 def get_vendors():
     """Get vendors."""

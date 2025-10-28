@@ -945,6 +945,10 @@ class TblIncomeCategory(MISBaseModel):
     Quickbk_Status = db.Column(db.Integer, default='0')
     pushed_date = db.Column(DateTime)
     pushed_by = db.Column(db.String(200))
+    income_account_qb = db.Column(db.Integer)  # QuickBooks Income Account ID
+    income_account_status = db.Column(db.Integer)  # Status of income account sync
+    sync_token_income = db.Column(db.Integer)  # To store QuickBooks SyncToken for income account
+    sync_token = db.Column(db.Integer)  # To store QuickBooks SyncToken for other accounts
 
     # Relationships 
     camp = relationship("TblCampus", backref="income_categories", lazy='joined')
@@ -979,7 +983,11 @@ class TblIncomeCategory(MISBaseModel):
             'QuickBk_ctgId': self.QuickBk_ctgId,
             'Quickbk_Status': self.Quickbk_Status,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-            'pushed_by': self.pushed_by
+            'pushed_by': self.pushed_by,
+            'income_account_qb': self.income_account_qb,
+            'income_account_status': self.income_account_status,
+            'sync_token_income': self.sync_token_income,
+            'sync_token': self.sync_token
         }
     @staticmethod
     def get_category_by_id(category_id):
@@ -1105,6 +1113,25 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error counting synced income categories: {str(e)}")
             return 0
+
+    @staticmethod
+    def get_unsynced_income_categories():
+        """Get income categories that have not been synced as income accounts to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                unsynced_categories = session.query(TblIncomeCategory).filter(
+                    or_(
+                        TblIncomeCategory.income_account_status != 1,
+                        TblIncomeCategory.income_account_status.is_(None)
+                    ),
+                    TblIncomeCategory.status_Id == 1
+                ).all()
+                return [cat.to_dict() for cat in unsynced_categories] if unsynced_categories else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced income categories for income accounts: {str(e)}")
+            return []
+        
 
     @staticmethod
     def fetch_paginated_categories(start: int = 0, length: int = 50, search: str = None):
