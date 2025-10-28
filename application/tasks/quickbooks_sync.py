@@ -423,7 +423,6 @@ def sync_invoices(self, batch_size=20):
         return {"error": str(e)}
     
 
-# application/tasks/scheduled_tasks.py
 @celery.task(bind=True, max_retries=3, default_retry_delay=60)
 def sync_single_applicant_task(self, tracking_id):
     """
@@ -527,7 +526,7 @@ def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_uns
             
             # Get current offset from Redis
             current_offset = int(redis_client.get(offset_key) or 0)
-            
+            current_app.logger.info(f"Current sync offset: {current_offset}")
             # Get list of applicants to sync
             if tracking_ids is None:
                 # Fetch applicants with offset

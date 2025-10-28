@@ -23,10 +23,14 @@ celery.conf.beat_schedule = {
     #},
     #"""
 
-    "sync-applicants-every-5-sec": {
+    "sync-applicants-every-300-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_applicants_task",
-        "schedule": 5.0,  # every 5 seconds
+        "schedule": 300.0,  # every 300 seconds
         "args": (),
+        "options":{
+            "expires": 290,  # Task expires in 290 seconds
+        }
+
     },
     "sync-students-every-15-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_students_task",
