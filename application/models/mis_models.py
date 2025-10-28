@@ -18,6 +18,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.orm import joinedload, foreign, load_only
 from flask import current_app
 from sqlalchemy import cast, String
+from flask import current_app
 
 
 
@@ -1007,7 +1008,6 @@ class TblIncomeCategory(MISBaseModel):
                 current_app.logger.info(f"Fetched category data for ID {category_id}: {cat_data_dict}")
                 return cat_data_dict
         except Exception as e:
-            from flask import current_app
             current_app.logger.error(f"Error getting income category for ID {category_id}: {str(e)}")
             return None
 
