@@ -1153,7 +1153,6 @@ class CustomerSyncService:
         except Exception as e:
             # Handle exception
             error_msg = str(e)
-            self._update_applicant_sync_status(applicant.get('tracking_id'), CustomerSyncStatus.FAILED.value)
             self._log_customer_sync_audit(applicant.get('tracking_id'), 'Applicant', 'ERROR', error_msg)
 
             return CustomerSyncResult(

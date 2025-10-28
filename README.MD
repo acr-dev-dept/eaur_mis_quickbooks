@@ -328,6 +328,8 @@ requirements needed:
    
    2. ItemRef id while syncing invoices to quickbooks
    3. IncomeAccountRef while referencing syncing Payments to QB
+   4. Classes (Student, Applicant)
+   5. Departments/Locations (Kigali campus, Nyagatare Campus) for the purpose of invoicing
 
 ## Order of Syncing
    0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
