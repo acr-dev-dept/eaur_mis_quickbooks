@@ -172,6 +172,7 @@ def register_blueprints(app):
     from application.routes.payments import payments_route
     from application.routes.items import items_route
     from application.routes.students import students_route
+    from application.api.v1.income_sync_api import income_sync_api
     
 
     # Register blueprints
@@ -195,6 +196,7 @@ def register_blueprints(app):
     from application.routes.website.web import web_route
     app.register_blueprint(web_route)  # No prefix, routes define their own
     
+    app.register_blueprint(income_sync_api, url_prefix='/api/v1/sync/income')
 
 
 
