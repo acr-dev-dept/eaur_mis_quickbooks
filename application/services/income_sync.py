@@ -74,6 +74,7 @@ class IncomeSyncService:
             # Prepare payload for QuickBooks
             payload = {
                 "Name": category['name'],
+                "Description": f"Income Category Sync: {category['name']}",
                 "AccountType": "Income",
             }
             qb_service = self._get_qb_service()
