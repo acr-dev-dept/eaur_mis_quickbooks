@@ -45,6 +45,14 @@ class IncomeSyncService:
     def __init__(self):
         self.qb_service = QuickBooks()
 
+    def _get_qb_service(self) -> QuickBooks:
+        """Get QuickBooks service instance"""
+        if not self.qb_service:
+            if not QuickBooksConfig.is_connected():
+                raise Exception("QuickBooks is not connected. Please authenticate first.")
+            self.qb_service = QuickBooks()
+        return self.qb_service
+
 
     def _update_income_category_sync_status(self, category_id: int, qb_account_id: str, qb_sync_token: int, status: IncomeSyncStatus):
         """Update the synchronization status of an income category."""
@@ -69,9 +77,9 @@ class IncomeSyncService:
                 "Description": category.get('description', ''),
                 "AccountType": "Income",
             }
-
+            qb_service = self._get_qb_service()
             # Call QuickBooks API to create income category
-            response = self.qb_service.create_account(account_data=payload)
+            response = qb_service.create_account(account_data=payload, realm_id=qb_service.realm_id)
             current_app.logger.info(f"Income category synced: {response}")
 
             if 'Account' in response:
