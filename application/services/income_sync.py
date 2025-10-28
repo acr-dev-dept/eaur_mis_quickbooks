@@ -61,7 +61,7 @@ class IncomeSyncService:
             category.income_account_qb = qb_account_id
             category.sync_token_income = qb_sync_token
             category.income_account_status = status.value
-            category.pushed_date = datetime.utc()
+            category.pushed_date = datetime.utcnow()
             category.pushed_by = 'IncomeSyncService'
             db.session.commit()
             current_app.logger.info(f"Updated income category {category_id} sync status to {status.name}")
@@ -94,7 +94,7 @@ class IncomeSyncService:
                 # Log successful sync
                 audit_log = QuickbooksAuditLog(
                     action_type='IncomeCategory',
-                    operational_status=200,
+                    operational_status='SUCCESS',
                     error_message=None,
                     request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                     response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
@@ -115,7 +115,7 @@ class IncomeSyncService:
                 # Log failed sync
                 audit_log = QuickbooksAuditLog(
                     action_type='IncomeCategory',
-                    operational_status=400,
+                    operational_status='FAILED',
                     error_message=error_message,
                     request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                     response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
@@ -135,7 +135,7 @@ class IncomeSyncService:
             # Log exception
             audit_log = QuickbooksAuditLog(
                 action_type='IncomeCategory',
-                operational_status=400,
+                operational_status='FAILED',
                 error_message=str(e),
                 request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                 response_payload=traceback_str
