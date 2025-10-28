@@ -56,7 +56,7 @@ def get_accounts():
         return jsonify({'error': 'Error getting accounts'}), 500
 
 
-@quickbooks_bp.route('/create_account', methods=['POST'])
+@quickbooks_bp.route('/create_account_in_chart', methods=['POST'])
 def create_account():
     """Create a new account.
         payload = {
