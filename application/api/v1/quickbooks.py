@@ -59,10 +59,10 @@ def get_accounts():
 @quickbooks_bp.route('/create_account', methods=['POST'])
 def create_account():
     """Create a new account.
-    payload = {
-        "Name": "New Account",
-        "AccountType": "Expense"
-        }
+        payload = {
+            "Name": "New Account",
+            "AccountType": "Expense"
+            }
     """
     try:
         # Check if QuickBooks is configured
