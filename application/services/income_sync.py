@@ -94,7 +94,7 @@ class IncomeSyncService:
                 # Log successful sync
                 audit_log = QuickbooksAuditLog(
                     action_type='IncomeCategory',
-                    operational_status='SUCCESS',
+                    operation_status='SUCCESS',
                     error_message=None,
                     request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                     response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
@@ -115,7 +115,7 @@ class IncomeSyncService:
                 # Log failed sync
                 audit_log = QuickbooksAuditLog(
                     action_type='IncomeCategory',
-                    operational_status='FAILED',
+                    operation_status='FAILED',
                     error_message=error_message,
                     request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                     response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
@@ -135,7 +135,7 @@ class IncomeSyncService:
             # Log exception
             audit_log = QuickbooksAuditLog(
                 action_type='IncomeCategory',
-                operational_status='FAILED',
+                operation_status='FAILED',
                 error_message=str(e),
                 request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
                 response_payload=traceback_str
