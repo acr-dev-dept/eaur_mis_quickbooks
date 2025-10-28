@@ -74,7 +74,6 @@ class IncomeSyncService:
             # Prepare payload for QuickBooks
             payload = {
                 "Name": category['name'],
-                "Description": f"Income Category Sync: {category['name']}",
                 "AccountType": "Income",
             }
             qb_service = self._get_qb_service()
@@ -94,11 +93,11 @@ class IncomeSyncService:
 
                 # Log successful sync
                 audit_log = QuickbooksAuditLog(
-                    entity_type='IncomeCategory',
-                    entity_id=category['id'],
-                    action='SYNC',
-                    status='SUCCESS',
-                    details=json.dumps(response, cls=EnhancedJSONEncoder)
+                    action_type='IncomeCategory',
+                    operational_status=200,
+                    error_message=None,
+                    request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
+                    response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
                 )
                 db.session.add(audit_log)
                 db.session.commit()
@@ -115,11 +114,11 @@ class IncomeSyncService:
                 current_app.logger.error(f"Failed to sync income category {category['id']}: {error_message}")
                 # Log failed sync
                 audit_log = QuickbooksAuditLog(
-                    entity_type='IncomeCategory',
-                    entity_id=category['id'],
-                    action='SYNC',
-                    status='FAILED',
-                    details=error_message
+                    action_type='IncomeCategory',
+                    operational_status=400,
+                    error_message=error_message,
+                    request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
+                    response_payload=json.dumps(response, cls=EnhancedJSONEncoder)
                 )
                 db.session.add(audit_log)
                 db.session.commit()
@@ -135,11 +134,11 @@ class IncomeSyncService:
             current_app.logger.error(traceback_str)
             # Log exception
             audit_log = QuickbooksAuditLog(
-                entity_type='IncomeCategory',
-                entity_id=category['id'],
-                action='SYNC',
-                status='FAILED',
-                details=str(e)
+                action_type='IncomeCategory',
+                operational_status=400,
+                error_message=str(e),
+                request_payload=json.dumps(payload, cls=EnhancedJSONEncoder),
+                response_payload=traceback_str
             )
             db.session.add(audit_log)
             db.session.commit()
