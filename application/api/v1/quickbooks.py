@@ -55,6 +55,74 @@ def get_accounts():
         current_app.logger.error(f"Error getting accounts: {e}")
         return jsonify({'error': 'Error getting accounts'}), 500
 
+
+@quickbooks_bp.route('/create_account', methods=['POST'])
+def create_account():
+    """Create a new account.
+    payload = {
+        "Name": "New Account",
+        "AccountType": "Expense"
+        }
+    """
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({'error': 'QuickBooks not connected'}), 400
+
+        # Validate request data
+        if not request.json:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided',
+                'message': 'Please provide account data in JSON format'
+            }), 400
+
+        account_data = request.json
+
+        # Basic validation for required fields
+        if 'Name' not in account_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: Name',
+                'message': 'Account must have a name'
+            }), 400
+
+        if 'AccountType' not in account_data:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: AccountType',
+                'message': 'Account must have an account type'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Creating new account')
+
+        result = qb.create_account(qb.realm_id, account_data)
+
+        # Check for errors in the response
+        if 'Fault' in result:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create account',
+                'details': result['Fault']['Error'][0]['Message'] if result['Fault']['Error'] else 'Unknown error'
+            }), 400
+
+        current_app.logger.info("Account created successfully")
+        return jsonify({
+            'success': True,
+            'data': result,
+            'message': 'Account created successfully'
+        }), 201
+
+    except Exception as e:
+        current_app.logger.error(f"Error creating account: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error creating account',
+            'details': str(e)
+        }), 500
+    
+
 @quickbooks_bp.route('/get_vendors', methods=['GET'])
 def get_vendors():
     """Get vendors."""
