@@ -57,36 +57,34 @@ def sync_income_category():
         sync_service = IncomeSyncService()
         category_data = request.json
         if not category_data or 'id' not in category_data:
-            return create_response(
-                success=False,
-                error='Invalid payload',
-                message='Income category ID is required',
-                status_code=400
-            )
+            return jsonify({
+                'success': False,
+                'error': 'Invalid payload',
+                'message': 'Income category ID is required',
+            }), 400
 
         category = TblIncomeCategory.get_category_by_id(category_data['id'])
         if not category:
-            return create_response(
-                success=False,
-                error='Not Found',
-                message=f'Income category with ID {category_data["id"]} not found',
-                status_code=404
-            )
+            return jsonify({
+                'success': False,
+                'error': 'Not Found',
+                'message': f'Income category with ID {category_data["id"]} not found',
+            }), 404
         result = sync_service.sync_income_category(category=category)
         
-        return create_response(
-            success=True,
-            data={'synced': result},
-            message='Income category synchronization completed'
-        )
+        return jsonify({
+            'success': True,
+            'data': {'synced': result},
+            'message': 'Income category synchronization completed'
+
+        })
     except Exception as e:
         current_app.logger.error(f"Exception in sync_income_category API: {str(e)}")
         traceback_str = traceback.format_exc()
         current_app.logger.error(traceback_str)
-        return create_response(
-            success=False,
-            error='Internal Server Error',
-            message='An error occurred while syncing income category',
-            details=str(e),
-            status_code=500
-        )
+        return jsonify({
+            'success': False,
+            'error': 'Internal Server Error',
+            'message': 'An error occurred during income category synchronization',
+            'details': str(e)
+        }), 500
