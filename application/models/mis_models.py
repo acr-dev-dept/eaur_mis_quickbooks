@@ -1004,6 +1004,7 @@ class TblIncomeCategory(MISBaseModel):
             with MISBaseModel.get_session() as session:
                 cat_data_obj=session.query(TblIncomeCategory).filter(TblIncomeCategory.id == category_id, TblIncomeCategory.status_Id == 1, TblIncomeCategory.Quickbk_Status == 1).first()
                 cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
+                current_app.logger.info(f"Fetched category data for ID {category_id}: {cat_data_dict}")
                 return cat_data_dict
         except Exception as e:
             from flask import current_app

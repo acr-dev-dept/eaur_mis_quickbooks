@@ -195,7 +195,6 @@ def register_blueprints(app):
     app.register_blueprint(error_logs_bp)  # No prefix, routes define their own
     from application.routes.website.web import web_route
     app.register_blueprint(web_route)  # No prefix, routes define their own
-    
     app.register_blueprint(income_sync_api, url_prefix='/api/v1/sync/income')
 
 
