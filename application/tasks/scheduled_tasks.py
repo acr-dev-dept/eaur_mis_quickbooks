@@ -16,12 +16,15 @@ celery.conf.beat_schedule = {
     #    "schedule": 15.0,  # every 15 seconds
     #    "args": (),
     #},
-    #"sync-payments-every-15-sec": {
-    #    "task": "application.tasks.quickbooks_sync.sync_payments",
-    #   "schedule": 15.0,  # every 15 seconds
-    #   "args": (),
-    #},
-    #"""
+    "sync-payments-every-150-sec": {
+        "task": "application.tasks.quickbooks_sync.sync_payments",
+       "schedule": 150.0,  # every 150 seconds
+       "args": (),
+         "options":{
+                "expires": 140,  # Task expires in 140 seconds
+         }
+    },
+    
 
     "sync-applicants-every-300-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_applicants_task",
