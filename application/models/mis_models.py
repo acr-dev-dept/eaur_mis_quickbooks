@@ -1062,7 +1062,7 @@ class TblIncomeCategory(MISBaseModel):
             current_app.logger.error(f"Error counting active income categories: {str(e)}")
             return 0
     @staticmethod
-    def update_quickbooks_status(category_id, quickbooks_id, pushed_by):
+    def update_quickbooks_status(category_id, quickbooks_id, pushed_by, sync_token):
         """
         Update QuickBooks sync status for an income category
 
@@ -1081,6 +1081,7 @@ class TblIncomeCategory(MISBaseModel):
                     category.Quickbk_Status = 1  # Mark as synced
                     category.pushed_by = pushed_by
                     category.pushed_date = datetime.utcnow()
+                    category.sync_token = sync_token
                     session.commit()
                     return True
                 return False

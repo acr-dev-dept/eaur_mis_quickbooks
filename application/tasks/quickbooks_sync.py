@@ -895,7 +895,7 @@ def sync_single_income_category_task(self, category_id):
                 }
             
             # Check if already synced
-            if category.get("Quickbk_Status") == 1:
+            if category.get("income_account_status") == 1:
                 return {
                     'success': False,
                     'category_id': category_id,
@@ -990,7 +990,7 @@ def process_income_categories_batch(category_ids, batch_num, total_batches):
                     continue
                 
                 # Check if already synced
-                if category.get("Quickbk_Status") == 1:
+                if category.get("income_account_status") == 1:
                     results['skipped'] += 1
                     flask_app.logger.debug(f"Income category {category_id} already synced, skipping")
                     continue
