@@ -79,6 +79,10 @@ class IncomeSyncService:
     def sync_income_category(self, category: Dict[str, Any]) -> bool:
         """Sync a single income category to QuickBooks."""
         try:
+
+            if len(category['name']) > 100:
+                raise ValueError("Income category name exceeds 100 characters limit, as per QuickBooks API constraints.")
+
             # Prepare payload for QuickBooks
             payload = {
                 "Name": category['name'],

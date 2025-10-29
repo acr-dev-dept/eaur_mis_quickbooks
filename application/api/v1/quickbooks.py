@@ -1387,6 +1387,13 @@ def sync_single_item():
                 'message': 'This income category has already been synced with QuickBooks'
             }), 400
 
+        if len(income_category['name']) > 100:
+            return jsonify({
+                'success': False,
+                'error': 'Income category name too long',
+                'message': 'Income category name must be 100 characters or fewer'
+            }), 400
+
         item_data = {
             "Name": income_category['name'],
             "Type": "Service",
