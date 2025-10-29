@@ -11,9 +11,11 @@ from application.services.customer_sync import CustomerSyncService
 from application.services.invoice_sync import InvoiceSyncService
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import traceback
-from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg
+from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg, TblIncomeCategory
 from datetime import datetime
 from celery import group, shared_task
+from application.services.income_sync import IncomeSyncService
+
 
 import redis
 
@@ -29,6 +31,8 @@ flask_app = create_app(os.getenv('FLASK_ENV', 'development'))
 flask_app.logger.setLevel(logging.DEBUG)
 flask_app.logger.info("Starting QuickBooks sync task")
 celery = make_celery(flask_app)
+
+
 
 
 @celery.task(bind=True)
@@ -852,3 +856,359 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches):
         )
         
         return results
+
+
+
+# Add to application/tasks/scheduled_tasks.py
+
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+def sync_single_income_category_task(self, category_id):
+    """
+    Celery task to synchronize a single income category to QuickBooks
+
+    Args:
+        category_id: Income category ID
+        
+    Returns:
+        dict: Result with success status and details
+    """
+    with flask_app.app_context():
+        sync_service = IncomeSyncService()
+        
+        try:
+            # Validate QuickBooks connection
+            if not QuickBooksConfig.is_connected():
+                return {
+                    'success': False,
+                    'category_id': category_id,
+                    'error': 'QuickBooks not connected'
+                }
+
+            # Fetch income category details
+            category = TblIncomeCategory.get_category_by_id(category_id)
+
+            if not category:
+                return {
+                    'success': False,
+                    'category_id': category_id,
+                    'error': f"Income category with ID {category_id} not found"
+                }
+            
+            # Check if already synced
+            if category.get("Quickbk_Status") == 1:
+                return {
+                    'success': False,
+                    'category_id': category_id,
+                    'error': f"Income category already synchronized",
+                    'skipped': True
+                }
+            
+            # Perform synchronization
+            result = sync_service.sync_income_category(category=category)
+            
+            if hasattr(result, 'status') and result.status == 'SYNCED':
+                return {
+                    'success': True,
+                    'category_id': category_id,
+                    'qb_account_id': result.qb_account_id if hasattr(result, 'qb_account_id') else None,
+                    'qb_sync_token': result.qb_sync_token if hasattr(result, 'qb_sync_token') else None,
+                    'category_name': category.get('name', 'Unknown')
+                }
+            else:
+                error_msg = result.error_message if hasattr(result, 'error_message') else 'Sync failed'
+                return {
+                    'success': False,
+                    'category_id': category_id,
+                    'error': error_msg
+                }
+                
+        except Exception as e:
+            # Log error and retry
+            error_msg = f"Error syncing income category {category_id}: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            # Retry the task
+            try:
+                raise self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                return {
+                    'success': False,
+                    'category_id': category_id,
+                    'error': f"Max retries exceeded: {str(e)}"
+                }
+
+
+@celery.task
+def process_income_categories_batch(category_ids, batch_num, total_batches):
+    """
+    Process a batch of income categories
+
+    Args:
+        category_ids: List of category IDs in this batch
+        batch_num: Current batch number
+        total_batches: Total number of batches
+        
+    Returns:
+        dict: Summary of batch processing
+    """
+    with flask_app.app_context():
+        flask_app.logger.info(
+            f"Processing income category batch {batch_num}/{total_batches} with {len(category_ids)} categories"
+        )
+        
+        sync_service = IncomeSyncService()
+        
+        results = {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': []
+        }
+
+        for category_id in category_ids:
+            try:
+                # Validate QuickBooks connection
+                if not QuickBooksConfig.is_connected():
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'category_id': category_id,
+                        'error': 'QuickBooks not connected'
+                    })
+                    continue
+
+                # Fetch income category details
+                category = TblIncomeCategory.get_category_by_id(category_id)
+
+                if not category:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'category_id': category_id,
+                        'error': f"Income category with ID {category_id} not found"
+                    })
+                    continue
+                
+                # Check if already synced
+                if category.get("Quickbk_Status") == 1:
+                    results['skipped'] += 1
+                    flask_app.logger.debug(f"Income category {category_id} already synced, skipping")
+                    continue
+
+                # Perform synchronization
+                result = sync_service.sync_income_category(category=category)
+
+                # Check if sync was successful based on the response structure
+                if hasattr(result, 'status') and result.status == 'SYNCED':
+                    results['synced'] += 1
+                    results['synced_details'].append({
+                        'category_id': category_id,
+                        'qb_account_id': result.qb_account_id if hasattr(result, 'qb_account_id') else None,
+                        'category_name': category.get('name', 'Unknown')
+                    })
+                    flask_app.logger.info(
+                        f"Successfully synced income category {category_id} "
+                        f"(QB Account ID: {getattr(result, 'qb_account_id', 'N/A')})"
+                    )
+                else:
+                    results['failed'] += 1
+                    error_msg = result.error_message if hasattr(result, 'error_message') else 'Sync failed - unknown status'
+                    results['errors'].append({
+                        'category_id': category_id,
+                        'error': error_msg
+                    })
+                    flask_app.logger.error(f"Failed to sync income category {category_id}: {error_msg}")
+
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'category_id': category_id,
+                    'error': str(e)
+                })
+                flask_app.logger.error(f"Exception syncing income category {category_id}: {str(e)}")
+                flask_app.logger.error(traceback.format_exc())
+        
+        flask_app.logger.info(
+            f"Income category batch {batch_num} completed: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+        
+        return results
+
+
+@celery.task(bind=True)
+def bulk_sync_income_categories_task(self, category_ids=None, batch_size=50, filter_unsynced=True):
+    """
+    Celery task to synchronize multiple income categories in batches
+
+    Args:
+        category_ids: List of income category IDs (optional, fetches all if None)
+        batch_size: Number of categories to process in each batch
+        filter_unsynced: Only sync categories not already in QuickBooks
+        
+    Returns:
+        dict: Summary of the bulk sync operation
+    """
+    start_time = datetime.now()
+    
+    with flask_app.app_context():
+        try:
+            # Get list of income categories to sync
+            if category_ids is None:
+                # Fetch all unsynced income categories at once
+                if filter_unsynced:
+                    categories = TblIncomeCategory.get_unsynced_income_categories()
+                else:
+                    categories = TblIncomeCategory.get_all_categories()
+
+                category_ids = [c.get('id') for c in categories if c.get('id')]
+
+            total_categories = len(category_ids)
+
+            if total_categories == 0:
+                flask_app.logger.info("No income categories found to sync")
+                return {
+                    'success': True,
+                    'message': 'No income categories to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0
+                }
+            
+            flask_app.logger.info(
+                f"Found {total_categories} income categories to sync. "
+                f"First few IDs: {category_ids[:10]}"
+            )
+            
+            # Create batches
+            batches = [category_ids[i:i + batch_size] for i in range(0, len(category_ids), batch_size)]
+
+            flask_app.logger.info(
+                f"Starting bulk sync of {total_categories} income categories in {len(batches)} batches"
+            )
+
+            # Process batches using Celery groups
+            job = group(
+                process_income_categories_batch.s(batch, batch_idx, len(batches))
+                for batch_idx, batch in enumerate(batches, 1)
+            )
+            
+            # Execute and wait for results
+            result = job.apply_async()
+            batch_results = result.get()
+            
+            # Aggregate results
+            total_synced = sum(r['synced'] for r in batch_results)
+            total_failed = sum(r['failed'] for r in batch_results)
+            total_skipped = sum(r['skipped'] for r in batch_results)
+            
+            # Collect all synced details
+            all_synced_details = []
+            all_errors = []
+            for r in batch_results:
+                all_synced_details.extend(r.get('synced_details', []))
+                all_errors.extend(r.get('errors', []))
+            
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            
+            flask_app.logger.info(
+                f"Income category bulk sync completed: {total_synced} synced, {total_failed} failed, "
+                f"{total_skipped} skipped in {duration:.2f} seconds"
+            )
+            
+            return {
+                'success': True,
+                'message': f'Bulk sync completed in {duration:.2f} seconds',
+                'total': total_categories,
+                'synced': total_synced,
+                'failed': total_failed,
+                'skipped': total_skipped,
+                'batches_processed': len(batches),
+                'duration_seconds': duration,
+                'synced_details': all_synced_details[:20],  # First 20 synced items
+                'errors': all_errors[:20] if all_errors else []  # First 20 errors if any
+            }
+            
+        except Exception as e:
+            error_msg = f"Error in income category bulk sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'details': traceback.format_exc()
+            }
+
+
+@celery.task
+def get_income_category_sync_stats():
+    """
+    Get income category sync statistics
+    
+    Returns:
+        dict: Sync statistics
+    """
+    with flask_app.app_context():
+        try:
+            total_count = TblIncomeCategory.get_total_income_count()
+            unsynced_count = TblIncomeCategory.get_unsynced_income_count()
+            synced_count = total_count - unsynced_count
+            
+            return {
+                'success': True,
+                'total_categories': total_count,
+                'synced': synced_count,
+                'unsynced': unsynced_count,
+                'sync_percentage': round((synced_count / total_count * 100), 2) if total_count > 0 else 0
+            }
+        except Exception as e:
+            flask_app.logger.error(f"Error getting income category sync stats: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+
+@celery.task
+def retry_failed_income_categories():
+    """
+    Retry syncing income categories that previously failed
+    Fetches categories with quickbooks_status != 1 that have error messages
+    
+    Returns:
+        dict: Summary of retry operation
+    """
+    with flask_app.app_context():
+        try:
+            # Get unsynced categories (which includes failed ones)
+            failed_categories = TblIncomeCategory.get_unsynced_income_categories()
+            
+            if not failed_categories:
+                return {
+                    'success': True,
+                    'message': 'No failed categories to retry',
+                    'total': 0
+                }
+            
+            flask_app.logger.info(f"Retrying {len(failed_categories)} failed income categories")
+            
+            # Trigger bulk sync for these categories
+            category_ids = [c.get('id') for c in failed_categories if c.get('id')]
+            result = bulk_sync_income_categories_task(
+                category_ids=category_ids,
+                batch_size=50,
+                filter_unsynced=False  # Don't filter, we already have the list
+            )
+            
+            return result
+            
+        except Exception as e:
+            error_msg = f"Error retrying failed income categories: {str(e)}"
+            flask_app.logger.error(error_msg)
+            return {
+                'success': False,
+                'error': error_msg
+            }
