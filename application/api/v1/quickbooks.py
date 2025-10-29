@@ -1394,6 +1394,13 @@ def sync_single_item():
                 'message': 'Income category name must be 100 characters or fewer'
             }), 400
 
+        if not income_category['income_account_qb']:
+            return jsonify({
+                'success': False,
+                'error': 'Missing Income Account Reference',
+                'message': 'Income category must have an associated QuickBooks income account'
+            }), 400
+
         item_data = {
             "Name": income_category['name'],
             "Type": "Service",

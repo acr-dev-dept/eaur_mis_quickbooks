@@ -1396,9 +1396,39 @@ def process_item_batch(item_ids, batch_num, total_batches):
                     results['skipped'] += 1
                     flask_app.logger.debug(f"Item {item_id} already synced, skipping")
                     continue
+                
+                if len(item['name']) > 100:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'item_id': item_id,
+                        'error': 'Item name too long',
+                        'message': 'Item name must be 100 characters or fewer'
+                    })
+                    flask_app.logger.error(f"Item {item_id} name too long, skipping")
+                    continue
+                
+                if not item['income_account_qb']:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'item_id': item_id,
+                        'error': 'Income account not mapped',
+                        'message': 'Please map the income account before syncing'
+                    })
+                    flask_app.logger.error(f"Item {item_id} income account not mapped, skipping")
+                    continue
+
+                item_data = {
+                    "Name": item['name'],
+                    "Type": "Service",
+                    "IncomeAccount": {
+                        "value": item['income_account_qb'],
+                    },
+                    "Description": item['description'] or "No description",
+                    "UnitPrice": 0.0,
+                }
 
                 # Perform synchronization
-                result = sync_service.create_item(item)
+                result = sync_service.create_item(sync_service.realm_id,item_data)
 
                 # Handle result object or dict
                 
