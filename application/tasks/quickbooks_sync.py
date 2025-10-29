@@ -1398,29 +1398,43 @@ def process_item_batch(item_ids, batch_num, total_batches):
                     continue
 
                 # Perform synchronization
-                result = sync_service.sync_single_item(item)
+                result = sync_service.create_item(item)
 
                 # Handle result object or dict
-                if hasattr(result, 'status') and result.status.name == 'SYNCED':
-                    results['synced'] += 1
-                    details = {
-                        'item_id': item_id,
-                        'qb_item_id': getattr(result, 'qb_account_id', None),
-                        'item_name': item.get('name', 'Unknown')
-                    }
-                    results['synced_details'].append(details)
-                    flask_app.logger.info(f"Item {item_id} synced successfully: {details}")
+                
+                if (
+                    isinstance(result, dict)
+                    and result.get("success")                     # ← corresponds to top-level 'success': true
+                    and "data" in result
+                    and "Item" in result["data"]                  # ← corresponds to 'data': {'Item': {...}}
+                ):
+                    qb_item = result["data"]["Item"]              # ← 'Item' block from your response
+                    qb_item_id = qb_item.get("Id")
+                    sync_token = qb_item.get("SyncToken")
+                    name = qb_item.get("Name")
 
-                elif isinstance(result, dict) and result.get('success'):
+                    # Update local DB (same as before)
+                    TblIncomeCategory.update_quickbooks_status(
+                        category_id=item['id'],
+                        quickbooks_id=qb_item_id,
+                        pushed_by="ItemSyncService",
+                        sync_token=sync_token
+                    )
+
                     results['synced'] += 1
                     results['synced_details'].append({
                         'item_id': item_id,
-                        'qb_item_id': result.get('qb_item_id'),
-                        'item_name': item.get('name', 'Unknown')
+                        'qb_item_id': qb_item_id,
+                        'sync_token': sync_token,
+                        'name': name
                     })
+                    flask_app.logger.info(
+                        f"Successfully synced item {item_id} (QB Item ID: {qb_item_id})"
+                    )
+
                 else:
                     results['failed'] += 1
-                    error_msg = getattr(result, 'error_message', None) or result.get('error', 'Unknown error')
+                    error_msg = result.get("message", "Unknown QuickBooks sync failure")
                     results['errors'].append({
                         'item_id': item_id,
                         'error': error_msg
