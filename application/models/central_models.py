@@ -461,3 +461,99 @@ class AuthenticationService:
         """
         permissions = token_payload.get('permissions', [])
         return required_permission in permissions
+
+class QuickBooksClasses(BaseModel):
+    """QuickBooks Classes for categorization"""
+    __tablename__ = 'quickbooks_classes'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    quickbooks_id = Column(Integer, nullable=True)
+    sync_token = Column(Integer, nullable=True)
+    quickbooks_status = Column(Integer, default=None, nullable=False)  # 0 = unsynced, 1 = synced
+
+    def __repr__(self):
+        return f'<QuickBooksClasses {self.name} - QB ID: {self.quickbooks_id}>'
+    
+    def to_dict(self):
+        """Convert model instance to dictionary"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'quickbooks_id': self.quickbooks_id,
+            'sync_token': self.sync_token,
+            'quickbooks_status': self.quickbooks_status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    @staticmethod
+    def get_unsynced_classes():
+        """Retrieve all unsynced QuickBooks classes
+        where quickbooks_status = 0 or is NULL
+        """
+        from application import db as db_manager
+        try:
+            with db_manager.get_session() as session:
+                unsynced_classes = session.query(QuickBooksClasses).filter(
+                    or_(QuickBooksClasses.quickbooks_status == 0, QuickBooksClasses.quickbooks_status.is_(None))
+                ).all()
+                return unsynced_classes
+        except Exception as e:
+            current_app.logger.error(f"Error retrieving unsynced classes: {e}")
+            return []
+        
+    @staticmethod
+    def insert_class(name: str, description: str = None):
+        """Insert a new QuickBooks class into the database."""
+        try:
+            new_class = QuickBooksClasses(
+                name=name,
+                description=description,
+                quickbooks_status=0  # Mark as unsynced initially
+            )
+            db.session.add(new_class)
+            db.session.commit()
+            return new_class
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error inserting QuickBooks class: {e}")
+            return None
+        
+    @staticmethod
+    def bulk_insert_classes(class_dict: dict):
+        """Bulk insert multiple QuickBooks classes from a dictionary."""
+        try:
+            new_classes = []
+            for name, description in class_dict.items():
+                new_class = QuickBooksClasses(
+                    name=name,
+                    description=description,
+                    quickbooks_status=0  # Mark as unsynced initially
+                )
+                new_classes.append(new_class)
+                db.session.add(new_class)
+            db.session.commit()
+            return new_classes
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error bulk inserting QuickBooks classes: {e}")
+            return []
+        
+    @staticmethod
+    def update_quickbooks_status(id: int, quickbooks_id: int, sync_token: int, status: int):
+        """Update QuickBooks status of a class."""
+        try:
+            qb_class = db.session.query(QuickBooksClasses).filter(QuickBooksClasses.id == id).first()
+            if qb_class:
+                qb_class.quickbooks_id = quickbooks_id
+                qb_class.sync_token = sync_token
+                qb_class.quickbooks_status = status
+                db.session.commit()
+                return qb_class
+            return None
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating QuickBooks status: {e}")
+            return None

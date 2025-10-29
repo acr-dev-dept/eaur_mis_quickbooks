@@ -6,7 +6,7 @@ including progress tracking, error handling, and data validation.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -17,7 +17,7 @@ from flask import current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication
+from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
@@ -136,26 +136,35 @@ class InvoiceSyncService:
         Returns:
             TblImvoice: Invoice object
         """
-        try:
-            with db_manager.get_mis_session() as session:
-                invoice = session.query(TblImvoice).options(
-                    joinedload(TblImvoice.level),
-                    joinedload(TblImvoice.fee_category_rel),
-                    joinedload(TblImvoice.module),
-                joinedload(TblImvoice.intake)
-            ).filter(TblImvoice.id == invoice_id, TblImvoice.QuickBk_Status != 1).first()
-            
-            if not invoice:
-                raise Exception(f"Invoice with ID {invoice_id} not found")
-            
-            return invoice
-            
-        except Exception as e:
-            logger.error(f"Error fetching invoice {invoice_id}: {e}")
-            raise Exception(f"The invoice with ID {invoice_id} could not be found or is already synchronized.") from e
-        finally:
-            if 'session' in locals():
-                session.close()
+        with db_manager.get_mis_session() as session:
+            try:
+                invoice = (
+                    session.query(TblImvoice)
+                        .options(
+                            joinedload(TblImvoice.level),
+                            joinedload(TblImvoice.fee_category_rel),
+                            joinedload(TblImvoice.module),
+                            joinedload(TblImvoice.intake),
+                        )
+                        .filter(
+                            TblImvoice.id == invoice_id,
+                            TblImvoice.QuickBk_Status != 1,
+                            TblImvoice.invoice_date >= date(2025, 1, 1)
+                        )
+                        .first()
+                    )
+
+                if not invoice:
+                    raise Exception(f"Invoice with ID {invoice_id} not found")
+                
+                return invoice
+                
+            except Exception as e:
+                current_app.logger.error(f"Error fetching invoice {invoice_id}: {e}")
+                raise Exception(f"The invoice with ID {invoice_id} could not be found or is already synchronized.") from e
+            finally:
+                if 'session' in locals():
+                    session.close()
     def get_unsynchronized_invoices(self, limit: Optional[int] = None, offset: int = 0) -> List[TblImvoice]:
         """
         Get invoices that haven't been synchronized to QuickBooks
@@ -261,7 +270,8 @@ class InvoiceSyncService:
             if invoice.fee_category:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
                 quickbooks_id = category['QuickBk_ctgId'] if category else None
-            
+                camp_id = category['camp_id'] if category else None
+                location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id else None
 
             # if no category found
             if not quickbooks_id:
@@ -276,16 +286,19 @@ class InvoiceSyncService:
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             customer_id = None
+            class_ref_id = None
             
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
+                class_ref_id = "834761"
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
                 current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
+                class_ref_id = "834762"
 
             # Log a warning if no customer reference is found
             else:
@@ -302,6 +315,12 @@ class InvoiceSyncService:
                         "SalesItemLineDetail": {
                             "ItemRef": {
                                 "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
+                            },
+                            "ClassRef": {
+                                "value": class_ref_id if class_ref_id else ''  # must exist in QB
+                            },
+                            "LocationRef": {
+                                "value": location_id if location_id else ''  # must exist in QB
                             },
                             "Qty": 1,
                             "UnitPrice": float(amount)
@@ -451,7 +470,6 @@ class InvoiceSyncService:
         try:
             # Mark invoice as in progress
             current_app.logger.info(f"Invoice data: {invoice}")
-            self._update_invoice_sync_status(invoice.id, SyncStatus.IN_PROGRESS.value)
 
             # Get QuickBooks service
             qb_service = self._get_qb_service()

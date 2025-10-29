@@ -468,6 +468,8 @@ class TblCampus(MISBaseModel):
     camp_yor = db.Column(DateTime, nullable=False)
     camp_active = db.Column(db.Integer, nullable=False)
     camp_comments = db.Column(db.String(255), nullable=False)
+    quickbooks_id = db.Column(db.Integer, nullable=True, server_default=None)
+    quickbooks_status = db.Column(db.Integer, nullable=True, server_default=None)
 
     # Relationships will be added after analyzing foreign keys
 
@@ -488,7 +490,9 @@ class TblCampus(MISBaseModel):
             'camp_city': self.camp_city,
             'camp_yor': self.camp_yor.isoformat() if self.camp_yor else None,
             'camp_active': self.camp_active,
-            'camp_comments': self.camp_comments
+            'camp_comments': self.camp_comments,
+            'quickbooks_id': self.quickbooks_id,
+            'quickbooks_status': self.quickbooks_status
         }
 
     @classmethod
@@ -534,12 +538,35 @@ class TblCampus(MISBaseModel):
                         'year_opened': campus.camp_yor.isoformat() if campus.camp_yor else None,
                         'is_active': campus.camp_active == 1,
                         'comments': campus.camp_comments,
-                        'display_name': f"{campus.camp_full_name} ({campus.camp_city})"
+                        'display_name': f"{campus.camp_full_name} ({campus.camp_city})",
+                        'quickbooks_id': campus.quickbooks_id,
+                        'quickbooks_status': campus.quickbooks_status
                     }
                 return None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting campus details for ID {camp_id}: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_location_id_by_camp_id(camp_id):
+        """
+        Get location ID for QuickBooks by campus ID
+
+        Args:
+            camp_id (int): Campus ID
+        Returns:
+            int: QuickBooks location ID or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                campus = session.query(TblCampus).filter(TblCampus.camp_id == camp_id).first()
+                if campus and campus.quickbooks_id:
+                    return campus.quickbooks_id
+                return None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting location ID for campus ID {camp_id}: {str(e)}")
             return None
 
     def to_quickbooks_format(self):

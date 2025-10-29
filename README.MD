@@ -332,6 +332,7 @@ requirements needed:
    5. Departments/Locations (Kigali campus, Nyagatare Campus) for the purpose of invoicing
 
 ## Order of Syncing
+   00. Creating locations and departments in quickbooks, to hard code them inside Tbl_campus table and on classref before syncing invoices
    0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
 
 
