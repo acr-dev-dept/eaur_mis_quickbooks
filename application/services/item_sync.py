@@ -46,9 +46,9 @@ class ItemSyncService:
                     item_data = {
                         "Name": category['name'],
                         "Type": "Service",
-                        "IncomeAccountRef": {"value": "79"},  # customize if needed
+                        "IncomeAccountRef": category['income_account_qb'],  # customize if needed
                         "Description": category['description'] or "No description",
-                        "UnitPrice": float(category['amount']) if category['amount'] else 0.0,
+                        "UnitPrice": 0.0,
                     }
 
                     current_app.logger.info(f"Syncing category {category['id']} to QuickBooks")
@@ -60,10 +60,12 @@ class ItemSyncService:
                         total_failed += 1
                     else:
                         item_id = result.get("Item", {}).get("Id")
+                        sync_token = result.get("Item", {}).get("SyncToken")
                         TblIncomeCategory.update_quickbooks_status(
                             category_id=category['id'],
                             quickbooks_id=item_id,
                             pushed_by="ItemSyncService",
+                            sync_token=sync_token,
                         )
                         results.append({'id': category['id'], 'status': 'success', 'quickbooks_id': item_id})
                         total_succeeded += 1
