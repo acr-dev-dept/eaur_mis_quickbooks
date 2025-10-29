@@ -40,8 +40,17 @@ celery.conf.beat_schedule = {
     #    "args": (),
     #},
 
-    "sync-income-categories-every-300-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
+    #"sync-income-categories-every-300-sec": {
+    #    "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
+    #    "schedule": 300.0,  # every 300 seconds
+    #    "args": (),
+    #    "options":{
+    #        "expires": 290,  # Task expires in 290 seconds
+    #    }
+    #},
+
+    "sync-items-every-300-sec": {
+        "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
         "schedule": 300.0,  # every 300 seconds
         "args": (),
         "options":{

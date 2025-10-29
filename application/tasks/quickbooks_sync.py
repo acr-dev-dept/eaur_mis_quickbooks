@@ -1,10 +1,11 @@
 from application.api.v1.customer_sync_api import create_response
 from application.models.central_models import QuickBooksConfig
+from application.services.quickbooks import QuickBooks
 from application.utils.celery_utils import make_celery
 from application import create_app
 import os
 import logging
-from flask import current_app
+from flask import current_app, jsonify
 from application.services.payment_sync import PaymentSyncService
 import requests
 from application.services.customer_sync import CustomerSyncService
@@ -1211,4 +1212,335 @@ def retry_failed_income_categories():
             return {
                 'success': False,
                 'error': error_msg
+            }
+        
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+def sync_single_item_task(self, item_id):
+    """
+    Celery task to synchronize a single item to QuickBooks
+
+    Args:
+        item_id: Item ID
+        
+    Returns:
+        dict: Result with success status and details
+    """
+    from application.services.quickbooks import QuickBooks
+    with flask_app.app_context():
+        sync_service = QuickBooks()
+        
+        try:
+            # Validate QuickBooks connection
+            if not QuickBooksConfig.is_connected():
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'message': 'QuickBooks not connected'
+                }
+
+            # Fetch item details
+            item = TblIncomeCategory.get_category_by_id_not_synced(item_id)
+
+            if not item:
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'message': f"Item with ID {item_id} not found"
+                }
+            
+            if item['status_Id'] != 1:
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'message': f"Item with ID {item_id} is not active"
+                }
+            
+            if item['Quickbk_Status'] == 1:
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'message': f"Item already synchronized",
+                    'skipped': True
+                }
+            
+            if len(item['name']) > 100:
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'error': 'Item name too long',
+                    'message': 'Item name must be 100 characters or fewer'
+                }
+            
+            item_data = {
+                "Name": item['name'],
+                "Type": "Service",
+                "IncomeAccount": {
+                    "value": item['income_account_qb'],
+                },
+                "Description": item['description'] or "No description",
+                "UnitPrice": 0.0,
+            }
+
+            result = sync_service.create_item(item_data)
+            current_app.logger.info(f"QuickBooks response for item {item_id}: {result}")
+            
+            if not result.get('Item'):
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'error': 'Failed to create item in QuickBooks',
+                    'details': result
+                }
+            
+            current_app.logger.info(f"Item synced successfully: {result.get('Item', {})}")
+
+            item_id = result.get("Item", {}).get("Id")
+            sync_token = result.get("Item", {}).get("SyncToken")
+
+            current_app.logger.info(f"Item ID from QuickBooks: {item_id}")
+            if not item_id:
+                return jsonify({
+                    'success': False,
+                    'item_id': item_id,
+                    'error': 'Failed to retrieve Item ID from QuickBooks response',
+                    'details': 'Item ID is missing in the response data'
+                }), 500
+            update_status = TblIncomeCategory.update_quickbooks_status(category_id=item['id'], quickbooks_id=item_id, pushed_by="ItemSyncService", sync_token=sync_token)
+            current_app.logger.info(f"QuickBooks status updated: {update_status}")
+            if not update_status:
+                return {
+                    'success': False,
+                    'item_id': item_id,
+                    'error': 'Failed to update QuickBooks status in local database'
+                }
+            return jsonify({
+                'success': True,
+                'data': result,
+                'message': f"Item {item['name']} synchronized successfully",
+            }), 201
+        
+        except Exception as e:
+            # Log error and retry
+            error_msg = f"Error syncing item {item_id}: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            # Retry the task
+            try:
+                raise self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                return jsonify({
+                    'success': False,
+                    'item_id': item_id,
+                    'error': f"Max retries exceeded: {str(e)}"
+                }), 500
+
+@celery.task
+def process_item_batch(item_ids, batch_num, total_batches):
+    """
+    Process a batch of items to synchronize with QuickBooks.
+
+    Args:
+        item_ids (list): List of item IDs in this batch
+        batch_num (int): Current batch number
+        total_batches (int): Total number of batches
+
+    Returns:
+        dict: Summary of batch processing
+    """
+    with flask_app.app_context():
+        flask_app.logger.info(
+            f"Processing QuickBooks item batch {batch_num}/{total_batches} with {len(item_ids)} items"
+        )
+    
+        sync_service = QuickBooks()
+        results = {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': [],
+            'synced_details': []
+        }
+
+        for item_id in item_ids:
+            try:
+                # Validate QuickBooks connection
+                if not QuickBooksConfig.is_connected():
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'item_id': item_id,
+                        'error': 'QuickBooks not connected'
+                    })
+                    continue
+
+                # Fetch item details
+                item = TblIncomeCategory.get_category_by_id_not_synced(item_id)
+
+                if not item:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'item_id': item_id,
+                        'error': f"Item with ID {item_id} not found"
+                    })
+                    continue
+
+                # Skip inactive items
+                if item['status_Id'] != 1:
+                    results['skipped'] += 1
+                    flask_app.logger.debug(f"Item {item_id} inactive, skipping")
+                    continue
+
+                # Skip already synced items
+                if item['Quickbk_Status'] == 1:
+                    results['skipped'] += 1
+                    flask_app.logger.debug(f"Item {item_id} already synced, skipping")
+                    continue
+
+                # Perform synchronization
+                result = sync_service.sync_single_item(item)
+
+                # Handle result object or dict
+                if hasattr(result, 'status') and result.status.name == 'SYNCED':
+                    results['synced'] += 1
+                    details = {
+                        'item_id': item_id,
+                        'qb_item_id': getattr(result, 'qb_account_id', None),
+                        'item_name': item.get('name', 'Unknown')
+                    }
+                    results['synced_details'].append(details)
+                    flask_app.logger.info(f"Item {item_id} synced successfully: {details}")
+
+                elif isinstance(result, dict) and result.get('success'):
+                    results['synced'] += 1
+                    results['synced_details'].append({
+                        'item_id': item_id,
+                        'qb_item_id': result.get('qb_item_id'),
+                        'item_name': item.get('name', 'Unknown')
+                    })
+                else:
+                    results['failed'] += 1
+                    error_msg = getattr(result, 'error_message', None) or result.get('error', 'Unknown error')
+                    results['errors'].append({
+                        'item_id': item_id,
+                        'error': error_msg
+                    })
+                    flask_app.logger.error(f"Failed to sync item {item_id}: {error_msg}")
+
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'item_id': item_id,
+                    'error': str(e)
+                })
+                flask_app.logger.error(f"Exception syncing item {item_id}: {str(e)}")
+                flask_app.logger.error(traceback.format_exc())
+
+        flask_app.logger.info(
+            f"Item batch {batch_num}/{total_batches} completed: "
+            f"{results['synced']} synced, {results['failed']} failed, {results['skipped']} skipped"
+        )
+
+        return results
+
+
+@celery.task(bind=True)
+def bulk_sync_items_task(self, item_ids=None, batch_size=50, filter_unsynced=True):
+    """
+    Celery task to synchronize multiple QuickBooks items in batches.
+
+    Args:
+        item_ids (list, optional): List of item IDs to sync
+        batch_size (int): Number of items to process per batch
+        filter_unsynced (bool): Whether to include only unsynced items
+
+    Returns:
+        dict: Summary of the bulk synchronization process
+    """
+    start_time = datetime.now()
+
+    with flask_app.app_context():
+        try:
+            # Fetch items to sync
+            if item_ids is None:
+                if filter_unsynced:
+                    items = TblIncomeCategory.get_unsynced_categories()
+                else:
+                    items = TblIncomeCategory.get_all_categories()
+
+                item_ids = [i.get('id') for i in items if i.get('id')]
+
+            total_items = len(item_ids)
+
+            if total_items == 0:
+                flask_app.logger.info("No QuickBooks items found to sync.")
+                return {
+                    'success': True,
+                    'message': 'No items to synchronize',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0
+                }
+
+            flask_app.logger.info(
+                f"Found {total_items} items to sync. First few IDs: {item_ids[:10]}"
+            )
+
+            # Create batches
+            batches = [item_ids[i:i + batch_size] for i in range(0, len(item_ids), batch_size)]
+
+            flask_app.logger.info(
+                f"Starting bulk sync of {total_items} items in {len(batches)} batches"
+            )
+
+            # Schedule all batch jobs
+            job = group(
+                process_item_batch.s(batch, batch_idx, len(batches))
+                for batch_idx, batch in enumerate(batches, 1)
+            )
+
+            result = job.apply_async()
+            batch_results = result.get()
+
+            # Aggregate results
+            total_synced = sum(r['synced'] for r in batch_results)
+            total_failed = sum(r['failed'] for r in batch_results)
+            total_skipped = sum(r['skipped'] for r in batch_results)
+
+            all_synced_details = []
+            all_errors = []
+            for r in batch_results:
+                all_synced_details.extend(r.get('synced_details', []))
+                all_errors.extend(r.get('errors', []))
+
+            duration = (datetime.now() - start_time).total_seconds()
+
+            flask_app.logger.info(
+                f"Item bulk sync completed: {total_synced} synced, "
+                f"{total_failed} failed, {total_skipped} skipped in {duration:.2f} seconds"
+            )
+
+            return {
+                'success': True,
+                'message': f"Bulk item sync completed in {duration:.2f} seconds",
+                'total': total_items,
+                'synced': total_synced,
+                'failed': total_failed,
+                'skipped': total_skipped,
+                'batches_processed': len(batches),
+                'duration_seconds': duration,
+                'synced_details': all_synced_details[:20],
+                'errors': all_errors[:20] if all_errors else []
+            }
+
+        except Exception as e:
+            error_msg = f"Error in bulk item sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+
+            return {
+                'success': False,
+                'error': error_msg,
+                'details': traceback.format_exc()
             }

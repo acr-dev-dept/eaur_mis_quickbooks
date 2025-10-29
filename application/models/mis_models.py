@@ -1107,6 +1107,19 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced income categories: {str(e)}")
             return []
+
+    @staticmethod
+    def get_all_categories():
+        """Get all income categories"""
+        try:
+            with MISBaseModel.get_session() as session:
+                categories = session.query(TblIncomeCategory).all()
+                return [cat.to_dict() for cat in categories] if categories else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting all income categories: {str(e)}")
+            return []    
+     
     @staticmethod
     def count_synced_categories():
         """Count income categories that have been synced to QuickBooks"""
