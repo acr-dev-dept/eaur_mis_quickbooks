@@ -46,7 +46,9 @@ class ItemSyncService:
                     item_data = {
                         "Name": category['name'],
                         "Type": "Service",
-                        "IncomeAccountRef": category['income_account_qb'],  # customize if needed
+                        "IncomeAccountRef": {
+                            "value": category['income_account_qb'],
+                        },
                         "Description": category['description'] or "No description",
                         "UnitPrice": 0.0,
                     }
