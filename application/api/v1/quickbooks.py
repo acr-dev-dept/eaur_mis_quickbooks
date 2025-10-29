@@ -1394,7 +1394,8 @@ def sync_single_item():
                 "value": "79",
             },
             "Description": income_category['description'] or "No description",
-            "UnitPrice": float(income_category['amount']) if income_category['amount'] else 0.0,
+            #"UnitPrice": float(income_category['amount']) if income_category['amount'] else 0.0,
+            "UnitPrice": 0.0,
         }
         qb = QuickBooks()
         current_app.logger.info('Syncing single item')
@@ -1411,6 +1412,7 @@ def sync_single_item():
         current_app.logger.info(f"Item from data: {result.get('data', {}).get('Item', {})}")
 
         item_id = result.get("Item", {}).get("Id")
+        sync_token = result.get("Item", {}).get("SyncToken")
 
         current_app.logger.info(f"Item ID from QuickBooks: {item_id}")
         if not item_id:
@@ -1419,7 +1421,7 @@ def sync_single_item():
                 'error': 'Failed to retrieve Item ID from QuickBooks response',
                 'details': 'Item ID is missing in the response data'
             }), 500
-        update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=item_id, pushed_by="ItemSyncService")
+        update_status = TblIncomeCategory.update_quickbooks_status(category_id=income_category['id'], quickbooks_id=item_id, pushed_by="ItemSyncService", sync_token=sync_token)
         current_app.logger.info(f"QuickBooks status updated: {update_status}")
         if not update_status:
             current_app.logger.error("Failed to update QuickBooks status in local database")
