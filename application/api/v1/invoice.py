@@ -533,7 +533,12 @@ def send_invoice(invoice_id):
         )
 @invoices_bp.route('/sync_single_invoice', methods=['POST'])
 def sync_single_invoice():
-    """Sync a single invoice from MIS to QuickBooks."""
+    """Sync a single invoice from MIS to QuickBooks.
+    JSON Payload:
+        {
+            "invoice_id": <int>
+        }
+    """
     try:
         # Validate QuickBooks connection
         is_connected, error_response = validate_quickbooks_connection()
@@ -614,107 +619,6 @@ def sync_single_invoice():
     except Exception as e:
         current_app.logger.error(f"Error syncing invoice: {e}")
         current_app.logger.error(traceback.format_exc())
-        return create_response(
-            success=False,
-            error='Error syncing invoice',
-            details=str(e),
-            status_code=500
-        )
-    
-@invoices_bp.route('/sync/<int:invoice_id>', methods=['POST'])
-def sync_invoice(invoice_id):
-    """Sync a single invoice by ID from MIS to QuickBooks."""
-    try:
-        # Validate QuickBooks connection
-        is_connected, error_response = validate_quickbooks_connection()
-        if not is_connected:
-            QuickbooksAuditLog.add_audit_log(
-                action_type="Validate QuickBooks connection",
-                operation_status=500,
-                error_message="QuickBooks not connected",
-            )
-            return error_response
-
-        if not invoice_id:
-            QuickbooksAuditLog.add_audit_log(
-                action_type="Validate invoice_id",
-                operation_status=400,
-                error_message="Invoice ID is required",
-            )
-            return create_response(
-                success=False,
-                error='Invoice ID is required',
-                message='Please provide a valid invoice ID',
-                status_code=400
-            )
-
-        current_app.logger.info(f'Syncing invoice with ID: {invoice_id}')
-
-        invoice_sync_service = InvoiceSyncService()
-        invoice_data = invoice_sync_service.fetch_invoice_data(invoice_id)
-        current_app.logger.info(f'Fetched invoice data: {invoice_data} and the type is {type(invoice_data)}')
-
-        
-        result = invoice_sync_service.sync_single_invoice(invoice_data)
-        
-        current_app.logger.info(f'Sync result: {result}')
-
-        if not result.success:
-            QuickbooksAuditLog.add_audit_log(
-                action_type="Sync single invoice",
-                operation_status=400,
-                error_message=result.error_message or "Failed to sync invoice",
-            )
-            return create_response(
-                success=False,
-                error='Failed to sync invoice',
-                details=result.error_message or 'Unknown error',
-                status_code=400
-            )
-
-        current_app.logger.info("Invoice synced successfully")
-        # update quickbooks_id in MIS database
-        qb_id = result.quickbooks_id
-        current_app.logger.info(f"Updating MIS invoice {invoice_id} with QuickBooks ID {qb_id}")
-        update_invoice = TblImvoice.update_invoice_quickbooks_status(
-            quickbooks_id=qb_id,
-            pushed_by="InvoiceSyncService",
-            pushed_date=datetime.now(),
-            QuickBk_Status=1,
-            invoice_id=invoice_id
-        )
-
-        if not update_invoice:
-            current_app.logger.error(f"Failed to update MIS invoice {invoice_id} with QuickBooks ID")
-            QuickbooksAuditLog.add_audit_log(
-                action_type="Update MIS invoice with QuickBooks ID",
-                operation_status=500,
-                error_message="Failed to update MIS invoice with QuickBooks ID",
-            )
-            return create_response(
-                success=False,
-                error='Failed to update MIS invoice with QuickBooks ID',
-                status_code=500
-            )
-        QuickbooksAuditLog.add_audit_log(
-            action_type="Sync single invoice",
-            operation_status=200,
-            error_message=None,
-        )
-        return create_response(
-            success=True,
-            data=result.details or {},
-            message='Invoice synced successfully'
-        )
-
-    except Exception as e:
-        current_app.logger.error(f"Error syncing invoice: {e}")
-        current_app.logger.error(traceback.format_exc())
-        QuickbooksAuditLog.add_audit_log(
-            action_type="Sync single invoice",
-            operation_status=500,
-            error_message=str(e),
-        )
         return create_response(
             success=False,
             error='Error syncing invoice',

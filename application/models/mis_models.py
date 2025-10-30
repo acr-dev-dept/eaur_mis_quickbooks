@@ -904,6 +904,31 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated invoices: {str(e)}")
             return 0, 0, []
+        
+    @staticmethod
+    def update_quickbooks_status(invoice_id, status):
+        """
+        Update QuickBooks sync status for an invoice
+
+        Args:
+            invoice_id (int): Invoice ID
+            status (int): QuickBooks sync status
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoice = session.query(TblImvoice).filter(TblImvoice.id == invoice_id).first()
+                if invoice:
+                    invoice.QuickBk_Status = status
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating QuickBooks status for invoice {invoice_id}: {str(e)}")
+            return False
+
     @staticmethod
     def count_invoices():
         """Count total number of invoices in the database"""
@@ -952,6 +977,36 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
             return None
+
+    @staticmethod
+    def get_unsynced_invoices(limit=50):
+        """
+        Get invoices that are not yet synced to QuickBooks
+
+        Args:
+            limit (int): Maximum number of records to fetch
+
+        Returns:
+            list: List of unsynced invoice records
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                unsynced_invoices = (
+                    session.query(TblImvoice)
+                    .filter(
+                        or_(
+                            TblImvoice.QuickBk_Status != 1,
+                            TblImvoice.QuickBk_Status.is_(None)
+                        )
+                    )
+                    .limit(limit)
+                    .all()
+                )
+                return [invoice.to_dict() for invoice in unsynced_invoices] if unsynced_invoices else []
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced invoices: {str(e)}")
+            return []
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
