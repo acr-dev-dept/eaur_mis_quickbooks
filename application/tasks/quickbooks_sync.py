@@ -1822,7 +1822,7 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches):
                     continue
                 
                 # Check if already synced
-                if invoice_data.get("QuickBk_Status") == 1:
+                if invoice_data.QuickBk_Status == 1:
                     results['skipped'] += 1
                     continue
                 
@@ -1833,14 +1833,6 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches):
                     results['synced'] += 1
                     flask_app.logger.debug(f"Successfully synced invoice {invoice_id}")
                     
-                    # Update invoice status to synced
-                    TblImvoice.update_invoice_quickbooks_status(
-                        quickbooks_id=result.quickbooks_id,
-                        pushed_by="CeleryInvoiceSyncTask",
-                        pushed_date=datetime.now(),
-                        QuickBk_Status=1,
-                        invoice_id=invoice_id
-                    )
                 else:
                     results['failed'] += 1
                     results['errors'].append({
@@ -1869,7 +1861,7 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches):
 @celery.task
 def scheduled_invoice_sync_task():
     """
-    🎯 THIS IS THE OPTIMAL WRAPPER TASK for Celery Beat
+    THIS IS THE OPTIMAL WRAPPER TASK for Celery Beat
     
     Scheduled task to automatically sync pending invoices progressively.
     Uses offset tracking to sync a batch at a time without overwhelming the system.
