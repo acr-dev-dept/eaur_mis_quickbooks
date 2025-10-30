@@ -3,7 +3,7 @@ from application.tasks.quickbooks_sync import celery as payment_celery
 from application.tasks.applicant_sync import celery as applicant_celery
 from celery.schedules import crontab
 
-celery = Celery('scheduled_tasks')
+from application.tasks.quickbooks_sync import celery
 celery.conf.beat_schedule = {
     #"sync-payments-every-15-sec": {
         #"task": "application.tasks.quickbooks_sync.sync_payments",
