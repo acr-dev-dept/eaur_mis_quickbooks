@@ -478,12 +478,13 @@ class InvoiceSyncService:
             qb_service = self._get_qb_service()
 
             # Map invoice data
+            qb_invoice_data = self.map_invoice_to_quickbooks(invoice)[0]
 
-            qb_invoice_data, qb_customer_id, qb_item_id = self.map_invoice_to_quickbooks(invoice)
-
+            qb_item_id = self.map_invoice_to_quickbooks(invoice)[2]
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
             
+            qb_customer_id = self.map_invoice_to_quickbooks(invoice)[1]
             if not qb_customer_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
 
