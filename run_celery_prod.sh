@@ -20,7 +20,16 @@ mkdir -p "$LOG_DIR"
 mkdir -p "$PID_DIR"
 
 # === FUNCTION TO KILL EXISTING PROCESSES ===
-pkill -f celery
+kill_existing() {
+    if [ -f "$PID_DIR/$1.pid" ]; then
+        PID=$(cat "$PID_DIR/$1.pid")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "Stopping $1 (PID: $PID)..."
+            kill -9 $PID
+        fi
+        rm -f "$PID_DIR/$1.pid"
+    fi
+}
 
 # Stop any running Celery worker, Beat, or Flower
 kill_existing "celery_worker"
