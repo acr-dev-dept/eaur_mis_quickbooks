@@ -67,7 +67,7 @@ celery.conf.beat_schedule = {
     # Optional: Reset offset daily at midnight to start fresh
     "reset-invoice-sync-offset-daily": {
         "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
-        "schedule": crontab(hour=0, minute=0),  # Daily at midnight
+        "schedule": 1200.0,  # every 1200 seconds (20 minutes)
     },
 }
 
