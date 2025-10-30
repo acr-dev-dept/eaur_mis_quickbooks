@@ -320,9 +320,9 @@ class InvoiceSyncService:
                             "ClassRef": {
                                 "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
                             },
-                            #"LocationRef": {
-                            #    "value": int(location_id) if location_id else ''  # must exist in QB
-                            #},
+                            "LocationRef": {
+                                "value": int(location_id) if location_id else ''  # must exist in QB
+                            },
                             "Qty": 1,
                             "UnitPrice": float(amount)
                         },
