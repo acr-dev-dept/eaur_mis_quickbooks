@@ -993,17 +993,21 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
             return None
 
+    from sqlalchemy import or_, not_
+
+
     @staticmethod
     def get_unsynced_invoices(limit=50, offset=0):
+        EXCLUDED_FEE_CATEGORIES = [
+        62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
+        77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 100, 101, 102,
+        103, 106, 107, 108, 109, 110, 111, 112, 113, 114, 122, 123,
+        124, 125
+        ]
         """
-        Get invoices that are not yet synced to QuickBooks, only invoice from jan 01st 2025 up to date
-
-        Args:
-            limit (int): Maximum number of records to fetch
-            offset (int): Number of records to skip
-
-        Returns:
-            list: List of unsynced invoice records
+        Get invoices that are not yet synced to QuickBooks,
+        only invoices from Jan 01, 2025 up to date, and
+        EXCLUDING certain fee categories
         """
         try:
             with MISBaseModel.get_session() as session:
@@ -1014,7 +1018,8 @@ class TblImvoice(MISBaseModel):
                             TblImvoice.QuickBk_Status != 1,
                             TblImvoice.QuickBk_Status.is_(None)
                         ),
-                        TblImvoice.invoice_date >= datetime(2025, 1, 1)
+                        TblImvoice.invoice_date >= datetime(2025, 1, 1),
+                        TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES)   # 👈 EXCLUDE HERE
                     )
                     .order_by(TblImvoice.id.asc())
                     .offset(offset)
@@ -1026,7 +1031,7 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced invoices: {str(e)}")
             return []
-
+            
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
