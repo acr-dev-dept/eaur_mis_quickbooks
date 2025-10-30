@@ -54,15 +54,14 @@ celery.conf.beat_schedule = {
     #    }
     #},
 
-    "sync-invoices-every-300-sec": {
+    "sync-invoices-every-20`-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_invoices_task",
-        "schedule": 300.0,  # every 300 seconds
+        "schedule": 20.0,  # every 20 seconds
         "args": (),
-        "options": {
-            "expires": 290,  # Task expires in 290 seconds
+        "options":{
+            "expires": 15,  # Task expires in 15 seconds
         }
-
-    },
+    }
 }
 
 celery.conf.timezone = "Africa/Kigali"
