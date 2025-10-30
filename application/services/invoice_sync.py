@@ -293,13 +293,13 @@ class InvoiceSyncService:
             if student_ref:
                 customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
-                class_ref_id = "834761"
+                class_ref_id = 834761
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
                 current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
-                class_ref_id = "834762"
+                class_ref_id = 834762
 
             # Log a warning if no customer reference is found
             else:
@@ -317,12 +317,12 @@ class InvoiceSyncService:
                             "ItemRef": {
                                 "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
                             },
-                            #"ClassRef": {
-                            #    "value": class_ref_id if class_ref_id else ''  # must exist in QB
-                            #},
-                            #"LocationRef": {
-                            #    "value": location_id if location_id else ''  # must exist in QB
-                            #},
+                            "ClassRef": {
+                                "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
+                            },
+                            "LocationRef": {
+                                "value": int(location_id) if location_id else ''  # must exist in QB
+                            },
                             "Qty": 1,
                             "UnitPrice": float(amount)
                         },
