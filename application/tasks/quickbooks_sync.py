@@ -1542,7 +1542,7 @@ def bulk_sync_items_task(self, item_ids=None, batch_size=50, filter_unsynced=Tru
             }
 
 
-@celery.task
+@celery.task(bind=True)
 def sync_single_invoice_task(self, invoice_id):
     """
     Celery task to synchronize a single invoice to QuickBooks
@@ -1605,8 +1605,8 @@ def sync_single_invoice_task(self, invoice_id):
                     'invoice_id': invoice_id,
                     'error': f"Max retries exceeded: {str(e)}"
                 }
-            
-@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+
+@celery.task(bind=True)
 def bulk_sync_invoices_task(self, invoice_ids, batch_size=50, filter_unsynced=True):
     """
     Celery task to synchronize multiple invoices to QuickBooks

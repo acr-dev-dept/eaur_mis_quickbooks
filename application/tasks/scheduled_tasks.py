@@ -48,14 +48,14 @@ celery.conf.beat_schedule = {
     #    }
     #},
 
-    "sync-items-every-3-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
-        "schedule": 3,  # every 3 seconds
-        "args": (),
-        "options":{
-            "expires": 2,  # Task expires in 2 seconds
-        }
-    },
+    #"sync-items-every-3-sec": {
+    #    "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
+    #    "schedule": 3,  # every 3 seconds
+    #    "args": (),
+    #    "options":{
+    #        "expires": 2,  # Task expires in 2 seconds
+    #    }
+    #},
     "sync-invoice-batches-every-10-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_invoices_task",
         "schedule": 10,  # every 10 seconds
