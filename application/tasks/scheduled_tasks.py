@@ -12,7 +12,7 @@ celery.conf.beat_schedule = {
     #},
     #"""
     "sync-invoices-every-300-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_invoices",
+        "task": "application.tasks.quickbooks_sync.bulk_sync_invoices_task",
         "schedule": 300.0,  # every 300 seconds
         "args": (),
         "options": {
