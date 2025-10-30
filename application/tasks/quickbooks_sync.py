@@ -1607,7 +1607,7 @@ def sync_single_invoice_task(self, invoice_id):
                 }
 
 @celery.task(bind=True)
-def bulk_sync_invoices_task(self, invoice_ids, batch_size=50, filter_unsynced=True):
+def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsynced=True):
     """
     Celery task to synchronize multiple invoices to QuickBooks
 
@@ -1696,7 +1696,7 @@ def bulk_sync_invoices_task(self, invoice_ids, batch_size=50, filter_unsynced=Tr
             }
         
 @celery.task(bind=True, max_retries=3, default_retry_delay=60)
-def process_invoice_batch(self, invoice_ids, batch_num, total_batches):
+def process_invoice_batch(self, invoice_ids=None, batch_num=None, total_batches=None):
     """
     Process a batch of invoices to synchronize with QuickBooks.
 
