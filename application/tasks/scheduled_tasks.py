@@ -1,7 +1,8 @@
-from celery import Celery
-from celery.schedules import crontab
+# scheduled_tasks.py
+from application.tasks.quickbooks_sync import celery 
 
-celery = Celery('scheduled_tasks')
+
+
 celery.conf.beat_schedule = {
     #"sync-payments-every-15-sec": {
         #"task": "application.tasks.quickbooks_sync.sync_payments",
@@ -47,12 +48,12 @@ celery.conf.beat_schedule = {
     #    }
     #},
 
-    "sync-items-every-30-sec": {
+    "sync-items-every-3-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
-        "schedule": 30.0,  # every 30 seconds
+        "schedule": 3,  # every 3 seconds
         "args": (),
         "options":{
-            "expires": 29,  # Task expires in 29 seconds
+            "expires": 2,  # Task expires in 2 seconds
         }
     },
 }
