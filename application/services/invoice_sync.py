@@ -317,9 +317,9 @@ class InvoiceSyncService:
                             "ItemRef": {
                                 "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
                             },
-                            "ClassRef": {
-                                "value": class_ref_id if class_ref_id else ''  # must exist in QB
-                            },
+                            #"ClassRef": {
+                            #    "value": class_ref_id if class_ref_id else ''  # must exist in QB
+                            #},
                             "LocationRef": {
                                 "value": location_id if location_id else ''  # must exist in QB
                             },
