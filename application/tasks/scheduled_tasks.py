@@ -1,6 +1,5 @@
 from celery import Celery
-from application.tasks.quickbooks_sync import celery as payment_celery
-from application.tasks.applicant_sync import celery as applicant_celery
+from application.tasks.quickbooks_sync import celery
 from celery.schedules import crontab
 
 from application.tasks.quickbooks_sync import celery
