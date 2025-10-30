@@ -56,12 +56,11 @@ celery.conf.beat_schedule = {
     #        "expires": 2,  # Task expires in 2 seconds
     #    }
     #},
-    "sync-invoice-batches-every-10-sec": {
+    "sync-invoice-batches-every-200-sec": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_invoices_task",
-        "schedule": 10,  # every 10 seconds
-        "args": (),
+        "schedule": 300,  # every 5 minutes
         "options":{
-            "expires": 9,  # Task expires in 9 seconds
+            "expires": 290,  # Task expires in 290 seconds
         }
     },
 }
