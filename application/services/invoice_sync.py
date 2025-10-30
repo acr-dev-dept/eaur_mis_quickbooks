@@ -484,7 +484,6 @@ class InvoiceSyncService:
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
             
-            qb_customer_id = self.map_invoice_to_quickbooks(invoice)[1]
             if not qb_customer_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
 
