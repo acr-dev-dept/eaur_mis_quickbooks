@@ -1,5 +1,4 @@
 from celery import Celery
-from application.tasks.quickbooks_sync import celery as payment_celery
 from celery.schedules import crontab
 
 celery = Celery('scheduled_tasks')
