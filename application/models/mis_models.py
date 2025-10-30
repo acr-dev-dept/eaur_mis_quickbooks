@@ -981,7 +981,7 @@ class TblImvoice(MISBaseModel):
     @staticmethod
     def get_unsynced_invoices(limit=50):
         """
-        Get invoices that are not yet synced to QuickBooks
+        Get invoices that are not yet synced to QuickBooks, only invoice from jan 01st 2025 up to date
 
         Args:
             limit (int): Maximum number of records to fetch
@@ -997,7 +997,8 @@ class TblImvoice(MISBaseModel):
                         or_(
                             TblImvoice.QuickBk_Status != 1,
                             TblImvoice.QuickBk_Status.is_(None)
-                        )
+                        ),
+                        TblImvoice.invoice_date >= datetime(2025, 1, 1)
                     )
                     .limit(limit)
                     .all()
