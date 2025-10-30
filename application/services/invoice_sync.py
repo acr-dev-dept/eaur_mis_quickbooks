@@ -279,6 +279,10 @@ class InvoiceSyncService:
                 current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
 
+            if location_id == 0 or location_id is None:
+                current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+
             reg_no = invoice.reg_no
             current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
 
