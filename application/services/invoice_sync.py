@@ -320,9 +320,6 @@ class InvoiceSyncService:
                             "ClassRef": {
                                 "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
                             },
-                            "DepartmentRef": {
-                                "value": int(location_id) if location_id else ''  # must exist in QB
-                            },
                             "Qty": 1,
                             "UnitPrice": float(amount)
                         },
@@ -332,6 +329,7 @@ class InvoiceSyncService:
                 "CustomerRef": {
                     "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
+                "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date if isinstance(invoice_date, str) else invoice_date.strftime("%Y-%m-%d"),
                 "DocNumber": f"MIS-{invoice.id}",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
