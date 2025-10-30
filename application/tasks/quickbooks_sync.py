@@ -1676,7 +1676,7 @@ def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsync
                         offset=current_offset
                     )
 
-                invoice_ids = [inv.id for inv in invoices if inv.id]
+                invoice_ids = [inv.get('id') for inv in invoices if inv.get('id')]
             else:
                 # If specific invoice_ids provided, don't use offset
                 current_offset = None
