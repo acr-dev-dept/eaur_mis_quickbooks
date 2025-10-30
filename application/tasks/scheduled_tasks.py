@@ -1,6 +1,6 @@
 # scheduled_tasks.py
 from application.tasks.quickbooks_sync import celery 
-
+from celery.schedules import crontab
 
 
 celery.conf.beat_schedule = {
@@ -56,12 +56,18 @@ celery.conf.beat_schedule = {
     #        "expires": 2,  # Task expires in 2 seconds
     #    }
     #},
-    "sync-invoice-batches-every-200-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_invoices_task",
-        "schedule": 300,  # every 5 minutes
-        "options":{
-            "expires": 290,  # Task expires in 290 seconds
+    "progressive-invoice-sync-every-5-min": {
+        "task": "application.tasks.quickbooks_sync.scheduled_invoice_sync_task",
+        "schedule": crontab(minute='*/5'),  # Every 5 minutes
+        "options": {
+            "expires": 240,  # Task expires in 4 minutes (less than schedule interval)
         }
+    },
+    
+    # Optional: Reset offset daily at midnight to start fresh
+    "reset-invoice-sync-offset-daily": {
+        "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
+        "schedule": crontab(hour=0, minute=0),  # Daily at midnight
     },
 }
 

@@ -741,7 +741,22 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting invoices for student {reg_no}: {str(e)}")
             return []
-        
+    @staticmethod
+    def get_unsynced_invoice_count():
+        """Count total invoices not yet synced to QuickBooks"""
+        try:
+            with MISBaseModel.get_session() as session:
+                return session.query(func.count(TblImvoice.id)).filter(
+                    or_(
+                        TblImvoice.QuickBk_Status == 0,
+                        TblImvoice.QuickBk_Status.is_(None)
+                    )
+                ).scalar()
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting unsynced invoices: {str(e)}")
+            return 0
+
     @classmethod
     def get_all_invoices_associated_with_application(cls, appl_Id):
         """
@@ -979,12 +994,13 @@ class TblImvoice(MISBaseModel):
             return None
 
     @staticmethod
-    def get_unsynced_invoices(limit=50):
+    def get_unsynced_invoices(limit=50, offset=0):
         """
         Get invoices that are not yet synced to QuickBooks, only invoice from jan 01st 2025 up to date
 
         Args:
             limit (int): Maximum number of records to fetch
+            offset (int): Number of records to skip
 
         Returns:
             list: List of unsynced invoice records
@@ -1000,6 +1016,8 @@ class TblImvoice(MISBaseModel):
                         ),
                         TblImvoice.invoice_date >= datetime(2025, 1, 1)
                     )
+                    .order_by(TblImvoice.id.asc())
+                    .offset(offset)
                     .limit(limit)
                     .all()
                 )

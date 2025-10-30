@@ -1542,7 +1542,7 @@ def bulk_sync_items_task(self, item_ids=None, batch_size=50, filter_unsynced=Tru
             }
 
 
-@celery.task(bind=True)
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
 def sync_single_invoice_task(self, invoice_id):
     """
     Celery task to synchronize a single invoice to QuickBooks
@@ -1572,16 +1572,27 @@ def sync_single_invoice_task(self, invoice_id):
                 return {
                     'success': False,
                     'invoice_id': invoice_id,
-                    'error': f"Invoice with ID {invoice_id} not found or already synced"
+                    'error': f"Invoice with ID {invoice_id} not found"
                 }
             
+            # Check if already synced
+            if invoice_data.get("QuickBk_Status") == 1:
+                return {
+                    'success': False,
+                    'invoice_id': invoice_id,
+                    'error': f"Invoice already synchronized",
+                    'skipped': True
+                }
+            
+            # Perform synchronization
             result = sync_service.sync_single_invoice(invoice_data)
 
             if result.success:
                 return {
                     'success': True,
-                    'data': result.details or {},
-                    'message': f"Invoice {invoice_id} synchronized successfully"
+                    'invoice_id': invoice_id,
+                    'quickbooks_id': result.quickbooks_id,
+                    'doc_number': invoice_data.get('doc_number')
                 }
             else:
                 return {
@@ -1606,73 +1617,135 @@ def sync_single_invoice_task(self, invoice_id):
                     'error': f"Max retries exceeded: {str(e)}"
                 }
 
+
 @celery.task(bind=True)
-def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsynced=True):
+def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
     """
-    Celery task to synchronize multiple invoices to QuickBooks
+    Celery task to synchronize multiple invoices in batches with offset tracking
+    This is the MAIN task that uses Redis offset for progressive syncing
 
     Args:
-        invoice_ids: List of invoice IDs to synchronize
+        invoice_ids: List of invoice IDs (optional, fetches from DB if None)
         batch_size: Number of invoices to process in each batch
+        filter_unsynced: Only sync invoices not already in QuickBooks
+        reset_offset: If True, reset the offset to 0 and start from beginning
 
     Returns:
         dict: Summary of the bulk sync operation
     """
+    start_time = datetime.now()
+    offset_key = 'invoice_sync:offset'
+    
     with flask_app.app_context():
-        start_time = datetime.now()
         try:
-            # get list of invoices to sync
-            if invoice_ids is None:
-                # Fetch all unsynced invoices at once
-                if filter_unsynced:
-                    invoices = TblImvoice.get_unsynced_invoices()
-                else:
-                    invoices = TblImvoice.get_all_invoices()
+            # Handle offset
+            if reset_offset:
+                redis_client.set(offset_key, 0)
+                flask_app.logger.info("Invoice sync offset reset to 0")
+            
+            # Get current offset from Redis
+            current_offset = int(redis_client.get(offset_key) or 0)
+            flask_app.logger.info(f"Current invoice sync offset: {current_offset}")
+            
 
-                invoice_ids = [inv.get('id') for inv in invoices if inv.get('id')]
+            # count the number of unsynced invoices
+            total_unsynced_invoices = TblImvoice.get_unsynced_invoice_count()
+            flask_app.logger.info(f"Total unsynced invoices in DB: {total_unsynced_invoices}")
+            if total_unsynced_invoices == 0 and invoice_ids is None:
+                return {
+                    'success': True,
+                    'message': 'No unsynced invoices to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0,
+                    'offset': current_offset
+                }
+        
+            # Get list of invoices to sync
+            if invoice_ids is None:
+                # Fetch invoices with offset
+                if filter_unsynced:
+                    invoices = TblImvoice.get_unsynced_invoices(
+                        limit=batch_size,
+                        offset=current_offset
+                    )
+                else:
+                    invoices = TblImvoice.get_all_invoices(
+                        limit=batch_size,
+                        offset=current_offset
+                    )
+
+                invoice_ids = [inv.invoice_id for inv in invoices if inv.invoice_id]
+            else:
+                # If specific invoice_ids provided, don't use offset
+                current_offset = None
+
             total_invoices = len(invoice_ids)
 
             if total_invoices == 0:
-                flask_app.logger.info("No invoices found to sync")
+                # Reset offset when no more records found
+                if current_offset is not None:
+                    redis_client.set(offset_key, 0)
+                    flask_app.logger.info("No more invoices to sync. Offset reset to 0.")
+                
                 return {
                     'success': True,
                     'message': 'No invoices to sync',
                     'total': 0,
                     'synced': 0,
                     'failed': 0,
-                    'skipped': 0
+                    'skipped': 0,
+                    'offset': current_offset,
+                    'offset_reset': True
                 }
             
-            # create batches
+            # Create batches
             batches = [invoice_ids[i:i + batch_size] for i in range(0, len(invoice_ids), batch_size)]
 
             flask_app.logger.info(
-                f"Starting bulk sync of {total_invoices} invoices in {len(batches)} batches"
+                f"Starting bulk invoice sync at offset {current_offset} with {total_invoices} invoices in {len(batches)} batches"
             )
 
-            # process batches using Celery groups
+            # Process batches using Celery groups
             job = group(
-                process_invoice_batch.s(batch, batch_idx, len(batches))
+                process_invoices_batch.s(batch, batch_idx, len(batches))
                 for batch_idx, batch in enumerate(batches, 1)
             )
-
-            # execute and wait for results
+            
+            # Execute and wait for results
             result = job.apply_async()
             batch_results = result.get()
-
-            # aggregate results
+            
+            # Aggregate results
             total_synced = sum(r['synced'] for r in batch_results)
             total_failed = sum(r['failed'] for r in batch_results)
             total_skipped = sum(r['skipped'] for r in batch_results)
-
+            
+            # Update offset in Redis (only if we used offset-based fetching)
+            if current_offset is not None:
+                # Increment offset by successfully processed records (synced + skipped)
+                # Don't count failed records so they can be retried
+                new_offset = current_offset + total_synced + total_skipped
+                redis_client.set(offset_key, new_offset)
+                
+                flask_app.logger.info(
+                    f"Updated invoice sync offset from {current_offset} to {new_offset}"
+                )
+            else:
+                new_offset = None
+            
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
-
+            
             flask_app.logger.info(
-                f"Invoice bulk sync completed: {total_synced} synced, {total_failed} failed, "
+                f"Bulk invoice sync completed: {total_synced} synced, {total_failed} failed, "
                 f"{total_skipped} skipped in {duration:.2f} seconds"
             )
-
+            
+            # Check if we should trigger next batch
+            has_more = len(invoices) == batch_size if invoice_ids is None else False
+            
             return {
                 'success': True,
                 'message': f'Bulk sync completed in {duration:.2f} seconds',
@@ -1681,39 +1754,43 @@ def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsync
                 'failed': total_failed,
                 'skipped': total_skipped,
                 'batches_processed': len(batches),
-                'duration_seconds': duration
+                'duration_seconds': duration,
+                'offset': current_offset,
+                'new_offset': new_offset,
+                'has_more': has_more
             }
-        
+            
         except Exception as e:
-            error_msg = f"Error in invoice bulk sync: {str(e)}"
+            error_msg = f"Error in bulk invoice sync: {str(e)}"
             flask_app.logger.error(error_msg)
             flask_app.logger.error(traceback.format_exc())
             
             return {
                 'success': False,
                 'error': error_msg,
-                'details': traceback.format_exc()
+                'details': traceback.format_exc(),
+                'offset': current_offset if 'current_offset' in locals() else None
             }
-        
-@celery.task(bind=True, max_retries=3, default_retry_delay=60)
-def process_invoice_batch(self, invoice_ids=None, batch_num=None, total_batches=None):
+
+
+@celery.task
+def process_invoices_batch(invoice_ids, batch_num, total_batches):
     """
-    Process a batch of invoices to synchronize with QuickBooks.
+    Process a batch of invoices
 
     Args:
-        invoice_ids (list): List of invoice IDs in this batch
-        batch_num (int): Current batch number
-        total_batches (int): Total number of batches
-
+        invoice_ids: List of invoice IDs in this batch
+        batch_num: Current batch number
+        total_batches: Total number of batches
+        
     Returns:
         dict: Summary of batch processing
     """
     with flask_app.app_context():
-        flask_app.logger.info(
-            f"Processing invoice batch {batch_num}/{total_batches} with {len(invoice_ids)} invoices"
-        )
-    
+        flask_app.logger.info(f"Processing invoice batch {batch_num}/{total_batches} with {len(invoice_ids)} invoices")
+        
         sync_service = InvoiceSyncService()
+        
         results = {
             'batch_num': batch_num,
             'synced': 0,
@@ -1733,27 +1810,36 @@ def process_invoice_batch(self, invoice_ids=None, batch_num=None, total_batches=
                     })
                     continue
 
-                # Fetch invoice details
+                # Fetch invoice data
                 invoice_data = sync_service.fetch_invoice_data(invoice_id)
 
                 if not invoice_data:
                     results['failed'] += 1
                     results['errors'].append({
                         'invoice_id': invoice_id,
-                        'error': f"Invoice with ID {invoice_id} not found or already synced"
+                        'error': f"Invoice with ID {invoice_id} not found"
                     })
                     continue
-
+                
+                # Check if already synced
+                if invoice_data.get("QuickBk_Status") == 1:
+                    results['skipped'] += 1
+                    continue
+                
                 # Perform synchronization
                 result = sync_service.sync_single_invoice(invoice_data)
-
+                
                 if result.success:
                     results['synced'] += 1
-                    flask_app.logger.info(
-                        f"Successfully synced invoice {invoice_id}"
-                    )
-                    TblImvoice.update_quickbooks_status(
-                        invoice_id=invoice_id, status=1
+                    flask_app.logger.debug(f"Successfully synced invoice {invoice_id}")
+                    
+                    # Update invoice status to synced
+                    TblImvoice.update_invoice_quickbooks_status(
+                        quickbooks_id=result.quickbooks_id,
+                        pushed_by="CeleryInvoiceSyncTask",
+                        pushed_date=datetime.now(),
+                        QuickBk_Status=1,
+                        invoice_id=invoice_id
                     )
                 else:
                     results['failed'] += 1
@@ -1771,8 +1857,57 @@ def process_invoice_batch(self, invoice_ids=None, batch_num=None, total_batches=
                 })
                 flask_app.logger.error(f"Exception syncing invoice {invoice_id}: {str(e)}")
                 flask_app.logger.error(traceback.format_exc())
-
+        
         flask_app.logger.info(
-            f"Invoice batch {batch_num}/{total_batches} completed: "
-            f"{results['synced']} synced, {results['failed']} failed"
+            f"Invoice batch {batch_num} completed: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
         )
+        
+        return results
+
+
+@celery.task
+def scheduled_invoice_sync_task():
+    """
+    🎯 THIS IS THE OPTIMAL WRAPPER TASK for Celery Beat
+    
+    Scheduled task to automatically sync pending invoices progressively.
+    Uses offset tracking to sync a batch at a time without overwhelming the system.
+    
+    Returns:
+        dict: Summary of sync results
+    """
+    with flask_app.app_context():
+        flask_app.logger.info("Starting scheduled invoice sync (offset-based)")
+        
+        try:
+            # Sync one batch of 50 invoices
+            # The offset is automatically tracked in Redis
+            result = bulk_sync_invoices_task(
+                invoice_ids=None,       # Fetch from DB using offset
+                batch_size=50,          # Process 50 at a time
+                filter_unsynced=True,   # Only unsynced invoices
+                reset_offset=False      # Don't reset, continue from last position
+            )
+            
+            result['scheduled'] = True
+            result['timestamp'] = datetime.now().isoformat()
+            
+            # Log progress
+            if result.get('success'):
+                flask_app.logger.info(
+                    f"Scheduled sync completed: {result.get('synced')} synced, "
+                    f"{result.get('failed')} failed, offset: {result.get('new_offset')}"
+                )
+            
+            return result
+            
+        except Exception as e:
+            error_msg = f"Error in scheduled invoice sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            return {
+                'success': False,
+                'error': error_msg,
+                'timestamp': datetime.now().isoformat()
+            }
