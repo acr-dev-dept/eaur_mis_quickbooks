@@ -160,7 +160,7 @@ class Payment(MISBaseModel):
     payment_chanel = db.Column(db.String(100))
     payment_notifi = db.Column(db.String(100))
     invoi_ref = db.Column(db.String(255))
-    QuickBk_status = db.Column(db.Integer, default='0')
+    QuickBk_Status = db.Column(db.Integer, default='0')
     pushed_by = db.Column(db.String(200))
     pushed_date = db.Column(DateTime)
     qk_id = db.Column(db.String(255))  # QuickBooks Payment ID
