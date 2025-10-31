@@ -274,7 +274,7 @@ class Payment(MISBaseModel):
             with cls.get_session() as session:
                 payment = session.query(cls).filter(
                     cls.id == payment_id,
-                    cls.payment_date >= date(2025, 1, 1)
+                    cls.date >= date(2025, 1, 1)
                 ).first()
                 return payment
         except Exception as e:

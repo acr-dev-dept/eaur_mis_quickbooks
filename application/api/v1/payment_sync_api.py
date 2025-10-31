@@ -33,10 +33,13 @@ def sync_payment(payment_id):
     try:
         # get the payment object given the payment_id
         payment = Payment.get_payment_by_id(payment_id)
+
+        if not payment:
+            return jsonify({'error': 'Payment not found'}), 404
+
         payment_dict = payment.to_dict() if payment else {}
         current_app.logger.info(f"Attempting to sync payment: {payment_dict}")
-        if not payment:
-            return jsonify({'error': 'Payment not found'}), 400
+        
     except Exception as e:
         current_app.logger.error(f"Error retrieving payment {payment_id}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
