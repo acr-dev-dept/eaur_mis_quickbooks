@@ -414,7 +414,7 @@ class TblBank(MISBaseModel):
     currency = db.Column(db.String(10), nullable=False)
     status = db.Column(db.String(10), nullable=False)
     qk_id = db.Column(db.String(255))  # QuickBooks Account ID
-
+    sync_token = db.Column(db.Integer)  # To store QuickBooks SyncToken
     # QuickBooks sync tracking fields (using existing status field)
     pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
@@ -441,7 +441,8 @@ class TblBank(MISBaseModel):
             'status': self.status,
             'qk_id': self.qk_id,
             'pushed_by': self.pushed_by,
-            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None
+            'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
+            'sync_token': self.sync_token
         }
 
     @classmethod

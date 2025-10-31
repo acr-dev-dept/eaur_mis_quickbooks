@@ -391,7 +391,6 @@ class PaymentSyncService:
             if payment.appl_Id and payment.online_application:
                 # Assuming applicant has been synced as a customer
                 customer_ref_id = payment.online_application.tracking_id # Use tracking_id for QuickBooks customer lookup if needed
-                customer_name = f"{payment.online_application.first_name} {payment.online_application.family_name}".strip()
                 # In a real scenario, you'd fetch the QuickBooks Customer ID using the tracking_id
                 # For now, let's use a placeholder or attempt to query existing QB customers
                 qb_customer_id = self._get_quickbooks_customer_id(customer_ref_id, 'applicant')

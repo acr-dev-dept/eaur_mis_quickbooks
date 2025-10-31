@@ -691,7 +691,8 @@ class BankSyncService:
                 self._update_bank_sync_status(
                     bank.bank_id,
                     BankSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_account_id
+                    quickbooks_id=qb_account_id,
+                    sync_token=response['Account'].get('SyncToken')
                 )
                 self._log_sync_audit(bank.bank_id, 'SUCCESS', f"Synced to QuickBooks Account ID: {qb_account_id}")
 
@@ -775,7 +776,7 @@ class BankSyncService:
                 'bank_id': bank_id
             }
 
-    def _update_bank_sync_status(self, bank_id: int, status: int, quickbooks_id: Optional[str] = None):
+    def _update_bank_sync_status(self, bank_id: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
         """
         Update bank synchronization status in MIS database
         """
@@ -786,6 +787,7 @@ class BankSyncService:
                     bank.status = status
                     bank.pushed_date = datetime.now()
                     bank.pushed_by = "BankSyncService"
+                    bank.sync_token = sync_token
                     if quickbooks_id and status == BankSyncStatus.SYNCED.value:
                         bank.qk_id = quickbooks_id
                     session.commit()
