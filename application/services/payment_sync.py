@@ -528,7 +528,8 @@ class PaymentSyncService:
                 self._update_payment_sync_status(
                     payment.id,
                     PaymentSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_payment_id
+                    quickbooks_id=qb_payment_id,
+                    sync_token=response['Payment'].get('SyncToken')
                 )
                 self._log_sync_audit(payment.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_payment_id}")
                 result = PaymentSyncResult(
@@ -728,7 +729,7 @@ class PaymentSyncService:
                            f"{overall_results['total_failed']} failed in {duration}")
         return overall_results
 
-    def _update_payment_sync_status(self, payment_id: int, status: int, quickbooks_id: Optional[str] = None):
+    def _update_payment_sync_status(self, payment_id: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
         """
         Update payment synchronization status in MIS database
         """
@@ -739,6 +740,8 @@ class PaymentSyncService:
                     payment.QuickBk_Status = status
                     payment.pushed_date = datetime.now()
                     payment.pushed_by = "PaymentSyncService"
+                    if sync_token:
+                        payment.sync_token = sync_token
                     if quickbooks_id and status == PaymentSyncStatus.SYNCED.value:
                         payment.qk_id = quickbooks_id # Assuming 'qk_id' field exists in Payment model for QB ID
                     session.commit()

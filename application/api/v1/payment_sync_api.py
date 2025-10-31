@@ -51,6 +51,7 @@ def sync_payment(payment_id):
     except Exception as e:
         logging.error(f"Error syncing payment {payment_id}: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+    
 @payment_sync_bp.route('/get_unsynced_payments', methods=['GET'])
 def get_unsynced_payments():
     try:
