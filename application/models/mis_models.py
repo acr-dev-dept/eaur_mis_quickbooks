@@ -19,6 +19,8 @@ from sqlalchemy.orm import joinedload, foreign, load_only
 from flask import current_app
 from sqlalchemy import cast, String
 from flask import current_app
+from datetime import date
+
 
 
 
@@ -162,7 +164,7 @@ class Payment(MISBaseModel):
     pushed_by = db.Column(db.String(200))
     pushed_date = db.Column(DateTime)
     qk_id = db.Column(db.String(255))  # QuickBooks Payment ID
-
+    sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
     # Relationships
     level = relationship("TblLevel", backref="payments", lazy='joined')
     bank = relationship("TblBank", backref="payments", lazy='joined')
@@ -208,7 +210,8 @@ class Payment(MISBaseModel):
             'QuickBk_Status': self.QuickBk_Status,
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
-            'qk_id': self.qk_id
+            'qk_id': self.qk_id,
+            'sync_token': self.sync_token
         }
     
     @classmethod
@@ -269,12 +272,16 @@ class Payment(MISBaseModel):
         """
         try:
             with cls.get_session() as session:
-                payment = session.query(cls).filter(cls.id == payment_id).first()
+                payment = session.query(cls).filter(
+                    cls.id == payment_id,
+                    cls.payment_date >= date(2025, 1, 1)
+                ).first()
                 return payment
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting payment for ID {payment_id}: {str(e)}")
             return None
+        
     @staticmethod
     def count_payments():
         """Count total payments"""

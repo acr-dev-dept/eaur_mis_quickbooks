@@ -465,7 +465,6 @@ class PaymentSyncService:
             qb_payment_data = {
                 "CustomerRef": {
                     "value": str(customer_ref_id), # This must be the QuickBooks Customer ID
-                    "name": customer_name
                 },
                 "DepositToAccountRef": {
                     "value": deposit_account_id # QuickBooks Account ID
@@ -497,7 +496,6 @@ class PaymentSyncService:
         Synchronize a single payment to QuickBooks
         """
         try:
-            self._update_payment_sync_status(payment.id, PaymentSyncStatus.IN_PROGRESS.value)
             qb_service = self._get_qb_service()
             qb_payment_data, map_error = self.map_payment_to_quickbooks(payment)
 

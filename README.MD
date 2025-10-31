@@ -342,6 +342,6 @@ requirements needed:
    3. Items (dependent on Income accounts ref)
    4. Invoices (dependent on Items and income accounts)
       1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync
-
+   5. Ensure the protection of api on order to be called only from EAUR MIS
 Concerns
 1. Deleting and updating student information when some data changes in MIS to directly change inside quickbooks too
