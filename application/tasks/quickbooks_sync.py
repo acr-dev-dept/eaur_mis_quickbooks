@@ -2180,8 +2180,8 @@ def process_payments_batch(payment_ids, batch_num, total_batches):
                 
                 # Perform synchronization
                 result = sync_service.sync_single_payment(payment_data)
-                
-                if result.success:
+
+                if result.get('success'):
                     results['synced'] += 1
                     flask_app.logger.debug(f"Successfully synced payment {payment_id}")
                     
