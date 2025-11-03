@@ -1979,7 +1979,7 @@ def sync_single_payment_task(self, payment_id):
                 }
             
 @celery.task(bind=True)
-def bulk_sync_payments_task(self, payment_ids=None, batch_size=75, filter_unsynced=True, reset_offset=False):
+def bulk_sync_payments_task(self, payment_ids=None, batch_size=100, filter_unsynced=True, reset_offset=False):
     """
     Celery task to synchronize multiple payments in batches.
 
@@ -2180,8 +2180,8 @@ def process_payments_batch(payment_ids, batch_num, total_batches):
                 
                 # Perform synchronization
                 result = sync_service.sync_single_payment(payment_data)
-
-                if result.get('success'):
+                success = result.success if hasattr(result, "success") else result.get("success")
+                if success:
                     results['synced'] += 1
                     flask_app.logger.debug(f"Successfully synced payment {payment_id}")
                     

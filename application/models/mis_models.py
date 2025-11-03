@@ -402,7 +402,7 @@ class Payment(MISBaseModel):
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
     @staticmethod
-    def get_unsynced_payments(limit=75, offset=0):
+    def get_unsynced_payments(limit=100, offset=0):
         """Get payments not yet synced to QuickBooks,
         Args:
             limit (int): Number of records to fetch
