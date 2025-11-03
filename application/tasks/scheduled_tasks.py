@@ -72,9 +72,9 @@ celery.conf.beat_schedule = {
 
     "sync-payments-every-5-min": {
         "task": "application.tasks.quickbooks_sync.bulk_sync_payments_task",
-        "schedule": crontab(minute='*/5'),  # Every 5 minutes
+        "schedule": crontab(minute='*/6'),  # Every 6 minutes
         "options": {
-            "expires": 240,  # Task expires in 4 minutes (less than schedule interval)
+            "expires": 300,  # Task expires in 5 minutes (less than schedule interval)
         }
     },
 
