@@ -12,7 +12,7 @@ from application.services.customer_sync import CustomerSyncService
 from application.services.invoice_sync import InvoiceSyncService
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import traceback
-from application.models.mis_models import TblOnlineApplication, TblImvoice, TblPersonalUg, TblIncomeCategory
+from application.models.mis_models import TblOnlineApplication, TblImvoice, TblPersonalUg, TblIncomeCategory, Payment
 from datetime import datetime
 from celery import group, shared_task
 from application.services.income_sync import IncomeSyncService
@@ -1903,3 +1903,353 @@ def scheduled_invoice_sync_task():
                 'error': error_msg,
                 'timestamp': datetime.now().isoformat()
             }
+        
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+def sync_single_payment_task(self, payment_id):
+    """
+    Celery task to synchronize a single payment to QuickBooks
+
+    Args:
+        payment_id: Payment ID
+        
+    Returns:
+        dict: Result with success status and details
+    """
+    with flask_app.app_context():
+        sync_service = PaymentSyncService()
+        
+        try:
+            # Validate QuickBooks connection
+            if not QuickBooksConfig.is_connected():
+                return {
+                    'success': False,
+                    'payment_id': payment_id,
+                    'error': 'QuickBooks not connected'
+                }
+
+            # Fetch payment details
+            payment_data = Payment.get_payment_by_id(payment_id)
+
+            if not payment_data:
+                return {
+                    'success': False,
+                    'payment_id': payment_id,
+                    'error': f"Payment with ID {payment_id} not found"
+                }
+            
+            # Check if already synced
+            if payment_data.QuickBk_Status == 1:
+                return {
+                    'success': False,
+                    'payment_id': payment_id,
+                    'error': f"Payment already synchronized",
+                    'skipped': True
+                }
+            
+            # Perform synchronization
+            result = sync_service.sync_single_payment(payment_data)
+
+            if result.success:
+                return {
+                    'success': True,
+                    'payment_id': payment_id,
+                    'quickbooks_id': result.quickbooks_id,
+                }
+            else:
+                return {
+                    'success': False,
+                    'payment_id': payment_id,
+                    'error': result.error_message
+                }
+            
+        except Exception as e:
+            # Log error and retry
+            error_msg = f"Error syncing payment {payment_id}: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            # Retry the task
+            try:
+                raise self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                return {
+                    'success': False,
+                    'payment_id': payment_id,
+                    'error': f"Max retries exceeded: {str(e)}"
+                }
+            
+@celery.task(bind=True)
+def bulk_sync_payments_task(self, payment_ids=None, batch_size=75, filter_unsynced=True, reset_offset=False):
+    """
+    Celery task to synchronize multiple payments in batches.
+
+    Args:
+        payment_ids: List of payment IDs (optional, fetches from DB if None)
+        batch_size: Number of payments to process in each batch
+        filter_unsynced: Only sync payments not already in QuickBooks
+        reset_offset: If True, reset the offset to 0 and start from beginning
+    """
+    start_time = datetime.now()
+    offset_key = 'payment_sync:offset'
+    
+    with flask_app.app_context():
+        try:
+            # Handle offset
+            if reset_offset:
+                redis_client.set(offset_key, 0)
+                flask_app.logger.info("Payment sync offset reset to 0")
+            
+            # Get current offset from Redis
+            current_offset = int(redis_client.get(offset_key) or 0)
+            flask_app.logger.info(f"Current payment sync offset: {current_offset}")
+            
+            # check if there are unsynced payments
+            total_unsynced_payments = Payment.get_unsynced_payment_count()
+            flask_app.logger.info(f"Total unsynced payments in DB: {total_unsynced_payments}")
+            if total_unsynced_payments == 0 and payment_ids is None:
+                return {
+                    'success': True,
+                    'message': 'No unsynced payments to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0,
+                    'offset': current_offset,
+                    'offset_reset': True
+                }
+
+
+            # Get list of payments to sync
+            if payment_ids is None:
+                # Fetch payments with offset
+                if filter_unsynced:
+                    payments = Payment.get_unsynced_payments(
+                        limit=batch_size,
+                        offset=current_offset
+                    )
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Fetching all payments without filtering is not supported in this task.'
+                    }), 400
+
+                payment_ids = [pay.get('id') for pay in payments if pay.get('id')]
+            else:
+                # If specific payment_ids provided, don't use offset
+                current_offset = None
+
+            total_payments = len(payment_ids)
+
+            if total_payments == 0:
+                # Reset offset when no more records found
+                if current_offset is not None:
+                    redis_client.set(offset_key, 0)
+                    flask_app.logger.info("No more payments to sync. Offset reset to 0.")
+                
+                return {
+                    'success': True,
+                    'message': 'No payments to sync',
+                    'total': 0,
+                    'synced': 0,
+                    'failed': 0,
+                    'skipped': 0,
+                    'offset': current_offset,
+                    'offset_reset': True
+                }
+            
+            # Create batches
+            batches = [payment_ids[i:i + batch_size] for i in range(0, len(payment_ids), batch_size)]
+
+            flask_app.logger.info(
+                f"Starting bulk payment sync at offset {current_offset} with {total_payments} payments in {len(batches)} batches"
+            )
+
+            # Process batches using Celery groups
+            job = group(
+                process_payments_batch.s(batch, batch_idx, len(batches))
+                for batch_idx, batch in enumerate(batches, 1)
+            )
+            
+            # Execute and wait for results
+            result = job.apply_async()
+            batch_results = result.get()
+            
+            # Aggregate results
+            total_synced = sum(r['synced'] for r in batch_results)
+            total_failed = sum(r['failed'] for r in batch_results)
+            total_skipped = sum(r['skipped'] for r in batch_results)
+
+            # Update offset in Redis (only if we used offset-based fetching)
+            if current_offset is not None:
+                # Increment offset by successfully processed records (synced + skipped)
+                # Don't count failed records so they can be retried
+                new_offset = current_offset + total_synced + total_skipped
+                redis_client.set(offset_key, new_offset)
+                
+                flask_app.logger.info(
+                    f"Updated payment sync offset from {current_offset} to {new_offset}"
+                )
+            else:
+                new_offset = None
+
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+
+            flask_app.logger.info(
+                f"Bulk payment sync completed: {total_synced} synced, {total_failed} failed, "
+                f"{total_skipped} skipped in {duration:.2f} seconds"
+            )
+
+            return {
+                'success': True,
+                'message': f'Bulk sync completed in {duration:.2f} seconds',
+                'total': total_payments,
+                'synced': total_synced,
+                'failed': total_failed,
+                'skipped': total_skipped,
+                'batches_processed': len(batches),
+                'duration_seconds': duration,
+                'offset': current_offset,
+                'new_offset': new_offset
+            }
+        
+        except Exception as e:
+            error_msg = f"Error in bulk payment sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'details': traceback.format_exc(),
+                'offset': current_offset if 'current_offset' in locals() else None
+            }
+        
+@celery.task
+def process_payments_batch(payment_ids, batch_num, total_batches):
+    """
+    Process a batch of payments
+
+    Args:
+        payment_ids: List of payment IDs in this batch
+        batch_num: Current batch number
+        total_batches: Total number of batches
+        
+    Returns:
+        dict: Summary of batch processing
+    """
+    with flask_app.app_context():
+        flask_app.logger.info(f"Processing payment batch {batch_num}/{total_batches} with {len(payment_ids)} payments")
+        
+        sync_service = PaymentSyncService()
+        
+        results = {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': []
+        }
+
+        for payment_id in payment_ids:
+            try:
+                # Validate QuickBooks connection
+                if not QuickBooksConfig.is_connected():
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'payment_id': payment_id,
+                        'error': 'QuickBooks not connected'
+                    })
+                    continue
+
+                # Fetch payment data
+                payment_data = Payment.get_payment_by_id(payment_id)
+
+                if not payment_data:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'payment_id': payment_id,
+                        'error': f"Payment with ID {payment_id} not found"
+                    })
+                    continue
+                
+                # Check if already synced
+                if payment_data.QuickBk_Status == 1:
+                    results['skipped'] += 1
+                    continue
+                
+                # Perform synchronization
+                result = sync_service.sync_single_payment(payment_data)
+                
+                if result.success:
+                    results['synced'] += 1
+                    flask_app.logger.debug(f"Successfully synced payment {payment_id}")
+                    
+                else:
+                    results['failed'] += 1
+                    results['errors'].append({
+                        'payment_id': payment_id,
+                        'error': result.error_message
+                    })
+                    flask_app.logger.error(f"Failed to sync payment {payment_id}: {result.error_message}")
+
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append({
+                    'payment_id': payment_id,
+                    'error': str(e)
+                })
+                flask_app.logger.error(f"Exception syncing payment {payment_id}: {str(e)}")
+                flask_app.logger.error(traceback.format_exc())
+        
+        flask_app.logger.info(
+            f"Payment batch {batch_num} completed: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+
+        return results
+    
+@celery.task
+def scheduled_payment_sync_task():
+    """
+    Scheduled task to automatically sync pending payments progressively.
+    Uses offset tracking to sync a batch at a time without overwhelming the system.
+    
+    Returns:
+        dict: Summary of sync results
+    """
+    with flask_app.app_context():
+        flask_app.logger.info("Starting scheduled payment sync (offset-based)")
+        
+        try:
+            # Sync one batch of 50 payments
+            # The offset is automatically tracked in Redis
+            result = bulk_sync_payments_task(
+                payment_ids=None,       # Fetch from DB using offset
+                batch_size=50,          # Process 50 at a time
+                filter_unsynced=True,   # Only unsynced payments
+                reset_offset=False      # Don't reset, continue from last position
+            )
+            
+            result['scheduled'] = True
+            result['timestamp'] = datetime.now().isoformat()
+            
+            # Log progress
+            if result.get('success'):
+                flask_app.logger.info(
+                    f"Scheduled payment sync completed: {result.get('synced')} synced, "
+                    f"{result.get('failed')} failed, offset: {result.get('new_offset')}"
+                )
+            
+            return result
+            
+        except Exception as e:
+            error_msg = f"Error in scheduled payment sync: {str(e)}"
+            flask_app.logger.error(error_msg)
+            flask_app.logger.error(traceback.format_exc())
+            return {
+                'success': False,
+                'error': error_msg,
+                'timestamp': datetime.now().isoformat()
+            }
+   

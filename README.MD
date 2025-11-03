@@ -330,6 +330,7 @@ requirements needed:
    3. IncomeAccountRef while referencing syncing Payments to QB
    4. Classes (Student, Applicant)
    5. Departments/Locations (Kigali campus, Nyagatare Campus) for the purpose of invoicing
+   6. Ensuring that there are all respective create and update endpoints to reflect the creation (sync) or update
 
 ## Order of Syncing
    00. Creating locations and departments in quickbooks, to hard code them inside Tbl_campus table and on classref before syncing invoices

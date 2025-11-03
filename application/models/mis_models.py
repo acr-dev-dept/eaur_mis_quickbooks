@@ -401,6 +401,50 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
+    @staticmethod
+    def get_unsynced_payments(limit=75, offset=0):
+        """Get payments not yet synced to QuickBooks,
+        Args:
+            limit (int): Number of records to fetch
+            offset (int): Offset for pagination
+        Returns:
+            list: List of unsynced payment records from 01-01-2025
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                payments = session.query(Payment).filter(
+                    or_(
+                        Payment.QuickBk_Status == 0,
+                        Payment.QuickBk_Status.is_(None)
+                    ),
+                    Payment.date >= date(2025, 1, 1)
+                ).order_by(Payment.id.asc()).offset(offset).limit(limit).all()
+                return payments
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced payments: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_unsynced_payment_count():
+        """Get count of payments not yet synced to QuickBooks from 01-01-2025
+        Returns:
+            int: Count of unsynced payments
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                count = session.query(func.count(Payment.id)).filter(
+                    or_(
+                        Payment.QuickBk_Status == 0,
+                        Payment.QuickBk_Status.is_(None)
+                    ),
+                    Payment.date >= date(2025, 1, 1)
+                ).scalar()
+                return count
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting unsynced payment count: {str(e)}")
+            return 0
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
