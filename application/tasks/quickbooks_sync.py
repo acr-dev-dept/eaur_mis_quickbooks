@@ -2033,7 +2033,7 @@ def bulk_sync_payments_task(self, payment_ids=None, batch_size=75, filter_unsync
                         'error': 'Fetching all payments without filtering is not supported in this task.'
                     }), 400
 
-                payment_ids = [pay.get('id') for pay in payments if pay.get('id')]
+                payment_ids = [pay.id for pay in payments if pay.id]
             else:
                 # If specific payment_ids provided, don't use offset
                 current_offset = None
