@@ -413,10 +413,7 @@ class Payment(MISBaseModel):
         try:
             with MISBaseModel.get_session() as session:
                 payments = session.query(Payment).filter(
-                    or_(
-                        Payment.QuickBk_Status == 0,
-                        Payment.QuickBk_Status.is_(None)
-                    ),
+                    Payment.qk_id.is_(None),
                     Payment.date >= date(2025, 1, 1)
                 ).order_by(Payment.id.asc()).offset(offset).limit(limit).all()
                 return payments
