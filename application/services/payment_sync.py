@@ -403,12 +403,21 @@ class PaymentSyncService:
             elif payment.reg_no:
                 # Assuming student has been synced as a customer
                 # You'd need to fetch student details and their QuickBooks ID
-                from application.models.mis_models import TblPersonalUg
+                from application.models.mis_models import TblPersonalUg, TblOnlineApplication
                 with db_manager.get_mis_session() as session:
                     student = session.query(TblPersonalUg).filter_by(reg_no=payment.reg_no).first()
+                    online_app = session.query(TblOnlineApplication).filter_by(tracking_id=payment.reg_no).first()
                 if student and student.qk_id:
                     customer_ref_id = student.qk_id
-                    customer_name = f"{student.fname} {student.lname}".strip()
+
+                elif online_app and online_app.quickbooks_id:
+                    customer_ref_id = online_app.quickbooks_id
+                
+                elif online_app:
+                    self.logger.warning(f"QuickBooks ID not found for online application {payment.reg_no}. This payment will be marked as failed.")
+                    # In a full solution, you might trigger customer creation here
+                    return None, f"QuickBooks Customer not found for online application {payment.reg_no}"
+
                 elif student:
                     self.logger.warning(f"QuickBooks ID not found for student {payment.reg_no}. This payment will be marked as failed.")
                     # In a full solution, you might trigger customer creation here
