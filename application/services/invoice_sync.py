@@ -387,7 +387,13 @@ class InvoiceSyncService:
             if invoice.get('fee_category'):
                 category = TblIncomeCategory.get_category_by_id(invoice.get('fee_category'))
                 quickbooks_id = category.get('QuickBk_ctgId') if category else None
-            
+                camp_id = category.get('camp_id') if category else None
+                location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
+                current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
+
+                if not location_id:
+                    current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
+                    raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks Location mapped.")
 
             # if no category found
             if not quickbooks_id:
@@ -402,22 +408,24 @@ class InvoiceSyncService:
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.get('reg_no'))
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.get('reg_no'))
             customer_id = None
-            
+            class_ref_id = None
+
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.get('reg_no')}")
+                class_ref_id = 834761
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
                 current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.get('reg_no')}")
+                class_ref_id = 834762
 
             # Log a warning if no customer reference is found
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.get('reg_no')}")
                 raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
-
             sync_token = getattr(invoice, 'sync_token', None)
             # If sync token is missing, pull it from QuickBooks
             if not sync_token:
@@ -425,10 +433,12 @@ class InvoiceSyncService:
                 invoice_qb = qb_service.get_invoice(invoice_id=invoice.get('quickbooks_id'), realm_id=qb_service.realm_id)
                 current_app.logger.info(f"Fetched invoice {invoice.get('id')} from QuickBooks for SyncToken retrieval: {invoice_qb}")
                 sync_token = invoice_qb.get('Invoice', {}).get('SyncToken')
+                
                 if not sync_token:
                     raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.get('id')} from QuickBooks.")
             # Create QuickBooks invoice structure
             current_app.logger.info(f"Customer ID for invoice {invoice.get('id')}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+
             qb_invoice = {
                 "Line": [
                     {
@@ -437,6 +447,9 @@ class InvoiceSyncService:
                         "SalesItemLineDetail": {
                             "ItemRef": {
                                 "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
+                            },
+                            "ClassRef": {
+                                "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
                             },
                             "Qty": 1,
                             "UnitPrice": float(amount)
@@ -447,6 +460,7 @@ class InvoiceSyncService:
                 "CustomerRef": {
                     "value": str(customer_id)  #str(invoice.quickbooks_customer_id)  # must exist in QB
                 },
+                "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date,
                 "SyncToken": f"{sync_token}",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",

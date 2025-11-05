@@ -456,6 +456,8 @@ def update_invoice(invoice_id):
         }), 500
 
 
+
+
 @quickbooks_bp.route('/invoices/<invoice_id>', methods=['DELETE'])
 def delete_invoice(invoice_id):
     """Delete an invoice."""
