@@ -148,7 +148,7 @@ class InvoiceSyncService:
                         )
                         .filter(
                             TblImvoice.id == invoice_id,
-                            TblImvoice.QuickBk_Status != 1,
+                            TblImvoice.quickbooks_id.is_(None),
                             TblImvoice.invoice_date >= date(2025, 1, 1)
                         )
                         .first()
