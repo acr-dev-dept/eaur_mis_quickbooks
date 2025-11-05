@@ -271,7 +271,7 @@ class InvoiceSyncService:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
                 quickbooks_id = category['QuickBk_ctgId'] if category else None
                 camp_id = category['camp_id'] if category else None
-                location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id else None
+                location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
                 current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
 
             # if no category found
