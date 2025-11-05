@@ -796,10 +796,7 @@ class TblImvoice(MISBaseModel):
         try:
             with MISBaseModel.get_session() as session:
                 return session.query(func.count(TblImvoice.id)).filter(
-                    or_(
-                        TblImvoice.QuickBk_Status == 0,
-                        TblImvoice.QuickBk_Status.is_(None)
-                    )
+                    TblImvoice.quickbooks_id.is_(None)
                 ).scalar()
         except Exception as e:
             from flask import current_app
@@ -1016,6 +1013,21 @@ class TblImvoice(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error counting synced invoices: {str(e)}")
             return 0
+    @classmethod
+    def count_unsynced_invoices(cls):
+        """Count total number of invoices not yet synced to QuickBooks"""
+        try:
+            with cls.get_session() as session:
+                unsynced_invoices = session.query(func.count(cls.id)).filter(
+                    cls.quickbooks_id.is_(None),
+                    cls.invoice_date >= datetime(2025, 1, 1)
+                ).scalar()
+                return unsynced_invoices
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting unsynced invoices: {str(e)}")
+            return 0    
+    
     @staticmethod
     def get_invoice_by_id(invoice_id):
         """
@@ -1046,14 +1058,15 @@ class TblImvoice(MISBaseModel):
 
 
     @staticmethod
-    def get_unsynced_invoices(limit=50, offset=0):
+    def get_unsynced_invoices(limit=100, offset=0):
+        EXCLUDED_FEE_CATEGORIES = []
+        """
         EXCLUDED_FEE_CATEGORIES = [
         62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
         77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 100, 101, 102,
         103, 106, 107, 108, 109, 110, 111, 112, 113, 114, 122, 123,
         124, 125
         ]
-        """
         Get invoices that are not yet synced to QuickBooks,
         only invoices from Jan 01, 2025 up to date, and
         EXCLUDING certain fee categories
@@ -1063,14 +1076,11 @@ class TblImvoice(MISBaseModel):
                 unsynced_invoices = (
                     session.query(TblImvoice)
                     .filter(
-                        or_(
-                            TblImvoice.QuickBk_Status != 1,
-                            TblImvoice.QuickBk_Status.is_(None)
-                        ),
+                        TblImvoice.quickbooks_id.is_(None),
                         TblImvoice.invoice_date >= datetime(2025, 1, 1),
                         TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES)   # 👈 EXCLUDE HERE
                     )
-                    .order_by(TblImvoice.id.asc())
+                    .order_by(TblImvoice.invoice_date.asc())
                     .offset(offset)
                     .limit(limit)
                     .all()

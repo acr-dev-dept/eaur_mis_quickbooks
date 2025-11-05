@@ -1619,7 +1619,7 @@ def sync_single_invoice_task(self, invoice_id):
 
 
 @celery.task(bind=True)
-def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
+def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=100, filter_unsynced=True, reset_offset=False):
     """
     Celery task to synchronize multiple invoices in batches with offset tracking
     This is the MAIN task that uses Redis offset for progressive syncing
@@ -1635,7 +1635,17 @@ def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsync
     """
     start_time = datetime.now()
     offset_key = 'invoice_sync:offset'
-    
+    unsynced_inv = TblImvoice.count_unsynced_invoices()
+    if unsynced_inv == 0 and invoice_ids is None:
+        return {
+            'success': True,
+            'message': 'No unsynced invoices to sync',
+            'total': 0,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'offset': 0
+        }
     with flask_app.app_context():
         try:
             # Handle offset
@@ -1671,10 +1681,10 @@ def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsync
                         offset=current_offset
                     )
                 else:
-                    invoices = TblImvoice.get_all_invoices(
-                        limit=batch_size,
-                        offset=current_offset
-                    )
+                    return {
+                        'success': False,
+                        'error': 'Bulk sync without invoice_ids must filter unsynced invoices'
+                    }
 
                 invoice_ids = [inv.get('id') for inv in invoices if inv.get('id')]
             else:
@@ -1786,6 +1796,18 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches):
     Returns:
         dict: Summary of batch processing
     """
+
+    unsynced_invces = TblImvoice.count_unsynced_invoices()
+    if unsynced_invces == 0:
+        return {
+            'batch_num': batch_num,
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': [],
+            'message': 'No unsynced invoices to process'
+        }
+
     with flask_app.app_context():
         flask_app.logger.info(f"Processing invoice batch {batch_num}/{total_batches} with {len(invoice_ids)} invoices")
         
