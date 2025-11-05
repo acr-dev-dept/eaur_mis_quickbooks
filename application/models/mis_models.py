@@ -1007,7 +1007,7 @@ class TblImvoice(MISBaseModel):
         """Count total number of invoices synced to QuickBooks"""
         try:
             with MISBaseModel.get_session() as session:
-                synced_invoices = session.query(TblImvoice).filter(TblImvoice.QuickBk_Status == 1, TblImvoice.quickbooks_id != None).count()
+                synced_invoices = session.query(TblImvoice).filter(TblImvoice.quickbooks_id != None).count()
                 return synced_invoices
         except Exception as e:
             from flask import current_app

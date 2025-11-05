@@ -67,7 +67,7 @@ celery.conf.beat_schedule = {
     # Optional: Reset offset daily at midnight to start fresh
     "reset-invoice-sync-offset-daily": {
         "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
-        "schedule": 1200.0,  # every 1200 seconds (20 minutes)
+        "schedule": 1800.0,  # every 1800 seconds (30 minutes)
     },
 
     #"sync-payments-every-5-min": {
