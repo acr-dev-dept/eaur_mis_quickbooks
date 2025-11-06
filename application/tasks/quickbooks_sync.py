@@ -1619,7 +1619,7 @@ def sync_single_invoice_task(self, invoice_id):
 
 
 @celery.task(bind=True)
-def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=100, filter_unsynced=True, reset_offset=False):
+def bulk_sync_invoices_task(self, invoice_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
     """
     Celery task to synchronize multiple invoices in batches with offset tracking
     This is the MAIN task that uses Redis offset for progressive syncing
@@ -1899,7 +1899,7 @@ def scheduled_invoice_sync_task():
             # The offset is automatically tracked in Redis
             result = bulk_sync_invoices_task(
                 invoice_ids=None,       # Fetch from DB using offset
-                batch_size=100,          # Process 50 at a time
+                batch_size=50,          # Process 50 at a time
                 filter_unsynced=True,   # Only unsynced invoices
                 reset_offset=False      # Don't reset, continue from last position
             )

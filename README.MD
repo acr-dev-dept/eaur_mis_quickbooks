@@ -348,3 +348,7 @@ requirements needed:
    6. Ensure the protection of api on order to be called only from EAUR MIS
 Concerns
 1. Deleting and updating student information when some data changes in MIS to directly change inside quickbooks too
+
+
+# Don't Dos
+1. Never update MIS data via Quickbooks directly, instead update via MIS and call the respective API to update the data inside quickbooks

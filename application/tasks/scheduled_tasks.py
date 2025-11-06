@@ -56,18 +56,18 @@ celery.conf.beat_schedule = {
     #        "expires": 2,  # Task expires in 2 seconds
     #    }
     #},
-    "progressive-invoice-sync-every-6-min": {
+    "progressive-invoice-sync-every-5-min": {
         "task": "application.tasks.quickbooks_sync.scheduled_invoice_sync_task",
-        "schedule": crontab(minute='*/6'),  # Every 5 minutes
+        "schedule": crontab(minute='*/5'),  # Every 5 minutes
         "options": {
-            "expires": 300,  # Task expires in 4 minutes (less than schedule interval)
+            "expires": 240,  # Task expires in 4 minutes (less than schedule interval)
         }
     },
     
     # Optional: Reset offset daily at midnight to start fresh
     "reset-invoice-sync-offset-daily": {
         "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
-        "schedule": 1800.0,  # every 1800 seconds (30 minutes)
+        "schedule": crontab(hour=0, minute=0),  # Every day at midnight
     },
 
     #"sync-payments-every-5-min": {
