@@ -1080,7 +1080,7 @@ class TblImvoice(MISBaseModel):
                         TblImvoice.invoice_date >= datetime(2025, 1, 1),
                         TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES)
                     )
-                    .order_by(TblImvoice.invoice_date.asc())
+                    .order_by(TblImvoice.invoice_date.desc())
                     .offset(offset)
                     .limit(limit)
                     .all()
