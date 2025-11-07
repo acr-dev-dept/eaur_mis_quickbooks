@@ -1895,11 +1895,11 @@ def scheduled_invoice_sync_task():
         flask_app.logger.info("Starting scheduled invoice sync (offset-based)")
         
         try:
-            # Sync one batch of 50 invoices
+            # Sync one batch of 100 invoices
             # The offset is automatically tracked in Redis
             result = bulk_sync_invoices_task(
                 invoice_ids=None,       # Fetch from DB using offset
-                batch_size=50,          # Process 50 at a time
+                batch_size=100,          # Process 100 at a time
                 filter_unsynced=True,   # Only unsynced invoices
                 reset_offset=False      # Don't reset, continue from last position
             )
