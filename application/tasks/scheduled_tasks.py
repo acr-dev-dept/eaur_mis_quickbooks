@@ -59,6 +59,7 @@ celery.conf.beat_schedule = {
     "progressive-invoice-sync-every-5-min": {
         "task": "application.tasks.quickbooks_sync.scheduled_invoice_sync_task",
         "schedule": crontab(minute='*/5'),  # Every 5 minutes
+        "args": (),
         "options": {
             "expires": 240,  # Task expires in 4 minutes (less than schedule interval)
         }

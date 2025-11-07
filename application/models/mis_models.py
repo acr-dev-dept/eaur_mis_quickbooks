@@ -1078,7 +1078,7 @@ class TblImvoice(MISBaseModel):
                     .filter(
                         TblImvoice.quickbooks_id.is_(None),
                         TblImvoice.invoice_date >= datetime(2025, 1, 1),
-                        TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES),
+                        #TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES),
                         TblImvoice.sync_token.is_(None),
                         TblImvoice.pushed_by != 'InvoiceSyncService'
                     )
