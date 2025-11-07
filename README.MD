@@ -333,9 +333,9 @@ requirements needed:
    6. Ensuring that there are all respective create and update endpoints to reflect the creation (sync) or update
 
 ## Order of Syncing
-   00. Creating locations and departments in quickbooks, to hard code them inside Tbl_campus table and on classref before syncing invoices
-   0. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
-
+   000. Creating locations and departments in quickbooks, to hard code them inside Tbl_campus table and on classref before syncing invoices in sync single invoice method
+   00. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
+   0. Before running bulk sync invoices sync a few and examine the effects
 
    1. Customers (Applicants and students), Inspect to add the address as in East African University live account
       - Create new customer types (Student, applicant)
