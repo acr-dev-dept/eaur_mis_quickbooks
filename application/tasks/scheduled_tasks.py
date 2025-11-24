@@ -4,24 +4,8 @@ from celery.schedules import crontab
 
 
 celery.conf.beat_schedule = {
-    #"sync-payments-every-15-sec": {
-        #"task": "application.tasks.quickbooks_sync.sync_payments",
-        #"schedule": 15.0,  # every 15 seconds
-       # "args": (),
-    #},
-    #"""
-    #"sync-invoices-every-15-sec": {
-    #    "task": "application.tasks.quickbooks_sync.sync_invoices",
-    #    "schedule": 15.0,  # every 15 seconds
-    #    "args": (),
-    #},
-    #"sync-payments-every-15-sec": {
-    #    "task": "application.tasks.quickbooks_sync.sync_payments",
-    #   "schedule": 15.0,  # every 15 seconds
-    #   "args": (),
-    #},
-    #"""
 
+    """A"""
     #"sync-applicants-every-300-sec": {
     #    "task": "application.tasks.quickbooks_sync.bulk_sync_applicants_task",
     #    "schedule": 300.0,  # every 300 seconds
@@ -32,21 +16,24 @@ celery.conf.beat_schedule = {
     #},
 
 
-
+    """B"""
     #"sync-students-every-15-sec": {
     #    "task": "application.tasks.quickbooks_sync.bulk_sync_students_task",
     #    "schedule": 15.0,  # every 15 seconds
     #    "args": (),
     #},
 
-    #"sync-income-categories-every-300-sec": {
-    #    "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
-    #    "schedule": 300.0,  # every 300 seconds
-    #    "args": (),
-    #    "options":{
-    #        "expires": 290,  # Task expires in 290 seconds
-    #    }
-    #},
+    """C"""
+    "sync-income-categories-every-300-sec": {
+        "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
+        "schedule": 30.0,  # every 300 seconds
+        "args": (),
+        "options":{
+            "expires": 29,  # Task expires in 290 seconds
+        }
+    },
+
+    """D"""
 
     #"sync-items-every-3-sec": {
     #    "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
@@ -56,20 +43,24 @@ celery.conf.beat_schedule = {
     #        "expires": 2,  # Task expires in 2 seconds
     #    }
     #},
-    "progressive-invoice-sync-every-7-min": {
-        "task": "application.tasks.quickbooks_sync.scheduled_invoice_sync_task",
-        "schedule": crontab(minute='*/7'),  # Every 7 minutes
-        "args": (),
-        "options": {
-            "expires": 360,  # Task expires in 6 minutes (less than schedule interval)
-        }
-    },
+
+    """E"""
+    #"progressive-invoice-sync-every-7-min": {
+    #    "task": "application.tasks.quickbooks_sync.scheduled_invoice_sync_task",
+    #    "schedule": crontab(minute='*/7'),  # Every 7 minutes
+    #    "args": (),
+    #    "options": {
+    #        "expires": 360,  # Task expires in 6 minutes (less than schedule interval)
+    #    }
+    #},
+
     
     # Optional: Reset offset daily at midnight to start fresh
     "reset-invoice-sync-offset-daily": {
         "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
         "schedule": crontab(hour=0, minute=0),  # Every day at midnight
     },
+
 
     #"sync-payments-every-5-min": {
     #    "task": "application.tasks.quickbooks_sync.bulk_sync_payments_task",

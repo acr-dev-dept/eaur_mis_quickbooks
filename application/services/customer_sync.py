@@ -439,7 +439,7 @@ class CustomerSyncService:
 
             # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "DisplayName": f"{applicant_data['tracking_id']} - Applicant",
+                "DisplayName": f"{applicant_data['tracking_id']}",
                 "GivenName": applicant_data['first_name'],
                 "FamilyName": applicant_data['last_name'],
                 "MiddleName": applicant_data['middle_name'],
@@ -510,7 +510,7 @@ class CustomerSyncService:
             if sparse:
                 # Full update logic if ever needed
                 qb_customer_update.update({
-                    "DisplayName": f"{applicant_data['tracking_id'] } - Applicant",
+                    "DisplayName": f"{applicant_data['tracking_id'] }",
                     "GivenName": applicant_data['first_name'],
                     "FamilyName": applicant_data['family_name'],
                     "MiddleName": applicant_data['middlename'],
@@ -577,7 +577,7 @@ class CustomerSyncService:
             if sparse:
                 # Full update logic if ever needed
                 qb_customer_update.update({
-                    "DisplayName": f"{student_data.get('reg_no', '')} - Student",
+                    "DisplayName": f"{student_data.get('reg_no', '')}",
                     "GivenName": student_data.get('first_name'),
                     "FamilyName": student_data.get('last_name'),
                     "MiddleName": student_data.get('middle_name'),
@@ -671,7 +671,7 @@ class CustomerSyncService:
 
             # Create the main QuickBooks customer dictionary
             qb_customer = {
-                "DisplayName": f"{student_data.get('reg_no', '')} - Student",
+                "DisplayName": f"{student_data.get('reg_no', '')}",
                 "GivenName": student_data.get('first_name'),
                 "FamilyName": student_data.get('last_name'),
                 "MiddleName": student_data.get('middle_name'),

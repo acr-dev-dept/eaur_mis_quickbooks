@@ -299,13 +299,7 @@ python app.py
 This project is proprietary software developed for East African University Rwanda.
 
 ## Support
-
-For technical support or questions:
-- Email: support@acr-online.rw
-- Documentation: [Project Wiki](link-to-wiki)
-- Issues: [GitHub Issues](link-to-issues)
-
----
+Call the given number
 
 **Note**: This microservice is part of the EAUR MIS-QuickBooks Integration project. Ensure you have the necessary credentials and permissions before setting up the integration.
 
@@ -352,3 +346,18 @@ Concerns
 
 # Don't Dos
 1. Never update MIS data via Quickbooks directly, instead update via MIS and call the respective API to update the data inside quickbooks
+
+# Database Setup
+mysqldump miseaurac_db > sandbox_v3.sql;
+mysql -e "CREATE DATABASE sandbox_v3";
+mysql sandbox_v3 < sandbox_v3.sql 
+
+Update the .env file from the microservice to point to the right database
+
+GRANT ALL PRIVILEGES ON sandbox_v3.* TO 'eaurqb'@'178.62.215.167';
+
+FLUSH PRIVILEGES;
+
+# QB Connection
+1. Intuit app, playground and proceed with keys generation and select the account to connect to
+
