@@ -24,25 +24,25 @@ celery.conf.beat_schedule = {
     #},
 
     """C"""
-    "sync-income-categories-every-300-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
-        "schedule": 30.0,  # every 300 seconds
-        "args": (),
-        "options":{
-            "expires": 29,  # Task expires in 290 seconds
-        }
-    },
+    #"sync-income-categories-every-300-sec": {
+    #    "task": "application.tasks.quickbooks_sync.bulk_sync_income_categories_task",
+    #    "schedule": 30.0,  # every 300 seconds
+    #    "args": (),
+    #    "options":{
+    #        "expires": 29,  # Task expires in 290 seconds
+    #    }
+    #},
 
     """D"""
 
-    #"sync-items-every-3-sec": {
-    #    "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
-    #    "schedule": 3,  # every 3 seconds
-    #    "args": (),
-    #    "options":{
-    #        "expires": 2,  # Task expires in 2 seconds
-    #    }
-    #},
+    "sync-items-every-3-sec": {
+        "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
+        "schedule": 3,  # every 3 seconds
+        "args": (),
+        "options":{
+            "expires": 2,  # Task expires in 2 seconds
+        }
+    },
 
     """E"""
     #"progressive-invoice-sync-every-7-min": {
