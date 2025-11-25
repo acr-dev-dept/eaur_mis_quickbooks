@@ -249,8 +249,8 @@ if __name__ == "__main__":
             amount=20000,
             channel_name="MOMO",
             phone_number="0781049931",
-            payer_names="Alex Rugema",
-            payer_email="alex.rugema@example.com"
+            payer_names="Patrick Kabanda",
+            payer_email="patrick.kabanda@example.com"
         )
         print(payment_response)
     except Exception as e:

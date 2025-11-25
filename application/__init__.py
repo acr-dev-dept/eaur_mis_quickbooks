@@ -68,31 +68,6 @@ def create_app(config_name=None):
 
     app.celery_app = celery
 
-    # create a home page route
-    @app.route('/')
-    def home():
-        #add a simple formatted home page message with inline html and some style
-        message = """
-        <html>
-        <head>
-            <title>EAUR MIS-QuickBooks Integration</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 40px; }
-                h1 { color: #2c3e50; }
-                p { font-size: 18px; }
-            </style>
-        </head>
-        <body>
-            <h1>Welcome to the EAUR MIS-QuickBooks Integration Service</h1>
-            <p>This service facilitates integration between the EAUR Management Information System (MIS) and QuickBooks.</p>
-            <p>Use the API endpoints to interact with the service.</p>
-            <p>The services are being developed and improved continuously.</p>
-            
-        </body>
-        </html>
-        """
-        return message
-
     # Setup application context
     with app.app_context():
         # Import central models to ensure they're registered with SQLAlchemy

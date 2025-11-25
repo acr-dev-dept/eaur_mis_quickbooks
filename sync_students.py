@@ -1,4 +1,3 @@
-#!/home/alex/eaur_mis_quickbooks/venv/bin/python3
 """This module will be used to sync students from MIS to QuickBooks."""
 import sys
 from application.services.customer_sync import CustomerSyncService
