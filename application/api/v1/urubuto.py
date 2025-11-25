@@ -629,7 +629,7 @@ def payment_notification():
 
             # Update invoice balance if needed
             try:
-                current_balance = float(invoice.balance) if invoice.balance else 0.0
+                current_balance = float(invoice.balance) if invoice.balance else float(invoice.dept) if invoice.dept else 0.0
                 new_balance = max(0, current_balance - float(amount))
                 invoice.balance = str(new_balance)
                 session.commit()

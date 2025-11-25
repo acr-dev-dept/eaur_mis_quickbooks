@@ -250,7 +250,7 @@ class Payment(MISBaseModel):
         """
         try:
             with cls.get_session() as session:
-                payment = cls(**kwargs)
+                payment = cls(**kwargs, date=datetime.now().strftime("%Y-%m-%d"))
                 session.add(payment)
                 session.commit()
                 return payment.to_dict()
