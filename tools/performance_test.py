@@ -69,11 +69,11 @@ def test_applicant_performance():
                     'status': 'SUCCESS'
                 }
                 
-                print(f"   ✅ Response Time: {response_time:.2f}s")
-                print(f"   ✅ Records Retrieved: {actual_count}")
-                print(f"   ✅ Enrichment Rate: {result['enrichment_rate']}%")
-                print(f"   ✅ Conversion Errors: {len(conversion_errors)}")
-                print(f"   ✅ Batch Optimized: {result['optimized']}")
+                print(f"   ==YES==Response Time: {response_time:.2f}s")
+                print(f"   ==YES==Records Retrieved: {actual_count}")
+                print(f"   ==YES==Enrichment Rate: {result['enrichment_rate']}%")
+                print(f"   ==YES==Conversion Errors: {len(conversion_errors)}")
+                print(f"   ==YES==Batch Optimized: {result['optimized']}")
                 
                 if response_time > 10:
                     print(f"   ⚠️  Slow response time: {response_time:.2f}s")
@@ -132,7 +132,7 @@ def test_limit_functionality():
                 actual_count = len(data.get('data', {}).get('applicants', []))
                 
                 if actual_count == limit:
-                    print(f"   ✅ Limit {limit}: Got {actual_count} records")
+                    print(f"   ==YES==Limit {limit}: Got {actual_count} records")
                 else:
                     print(f"   ⚠️  Limit {limit}: Expected {limit}, got {actual_count} records")
             else:
@@ -163,7 +163,7 @@ def print_performance_summary(results):
         if max_response_time < 5:
             print("🎉 EXCELLENT: All responses under 5 seconds")
         elif max_response_time < 10:
-            print("✅ GOOD: All responses under 10 seconds")
+            print("==YES==GOOD: All responses under 10 seconds")
         elif max_response_time < 30:
             print("⚠️  ACCEPTABLE: Some responses over 10 seconds")
         else:
@@ -232,9 +232,9 @@ def test_student_performance():
                     'status': 'SUCCESS'
                 }
 
-                print(f"   ✅ Response Time: {response_time:.2f}s")
-                print(f"   ✅ Records Retrieved: {actual_count}")
-                print(f"   ✅ Enrichment Rate: {result['enrichment_rate']}%")
+                print(f"   ==YES==Response Time: {response_time:.2f}s")
+                print(f"   ==YES==Records Retrieved: {actual_count}")
+                print(f"   ==YES==Enrichment Rate: {result['enrichment_rate']}%")
 
                 if response_time > 10:
                     print(f"   ⚠️  Slow response time: {response_time:.2f}s")

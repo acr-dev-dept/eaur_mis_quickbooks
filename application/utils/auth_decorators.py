@@ -102,7 +102,7 @@ def require_auth(required_permission=None):
                         "status": 401
                     }), 401
                 else:
-                    current_app.logger.info(f"✅ Token valid for client: {payload_or_error.get('client_name')} (ID: {payload_or_error.get('client_id')})")
+                    current_app.logger.info(f"==YES==Token valid for client: {payload_or_error.get('client_name')} (ID: {payload_or_error.get('client_id')})")
                     current_app.logger.info(f"Client gateway: {payload_or_error.get('gateway_name')}")
                     current_app.logger.info(f"Client permissions: {payload_or_error.get('permissions', [])}")
                 
@@ -123,14 +123,14 @@ def require_auth(required_permission=None):
                             "status": 403
                         }), 403
                     else:
-                        current_app.logger.info(f"✅ Permission check passed: {required_permission}")
+                        current_app.logger.info(f"==YES==Permission check passed: {required_permission}")
 
                 # Add token payload to request context for use in route
                 request.token_payload = payload_or_error
-                current_app.logger.info("✅ Token payload added to request context")
+                current_app.logger.info("==YES==Token payload added to request context")
 
                 current_app.logger.info(
-                    f"✅ Authentication successful for client: {payload_or_error.get('client_name')} "
+                    f"==YES==Authentication successful for client: {payload_or_error.get('client_name')} "
                     f"({payload_or_error.get('gateway_name')})"
                 )
                 current_app.logger.info(f"🔐 === AUTH END for {f.__name__} - PROCEEDING ===")
@@ -204,7 +204,7 @@ def require_gateway(allowed_gateways):
                         "status": 403
                     }), 403
 
-                current_app.logger.info(f"✅ Gateway access granted for {client_gateway}")
+                current_app.logger.info(f"==YES==Gateway access granted for {client_gateway}")
                 current_app.logger.info(f"🚪 === GATEWAY CHECK END ===")
                 return f(*args, **kwargs)
                 

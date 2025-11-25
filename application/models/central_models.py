@@ -409,7 +409,7 @@ class AuthenticationService:
 
             current_app.logger.info("🔍 Attempting JWT decode with HS256")
             payload = jwt.decode(token, secret_key, algorithms=['HS256'])
-            current_app.logger.info("✅ JWT decoded successfully")
+            current_app.logger.info("==YES==JWT decoded successfully")
             current_app.logger.info(f"Token payload keys: {list(payload.keys())}")
             current_app.logger.info(f"Token payload: {payload}")
 
@@ -431,7 +431,7 @@ class AuthenticationService:
                 current_app.logger.warning("❌ Client no longer active or not found")
                 return False, "Client no longer active"
 
-            current_app.logger.info("✅ JWT validation successful")
+            current_app.logger.info("==YES==JWT validation successful")
             current_app.logger.info("🔍 === JWT VALIDATION END ===")
             return True, payload
 

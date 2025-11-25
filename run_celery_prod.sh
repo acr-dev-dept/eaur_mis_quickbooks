@@ -68,6 +68,6 @@ celery -A $APP_MODULE flower \
     --pidfile="$PID_DIR/flower.pid" \
     --logfile="$LOG_DIR/flower.log" &
 
-echo "✅ Celery worker started (async mode)"
-echo "✅ Standalone Beat started"
-echo "✅ Flower monitoring started at http://localhost:$FLOWER_PORT"
+echo "==YES==Celery worker started (async mode)"
+echo "==YES==Standalone Beat started"
+echo "==YES==Flower monitoring started at http://localhost:$FLOWER_PORT"

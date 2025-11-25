@@ -333,8 +333,8 @@ requirements needed:
 
    1. Customers (Applicants and students), Inspect to add the address as in East African University live account
       - Create new customer types (Student, applicant)
-   2. Income Accounts
-   3. Items (dependent on Income accounts ref)
+   2. Income Accounts (sync by celery)
+   3. Items (dependent on Income accounts ref) (sync by bash script)
    4. Invoices (dependent on Items and income accounts)
       1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync
    5. Sync Banks (to be used as a DepositToAccountRef while syncing Payments)

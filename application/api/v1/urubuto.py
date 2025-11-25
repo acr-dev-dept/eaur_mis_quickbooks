@@ -712,6 +712,7 @@ def initiate_payment():
         amount = data.get('amount')
         channel_name = data.get('channel_name')
         service_code = data.get('service_code')
+        merchant_code = data.get('merchant_code')
 
         if not all([payer_code,  channel_name]):
             return jsonify({
@@ -759,7 +760,8 @@ def initiate_payment():
                 redirection_url=data.get('redirection_url'),
                 payer_names=data.get('payer_names'),
                 payer_email=data.get('payer_email'),
-                service_code=service_code
+                service_code=service_code,
+                merchant_code=merchant_code
             )
             current_app.logger.info(f"Payment initiation result checking: {result}")
 
@@ -947,8 +949,8 @@ def check_payment_status_by_reference():
 @require_auth()
 def test_auth():
     """Test authentication endpoint for debugging token issues."""
-    current_app.logger.info("🧪 === TEST AUTH ENDPOINT REACHED ===")
-    current_app.logger.info("✅ Authentication successful - endpoint reached")
+    current_app.logger.info("++ === TEST AUTH ENDPOINT REACHED ===")
+    current_app.logger.info("==YES==Authentication successful - endpoint reached")
 
     return jsonify({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

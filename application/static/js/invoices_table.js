@@ -11,10 +11,10 @@ $(document).ready(function() {
             url: '/mis_invoices/get_mis_invoices',
             type: 'GET',
             data: function(d) {
-                // ✅ Keep DataTables search untouched
+                // ==YES==Keep DataTables search untouched
                 d.search_value = d.search.value;  
 
-                // ✅ Add separate status filter
+                // ==YES==Add separate status filter
                 d.status_filter = $('#status-filter-input').val() || '';
             }
         },
@@ -57,7 +57,7 @@ $(document).ready(function() {
         order: [[0, 'desc']]
     });
 
-    // ✅ Status filter buttons
+    // ==YES==Status filter buttons
     $(".status-filter").on("click", function() {
         $(".status-filter").removeClass("ring-2 ring-blue-500");
         $(this).addClass("ring-2 ring-blue-500");
@@ -66,7 +66,7 @@ $(document).ready(function() {
         table.ajax.reload();
     });
 
-    // ✅ Sync button handler
+    // ==YES==Sync button handler
     $('#invoices-table').on('click', '.sync-btn', function () {
         const btn = $(this);
         const recordId = btn.data('id');

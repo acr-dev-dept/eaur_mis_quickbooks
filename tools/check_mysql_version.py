@@ -49,7 +49,7 @@ def check_mysql_version():
             cursor.execute("SELECT VERSION()")
             version = cursor.fetchone()[0]
             
-            print(f"✅ Connected successfully!")
+            print(f"==YES==Connected successfully!")
             print(f"📊 MySQL Version: {version}")
             
             # Parse version to check JSON support
@@ -59,7 +59,7 @@ def check_mysql_version():
             
             # Check JSON support
             if major > 5 or (major == 5 and minor >= 7):
-                print("✅ JSON Support: YES (MySQL 5.7+)")
+                print("==YES==JSON Support: YES (MySQL 5.7+)")
                 print("💡 Recommendation: Keep JSON columns in models")
                 
                 # Test JSON functionality
@@ -67,7 +67,7 @@ def check_mysql_version():
                     cursor.execute("SELECT JSON_VALID('{\"test\": true}')")
                     result = cursor.fetchone()[0]
                     if result == 1:
-                        print("✅ JSON Functions: Available")
+                        print("==YES==JSON Functions: Available")
                     else:
                         print("⚠️  JSON Functions: Limited")
                 except Exception as e:
@@ -112,7 +112,7 @@ def main():
     
     print("\n" + "=" * 50)
     if success:
-        print("✅ Database check completed successfully")
+        print("==YES==Database check completed successfully")
         print("\nNext steps:")
         print("1. Review the JSON support status above")
         print("2. If JSON is supported, keep current model structure")

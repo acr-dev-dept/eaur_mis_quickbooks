@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def test_applicant_preview_api():
     """Test the applicant preview API endpoint"""
-    print("🧪 Testing Applicant Preview API...")
+    print("++ Testing Applicant Preview API...")
 
     try:
         # Test the preview endpoint
@@ -23,12 +23,12 @@ def test_applicant_preview_api():
         if response.status_code == 200:
             data = response.json()
 
-            print(f"✅ API Response Status: {response.status_code}")
-            print(f"✅ Success: {data.get('success')}")
-            print(f"✅ Message: {data.get('message')}")
+            print(f"==YES==API Response Status: {response.status_code}")
+            print(f"==YES==Success: {data.get('success')}")
+            print(f"==YES==Message: {data.get('message')}")
 
             applicants = data.get('data', {}).get('applicants', [])
-            print(f"✅ Retrieved {len(applicants)} applicants")
+            print(f"==YES==Retrieved {len(applicants)} applicants")
 
             if applicants:
                 print("\n📊 Sample Applicant Data:")
@@ -82,7 +82,7 @@ def test_applicant_preview_api():
 
 def test_student_preview_api():
     """Test the student preview API endpoint"""
-    print("🧪 Testing Student Preview API...")
+    print("++ Testing Student Preview API...")
     
     try:
         # Test the preview endpoint
@@ -92,12 +92,12 @@ def test_student_preview_api():
         if response.status_code == 200:
             data = response.json()
             
-            print(f"✅ API Response Status: {response.status_code}")
-            print(f"✅ Success: {data.get('success')}")
-            print(f"✅ Message: {data.get('message')}")
+            print(f"==YES==API Response Status: {response.status_code}")
+            print(f"==YES==Success: {data.get('success')}")
+            print(f"==YES==Message: {data.get('message')}")
             
             students = data.get('data', {}).get('students', [])
-            print(f"✅ Retrieved {len(students)} students")
+            print(f"==YES==Retrieved {len(students)} students")
             
             if students:
                 print("\n📊 Sample Student Data:")
@@ -156,10 +156,10 @@ def test_debug_endpoint(reg_no):
         if response.status_code == 200:
             data = response.json()
             
-            print(f"✅ Debug Response Status: {response.status_code}")
+            print(f"==YES==Debug Response Status: {response.status_code}")
             debug_results = data.get('data', {})
             
-            print(f"✅ Student: {debug_results.get('reg_no')}")
+            print(f"==YES==Student: {debug_results.get('reg_no')}")
             
             # Show enrichment results
             enrichment_results = debug_results.get('enrichment_results', {})
@@ -177,7 +177,7 @@ def test_debug_endpoint(reg_no):
             
             # Show full QuickBooks dict status
             if 'full_quickbooks_dict' in debug_results:
-                print("\n✅ Full QuickBooks dict generated successfully")
+                print("\n==YES==Full QuickBooks dict generated successfully")
                 qb_dict = debug_results['full_quickbooks_dict']
                 print(f"   - Display Name: {qb_dict.get('display_name')}")
                 print(f"   - Campus: {qb_dict.get('campus_name')}")
@@ -187,7 +187,7 @@ def test_debug_endpoint(reg_no):
                 if nationality and nationality.isdigit():
                     print(f"   ⚠️  Nationality: '{nationality}' (still showing ID)")
                 else:
-                    print(f"   ✅ Nationality: '{nationality}'")
+                    print(f"   ==YES==Nationality: '{nationality}'")
             elif 'full_quickbooks_dict_error' in debug_results:
                 print(f"\n❌ Full QuickBooks dict error: {debug_results['full_quickbooks_dict_error']}")
             
@@ -213,10 +213,10 @@ def test_country_debug_endpoint(reg_no):
         if response.status_code == 200:
             data = response.json()
 
-            print(f"✅ Country Debug Response Status: {response.status_code}")
+            print(f"==YES==Country Debug Response Status: {response.status_code}")
             debug_results = data.get('data', {})
 
-            print(f"✅ Student: {debug_results.get('reg_no')}")
+            print(f"==YES==Student: {debug_results.get('reg_no')}")
 
             # Show raw data
             raw_data = debug_results.get('raw_data', {})
@@ -232,14 +232,14 @@ def test_country_debug_endpoint(reg_no):
             if 'by_cntr_id' in lookup_results:
                 cntr_result = lookup_results['by_cntr_id']
                 if cntr_result.get('found'):
-                    print(f"   ✅ By cntr_id: {cntr_result.get('cntr_name')} ({cntr_result.get('cntr_nationality')})")
+                    print(f"   ==YES==By cntr_id: {cntr_result.get('cntr_name')} ({cntr_result.get('cntr_nationality')})")
                 else:
                     print(f"   ❌ By cntr_id: Not found")
 
             if 'by_nationality_field' in lookup_results:
                 nat_result = lookup_results['by_nationality_field']
                 if nat_result.get('found'):
-                    print(f"   ✅ By nationality field: {nat_result.get('cntr_name')} ({nat_result.get('cntr_nationality')})")
+                    print(f"   ==YES==By nationality field: {nat_result.get('cntr_name')} ({nat_result.get('cntr_nationality')})")
                 else:
                     print(f"   ❌ By nationality field: Not found")
 
@@ -247,7 +247,7 @@ def test_country_debug_endpoint(reg_no):
             if 'enrichment_result' in debug_results:
                 enrichment_result = debug_results['enrichment_result']
                 if enrichment_result and not enrichment_result.isdigit():
-                    print(f"\n✅ Enrichment Result: '{enrichment_result}'")
+                    print(f"\n==YES==Enrichment Result: '{enrichment_result}'")
                 else:
                     print(f"\n⚠️  Enrichment Result: '{enrichment_result}' (still showing ID)")
             elif 'enrichment_error' in debug_results:
@@ -275,11 +275,11 @@ def test_applicant_debug_endpoint(appl_id):
         if response.status_code == 200:
             data = response.json()
 
-            print(f"✅ Applicant Debug Response Status: {response.status_code}")
+            print(f"==YES==Applicant Debug Response Status: {response.status_code}")
             debug_results = data.get('data', {})
 
-            print(f"✅ Applicant ID: {debug_results.get('appl_Id')}")
-            print(f"✅ Tracking ID: {debug_results.get('tracking_id')}")
+            print(f"==YES==Applicant ID: {debug_results.get('appl_Id')}")
+            print(f"==YES==Tracking ID: {debug_results.get('tracking_id')}")
 
             # Show raw data
             raw_data = debug_results.get('raw_data', {})
@@ -307,7 +307,7 @@ def test_applicant_debug_endpoint(appl_id):
 
             # Show full QuickBooks dict status
             if 'full_quickbooks_dict' in debug_results:
-                print("\n✅ Full QuickBooks dict generated successfully")
+                print("\n==YES==Full QuickBooks dict generated successfully")
                 qb_dict = debug_results['full_quickbooks_dict']
                 print(f"   - Display Name: {qb_dict.get('display_name')}")
                 print(f"   - Country of Birth: {qb_dict.get('country_of_birth')}")

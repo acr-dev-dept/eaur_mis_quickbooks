@@ -1733,15 +1733,15 @@ if __name__ == "__main__":
             # Encrypt and store tokens if provided
             if access_token:
                 config.access_token = QuickBooksHelper.encrypt(access_token)
-                print("✅ Access token encrypted and stored")
+                print("==YES==Access token encrypted and stored")
 
             if refresh_token:
                 config.refresh_token = QuickBooksHelper.encrypt(refresh_token)
-                print("✅ Refresh token encrypted and stored")
+                print("==YES==Refresh token encrypted and stored")
 
             if authorization_code:
                 config.authorization_code = QuickBooksHelper.encrypt(authorization_code)
-                print("✅ Authorization code encrypted and stored")
+                print("==YES==Authorization code encrypted and stored")
 
             # Store realm_id and set active
             config.realm_id = realm_id
@@ -1750,7 +1750,7 @@ if __name__ == "__main__":
             # Save to database
             db.session.add(config)
             db.session.commit()
-            print("✅ Database updated successfully!")
+            print("==YES==Database updated successfully!")
 
         except Exception as e:
             print(f"❌ Error populating database: {e}")
@@ -1759,7 +1759,7 @@ if __name__ == "__main__":
         # Initialize QuickBooks client (will now load from database)
         try:
             qb = QuickBooks()
-            print(f"✅ QuickBooks client created and loaded from database")
+            print(f"==YES==QuickBooks client created and loaded from database")
             print(f"   - Realm ID: {qb.realm_id}")
             print(f"   - Has access token: {bool(qb.access_token)}")
             print(f"   - Has refresh token: {bool(qb.refresh_token)}")
@@ -1768,23 +1768,23 @@ if __name__ == "__main__":
             exit(1)
 
         # Test the configuration
-        print("\n🧪 Testing QuickBooks API connection...")
+        print("\n++ Testing QuickBooks API connection...")
         try:
             # If we have an access token, try a direct API call
             if qb.access_token:
                 print("� Testing with existing access token...")
                 accounts = qb.get_account_types(qb.realm_id)
-                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
+                print(f"==YES==API test successful! Retrieved {len(accounts) if accounts else 0} account types")
 
             # If we only have refresh token, try to refresh first
             elif qb.refresh_token:
                 print("🔄 No access token found, attempting token refresh...")
                 tokens = qb.refresh_access_token()
-                print("✅ Token refresh successful!")
+                print("==YES==Token refresh successful!")
 
                 # Now test API
                 accounts = qb.get_account_types(qb.realm_id)
-                print(f"✅ API test successful! Retrieved {len(accounts) if accounts else 0} account types")
+                print(f"==YES==API test successful! Retrieved {len(accounts) if accounts else 0} account types")
 
             else:
                 print("⚠️  No tokens available for testing")

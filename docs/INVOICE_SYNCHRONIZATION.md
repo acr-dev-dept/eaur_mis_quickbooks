@@ -6,19 +6,19 @@ The EAUR MIS-QuickBooks Integration includes a comprehensive invoice synchroniza
 
 ## Features
 
-### ✅ **Comprehensive Synchronization**
+### ==YES==**Comprehensive Synchronization**
 - **Bulk Processing**: Synchronize thousands of invoices efficiently
 - **Batch Processing**: Process invoices in configurable batches to avoid API rate limits
 - **Progress Tracking**: Real-time monitoring of synchronization progress
 - **Error Handling**: Robust error handling with retry mechanisms
 
-### ✅ **Data Integrity**
+### ==YES==**Data Integrity**
 - **Status Tracking**: Track synchronization status for each invoice
 - **Audit Logging**: Complete audit trail of all synchronization activities
 - **Data Validation**: Validate data before sending to QuickBooks
 - **Duplicate Prevention**: Prevent duplicate synchronization
 
-### ✅ **Flexible Management**
+### ==YES==**Flexible Management**
 - **API Endpoints**: RESTful API for programmatic control
 - **Command Line Tools**: CLI tools for manual management
 - **Multiple Sync Options**: Single invoice, batch, or full synchronization
@@ -84,7 +84,7 @@ python3 tools/sync_invoices.py analyze
 ```
 📊 Synchronization Statistics:
    Total Invoices: 1,250
-   ✅ Already Synced: 0
+   ==YES==Already Synced: 0
    ⏳ Not Synced: 1,250
    ❌ Failed: 0
    🔄 In Progress: 0

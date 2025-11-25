@@ -82,7 +82,7 @@ $(document).ready(function() {
     pageLength: 50
   });
 
-  // ✅ Event delegation for sync button
+  // ==YES==Event delegation for sync button
   $('#invoices-table').on('click', '.sync-btn', function () {
     const btn = $(this);
     const recordId = btn.data('id');

@@ -6,18 +6,18 @@ The EAUR MIS-QuickBooks Integration includes a comprehensive customer synchroniz
 
 ## Features
 
-### ✅ **Dual Customer Types**
+### ==YES==**Dual Customer Types**
 - **Applicants**: From `tbl_online_application` → QuickBooks Customers (`CustomerType: "Applicant"`)
 - **Students**: From `tbl_personal_ug` → QuickBooks Customers (`CustomerType: "Student"`)
 - **Separate Records**: Same person can exist as both applicant and student with different identifiers
 
-### ✅ **Comprehensive Data Mapping**
+### ==YES==**Comprehensive Data Mapping**
 - **Real Names**: Display names use actual names (e.g., "John Doe", not "APP-John Doe")
 - **Rich Custom Fields**: Campus, program, intake, gender, national ID, etc.
 - **Data Enrichment**: IDs converted to readable names with fallback handling
 - **Complete Coverage**: ALL records included, even with missing data
 
-### ✅ **Robust Synchronization**
+### ==YES==**Robust Synchronization**
 - **Batch Processing**: Configurable batch sizes to respect API limits
 - **Status Tracking**: Track sync status for each customer
 - **Error Handling**: Graceful handling of missing data and API errors
@@ -132,7 +132,7 @@ python3 tools/sync_customers.py analyze
 
 👥 APPLICANTS:
    Total Applicants: 850
-   ✅ Already Synced: 0
+   ==YES==Already Synced: 0
    ⏳ Not Synced: 850
    ❌ Failed: 0
    🔄 In Progress: 0
@@ -140,7 +140,7 @@ python3 tools/sync_customers.py analyze
 
 🎓 STUDENTS:
    Total Students: 1,200
-   ✅ Already Synced: 0
+   ==YES==Already Synced: 0
    ⏳ Not Synced: 1,200
    ❌ Failed: 0
    🔄 In Progress: 0
@@ -148,7 +148,7 @@ python3 tools/sync_customers.py analyze
 
 🌟 OVERALL:
    Total Customers: 2,050
-   ✅ Total Synced: 0
+   ==YES==Total Synced: 0
    ⏳ Total Not Synced: 2,050
    📈 Overall Progress: 0.0%
 ```
