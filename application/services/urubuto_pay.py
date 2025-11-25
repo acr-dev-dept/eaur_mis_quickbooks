@@ -38,6 +38,8 @@ class UrubutoPay:
             logger.warning("URUBUTO_PAY_API_KEY not configured")
         if not self.merchant_code:
             logger.warning("URUBUTO_PAY_MERCHANT_CODE not configured")
+        if not self.service_code:
+            logger.warning("URUBUTO_PAY_SERVICE_CODE not configured")
     
     def _make_request(self, endpoint, method="GET", data=None, headers=None):
         """
@@ -86,7 +88,7 @@ class UrubutoPay:
     
     def initiate_payment(self, payer_code, amount, channel_name, phone_number=None, 
                         card_type=None, redirection_url=None, payer_names=None, 
-                        payer_email=None, service_code=None):
+                        payer_email=None, service_code=None, merchant_code=None):
         """
         Initiate a payment through Urubuto Pay gateway.
         
@@ -109,7 +111,7 @@ class UrubutoPay:
             
             # Prepare payment data
             payment_data = {
-                "merchant_code": self.merchant_code,
+                "merchant_code": self.merchant_code if self.merchant_code else merchant_code,
                 "payer_code": str(payer_code),
                 "amount": float(amount),
                 "channel_name": channel_name,
