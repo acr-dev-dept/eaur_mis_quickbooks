@@ -785,7 +785,7 @@ class TblImvoice(MISBaseModel):
                 invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
                 if invoice:
                     # The balance cannot be negative
-                    new_balance = max(0, (invoice.balance or 0) - amount_paid)
+                    new_balance = max(0, (invoice.balance or invoice.dept) - amount_paid)
                     invoice.balance = new_balance
                     session.commit()
                     return new_balance, invoice
