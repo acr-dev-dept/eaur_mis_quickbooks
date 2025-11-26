@@ -2754,6 +2754,26 @@ class TblRegisterProgramUg(MISBaseModel):
             'auth_ccs_nnc': self.auth_ccs_nnc,
             'qk_id': self.qk_id
         }
+    
+    @staticmethod
+    def get_campus_id_by_reg_no(reg_no):
+        """
+        Get campus ID by student registration number
+
+        Args:
+            reg_no (str): Student registration number
+
+        Returns:
+            int: Campus ID or None if not found
+        """
+        try:
+            with TblRegisterProgramUg.get_session() as session:
+                reg_program = session.query(TblRegisterProgramUg).filter(TblRegisterProgramUg.reg_no == reg_no).first()
+                return reg_program.camp_id if reg_program else None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting campus ID for reg no {reg_no}: {str(e)}")
+            return None
 
 class TblSponsor(MISBaseModel):
     """Model for tbl_sponsor table"""
