@@ -17,7 +17,7 @@ from flask import current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication
+from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication, TblRegisterProgramUg
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
@@ -270,7 +270,7 @@ class InvoiceSyncService:
             if invoice.fee_category:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
                 quickbooks_id = category['QuickBk_ctgId'] if category else None
-                camp_id = category['camp_id'] if category else None
+                camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.reg_no)
                 location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
                 current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
 
