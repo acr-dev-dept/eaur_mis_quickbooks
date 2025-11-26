@@ -158,7 +158,11 @@ def payer_validation():
 
         # get invoice details given the reference number (payer_code)
         try:            
-            invoice_balance = TblImvoice.get_invoice_balance(payer_code)
+            invoice_bal = TblImvoice.get_invoice_balance(payer_code)
+            invoice_deposit_amount = TblImvoice.get_invoice_deposit_amount(payer_code)
+
+            invoice_balance = invoice_bal or invoice_deposit_amount
+
             if invoice_balance is None:
                 current_app.logger.warning(f"No invoice found for payer_code: {payer_code}")
                 return jsonify({

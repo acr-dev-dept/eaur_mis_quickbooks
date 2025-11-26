@@ -742,6 +742,33 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error getting invoice balance for reference {reference_number}: {str(e)}")
             return None
     
+
+    @classmethod
+    def get_invoice_deposit_amount(cls, reference_number):
+        """
+        Get total deposit amount for an invoice by reference number
+
+        Args:
+            reference_number (str): Invoice reference number
+        Returns:
+            float: Total deposit amount or 0 if none found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
+                if invoice:
+                    dept_amount = invoice.dept or None
+                    return dept_amount
+                return None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting deposit amount for invoice {reference_number}: {str(e)}")
+            return None
+
+
+
+
+
     @classmethod
     def update_invoice_balance(cls, reference_number, amount_paid):
         """
