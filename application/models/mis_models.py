@@ -1226,7 +1226,8 @@ class TblIncomeCategory(MISBaseModel):
             with MISBaseModel.get_session() as session:
                 cat_data_obj=session.query(TblIncomeCategory).filter(
                     TblIncomeCategory.name == category_name,
-                    TblIncomeCategory.QuickBk_ctgId.isnot(None)
+                    TblIncomeCategory.QuickBk_ctgId.isnot(None),
+                    TblIncomeCategory.sync_token.isnot(None)
                 ).first()
                 cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
                 return cat_data_dict
