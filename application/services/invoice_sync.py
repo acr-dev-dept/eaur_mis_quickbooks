@@ -259,9 +259,9 @@ class InvoiceSyncService:
                 amount = float(invoice.dept or 0)  # Use debit amount if calculation results in zero/negative
 
             # Get fee category description
-            fee_description = "Tuition Fee"  # Default
+            fee_description = ""  # Default
             if invoice.fee_category_rel:
-                fee_description = getattr(invoice.fee_category_rel, 'name', 'Tuition Fee')
+                fee_description = getattr(invoice.fee_category_rel, 'name', '')
                 current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
             invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
@@ -269,6 +269,19 @@ class InvoiceSyncService:
             # Get fee category for item mapping
             if invoice.fee_category:
                 category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
+                cat_name = category['name'] if category else None
+                current_app.logger.info(f"Fee category name for invoice {invoice.id}: {cat_name}")
+                __categ = TblIncomeCategory.get_qb_synced_category_by_name(cat_name) if cat_name else None
+                current_app.logger.info(f"Category for invoice {invoice.id}: {cat_name}, QuickBooks ID: {__categ.get('QuickBk_ctgId') if __categ else None}")
+                quickbooks_id = __categ.get('QuickBk_ctgId') if __categ else None
+                current_app.logger.info(f"QuickBooks category ID for invoice {invoice.id}: {quickbooks_id}")
+                # Get campus ID and location ID
+                if not quickbooks_id:
+                    current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+                    category = TblIncomeCategory.get_default_category()
+                    if not category:
+                        raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                    current_app.logger.info(f"Using default category for invoice {invoice.id}: {category['name']}")
                 quickbooks_id = category['QuickBk_ctgId'] if category else None
                 camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.reg_no)
                 location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None

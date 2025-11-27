@@ -1086,13 +1086,14 @@ class TblImvoice(MISBaseModel):
 
     @staticmethod
     def get_unsynced_invoices(limit=100, offset=0):
+        EXCLUDED_FEE_CATEGORIES = []
+        """
         EXCLUDED_FEE_CATEGORIES = [
             1, 2, 3, 4, 5, 6, 7, 8, 9,
             58, 60, 62, 63, 64, 66, 69,
             72, 73, 80, 85, 89, 91, 97,
             99, 103, 111
         ]
-        """
         EXCLUDED_FEE_CATEGORIES = [
         62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
         77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 100, 101, 102,
@@ -1209,6 +1210,29 @@ class TblIncomeCategory(MISBaseModel):
                 return cat_data_dict
         except Exception as e:
             current_app.logger.error(f"Error getting income category for ID {category_id}: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_qb_synced_category_by_name(category_name):
+        """
+        Get income category by name only if already synced to QuickBooks
+
+        Args:
+            category_name (str): Income category name
+        Returns:
+            TblIncomeCategory: Income category record or None if not found or not synced
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                cat_data_obj=session.query(TblIncomeCategory).filter(
+                    TblIncomeCategory.name == category_name,
+                    TblIncomeCategory.QuickBk_ctgId.isnot(None)
+                ).first()
+                cat_data_dict=cat_data_obj.to_dict() if cat_data_obj else None
+                return cat_data_dict
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting synced income category for name {category_name}: {str(e)}")
             return None
 
     @staticmethod
