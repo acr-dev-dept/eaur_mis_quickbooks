@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 import time
+from unicodedata import category
 
 from flask import current_app
 from sqlalchemy import and_, or_, func
@@ -277,13 +278,15 @@ class InvoiceSyncService:
                 # Get campus ID and location ID
                 if not quickbooks_id:
                     current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
-                    category = TblIncomeCategory.get_default_category()
-                    if not category:
-                        raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
-                    current_app.logger.info(f"Using default category for invoice {invoice.id}: {category['name']}")
-                quickbooks_id = category['QuickBk_ctgId'] if category else None
+                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
                 camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.reg_no)
+                if camp_id is None:
+                    current_app.logger.warning(f"No Campus ID found for student {invoice.reg_no} on invoice {invoice.id}")
+                    raise ValueError(f"Invoice {invoice.id} has no valid Campus mapped for student {invoice.reg_no}.")
                 location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
+                if location_id is None:
+                    current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
+                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
                 current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
 
             # if no category found
