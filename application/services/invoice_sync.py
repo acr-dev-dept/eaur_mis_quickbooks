@@ -268,8 +268,7 @@ class InvoiceSyncService:
 
             # Get fee category for item mapping
             if invoice.fee_category:
-                category = TblIncomeCategory.get_category_by_id(invoice.fee_category)
-                cat_name = category['name'] if category else None
+                cat_name = fee_description if fee_description else None
                 current_app.logger.info(f"Fee category name for invoice {invoice.id}: {cat_name}")
                 __categ = TblIncomeCategory.get_qb_synced_category_by_name(cat_name) if cat_name else None
                 current_app.logger.info(f"Category for invoice {invoice.id}: {cat_name}, QuickBooks ID: {__categ.get('QuickBk_ctgId') if __categ else None}")
