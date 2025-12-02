@@ -2020,6 +2020,24 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error updating application status for applicant {tracking_id}: {str(e)}")
             return False
+    @staticmethod
+    def get_campus_id_by_tracking_id(tracking_id):
+        """
+        Get campus ID for an applicant by tracking ID
+
+        Args:
+            tracking_id (str): Applicant tracking ID
+        Returns:
+            int: Campus ID or None if not found
+        """
+        try:
+            with TblOnlineApplication.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
+                return applicant.camp_id if applicant else None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting campus ID for applicant {tracking_id}: {str(e)}")
+            return None
 
 class TblPersonalUg(MISBaseModel):
     """Model for tbl_personal_ug table"""
