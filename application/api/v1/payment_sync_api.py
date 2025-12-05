@@ -31,6 +31,7 @@ def sync_payments():
 def sync_payment(payment_id):
     """Sync a single payment by its ID."""
     try:
+        current_app.logger.info(f"Starting sync for payment ID: {payment_id}")
         # get the payment object given the payment_id
         payment = Payment.get_payment_by_id(payment_id)
 
