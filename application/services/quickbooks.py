@@ -1622,6 +1622,37 @@ class QuickBooks:
                 }
             }
 
+    def create_refund_receipt(self, realm_id, refund_data):
+        """
+        Create a refund receipt in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            refund_data (dict): The data for the refund receipt.
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/refundreceipt"
+        try:
+            current_app.logger.info(f"Creating refund receipt with data: {refund_data}")
+            response = self.make_request(endpoint, method="POST", data=refund_data)
+            current_app.logger.info(f"Refund receipt created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating refund receipt: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating refund receipt: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
+
 
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""
@@ -1815,3 +1846,4 @@ if __name__ == "__main__":
                 print(f"Account types: {accounts}")
             except Exception as e:
                 print("Error:", str(e))
+
