@@ -39,7 +39,7 @@ fi
 
 
 echo "Starting Celery worker..."
-nohup celery -A app.celery worker --loglevel=info > /var/log/celery_worker.log 2>&1 &
+nohup celery -A application.celery worker --loglevel=info > /var/log/celery_worker.log 2>&1 &
 if pgrep -f "celery worker" > /dev/null; then
     echo "✅ Celery worker started successfully."
 else
