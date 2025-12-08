@@ -401,6 +401,12 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching paginated payments: {str(e)}")
             return 0, 0, []
+    @classmethod
+    def get_refund_data(cls, payment_id):
+        """
+            Waiting for implementaion
+        """
+        pass
     @staticmethod
     def get_unsynced_payments(limit=100, offset=0):
         """Get payments not yet synced to QuickBooks,

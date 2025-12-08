@@ -34,15 +34,15 @@ celery.conf.beat_schedule = {
     #},
 
     """D"""
-
-    "sync-items-every-3-sec": {
-        "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
-        "schedule": 3,  # every 3 seconds
-        "args": (),
-        "options":{
-            "expires": 2,  # Task expires in 2 seconds
-        }
-    },
+    
+    #"sync-items-every-3-sec": {
+    #    "task": "application.tasks.quickbooks_sync.bulk_sync_items_task",
+    #    "schedule": 3,  # every 3 seconds
+    #    "args": (),
+    #    "options":{
+    #        "expires": 2,  # Task expires in 2 seconds
+    #    }
+    #},
 
     """E"""
     #"progressive-invoice-sync-every-7-min": {
@@ -56,10 +56,10 @@ celery.conf.beat_schedule = {
 
     
     # Optional: Reset offset daily at midnight to start fresh
-    "reset-invoice-sync-offset-daily": {
-        "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
-        "schedule": crontab(hour=0, minute=0),  # Every day at midnight
-    },
+    #"reset-invoice-sync-offset-daily": {
+    #    "task": "application.tasks.quickbooks_sync.reset_invoice_sync_offset",
+    #    "schedule": crontab(hour=0, minute=0),  # Every day at midnight
+    #},
 
 
     #"sync-payments-every-5-min": {
