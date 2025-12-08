@@ -11,6 +11,9 @@ fi
 LOG_DIR="/home/eaur/eaur_mis_quickbooks/logs"
 mkdir -p "$LOG_DIR"
 
+# Change to project directory to ensure proper imports
+cd /home/eaur/eaur_mis_quickbooks
+
 # Restart services
 echo "Restarting services..."
 
@@ -41,12 +44,13 @@ else
 fi
 
 echo "Starting Celery worker..."
-nohup celery -A application.celery worker --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
+nohup celery -A application.config_files.celery worker --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
 sleep 2
 if pgrep -f "celery worker" > /dev/null; then
     echo "✅ Celery worker started successfully."
 else
     echo "❌ Failed to start Celery worker."
+    echo "Check logs at: $LOG_DIR/celery_worker.log"
 fi
 
 echo "Starting Celery beat..."
@@ -56,6 +60,7 @@ if pgrep -f "celery beat" > /dev/null; then
     echo "✅ Celery beat started successfully."
 else
     echo "❌ Failed to start Celery beat."
+    echo "Check logs at: $LOG_DIR/celery_beat.log"
 fi
 
 echo "Checking and restarting Gunicorn..."
@@ -66,12 +71,14 @@ else
     echo "⚠️ No running Gunicorn process found."
 fi
 
-nohup gunicorn run:app -w 2 -k gevent --worker-connections 1000 -b 0.0.0.0:9000 > "$LOG_DIR/gunicorn.log" 2>&1 &
+nohup gunicorn -b 0.0.0.0:9000 -w 2 run:app > "$LOG_DIR/gunicorn.log" 2>&1 &
 sleep 2
 if pgrep -f "gunicorn" > /dev/null; then
     echo "✅ Gunicorn started successfully."
 else
     echo "❌ Failed to start Gunicorn."
+    echo "Check logs at: $LOG_DIR/gunicorn.log"
 fi
 
 echo "✅ All services restarted successfully."
+echo "Logs are available in: $LOG_DIR/"
