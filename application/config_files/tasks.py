@@ -22,7 +22,7 @@ app = create_app()
 
 
 @shared_task
-def bulk_sync_applicants_task(self, tracking_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
+def bulk_sync_applicants_task(tracking_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
     """
     Celery task to synchronize multiple applicants in batches with offset tracking
 
