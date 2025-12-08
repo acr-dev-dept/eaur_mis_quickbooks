@@ -10,6 +10,9 @@ fi
 # Create logs directory if it doesn't exist
 LOG_DIR="/home/eaur/eaur_mis_quickbooks/logs"
 mkdir -p "$LOG_DIR"
+FLOWER_PORT=${FLOWER_PORT:-5555}
+APP_MODULE=${APP_MODULE:-application.config_files.celery}
+PID_DIR=${PID_DIR:-/home/eaur/eaur_mis_quickbooks/pids}
 
 # Change to project directory to ensure proper imports
 cd /home/eaur/eaur_mis_quickbooks
@@ -22,34 +25,34 @@ echo "Checking and stopping existing Celery processes..."
 # Kill Celery worker if running
 if pgrep -f "celery worker" > /dev/null; then
     pkill -f "celery worker"
-    echo "✅ Celery worker stopped."
+    echo "=== Celery worker stopped."
 else
-    echo "⚠️ No running Celery worker found."
+    echo "xxx No running Celery worker found."
 fi
 
 # Kill Celery beat if running
 if pgrep -f "celery beat" > /dev/null; then
     pkill -f "celery beat"
-    echo "✅ Celery beat stopped."
+    echo "=== Celery beat stopped."
 else
-    echo "⚠️ No running Celery beat found."
+    echo "--- No running Celery beat found."
 fi
 
 # Kill any Celery process
 if pgrep -f "celery" > /dev/null; then
     pkill -f "celery"
-    echo "✅ Other Celery processes stopped."
+    echo "=== Other Celery processes stopped."
 else
-    echo "⚠️ No other running Celery processes found."
+    echo "xxx No other running Celery processes found."
 fi
 
 echo "Starting Celery worker..."
 nohup celery -A application.config_files.celery worker --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
 sleep 2
 if pgrep -f "celery worker" > /dev/null; then
-    echo "✅ Celery worker started successfully."
+    echo "=== Celery worker started successfully."
 else
-    echo "❌ Failed to start Celery worker."
+    echo "xxx Failed to start Celery worker."
     echo "Check logs at: $LOG_DIR/celery_worker.log"
 fi
 
@@ -57,26 +60,26 @@ echo "Starting Celery beat..."
 nohup celery -A application.config_files.celery beat --loglevel=info > "$LOG_DIR/celery_beat.log" 2>&1 &
 sleep 2
 if pgrep -f "celery beat" > /dev/null; then
-    echo "✅ Celery beat started successfully."
+    echo "=== Celery beat started successfully."
 else
-    echo "❌ Failed to start Celery beat."
+    echo "xxx Failed to start Celery beat."
     echo "Check logs at: $LOG_DIR/celery_beat.log"
 fi
 
 echo "Checking and restarting Gunicorn..."
 if pgrep -f "gunicorn" > /dev/null; then
     pkill -f "gunicorn"
-    echo "✅ Gunicorn stopped."
+    echo "=== Gunicorn stopped."
 else
-    echo "⚠️ No running Gunicorn process found."
+    echo "xxx No running Gunicorn process found."
 fi
 
 nohup gunicorn -b 0.0.0.0:9000 -w 2 app:app > "$LOG_DIR/gunicorn.log" 2>&1 &
 sleep 2
 if pgrep -f "gunicorn" > /dev/null; then
-    echo "✅ Gunicorn started successfully."
+    echo "=== Gunicorn started successfully."
 else
-    echo "❌ Failed to start Gunicorn."
+    echo "xxx Failed to start Gunicorn."
     echo "Check logs at: $LOG_DIR/gunicorn.log"
 fi
 # === START FLOWER MONITORING ===
@@ -86,6 +89,6 @@ celery -A $APP_MODULE flower \
     --loglevel=info \
     --pidfile="$PID_DIR/flower.pid" \
     --logfile="$LOG_DIR/flower.log" &
-echo "==YES==Celery worker started (async mode)"
+echo "=== Flower started."
 echo "Logs are available in: $LOG_DIR/"
 
