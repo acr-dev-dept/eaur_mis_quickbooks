@@ -155,7 +155,7 @@ def bulk_sync_applicants_task(tracking_ids=None, batch_size=50, filter_unsynced=
                 'details': traceback.format_exc(),
                 'offset': current_offset if 'current_offset' in locals() else None
             }
-
+@shared_task
 def process_applicants_batch(tracking_ids, batch_num, total_batches):
     """
     Process a batch of applicants
