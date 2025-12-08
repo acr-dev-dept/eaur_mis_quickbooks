@@ -79,6 +79,13 @@ else
     echo "❌ Failed to start Gunicorn."
     echo "Check logs at: $LOG_DIR/gunicorn.log"
 fi
-
-echo "✅ All services restarted successfully."
+# === START FLOWER MONITORING ===
+echo "Starting Flower..."
+celery -A $APP_MODULE flower \
+    --port=$FLOWER_PORT \
+    --loglevel=info \
+    --pidfile="$PID_DIR/flower.pid" \
+    --logfile="$LOG_DIR/flower.log" &
+echo "==YES==Celery worker started (async mode)"
 echo "Logs are available in: $LOG_DIR/"
+
