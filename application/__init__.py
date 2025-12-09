@@ -33,8 +33,8 @@ def create_app(config_name=None):
     app = Flask(__name__)
 
     # Load configuration
-    from config import get_config
-    config_class = get_config(config_name)
+    from config import get_app_config
+    config_class = get_app_config(config_name)
     app.config.from_object(config_class)
 
     # Initialize extensions with app

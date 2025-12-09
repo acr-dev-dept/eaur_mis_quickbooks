@@ -148,7 +148,7 @@ config = {
     'default': DevelopmentConfig
 }
 
-def get_config(config_name=None):
+def get_app_config(config_name=None):
     """Get configuration class by name"""
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
