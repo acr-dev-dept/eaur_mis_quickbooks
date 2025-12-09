@@ -1,12 +1,11 @@
 from celery import shared_task
 from datetime import datetime
-from application import create_app
 from flask import current_app
 import os
 import traceback
 from celery import group, chord
 import redis
-from application.models.mis_models import TblOnlineApplication, TblImvoice, TblPersonalUg, TblIncomeCategory, Payment
+
 from application.services.customer_sync import CustomerSyncService
 from application.models.central_models import QuickBooksConfig
 from application.services.quickbooks import QuickBooks
@@ -18,8 +17,13 @@ redis_client = redis.Redis(
     db=int(os.getenv('REDIS_DB', 0)),
     decode_responses=True
 )
-app = create_app()
 
+
+def get_flask_app():
+    """Helper function to get Flask app context"""
+    from application import create_app
+    app = create_app()
+    return app
 
 @shared_task
 def bulk_sync_applicants_task(tracking_ids=None, batch_size=50, filter_unsynced=True, reset_offset=False):
@@ -36,6 +40,8 @@ def bulk_sync_applicants_task(tracking_ids=None, batch_size=50, filter_unsynced=
     Returns:
         dict: Summary with task info for tracking
     """
+    from application.models.mis_models import TblOnlineApplication
+    app = get_flask_app()
     start_time = datetime.now()
     offset_key = 'applicant_sync:offset'
     
@@ -163,6 +169,8 @@ def process_applicants_batch(tracking_ids, batch_num, total_batches, job_id):
     Returns:
         dict: Summary of batch processing
     """
+    from application.models.mis_models import TblOnlineApplication
+    app = get_flask_app()
     with app.app_context():
         current_app.logger.info(
             f"[Job {job_id}] Processing batch {batch_num}/{total_batches} with {len(tracking_ids)} students"
@@ -263,6 +271,8 @@ def aggregate_batch_results(batch_results, job_id, current_offset):
     Returns:
         dict: Final aggregated results
     """
+    from application.models.mis_models import TblOnlineApplication
+    app = get_flask_app()
     with app.app_context():
         try:
             # Aggregate results from all batches
@@ -357,6 +367,8 @@ def get_job_status(job_id):
     Returns:
         dict: Current job status and metrics
     """
+    app = get_flask_app()
+    
     with app.app_context():
         try:
             job_info = redis_client.hgetall(f'job:{job_id}')
