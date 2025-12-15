@@ -250,7 +250,7 @@ if __name__ == "__main__":
             payer_code="INV123456",
             amount=20000,
             channel_name="MOMO",
-            phone_number="0781049931",
+            phone_number="0780840983",
             payer_names="Patrick Kabanda",
             payer_email="patrick.kabanda@example.com"
         )

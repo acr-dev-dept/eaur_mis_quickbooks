@@ -454,7 +454,6 @@ class PaymentSyncService:
             linked_invoices = []
             if payment.invoi_ref:
                 # Here you would fetch the QuickBooks Invoice ID using payment.invoi_ref
-                # For now, using a placeholder.
                 from application.models.mis_models import TblImvoice
                 with db_manager.get_mis_session() as session:
                     invoice_obj = session.query(TblImvoice).filter_by(reference_number=payment.invoi_ref).first()
@@ -503,6 +502,93 @@ class PaymentSyncService:
         """
         Synchronize a single payment to QuickBooks
         """
+        try:
+            qb_service = self._get_qb_service()
+            qb_payment_data, map_error = self.map_payment_to_quickbooks(payment)
+
+            self.logger.debug(f"Mapped QuickBooks payment data for payment {payment.id}: {json.dumps(qb_payment_data, cls=EnhancedJSONEncoder)}")
+
+            if map_error:
+                self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
+                self._log_sync_audit(payment.id, 'ERROR', map_error)
+                return PaymentSyncResult(
+                    status=PaymentSyncStatus.FAILED,
+                    message=f"Failed to synchronize payment {payment.id} due to mapping error",
+                    success=False,
+                    error_message=map_error
+                )
+            # Log the payload being sent
+            self.logger.info(f"sending a payment with invoice ref {payment.invoi_ref} to QuickBooks and data mapped is {qb_payment_data}")
+            response = qb_service.create_payment(qb_service.realm_id, qb_payment_data)
+            # write this response to the log file
+            log_path = "/var/log/hrms/quickbooks_response.log"
+            try:
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Response: {response}\n")
+                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Request: {qb_payment_data}\n")
+            except Exception as e:
+                self.logger.error(f"Error writing QuickBooks log for payment {payment.id}: {e}")
+            self.logger.debug(f"QuickBooks response for payment {payment.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
+
+            if 'Payment' in response and response['Payment'].get('Id'):
+                qb_payment_id = response['Payment']['Id']
+                self._update_payment_sync_status(
+                    payment.id,
+                    PaymentSyncStatus.SYNCED.value,
+                    quickbooks_id=qb_payment_id,
+                    sync_token=response['Payment'].get('SyncToken')
+                )
+                self._log_sync_audit(payment.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_payment_id}")
+                result = PaymentSyncResult(
+                    status=PaymentSyncStatus.SYNCED,
+                    message=f"Payment {payment.id} synchronized successfully",
+                    success=True,
+                    details=response,
+                    quickbooks_id=qb_payment_id
+                )
+                return result.to_dict()
+            else:
+                error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
+                self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
+                self._log_sync_audit(payment.id, 'ERROR', error_msg)
+                result = PaymentSyncResult(
+                    status=PaymentSyncStatus.FAILED,
+                    message=f"Failed to synchronize payment {payment.id}",
+                    success=False,
+                    error_message=error_msg,
+                    details=response
+                )
+                return result.to_dict()
+
+        except Exception as e:
+            error_msg = str(e)
+            tb = traceback.format_exc()
+            self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
+            self._log_sync_audit(payment.id, 'ERROR', error_msg)
+            result = PaymentSyncResult(
+                status=PaymentSyncStatus.FAILED,
+                message=f"Error synchronizing payment {payment.id}",
+                success=False,
+                error_message=error_msg,
+                traceback=tb
+            )
+            return result.to_dict()
+
+
+    def sync_single_payment_async(self, payment_id: int) -> Dict:
+        """
+        Synchronize a single payment to QuickBooks
+        """
+        payment = Payment.query.get(payment_id)
+        if not payment:
+            raise ValueError(f"Payment with ID {payment_id} not found.")
+        
+        if payment.sync_status == PaymentSyncStatus.SYNCED.value:
+            return {
+                'status': 'ALREADY_SYNCED',
+                'message': f"Payment {payment_id} is already synchronized to QuickBooks.",
+                'success': True
+            }
         try:
             qb_service = self._get_qb_service()
             qb_payment_data, map_error = self.map_payment_to_quickbooks(payment)
