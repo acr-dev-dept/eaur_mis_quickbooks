@@ -583,7 +583,7 @@ class PaymentSyncService:
         if not payment:
             raise ValueError(f"Payment with ID {payment_id} not found.")
         
-        if payment.sync_status == PaymentSyncStatus.SYNCED.value:
+        if payment.QuickBk_Status == 1:  # Already synced
             return {
                 'status': 'ALREADY_SYNCED',
                 'message': f"Payment {payment_id} is already synchronized to QuickBooks.",
