@@ -579,7 +579,7 @@ class PaymentSyncService:
         """
         Synchronize a single payment to QuickBooks
         """
-        payment = Payment.query.get(payment_id)
+        payment = Payment.get_payment_by_id(payment_id)
         if not payment:
             raise ValueError(f"Payment with ID {payment_id} not found.")
         

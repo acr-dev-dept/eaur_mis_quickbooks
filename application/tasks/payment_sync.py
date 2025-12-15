@@ -10,4 +10,4 @@ from application.services.payment_sync import PaymentSyncService
 
 def sync_payment_to_quickbooks_task(self, payment_id: int):
     service = PaymentSyncService()
-    return service.sync_single_payment(payment_id)
+    return service.sync_single_payment_async(payment_id)
