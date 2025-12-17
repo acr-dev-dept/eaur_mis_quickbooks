@@ -19,9 +19,9 @@ celery.autodiscover_tasks([
 ])
 
 celery.conf.beat_schedule = {
-    'sync_applicants_every_5_minutes': {
+    'sync_applicants_every_midnight': {
         'task': 'application.config_files.tasks.bulk_sync_applicants_task',
-        'schedule': crontab(minute='*/1'),
+        'schedule': crontab(hour=0, minute=0),  # every day at midnight
     }
 }
 
