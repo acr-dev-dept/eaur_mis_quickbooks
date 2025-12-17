@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="/logs/gunicorn.log"
+LOG_FILE="/home/eaur/eaur_mis_quickbooks/logs/gunicorn.log"
 LINES=100
 
 if [ ! -f "$LOG_FILE" ]; then
