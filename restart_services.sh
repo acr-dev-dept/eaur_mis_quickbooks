@@ -47,7 +47,9 @@ else
 fi
 
 echo "Starting Celery worker..."
-nohup celery -A application.config_files.celery worker --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
+nohup celery -A application.config_files.celery worker \
+    -Q celery, payment_sync_queue \
+    --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
 sleep 2
 if pgrep -f "celery worker" > /dev/null; then
     echo "=== Celery worker started successfully."
