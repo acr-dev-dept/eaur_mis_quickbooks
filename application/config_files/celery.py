@@ -38,21 +38,15 @@ celery.conf.beat_schedule = {
 celery.conf.task_routes = {
     'application.config_files.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
 }
-def make_celery():
+def make_celery(app):
     app = create_app()
-    celery = Celery(
-        app.import_name,
-        broker=app.config['CELERY_BROKER_URL'],
-        backend=app.config['CELERY_RESULT_BACKEND']
-    )
-    celery.conf.update(app.config)
+    with app.app_context():
+        celery.conf.update(app.config)
 
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
+        class ContextTask(celery.Task):
+            def __call__(self, *args, **kwargs):
+                with app.app_context():
+                    return self.run(*args, **kwargs)
 
-    celery.Task = ContextTask
-    return celery
-
-celery = make_celery()
+        celery.Task = ContextTask
+        return celery

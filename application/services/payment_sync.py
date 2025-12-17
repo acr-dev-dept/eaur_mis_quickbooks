@@ -13,7 +13,7 @@ import json
 import time
 import traceback
 
-from flask import current_app
+from flask import app, current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
@@ -638,6 +638,7 @@ class PaymentSyncService:
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
                 self._update_payment_sync_status(payment.id, PaymentSyncStatus.FAILED.value)
                 self._log_sync_audit(payment.id, 'ERROR', error_msg)
+                current_app.logger.error(f"Failed to sync payment {payment.id}. Error: {error_msg}. Full response: {response}")
                 result = PaymentSyncResult(
                     status=PaymentSyncStatus.FAILED,
                     message=f"Failed to synchronize payment {payment.id}",
@@ -849,15 +850,16 @@ class PaymentSyncService:
         """
         Log synchronization audit trail for payments
         """
-        try:
-            audit_log = QuickbooksAuditLog(
-                action_type=f"PAYMENT_SYNC_{action}",
-                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
-                response_payload=f"Payment ID: {payment_id} - {details}",
-            )
-            db.session.add(audit_log)
-            db.session.commit()
-        except Exception as e:
-            self.logger.error(f"Error logging payment sync audit for payment {payment_id}: {e}")
-            if db.session:
-                db.session.rollback()
+        with app.app_context():
+            try:
+                audit_log = QuickbooksAuditLog(
+                    action_type=f"PAYMENT_SYNC_{action}",
+                    operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
+                    response_payload=f"Payment ID: {payment_id} - {details}",
+                )
+                db.session.add(audit_log)
+                db.session.commit()
+            except Exception as e:
+                self.logger.error(f"Error logging payment sync audit for payment {payment_id}: {e}")
+                if db.session:
+                    db.session.rollback()
