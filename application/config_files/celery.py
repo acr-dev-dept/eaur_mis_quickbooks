@@ -2,6 +2,7 @@ from celery import Celery
 from celery.schedules import crontab
 import os
 from dotenv import load_dotenv
+from kombu import Exchange, Queue
 
 load_dotenv()
 
@@ -19,6 +20,11 @@ celery = Celery(
 celery.autodiscover_tasks([
     'application',
 ])
+
+celery.conf.task_queues = (
+    Queue('celery'),  # default queue
+    Queue('payment_sync_queue'),  # custom queue for QuickBooks payments
+)
 
 celery.conf.beat_schedule = {
     'sync_applicants_every_midnight': {
