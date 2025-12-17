@@ -1,61 +1,21 @@
 from celery import Celery
 from celery.schedules import crontab
 import os
-from pathlib import Path
 from dotenv import load_dotenv
 
-# CRITICAL FIX: Load .env from the correct path
-# Get the directory where celery.py is located
-basedir = Path(__file__).resolve().parent
-env_path = basedir / '.env'
+load_dotenv()
 
-print(f"Looking for .env at: {env_path}")
-print(f".env exists: {env_path.exists()}")
-
-# Load the .env file
-load_dotenv(dotenv_path=env_path)
-
-# Get the broker URL
-broker_url = os.getenv('CELERY_BROKER_URL')
-result_backend = os.getenv('CELERY_RESULT_BACKEND')
-
-print(f"CELERY_BROKER_URL from env: {broker_url}")
-print(f"CELERY_RESULT_BACKEND from env: {result_backend}")
-
-# Fallback to Redis if not set
-if not broker_url:
-    broker_url = 'redis://localhost:6379/0'
-    print(f"WARNING: CELERY_BROKER_URL not found in .env, using default: {broker_url}")
-
-if not result_backend:
-    result_backend = 'redis://localhost:6379/1'
-    print(f"WARNING: CELERY_RESULT_BACKEND not found in .env, using default: {result_backend}")
-
-# Create Celery instance with explicit broker
-celery = Celery('my_app')
-
-# CRITICAL: Set broker AFTER creating instance
-celery.conf.broker_url = broker_url
-celery.conf.result_backend = result_backend
-
-# Additional configuration
-celery.conf.update(
-    broker_connection_retry_on_startup=True,
-    task_track_started=True,
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='Africa/Kigali',
-    enable_utc=True,
-    task_always_eager=False,
-    worker_prefetch_multiplier=1,
-    task_acks_late=True,
+celery = Celery(
+    'my_app',
+    broker=os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0'),
+    backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0'),
+    include=['application.config_files.tasks']
 )
 
 # Autodiscover tasks
 celery.autodiscover_tasks([
     'application',
-    'application.config_files',
+    'application.config_files'
 ])
 
 celery.conf.beat_schedule = {
@@ -64,21 +24,11 @@ celery.conf.beat_schedule = {
         'schedule': crontab(minute='*/1'),
     }
 }
-# Define task routes
-task_routes = {
-    'application.tasks.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
+
+celery.conf.task_routes = {
+    'application.config_files.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
 }
 
 def make_celery(app):
-    celery.conf.update(
-        app.config,
-        task_routes=task_routes
-    )
-    
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-    
-    celery.Task = ContextTask
+    celery.conf.update(app.config)
     return celery
