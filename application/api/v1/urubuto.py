@@ -404,7 +404,7 @@ def payment_callback():
                         
                         response = sync_payment_to_quickbooks_task.delay(payment_id)
                         if response:
-                            current_app.logger.info(f"Payment {payment} sync to QuickBooks task queued successfully:")
+                            current_app.logger.info(f"Payment {payment} sync to QuickBooks task queued successfully: {response.id}")
                         else:
                             current_app.logger.error(f"Payment {payment} sync to QuickBooks task failed to queue:")
                     except Exception as e:
