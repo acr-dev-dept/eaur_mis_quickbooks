@@ -278,8 +278,6 @@ class Payment(MISBaseModel):
                 ).first()
                 return payment
         except Exception as e:
-            from flask import current_app
-            current_app.logger.error(f"Error getting payment for ID {payment_id}: {str(e)}")
             return None
         
     @staticmethod
@@ -289,8 +287,6 @@ class Payment(MISBaseModel):
             with MISBaseModel.get_session() as session:
                 return session.query(func.count(Payment.id)).scalar()
         except Exception as e:
-            from flask import current_app
-            current_app.logger.error(f"Error counting payments: {str(e)}")
             return 0
 
     @staticmethod
