@@ -64,9 +64,16 @@ celery.conf.beat_schedule = {
         'schedule': crontab(minute='*/1'),
     }
 }
+# Define task routes
+task_routes = {
+    'application.tasks.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
+}
 
 def make_celery(app):
-    celery.conf.update(app.config)
+    celery.conf.update(
+        app.config,
+        task_routes=task_routes
+    )
     
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
