@@ -4,7 +4,7 @@ from application.services.payment_sync import PaymentSyncService
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
-    retry_backoff=60,
+    retry_backoff=60, # retry after 1 minute
     retry_kwargs={"max_retries": 5},
     retry_jitter=True)
 
