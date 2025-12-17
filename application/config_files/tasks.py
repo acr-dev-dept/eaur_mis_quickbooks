@@ -65,10 +65,8 @@ def bulk_sync_applicants_task(tracking_ids=None, batch_size=50, filter_unsynced=
                         offset=current_offset
                     )
                 else:
-                    applicants = TblOnlineApplication.get_all_applicants(
-                        limit=batch_size,
-                        offset=current_offset
-                    )
+                    # no applicants left to process
+                    raise ValueError("No applicants left to process with the current offset.")
 
                 tracking_ids = [a.get('tracking_id') for a in applicants if a.get('tracking_id')]
             else:
