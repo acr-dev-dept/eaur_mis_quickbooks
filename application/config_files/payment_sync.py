@@ -2,6 +2,7 @@ from celery import shared_task
 from application.services.payment_sync import PaymentSyncService
 
 @shared_task(
+    name='application.config_files.payment_sync.sync_payment_to_quickbooks_task',
     bind=True,
     autoretry_for=(Exception,),
     retry_backoff=60, # retry after 1 minute

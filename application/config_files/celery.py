@@ -15,7 +15,6 @@ celery = Celery(
 # Autodiscover tasks
 celery.autodiscover_tasks([
     'application',
-    'application.config_files'
 ])
 
 celery.conf.beat_schedule = {
@@ -26,7 +25,7 @@ celery.conf.beat_schedule = {
 }
 
 celery.conf.task_routes = {
-    'application.config_files.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
+    'application.config_files.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'celery'},
 }
 def make_celery(app):
     celery.conf.update(app.config)
