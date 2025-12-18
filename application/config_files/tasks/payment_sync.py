@@ -4,7 +4,7 @@ from application.services.payment_sync import PaymentSyncService
 
 @celery.task(
     bind=True,
-    name="payments.sync_to_quickbooks",
+    name="application.config_files.payment_sync.sync_payment_to_quickbooks_task",
     autoretry_for=(Exception,),
     retry_backoff=60,
     retry_kwargs={"max_retries": 5},
