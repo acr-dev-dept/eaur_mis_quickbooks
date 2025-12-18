@@ -39,6 +39,9 @@ def sync_payment(payment_id):
         if payment_date < datetime(2025, 1, 1).date():
             return jsonify({'error': 'Payment date is before 2025-01-01'}), 400
 
+        if payment.qk_id is not None:
+            return jsonify({'message': 'Payment already synchronized'}), 200
+
         if not payment:
             return jsonify({'error': 'Payment not found'}), 404
 
