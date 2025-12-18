@@ -402,7 +402,9 @@ def payment_callback():
                         # Use the endpoint to sync single payment
                         # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
                         
-                        response = sync_payment_to_quickbooks_task.delay(payment_id)
+                        response = current_app.celery.tasks[
+                            'application.config_files.payment_sync.sync_payment_to_quickbooks_task'
+                        ]
                         if response:
                             current_app.logger.info(f"Payment {response} sync to QuickBooks task queued successfully: {response.id}")
                         else:

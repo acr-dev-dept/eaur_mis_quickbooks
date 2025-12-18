@@ -1,4 +1,4 @@
-# application/celery_app.py
+# application/config_filescelery_app.py
 from application.utils.celery_utils import make_celery
 from application import create_app
 
