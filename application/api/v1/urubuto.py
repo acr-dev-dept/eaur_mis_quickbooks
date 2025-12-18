@@ -11,7 +11,6 @@ from application.services.payment_sync import PaymentSyncService
 import requests
 
 # Import the Celery task for syncing payment to QuickBooks
-from application.config_files.payment_sync import sync_payment_to_quickbooks_task
 
 
 urubuto_bp = Blueprint('urubuto', __name__)
@@ -402,7 +401,7 @@ def payment_callback():
                         payment_id = payment.get('id')
                         # Use the endpoint to sync single payment
                         # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
-                        
+                        from application.config_files.payment_sync import sync_payment_to_quickbooks_task
                         response = sync_payment_to_quickbooks_task.delay(payment_id)
                         
                     except Exception as e:
