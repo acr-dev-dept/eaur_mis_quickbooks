@@ -35,6 +35,9 @@ def sync_payment(payment_id):
         # get the payment object given the payment_id
         payment = Payment.get_payment_by_id(payment_id)
 
+        if payment.date < datetime(2025, 1, 1):
+            return jsonify({'error': 'Payment date is before 2025-01-01'}), 400
+
         if not payment:
             return jsonify({'error': 'Payment not found'}), 404
 

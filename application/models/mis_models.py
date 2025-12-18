@@ -261,25 +261,13 @@ class Payment(MISBaseModel):
         
     @classmethod
     def get_payment_by_id(cls, payment_id):
-        """
-        Get payment by ID
-
-        Args:
-            payment_id (int): Payment ID
-
-        Returns:
-            Payment: Payment record or None if not found
-        """
         try:
             with cls.get_session() as session:
-                payment = session.query(cls).filter(
-                    cls.id == payment_id,
-                    cls.date >= date(2025, 1, 1)
-                ).first()
-                return payment
-        except Exception as e:
+                return session.query(cls).filter_by(id=payment_id).first()
+                # or: .filter(cls.id == payment_id).first()
+        except Exception:
             return None
-        
+            
     @staticmethod
     def count_payments():
         """Count total payments"""

@@ -580,6 +580,14 @@ class PaymentSyncService:
         Synchronize a single payment to QuickBooks
         """
         payment = Payment.get_payment_by_id(payment_id)
+
+        if payment.date < datetime(2025, 1, 1):
+            return {
+                'status': 'ERROR',
+                'message': 'Payment date is before 2025-01-01',
+                'success': False
+            }
+
         if not payment:
             raise ValueError(f"Payment with ID {payment_id} not found.")
         
