@@ -2,6 +2,7 @@ import logging
 from flask import Blueprint, jsonify, request, current_app
 from datetime import datetime
 
+from application.helpers.parse_date import parse_date
 from application.services.payment_sync import PaymentSyncService
 from application.models.mis_models import Payment
 
@@ -34,7 +35,7 @@ def sync_payment(payment_id):
         current_app.logger.info(f"Starting sync for payment ID: {payment_id}")
         # get the payment object given the payment_id
         payment = Payment.get_payment_by_id(payment_id)
-        payment_date = datetime.strptime(payment.date.strip(), '%Y-%m-%d').date()
+        payment_date = parse_date(payment.payment_date)
 
         if payment_date < datetime(2025, 1, 1).date():
             return jsonify({'error': 'Payment date is before 2025-01-01'}), 400

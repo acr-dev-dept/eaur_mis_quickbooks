@@ -17,6 +17,7 @@ from flask import app, current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
+from application.helpers import parse_date
 from application.models.mis_models import TblOnlineApplication, TblPersonalUg, Payment
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
@@ -580,8 +581,9 @@ class PaymentSyncService:
         Synchronize a single payment to QuickBooks
         """
         payment = Payment.get_payment_by_id(payment_id)
+        payment_date = parse_date(payment.date)
 
-        if payment.date < datetime(2025, 1, 1):
+        if payment_date < datetime(2025, 1, 1).date():
             return {
                 'status': 'ERROR',
                 'message': 'Payment date is before 2025-01-01',
