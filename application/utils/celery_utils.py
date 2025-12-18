@@ -1,50 +1,63 @@
 # application/utils/celery_utils.py
 import logging
 from celery import Celery
+from celery.schedules import crontab
+from kombu import Queue
 
-# This logger works immediately, even during imports
-celery_setup_logger = logging.getLogger("celery_setup")
-
-# Optional: make it pretty if no handlers exist yet
-if not celery_setup_logger.handlers:
+log = logging.getLogger("celery.setup")
+if not log.handlers:
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    celery_setup_logger.addHandler(handler)
-    celery_setup_logger.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
 
 def make_celery(app):
-    celery_setup_logger.info("Starting make_celery() — creating Celery instance")
+    log.info("make_celery() → Creating Celery instance bound to Flask app")
 
     celery = Celery(
         app.import_name,
-        broker=app.config['CELERY_BROKER_URL'],
-        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config["CELERY_BROKER_URL"],
+        backend=app.config["CELERY_RESULT_BACKEND"],
         include=[
-            'application.config_files.payment_sync',
-            'application.config_files.tasks',
-        ]
+            "application.config_files.payment_sync",
+            "application.config_files.tasks",
+        ],
     )
-    celery.conf.update(app.config)
-    celery_setup_logger.info("Celery instance created and config updated")
 
-    # App context for tasks
+    celery.conf.update(app.config)
+
+    # All tasks automatically get app context
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return self.run(*args, **kwargs)
     celery.Task = ContextTask
 
-    # THIS IS WHERE YOU ADD THE DEBUGGING
-    try:
-        with app.app_context():
-            celery_setup_logger.info("Inside app context — initializing DatabaseManager...")
-            from application.utils.database import init_database_manager
-            init_database_manager(app)
-            celery_setup_logger.info("DatabaseManager initialized successfully in Celery worker!")
-    except Exception as e:
-        celery_setup_logger.error(f"FAILED to initialize DatabaseManager in Celery: {e}", exc_info=True)
-        raise  # Crash the worker early — better than silent failure!
+    # Critical: Initialize MIS DB connection
+    with app.app_context():
+        app.logger.info("Initializing DatabaseManager in Celery worker process")
+        from application.utils.database import init_database_manager
+        init_database_manager(app)
+        app.logger.info("DatabaseManager ready — MIS DB works in Celery!")
 
-    celery_setup_logger.info("make_celery() completed successfully")
+    # Move all your beat/queues/routes here (or in create_app)
+    celery.conf.update(
+        task_queues=(
+            Queue("celery"),
+            Queue("payment_sync_queue"),
+        ),
+        task_routes={
+            "application.config_files.payment_sync.sync_payment_to_quickbooks_task": {
+                "queue": "payment_sync_queue"
+            },
+        },
+        beat_schedule={
+            "sync_applicants_every_midnight": {
+                "task": "application.config_files.tasks.bulk_sync_applicants_task",
+                "schedule": crontab(hour=0, minute=0),
+            },
+        },
+    )
+
+    log.info("Celery fully configured and ready")
     return celery
