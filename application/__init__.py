@@ -64,7 +64,7 @@ def create_app(config_name=None):
     register_error_handlers(app)
 
     # Celery setup
-    app.config['BROKER_URL'] = os.getenv('BROKER_URL')
+    app.config['broker_url'] = os.getenv('broker_url')
     app.config['RESULT_BACKEND'] = os.getenv('RESULT_BACKEND')
     # Initialize Celery
     celery = make_celery(app)

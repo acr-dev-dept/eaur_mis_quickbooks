@@ -8,7 +8,7 @@ APP_MODULE="application.tasks.scheduled_tasks.celery"
 LOG_DIR="/home/eaur/eaur_mis_quickbooks/logs"
 PID_DIR="$LOG_DIR/pids"
 FLASK_ENV=${FLASK_ENV:-production}
-BROKER_URL=${BROKER_URL:-redis://localhost:6379/0}
+broker_url=${broker_url:-redis://localhost:6379/0}
 RESULT_BACKEND=${RESULT_BACKEND:-redis://localhost:6379/0}
 FLOWER_PORT=${FLOWER_PORT:-5555}
 
