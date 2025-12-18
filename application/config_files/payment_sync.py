@@ -1,4 +1,4 @@
-from application.celery_app import celery
+from application.config_files.celery_app import celery
 from application.services.payment_sync import PaymentSyncService
 
 
