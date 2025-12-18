@@ -4,7 +4,6 @@ import os
 from dotenv import load_dotenv
 from kombu import Exchange, Queue
 
-from application import create_app  # Import create_app
 
 load_dotenv()
 
@@ -38,15 +37,3 @@ celery.conf.beat_schedule = {
 celery.conf.task_routes = {
     'application.config_files.payment_sync.sync_payment_to_quickbooks_task': {'queue': 'payment_sync_queue'},
 }
-def make_celery(app):
-    app = create_app()
-    with app.app_context():
-        celery.conf.update(app.config)
-
-        class ContextTask(celery.Task):
-            def __call__(self, *args, **kwargs):
-                with app.app_context():
-                    return self.run(*args, **kwargs)
-
-        celery.Task = ContextTask
-        return celery

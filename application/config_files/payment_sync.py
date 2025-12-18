@@ -1,8 +1,8 @@
 # from shared_task
 # from celery import shared_task
-from flask import app
 from application.config_files.celery import celery
 from application.services.payment_sync import PaymentSyncService
+from application import create_app as app
 
 @celery.task(
     bind=True,
