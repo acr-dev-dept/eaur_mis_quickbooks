@@ -56,8 +56,8 @@ class Config:
     
     # Celery Configuration
     REDIS_URL = 'redis://localhost:6379/0'
-    broker_url = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
-    result_backend = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+    broker_url = os.environ.get('BROKER_URL', REDIS_URL)
+    result_backend = os.environ.get('RESULT_BACKEND', REDIS_URL)
     task_track_started = True
     task_time_limit = 30 * 60  # 30 minutes per task
 
