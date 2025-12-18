@@ -8,7 +8,7 @@ celery = make_celery(app)
 # This replaces the old include= and autodiscover
 celery.autodiscover_tasks([
     'application.config_files',
-    'application.tasks',
+    'application.config_files.tasks',
     # or just:
     'application',
 ])
