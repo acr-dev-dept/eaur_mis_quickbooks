@@ -35,7 +35,7 @@ def sync_payment(payment_id):
         current_app.logger.info(f"Starting sync for payment ID: {payment_id}")
         # get the payment object given the payment_id
         payment = Payment.get_payment_by_id(payment_id)
-        payment_date = parse_date(payment.payment_date)
+        payment_date = parse_date(payment.date)
 
         if payment_date < datetime(2025, 1, 1).date():
             return jsonify({'error': 'Payment date is before 2025-01-01'}), 400
