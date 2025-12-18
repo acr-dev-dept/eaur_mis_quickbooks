@@ -17,7 +17,7 @@ from flask import app, current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.helpers import parse_date
+from application.helpers.parse_date import parse_date
 from application.models.mis_models import TblOnlineApplication, TblPersonalUg, Payment
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
