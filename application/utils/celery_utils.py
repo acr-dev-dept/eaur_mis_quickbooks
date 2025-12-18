@@ -18,10 +18,6 @@ def make_celery(app):
         app.import_name,
         broker=app.config["CELERY_BROKER_URL"],
         backend=app.config["CELERY_RESULT_BACKEND"],
-        include=[
-            "application.config_files.payment_sync",
-            "application.config_files.tasks",
-        ],
     )
 
     celery.conf.update(app.config)
