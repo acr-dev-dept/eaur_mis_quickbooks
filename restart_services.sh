@@ -11,7 +11,7 @@ fi
 LOG_DIR="/home/eaur/eaur_mis_quickbooks/logs"
 mkdir -p "$LOG_DIR"
 FLOWER_PORT=${FLOWER_PORT:-5555}
-APP_MODULE=${APP_MODULE:-application.config_files.celery_app}
+APP_MODULE=${APP_MODULE:-application.config_files.celery_app.celery}
 PID_DIR=${PID_DIR:-/home/eaur/eaur_mis_quickbooks/pids}
 
 # Change to project directory to ensure proper imports
