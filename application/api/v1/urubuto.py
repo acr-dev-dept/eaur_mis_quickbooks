@@ -10,8 +10,6 @@ import os
 from application.services.payment_sync import PaymentSyncService
 import requests
 
-# Import the Celery task for syncing payment to QuickBooks
-from application.config_files.payment_sync import sync_payment_to_quickbooks_task
 
 urubuto_bp = Blueprint('urubuto', __name__)
 # Initialize Urubuto Pay service
