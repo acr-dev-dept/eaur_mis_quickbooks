@@ -858,16 +858,15 @@ class PaymentSyncService:
         """
         Log synchronization audit trail for payments
         """
-        with app.app_context():
-            try:
-                audit_log = QuickbooksAuditLog(
-                    action_type=f"PAYMENT_SYNC_{action}",
-                    operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
-                    response_payload=f"Payment ID: {payment_id} - {details}",
-                )
-                db.session.add(audit_log)
-                db.session.commit()
-            except Exception as e:
-                self.logger.error(f"Error logging payment sync audit for payment {payment_id}: {e}")
-                if db.session:
-                    db.session.rollback()
+        try:
+            audit_log = QuickbooksAuditLog(
+                action_type=f"PAYMENT_SYNC_{action}",
+                operation_status=f"{'200' if action == 'SUCCESS' else '500'}",
+                response_payload=f"Payment ID: {payment_id} - {details}",
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as e:
+            self.logger.error(f"Error logging payment sync audit for payment {payment_id}: {e}")
+            if db.session:
+                db.session.rollback()
