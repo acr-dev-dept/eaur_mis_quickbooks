@@ -13,4 +13,4 @@ celery.autodiscover_tasks([
     'application',
 ])
 
-celery.set_default()
+#celery.set_default()
