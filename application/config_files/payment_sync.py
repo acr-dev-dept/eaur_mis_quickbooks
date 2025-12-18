@@ -1,6 +1,6 @@
 # from shared_task
 # from celery import shared_task
-from flask import current_app
+from flask import app
 from application.config_files.celery import celery
 from application.services.payment_sync import PaymentSyncService
 
@@ -13,6 +13,6 @@ from application.services.payment_sync import PaymentSyncService
     name="application.config_files.payment_sync.sync_payment_to_quickbooks_task"  # explicit name
 )
 def sync_payment_to_quickbooks_task(self, payment_id: int):
-    with current_app.app_context():
+    with app.app_context():
         service = PaymentSyncService()
         return service.sync_single_payment_async(payment_id)
