@@ -1997,7 +1997,6 @@ def get_recent_created_accounts():
                 'error': 'QuickBooks not connected',
                 'message': 'Please connect to QuickBooks first'
             }), 400
-
         qb = QuickBooks()
         current_app.logger.info('Getting recently created accounts')
 

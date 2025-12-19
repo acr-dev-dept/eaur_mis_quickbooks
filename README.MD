@@ -340,6 +340,7 @@ requirements needed:
       1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync
    5. Sync Banks (to be used as a DepositToAccountRef while syncing Payments)
    6. SYnc Payments
+      - Add a boolean column to track if payment is derived from prepayment (Wallet)
    6. Ensure the protection of api on order to be called only from EAUR MIS
 Concerns
 1. Deleting and updating student information when some data changes in MIS to directly change inside quickbooks too

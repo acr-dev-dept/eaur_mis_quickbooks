@@ -8,7 +8,7 @@ DO NOT MODIFY THIS FILE MANUALLY - it will be regenerated when the database sche
 """
 
 from datetime import datetime
-from sqlalchemy import  DateTime, ForeignKey, Text, Boolean, Float, func
+from sqlalchemy import  DateTime, ForeignKey, Text, Boolean, Float, func, text
 from sqlalchemy.types import Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -432,6 +432,140 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced payment count: {str(e)}")
             return 0
+
+class TableStudentWallet(MISBaseModel):
+    """Model for tbl_student_wallet table"""
+    __tablename__ = "tbl_student_wallet"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    reg_prg_id = db.Column(db.Integer, nullable=False, index=True)
+    reference_number = db.Column(db.String(255), nullable=True)
+    reg_no = db.Column(db.String(200), nullable=True, index=True)
+    level_id = db.Column(db.Integer, nullable=True)
+    bank_id = db.Column(db.Integer, nullable=True)
+    slip_no = db.Column(db.String(200), nullable=True)
+    trans_code = db.Column(db.String(255), nullable=True)
+    external_transaction_id = db.Column(db.Text, nullable=True)
+    payment_channel = db.Column(db.String(100), nullable=True)
+    fee_category = db.Column(db.Integer, nullable=True)
+    dept = db.Column(db.Float, nullable=True)  # this seems to be the amount
+    payment_date = db.Column(db.Date, nullable=True)
+    comment = db.Column(db.String(900), nullable=True)
+    user = db.Column(db.String(20), nullable=True)
+    date = db.Column(db.DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    is_paid = db.Column(db.String(20), nullable=False, server_default=text("'No'"))
+
+    def __repr__(self):
+        return f"<TableStudentWallet id={self.id} reg_no={self.reg_no}>"
+
+    def to_dict(self):
+        """
+        Convert model to dictionary for JSON responses
+
+        Returns:
+            dict: Model data as dictionary
+        """
+        return {
+            'id': self.id,
+            'reg_prg_id': self.reg_prg_id,
+            'reference_number': self.reference_number,
+            'reg_no': self.reg_no,
+            'level_id': self.level_id,
+            'bank_id': self.bank_id,
+            'slip_no': self.slip_no,
+            'trans_code': self.trans_code,
+            'external_transaction_id': self.external_transaction_id,
+            'payment_channel': self.payment_channel,
+            'fee_category': self.fee_category,
+            'dept': self.dept,
+            'payment_date': self.payment_date.isoformat() if self.payment_date else None,
+            'comment': self.comment,
+            'user': self.user,
+            'date': self.date.isoformat() if self.date else None,
+            'is_paid': self.is_paid
+        }
+
+    @classmethod
+    def get_by_reg_no(cls, reg_no):
+        """
+        Get all wallet records for a student by registration number
+
+        Args:
+            reg_no (str): Student registration number
+
+        Returns:
+            list: List of wallet records as dictionaries
+        """
+        try:
+            with cls.get_session() as session:
+                records = session.query(cls).filter(cls.reg_no == reg_no).all()
+                return [r.to_dict() for r in records] if records else []
+        except Exception as e:
+            current_app.logger.error(f"Error getting wallet records for reg_no {reg_no}: {str(e)}")
+            return []
+
+    @classmethod
+    def get_by_reference_number(cls, reference_number):
+        """
+        Get wallet record by reference number
+
+        Args:
+            reference_number (str): Reference number
+
+        Returns:
+            dict: Wallet record as dictionary or None if not found
+        """
+        try:
+            with cls.get_session() as session:
+                record = session.query(cls).filter(cls.reference_number == reference_number).first()
+                return record.to_dict() if record else None
+        except Exception as e:
+            current_app.logger.error(f"Error getting wallet record for reference_number {reference_number}: {str(e)}")
+            return None
+
+    @classmethod
+    def create_wallet_entry(cls, **kwargs):
+        """
+        Create a new wallet entry
+
+        Args:
+            kwargs: Wallet fields
+
+        Returns:
+            dict: Created wallet record as dictionary
+        """
+        try:
+            with cls.get_session() as session:
+                wallet = cls(**kwargs)
+                session.add(wallet)
+                session.commit()
+                return wallet.to_dict()
+        except Exception as e:
+            current_app.logger.error(f"Error creating wallet entry: {str(e)}")
+            return None
+
+    @classmethod
+    def mark_as_paid(cls, wallet_id):
+        """
+        Mark a wallet entry as paid
+
+        Args:
+            wallet_id (int): Wallet entry ID
+
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
+        try:
+            with cls.get_session() as session:
+                wallet = session.query(cls).filter(cls.id == wallet_id).first()
+                if wallet:
+                    wallet.is_paid = "Yes"
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            current_app.logger.error(f"Error marking wallet entry {wallet_id} as paid: {str(e)}")
+            return False
+
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
