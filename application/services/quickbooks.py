@@ -11,6 +11,7 @@ from flask import current_app
 from application.helpers.quickbooks_helpers import QuickBooksHelper
 from application.helpers.json_encoder import EnhancedJSONEncoder
 import os, sys
+from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 load_dotenv()
@@ -1672,6 +1673,22 @@ class QuickBooks:
             return accounts
         except Exception as e:
             current_app.logger.error(f"Error fetching chart of accounts: {str(e)}")
+            return []
+
+    def get_recent_created_accounts(self, realm_id):
+        """
+        Fetch previously created accounts from QuickBooks within the last 7 days."""
+        seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        query = f"SELECT * FROM Account WHERE MetaData.CreateTime >= '{seven_days_ago}'"
+        current_app.logger.info(f"Fetching recently created accounts with query: {query}")
+        try:
+            # Query to fetch recently created accounts
+            accounts_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            current_app.logger.info(f"Recently created accounts fetched successfully: {accounts_response}")
+            accounts = accounts_response.get("QueryResponse", {}).get("Account", [])
+            return accounts
+        except Exception as e:
+            current_app.logger.error(f"Error fetching recently created accounts: {str(e)}")
             return []
 
 def setup_quickbooks_from_env():
