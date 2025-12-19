@@ -1652,7 +1652,27 @@ class QuickBooks:
                 }
             }
 
+    def get_chart_of_accounts(self, realm_id):
+        """
+        Fetch the chart of accounts from QuickBooks.
 
+        Args:
+            realm_id (str): The QuickBooks company ID.
+
+        Returns:
+            list: A list of accounts.
+        """
+        query = "SELECT * FROM Account"
+        current_app.logger.info(f"Fetching chart of accounts with query: {query}")
+        try:
+            # Query to fetch all accounts
+            accounts_response = self.make_request(f"{realm_id}/query?query={query}", method="GET")
+            current_app.logger.info(f"Chart of accounts fetched successfully: {accounts_response}")
+            accounts = accounts_response.get("QueryResponse", {}).get("Account", [])
+            return accounts
+        except Exception as e:
+            current_app.logger.error(f"Error fetching chart of accounts: {str(e)}")
+            return []
 
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""

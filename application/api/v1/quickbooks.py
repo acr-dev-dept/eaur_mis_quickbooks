@@ -1944,3 +1944,44 @@ def create_department():
             'error': 'Error creating department',
             'details': str(e)
         }), 500
+    
+@quickbooks_bp.route('/chart_of_accounts', methods=['GET'])
+def get_chart_of_accounts():
+    """Get all chart of accounts."""
+    try:
+        # Check if QuickBooks is configured
+        if not QuickBooksConfig.is_connected():
+            return jsonify({
+                'success': False,
+                'error': 'QuickBooks not connected',
+                'message': 'Please connect to QuickBooks first'
+            }), 400
+
+        qb = QuickBooks()
+        current_app.logger.info('Getting chart of accounts')
+
+        accounts = qb.get_chart_of_accounts(qb.realm_id)
+        current_app.logger.info(f"Chart of accounts retrieved successfully: {accounts}")
+
+        # Check for errors in the response
+        if 'error' in accounts:
+            return jsonify({
+                'success': False,
+                'error': accounts['error'],
+                'details': accounts.get('details', '')
+            }), 500
+
+        return jsonify({
+            'success': True,
+            'number_of_accounts': len(accounts) if isinstance(accounts, list) else 0,
+            'data': accounts,
+            'message': 'Chart of accounts retrieved successfully'
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting chart of accounts: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error getting chart of accounts',
+            'details': str(e)
+        }), 500

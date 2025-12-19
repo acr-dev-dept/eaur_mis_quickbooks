@@ -330,12 +330,12 @@ requirements needed:
    0000. Creating locations and departments in quickbooks, to hard code them inside Tbl_campus table and on classref(code) before syncing invoices in sync single invoice method
    000. First and foremost we'll update all the invoices, customers, items and payments from 01/01/2025, setting their quicbooks status to 0, and quickbooks ID to NULL, in the EAUR mis db
    00. Sync banks by id (1 by one)
-   0. Before running bulk sync invoices sync a few and examine the effects
-
    1. Customers (Applicants and students), Inspect to add the address as in East African University live account
       - Create new customer types (Student, applicant)
    2. Income Accounts (sync by celery)
+      - Create Unearned revenue account to be linked to a prepayment Item hard-coded
    3. Items (dependent on Income accounts ref) (sync by bash script)
+      - Create a Prepayment Item linked to Unearned revenue
    4. Invoices (dependent on Items and income accounts)
       1. Upon syncing invoices, Only invoices with active items (status_Id == 1) are the only ones which sync
    5. Sync Banks (to be used as a DepositToAccountRef while syncing Payments)
