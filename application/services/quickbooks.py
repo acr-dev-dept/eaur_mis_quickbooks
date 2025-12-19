@@ -1699,7 +1699,6 @@ class QuickBooks:
                 sales_receipt_data (dict): The data for the sales receipt.
             Returns:
                 dict: The response from the QuickBooks API.
-
         """
         endpoint = f"{realm_id}/salesreceipt"
         
