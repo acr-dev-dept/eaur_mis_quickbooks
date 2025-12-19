@@ -433,7 +433,7 @@ class Payment(MISBaseModel):
             current_app.logger.error(f"Error getting unsynced payment count: {str(e)}")
             return 0
 
-class TableStudentWallet(MISBaseModel):
+class TblStudentWallet(MISBaseModel):
     """Model for tbl_student_wallet table"""
     __tablename__ = "tbl_student_wallet"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

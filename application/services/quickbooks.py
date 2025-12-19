@@ -1691,6 +1691,40 @@ class QuickBooks:
             current_app.logger.error(f"Error fetching recently created accounts: {str(e)}")
             return []
 
+    def create_sales_receipt(self, realm_id, sales_receipt_data):
+        """
+            Create sales receipts in quickbooks.
+            Args:
+                realm_id (str): The realm ID of the company.
+                sales_receipt_data (dict): The data for the sales receipt.
+            Returns:
+                dict: The response from the QuickBooks API.
+
+        """
+        endpoint = f"{realm_id}/salesreceipt"
+        
+        try:
+            current_app.logger.info(f"Creating sales receipt with data: {sales_receipt_data}")
+            response = self.make_request(endpoint, method="POST", data=sales_receipt_data)
+            current_app.logger.info(f"Sales receipt created successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error creating sales receipt: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error creating sales receipt: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+        
+
+
+
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""
     client_id = os.getenv("QUICK_BOOKS_CLIENT_ID")
