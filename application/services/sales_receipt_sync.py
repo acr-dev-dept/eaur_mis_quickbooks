@@ -28,7 +28,8 @@ class SalesReceiptSyncResult:
     """Dataclass to hold the result of a sales_receipt synchronization attempt."""
     status: SalesReceiptSyncStatus
     error_message: Optional[str] = None
-    success: bool = True
+    success=None
+
 
     def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None):
         self.status = status
