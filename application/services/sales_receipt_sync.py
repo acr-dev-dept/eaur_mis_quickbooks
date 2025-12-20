@@ -84,7 +84,7 @@ class SalesReceiptSyncService:
             current_app.logger.info("Customer not found in database")
             raise Exception("Customer not found in database")
 
-        item_id = item.income_account_qb
+        item_id = item.QuickBk_ctgId
         customer_id = customer.qk_id
         
 
