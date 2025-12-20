@@ -385,7 +385,7 @@ def payment_callback():
                         external_transaction_id=transaction_id,
                         trans_code=transaction_id,
                         description=f"Urubuto Pay Via Microservice",
-                        payment_chanel=data.get('payment_channel_name'),
+                        payment_chanel=data.get('payment_chanel_name'),
                         invoi_ref=payer_code,
                         amount=amount,
                         level_id=updated[1].level_id if updated[1] else None,
@@ -427,7 +427,7 @@ def payment_callback():
                         external_transaction_id=transaction_id,
                     description=f"Urubuto Pay Via Microservice",
                     trans_code=transaction_id,
-                    payment_chanel=data.get('payment_channel_name'),
+                    payment_chanel=data.get('payment_chanel_name'),
                     invoi_ref=payer_code,
                     level_id=updated[1].level_id if updated[1] else None,
                     amount=amount,
@@ -488,8 +488,8 @@ def payment_notification():
         "transaction_id": "11202202011152166608",
         "merchant_code": "TH35409959",
         "payer_code": "2022011019",
-        "payment_channel": "WALLET",
-        "payment_channel_name": "MOMO",
+        "payment_chanel": "WALLET",
+        "payment_chanel_name": "MOMO",
         "amount": 100,
         "currency": "RWF",
         "payment_date_time": "2022-01-23 09:22:34",
@@ -525,8 +525,8 @@ def payment_notification():
         transaction_id = data.get('transaction_id')
         merchant_code = data.get('merchant_code')
         payer_code = data.get('payer_code')
-        payment_channel = data.get('payment_channel')
-        payment_channel_name = data.get('payment_channel_name')
+        payment_chanel = data.get('payment_chanel')
+        payment_chanel_name = data.get('payment_chanel_name')
         amount = data.get('amount')
         currency = data.get('currency')
         payment_date_time = data.get('payment_date_time')
@@ -534,7 +534,7 @@ def payment_notification():
 
         # Validate required fields
         required_fields = ['transaction_id', 'merchant_code',
-                          'payer_code', 'payment_channel', 'amount', 'currency', 'payment_date_time']
+                          'payer_code', 'payment_chanel', 'amount', 'currency', 'payment_date_time']
 
         missing_fields = [field for field in required_fields if not data.get(field)]
         if missing_fields:
@@ -617,7 +617,7 @@ def payment_notification():
                 date=payment_date_time.split(' ')[0] if payment_date_time else datetime.now().strftime("%Y-%m-%d"),
                 fee_category=invoice.fee_category,
                 amount=float(amount),
-                description=f"Payment via Urubuto Pay - {payment_channel_name}",
+                description=f"Payment via Urubuto Pay - {payment_chanel_name}",
                 recorded_date=datetime.now(),
                 Remark=f"Urubuto Pay transaction: {transaction_id}",
                 action="PAYMENT",
@@ -921,7 +921,7 @@ def check_payment_status_by_reference():
                     "payment_id": payment.id,
                     "transaction_id": payment.external_transaction_id,
                     "amount": payment.amount,
-                    "payment_channel": payment.payment_chanel,
+                    "payment_chanel": payment.payment_chanel,
                     "payment_date": payment.recorded_date.isoformat() if payment.recorded_date else None,
                     "status": "PROCESSED",
                     "quickbooks_status": payment.QuickBk_Status

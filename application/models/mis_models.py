@@ -445,7 +445,7 @@ class TblStudentWallet(MISBaseModel):
     slip_no = db.Column(db.String(200), nullable=True)
     trans_code = db.Column(db.String(255), nullable=True)
     external_transaction_id = db.Column(db.Text, nullable=True)
-    payment_channel = db.Column(db.String(100), nullable=True)
+    payment_chanel = db.Column(db.String(100), nullable=True)
     fee_category = db.Column(db.Integer, nullable=True)
     dept = db.Column(db.Float, nullable=True)  # this seems to be the amount
     payment_date = db.Column(db.Date, nullable=True)
@@ -479,7 +479,7 @@ class TblStudentWallet(MISBaseModel):
             'slip_no': self.slip_no,
             'trans_code': self.trans_code,
             'external_transaction_id': self.external_transaction_id,
-            'payment_channel': self.payment_channel,
+            'payment_chanel': self.payment_chanel,
             'fee_category': self.fee_category,
             'dept': self.dept,
             'payment_date': self.payment_date.isoformat() if self.payment_date else None,
