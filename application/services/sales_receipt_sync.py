@@ -161,7 +161,7 @@ class SalesReceiptSyncService:
             qb_service = self._get_qb_service()
             
             try:
-                qb_sales_receipt_data, map_error = self.map_sales_receipt_to_quickbooks(sales_receipt)
+                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(sales_receipt)
             except Exception as e:
                 map_error = f"Error mapping sales_receipt data: {e}"
                 qb_sales_receipt_data = None
