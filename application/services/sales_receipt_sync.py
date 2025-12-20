@@ -124,15 +124,21 @@ class SalesReceiptSyncService:
             
 
     def _log_sync_audit(self, sales_receipt_id: int, status: str, message: str):
-        """
-        Log the sync audit for a sales_receipt
-        """
-        audit_log = QuickbooksAuditLog(
-            sales_receipt_id=sales_receipt_id,
-            status=status,
-            message=message
-        )
-        audit_log.save()
+        try:
+            with db_manager.get_mis_session() as session:
+                
+                audit_log = QuickbooksAuditLog(
+                    sales_receipt_id=sales_receipt_id,
+                    status=status,
+                    message=message
+                )
+                session.add(audit_log)
+                session.commit()
+                session.close()
+        except Exception as e:
+            self.logger.error(f"Error logging sync audit for sales_receipt {sales_receipt_id}: {e}")
+
+        
 
 
     def sync_single_sales_receipt(self, sales_receipt: TblStudentWallet) -> SalesReceiptSyncResult:
