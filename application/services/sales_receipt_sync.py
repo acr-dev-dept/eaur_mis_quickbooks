@@ -32,9 +32,6 @@ class SalesReceiptSyncResult:
     details: Optional[dict] = None
     quickbooks_id: Optional[str] = None
     traceback: Optional[str] = None
-    
-    
-
 
     def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None):
         self.status = status
@@ -140,9 +137,12 @@ class SalesReceiptSyncService:
             with db_manager.get_mis_session() as session:
                 
                 audit_log = QuickbooksAuditLog(
-                    id=sales_receipt_id,
-                    status=status,
-                    message=message
+                    action_type='sales_receipt',
+                    operation_status=status,
+                    error_message=message,
+                    request_payload=None,
+                    response_payload=None,
+                    user_id=None,
                 )
                 session.add(audit_log)
                 session.commit()
