@@ -60,52 +60,54 @@ class SalesReceiptSyncService:
         self.success = None
         
 
-    def map_sales_receipt_to_quickbooks(self, sales_receipt: dict):
+    def map_sales_receipt_to_quickbooks(self, sales_receipt: TblStudentWallet) -> dict:
         """
             Map MIS sales receipt data to quickbooks format.
         """
 
-        if sales_receipt:
-            current_app.logger.info("Mapping sales receipt to quickbooks format...")
-            item = TblIncomeCategory.get_by_id(sales_receipt.fee_category)
-            customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
+        if not sales_receipt:
+            raise ValueError("sales_receipt cannot be None")
 
-            if item:
-                item_id = item.income_account_qb
-            else:
-                current_app.logger.info("Item not found in database")
-                raise Exception("Item not found in database")
 
-            if customer:
-                customer_id = customer.qk_id
-            else:
-                current_app.logger.info("Customer not found in database")
-                raise Exception("Customer not found in database")
-            
+        current_app.logger.info("Mapping sales receipt to quickbooks format...")
+        item = TblIncomeCategory.get_by_id(sales_receipt.fee_category)
+        
 
-        try:
-            quickbooks_data = {
-                "Line": [
-                    {
-                        "DetailType": "SalesItemLineDetail",
-                        "Amount": sales_receipt.dept,
-                        "SalesItemLine": {
-                            "ItemRef": {
-                                "value": item_id
-                            }
+        if not item or not item.income_account_qb:
+            current_app.logger.info("Item not found in database")
+            raise Exception("Item not found in database")
+
+        
+        customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
+        if not customer or not customer.qk_id:
+            current_app.logger.info("Customer not found in database")
+            raise Exception("Customer not found in database")
+
+        item_id = item.income_account_qb
+        customer_id = customer.qk_id
+        
+
+        quickbooks_data = {
+            "Line": [
+                {
+                    "DetailType": "SalesItemLineDetail",
+                    "Amount": float(sales_receipt.dept),
+                    "SalesItemLineDetail": {
+                        "ItemRef": {
+                            "value": item_id
                         }
                     }
-                ],
-                "CustomerRef": {
-                    "value": customer_id
                 }
-            
-            }
-            current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
-            return quickbooks_data
-        except Exception as e:
-            current_app.logger.error(f"Error mapping sales receipt to quickbooks format: {e}")
-            raise
+            ],
+            "CustomerRef": {
+                "value": customer_id
+            },
+            "TotalAmt":float(sales_receipt.dept)
+        
+        }
+        current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
+        return quickbooks_data
+        
 
 
     def _get_qb_service(self) -> QuickBooks:
@@ -177,28 +179,20 @@ class SalesReceiptSyncService:
             # Log the payload being sent
             self.logger.info(f"sending a sales_receipt with invoice ref {sales_receipt.invoi_ref} to QuickBooks and data mapped is {qb_sales_receipt_data}")
             response = qb_service.create_sales_receipt(qb_service.realm_id, qb_sales_receipt_data)
-            # write this response to the log file
-            log_path = "/var/log/hrms/quickbooks_response.log"
-            try:
-                with open(log_path, 'a') as log_file:
-                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {sales_receipt.id} Response: {response}\n")
-                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {sales_receipt.id} Request: {qb_sales_receipt_data}\n")
-            except Exception as e:
-                self.logger.error(f"Error writing QuickBooks log for sales_receipt {sales_receipt.id}: {e}")
             self.logger.debug(f"QuickBooks response for sales_receipt {sales_receipt.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
 
-            if 'Payment' in response and response['Payment'].get('Id'):
-                qb_sales_receipt_id = response['Payment']['Id']
+            if 'SalesReceipt' in response and response['SalesReceipt'].get('Id'):
+                qb_sales_receipt_id = response['SalesReceipt']['Id']
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
                     SalesReceiptSyncStatus.SYNCED.value,
                     quickbooks_id=qb_sales_receipt_id,
-                    sync_token=response['Payment'].get('SyncToken')
+                    sync_token=response['SalesReceipt'].get('SyncToken')
                 )
                 self._log_sync_audit(sales_receipt.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_sales_receipt_id}")
                 result = SalesReceiptSyncResult(
                     status=SalesReceiptSyncStatus.SYNCED,
-                    message=f"Payment {sales_receipt.id} synchronized successfully",
+                    message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
                     success=True,
                     details=response,
                     quickbooks_id=qb_sales_receipt_id
