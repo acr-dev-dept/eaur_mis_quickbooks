@@ -149,6 +149,9 @@ class SalesReceiptSyncService:
         """
         Update the sync status of a sales_receipt
         """
+        current_app.logger.info(
+            f"Updating sync status for sales_receipt {sales_receipt_id} to {status}, quickbooks_id: {quickbooks_id}, sync_token: {sync_token}"
+        )
         with db_manager.get_mis_session() as session:
             sales_receipt = session.get(TblStudentWallet, sales_receipt_id)
 
