@@ -9,6 +9,7 @@ from application.models.central_models import QuickBooksConfig, QuickbooksAuditL
 from datetime import datetime
 import json
 from application.helpers.json_encoder import EnhancedJSONEncoder
+from application.utils.database import db_manager
 
 
 
@@ -57,7 +58,7 @@ class SalesReceiptSyncService:
         """
 
         if sales_receipt:
-            current_app.logging.info("Mapping sales receipt to quickbooks format...")
+            current_app.logger.info("Mapping sales receipt to quickbooks format...")
             item = TblIncomeCategory.get_by_id(sales_receipt["item_id"])
             customer = TblPersonalUg.get_by_id(sales_receipt["customer_id"])
             if item:
@@ -92,10 +93,10 @@ class SalesReceiptSyncService:
                 }
             
             }
-            current_app.logging.info("Sales receipt mapped to quickbooks format successfully.")
+            current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
             return quickbooks_data
         except Exception as e:
-            current_app.logging.error(f"Error mapping sales receipt to quickbooks format: {e}")
+            current_app.logger.error(f"Error mapping sales receipt to quickbooks format: {e}")
             raise Exception
 
     def _get_qb_service(self) -> QuickBooks:
@@ -114,10 +115,13 @@ class SalesReceiptSyncService:
         """
         sales_receipt = TblStudentWallet.get_by_id(sales_receipt_id)
         if sales_receipt:
-            sales_receipt.sync_status = status
-            sales_receipt.quickbooks_id = quickbooks_id
-            sales_receipt.sync_token = sync_token
-            sales_receipt.save()
+            with db_manager.get_mis_session() as session:
+                sales_receipt.sync_status = status
+                sales_receipt.quickbooks_id = quickbooks_id
+                sales_receipt.sync_token = sync_token
+                session.commit()
+                session.close()
+            
 
     def _log_sync_audit(self, sales_receipt_id: int, status: str, message: str):
         """
