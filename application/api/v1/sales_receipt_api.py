@@ -36,7 +36,7 @@ def validate_quickbooks_connection():
         )
     return True, None
 
-@sales_receipt_api.route('/create_sales_receipt', methods=['POST'])
+@sales_receipt_api.route('/create', methods=['POST'])
 def create_sales_receipt():
     """
         API endpoint to create a sales receipt in QuickBooks.

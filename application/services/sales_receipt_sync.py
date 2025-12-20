@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from enum import Enum
 from flask import current_app
@@ -40,6 +41,16 @@ class SalesReceiptSyncResult:
     
 
 class SalesReceiptSyncService:
+
+
+    def __init__(self):
+        self.qb_service = None
+        self.batch_size = 50  # Process payments in batches
+        self.max_retries = 3
+        self.retry_delay = 5  # seconds
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.bank_sync_service = None  # Lazy load for bank operations
+
     def map_sales_receipt_to_quickbooks(self, sales_receipt: dict):
         """
             Map MIS sales receipt data to quickbooks format.

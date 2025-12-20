@@ -578,7 +578,7 @@ class TblStudentWallet(MISBaseModel):
         with cls.get_session() as session:
             sales_data = session.query(cls).filter(cls.id == id).first()
             if sales_data:
-                return sales_data.to_dict()
+                return sales_data
             return None
 
 
