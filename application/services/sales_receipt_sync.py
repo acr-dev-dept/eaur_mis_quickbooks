@@ -33,7 +33,9 @@ class SalesReceiptSyncResult:
     quickbooks_id: Optional[str] = None
     traceback: Optional[str] = None
 
-    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None, details: Optional[dict] = None):
+    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None, details: Optional[dict] = None, quickbooks_id: Optional[str] = None):
+        self.details = details
+        self.quickbooks_id = quickbooks_id
         self.status = status
         self.error_message = error_message
         self.success = success
