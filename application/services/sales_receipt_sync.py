@@ -128,7 +128,7 @@ class SalesReceiptSyncService:
             with db_manager.get_mis_session() as session:
                 
                 audit_log = QuickbooksAuditLog(
-                    sales_receipt_id=sales_receipt_id,
+                    id=sales_receipt_id,
                     status=status,
                     message=message
                 )
@@ -210,7 +210,6 @@ class SalesReceiptSyncService:
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
             result = SalesReceiptSyncResult(
                 status=SalesReceiptSyncStatus.FAILED,
-                message=f"Error synchronizing sales_receipt {sales_receipt.id}",
                 success=False,
                 error_message=error_msg,
                 traceback=tb
