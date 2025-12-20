@@ -54,6 +54,7 @@ class SalesReceiptSyncService:
         self.retry_delay = 5  # seconds
         self.logger = logging.getLogger(self.__class__.__name__)
         self.bank_sync_service = None  # Lazy load for bank operations
+        self.success = None
 
     def map_sales_receipt_to_quickbooks(self, sales_receipt: dict):
         """
@@ -72,7 +73,7 @@ class SalesReceiptSyncService:
                 raise Exception("Item not found in database")
 
             if customer:
-                customer_id = customer.id
+                customer_id = customer.qk_id
             else:
                 current_app.logger.info("Customer not found in database")
                 raise Exception("Customer not found in database")
