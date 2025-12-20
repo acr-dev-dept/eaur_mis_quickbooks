@@ -31,6 +31,7 @@ class SalesReceiptSyncResult:
     success: bool = True
     details: Optional[dict] = None
     quickbooks_id: Optional[str] = None
+    traceback: Optional[str] = None
     
     
 
@@ -60,6 +61,7 @@ class SalesReceiptSyncService:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.bank_sync_service = None  # Lazy load for bank operations
         self.success = None
+        
 
     def map_sales_receipt_to_quickbooks(self, sales_receipt: dict):
         """
