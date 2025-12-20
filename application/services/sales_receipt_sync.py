@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from enum import Enum
 from flask import current_app
-from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet
+from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus
 from application.services.quickbooks import QuickBooks
 import traceback
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
@@ -84,9 +84,25 @@ class SalesReceiptSyncService:
             current_app.logger.info("Customer not found in database")
             raise Exception("Customer not found in database")
 
+        
+        
+        bank = TblBank.get_bank_details(sales_receipt.bank_id)
+        if not bank:
+            current_app.logger.info("Bank not found in database")
+            raise Exception("Bank not found in database")
+
+        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no)
+        
+        if not student_camp_id:
+            current_app.logger.info("Student campus ID not found in database")
+            raise Exception("Student campus ID not found in database")
+        
         item_id = item.QuickBk_ctgId
         customer_id = customer.qk_id
-        
+        bank_qb_id = bank.qk_id
+        location_id = TblCampus.get_location_id_by_camp_id(student_camp_id)
+
+
 
         quickbooks_data = {
             "Line": [
@@ -103,7 +119,13 @@ class SalesReceiptSyncService:
             "CustomerRef": {
                 "value": customer_id
             },
-            "TotalAmt":float(sales_receipt.dept)
+
+            "TotalAmt":float(sales_receipt.dept),
+
+            "DepositToAccountRef" :{
+                "value": bank_qb_id
+            },
+            "DepartmentRef": {"value": int(location_id) if location_id else ''}
         
         }
         current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
@@ -135,14 +157,14 @@ class SalesReceiptSyncService:
                 session.close()
             
 
-    def _log_sync_audit(self, sales_receipt_id: int, status: str, message: str):
+    def _log_sync_audit(self, sales_receipt_id: int, status: str, error_message: str):
         try:
             with db_manager.get_mis_session() as session:
                 
                 audit_log = QuickbooksAuditLog(
                     action_type='sales_receipt',
                     operation_status=status,
-                    error_message=message,
+                    error_message=error_message,
                     request_payload=None,
                     response_payload=None,
                     user_id=None,
@@ -220,7 +242,7 @@ class SalesReceiptSyncService:
                 return SalesReceiptSyncResult(
                     status=SalesReceiptSyncStatus.SYNCED,
                     success=True,
-                    message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
+                    error_message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
                     details=response,
                     quickbooks_id=qb_id
                 )
