@@ -453,6 +453,11 @@ class TblStudentWallet(MISBaseModel):
     user = db.Column(db.String(20), nullable=True)
     date = db.Column(db.DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     is_paid = db.Column(db.String(20), nullable=False, server_default=text("'No'"))
+    quickbooks_id = db.Column(db.String(255), nullable=True)
+    sync_token = db.Column(db.String(10), nullable=True)
+    sync_status = db.Column(db.Integer, nullable=True)
+
+
 
     def __repr__(self):
         return f"<TableStudentWallet id={self.id} reg_no={self.reg_no}>"
@@ -481,7 +486,10 @@ class TblStudentWallet(MISBaseModel):
             'comment': self.comment,
             'user': self.user,
             'date': self.date.isoformat() if self.date else None,
-            'is_paid': self.is_paid
+            'is_paid': self.is_paid,
+            'sync_token': self.sync_token,
+            'sync_status': self.sync_status,
+            'quickbooks_id': self.quickbooks_id
         }
 
     @classmethod
@@ -565,6 +573,15 @@ class TblStudentWallet(MISBaseModel):
         except Exception as e:
             current_app.logger.error(f"Error marking wallet entry {wallet_id} as paid: {str(e)}")
             return False
+    @classmethod
+    def get_sales_data(cls, id):
+        with cls.get_session() as session:
+            sales_data = session.query(cls).filter(cls.id == id).first()
+            if sales_data:
+                return sales_data.to_dict()
+            return None
+
+
 
 
 class TblBank(MISBaseModel):
