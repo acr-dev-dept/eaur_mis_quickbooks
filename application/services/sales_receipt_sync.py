@@ -36,11 +36,11 @@ class SalesReceiptSyncResult:
     
 
 
-    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback_err: Optional[str] = None):
+    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None):
         self.status = status
         self.error_message = error_message
         self.success = success
-        self.traceback = traceback_err
+        self.traceback = traceback
 
     def to_dict(self) -> dict:
         """Convert the object to a dictionary."""
@@ -91,7 +91,7 @@ class SalesReceiptSyncService:
                 "Line": [
                     {
                         "DetailType": "SalesItemLineDetail",
-                        "Amount": sales_receipt["amount"],
+                        "Amount": sales_receipt.dept,
                         "SalesItemLine": {
                             "ItemRef": {
                                 "value": item_id
@@ -108,7 +108,8 @@ class SalesReceiptSyncService:
             return quickbooks_data
         except Exception as e:
             current_app.logger.error(f"Error mapping sales receipt to quickbooks format: {e}")
-            raise Exception
+            raise
+
 
     def _get_qb_service(self) -> QuickBooks:
         """
