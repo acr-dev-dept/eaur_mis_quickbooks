@@ -59,8 +59,9 @@ class SalesReceiptSyncService:
 
         if sales_receipt:
             current_app.logger.info("Mapping sales receipt to quickbooks format...")
-            item = TblIncomeCategory.get_by_id(sales_receipt["item_id"])
-            customer = TblPersonalUg.get_by_id(sales_receipt["customer_id"])
+            item = TblIncomeCategory.get_by_id(sales_receipt.fee_category)
+            customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
+
             if item:
                 item_id = item.id
             else:
