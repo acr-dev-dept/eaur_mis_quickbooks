@@ -186,7 +186,6 @@ class SalesReceiptSyncService:
             # ---- Send to QuickBooks ----
             self.logger.info(
                 f"Sending SalesReceipt {sales_receipt.id} "
-                f"(invoice_ref={sales_receipt.invoi_ref}) to QuickBooks"
             )
 
             response = qb_service.create_sales_receipt(
