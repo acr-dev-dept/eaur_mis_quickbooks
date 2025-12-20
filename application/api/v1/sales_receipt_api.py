@@ -55,13 +55,15 @@ def create_sales_receipt():
         sales_data_id = request.json
         sales_data = TblStudentWallet.get_sales_data(sales_data_id['id'])
         sync_service = SalesReceiptSyncService()
-        if not sales_data or 'id' not in sales_data:
+
+        if not sales_data or not sales_data.id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid input',
                 'message': 'id is required',
                 'timestamp': datetime.now().isoformat()
             }), 400
+
         result = sync_service.sync_single_sales_receipt(sales_data)
         
         return jsonify({
