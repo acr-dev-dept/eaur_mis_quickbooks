@@ -99,7 +99,7 @@ class SalesReceiptSyncService:
         
         item_id = item.QuickBk_ctgId
         customer_id = customer.qk_id
-        bank_qb_id = bank.qk_id
+        bank_qb_id = bank.get("qk_id")
         location_id = TblCampus.get_location_id_by_camp_id(student_camp_id)
 
 
