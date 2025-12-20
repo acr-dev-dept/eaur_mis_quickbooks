@@ -63,11 +63,10 @@ class SalesReceiptSyncService:
             customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
 
             if item:
-                item_id = item.id
+                item_id = item.income_account_qb
             else:
                 current_app.logger.info("Item not found in database")
                 raise Exception("Item not found in database")
-            sales_receipt["item_id"] = item_id
 
             if customer:
                 customer_id = customer.id
@@ -84,7 +83,7 @@ class SalesReceiptSyncService:
                         "Amount": sales_receipt["amount"],
                         "SalesItemLine": {
                             "ItemRef": {
-                                "value": sales_receipt["item_id"]
+                                "value": item_id
                             }
                         }
                     }
