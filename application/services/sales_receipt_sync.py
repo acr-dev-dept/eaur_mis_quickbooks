@@ -168,7 +168,6 @@ class SalesReceiptSyncService:
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
                 return SalesReceiptSyncResult(
                     status=SalesReceiptSyncStatus.FAILED,
-                    message=f"Failed to synchronize sales_receipt {sales_receipt.id} due to mapping error",
                     success=False,
                     error_message=map_error
                 )
