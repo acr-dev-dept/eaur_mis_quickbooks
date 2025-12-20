@@ -33,11 +33,12 @@ class SalesReceiptSyncResult:
     quickbooks_id: Optional[str] = None
     traceback: Optional[str] = None
 
-    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None):
+    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True, traceback: Optional[str] = None, details: Optional[dict] = None):
         self.status = status
         self.error_message = error_message
         self.success = success
         self.traceback = traceback
+        self.details = None
 
     def to_dict(self) -> dict:
         """Convert the object to a dictionary."""
