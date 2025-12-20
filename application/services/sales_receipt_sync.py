@@ -224,7 +224,7 @@ class SalesReceiptSyncService:
             )
 
             # ---- Success path ----
-            if response.get('SalesReceipt', {}).get('Id'):
+            if 'SalesReceipt' in response:
                 qb_id = response['SalesReceipt']['Id']
                 sync_token = response['SalesReceipt'].get('SyncToken')
 
