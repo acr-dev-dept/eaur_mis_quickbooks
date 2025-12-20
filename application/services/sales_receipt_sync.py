@@ -159,9 +159,12 @@ class SalesReceiptSyncService:
         """
         try:
             qb_service = self._get_qb_service()
-            qb_sales_receipt_data, map_error = self.map_sales_receipt_to_quickbooks(sales_receipt)
-
-            self.logger.debug(f"Mapped QuickBooks sales_receipt data for sales_receipt {sales_receipt.id}: {json.dumps(qb_sales_receipt_data, cls=EnhancedJSONEncoder)}")
+            
+            try:
+                qb_sales_receipt_data, map_error = self.map_sales_receipt_to_quickbooks(sales_receipt)
+            except Exception as e:
+                map_error = f"Error mapping sales_receipt data: {e}"
+                qb_sales_receipt_data = None
 
             if map_error:
                 self._update_sales_receipt_sync_status(sales_receipt.id, SalesReceiptSyncStatus.FAILED.value)
