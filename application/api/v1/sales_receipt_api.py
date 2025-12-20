@@ -65,7 +65,14 @@ def create_sales_receipt():
             }), 400
 
         result = sync_service.sync_single_sales_receipt(sales_data)
-        
+        if not result.success:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create sales receipt',
+                'details': result.error_message,
+                'timestamp': datetime.now().isoformat()
+            }), 500
+
         return jsonify({
             'success': True,
             'data': {'synced': result.to_dict() if hasattr(result, "to_dict") else str(result)},
