@@ -159,67 +159,107 @@ class SalesReceiptSyncService:
         """
         Synchronize a single sales_receipt to QuickBooks
         """
+        map_error = None
+
         try:
             qb_service = self._get_qb_service()
-            
+
+            # ---- Mapping phase ----
             try:
                 qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(sales_receipt)
             except Exception as e:
-                map_error = f"Error mapping sales_receipt data: {e}"
+                map_error = str(e)
                 qb_sales_receipt_data = None
 
             if map_error:
-                self._update_sales_receipt_sync_status(sales_receipt.id, SalesReceiptSyncStatus.FAILED.value)
+                self._update_sales_receipt_sync_status(
+                    sales_receipt.id,
+                    SalesReceiptSyncStatus.FAILED.value
+                )
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
                 return SalesReceiptSyncResult(
                     status=SalesReceiptSyncStatus.FAILED,
                     success=False,
                     error_message=map_error
                 )
-            # Log the payload being sent
-            self.logger.info(f"sending a sales_receipt with invoice ref {sales_receipt.invoi_ref} to QuickBooks and data mapped is {qb_sales_receipt_data}")
-            response = qb_service.create_sales_receipt(qb_service.realm_id, qb_sales_receipt_data)
-            self.logger.debug(f"QuickBooks response for sales_receipt {sales_receipt.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
 
-            if 'SalesReceipt' in response and response['SalesReceipt'].get('Id'):
-                qb_sales_receipt_id = response['SalesReceipt']['Id']
+            # ---- Send to QuickBooks ----
+            self.logger.info(
+                f"Sending SalesReceipt {sales_receipt.id} "
+                f"(invoice_ref={sales_receipt.invoi_ref}) to QuickBooks"
+            )
+
+            response = qb_service.create_sales_receipt(
+                qb_service.realm_id,
+                qb_sales_receipt_data
+            )
+
+            self.logger.debug(
+                f"QuickBooks response for sales_receipt {sales_receipt.id}: "
+                f"{json.dumps(response, cls=EnhancedJSONEncoder)}"
+            )
+
+            # ---- Success path ----
+            if response.get('SalesReceipt', {}).get('Id'):
+                qb_id = response['SalesReceipt']['Id']
+                sync_token = response['SalesReceipt'].get('SyncToken')
+
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
                     SalesReceiptSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_sales_receipt_id,
-                    sync_token=response['SalesReceipt'].get('SyncToken')
+                    quickbooks_id=qb_id,
+                    sync_token=sync_token
                 )
-                self._log_sync_audit(sales_receipt.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_sales_receipt_id}")
-                result = SalesReceiptSyncResult(
-                    status=SalesReceiptSyncStatus.SYNCED,
-                    message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
-                    success=True,
-                    details=response,
-                    quickbooks_id=qb_sales_receipt_id
-                )
-                return result.to_dict()
-            else:
-                error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_sales_receipt_sync_status(sales_receipt.id, SalesReceiptSyncStatus.FAILED.value)
-                self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
-                result = SalesReceiptSyncResult(
-                    status=SalesReceiptSyncStatus.FAILED,
-                    message=f"Failed to synchronize sales_receipt {sales_receipt.id}",
-                    success=False,
-                    error_message=error_msg,
-                    details=response
-                )
-                return result.to_dict()
 
-        except Exception as e:
-            error_msg = str(e)
-            tb = traceback.format_exc()
-            self._update_sales_receipt_sync_status(sales_receipt.id, SalesReceiptSyncStatus.FAILED.value)
+                self._log_sync_audit(
+                    sales_receipt.id,
+                    'SUCCESS',
+                    f"Synced to QuickBooks ID: {qb_id}"
+                )
+
+                return SalesReceiptSyncResult(
+                    status=SalesReceiptSyncStatus.SYNCED,
+                    success=True,
+                    message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
+                    details=response,
+                    quickbooks_id=qb_id
+                )
+
+            # ---- QuickBooks business error ----
+            error_msg = (
+                response.get('Fault', {})
+                .get('Error', [{}])[0]
+                .get('Detail', 'Unknown QuickBooks error')
+            )
+
+            self._update_sales_receipt_sync_status(
+                sales_receipt.id,
+                SalesReceiptSyncStatus.FAILED.value
+            )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
-            result = SalesReceiptSyncResult(
+
+            return SalesReceiptSyncResult(
                 status=SalesReceiptSyncStatus.FAILED,
                 success=False,
                 error_message=error_msg,
-                traceback=tb
+                details=response
             )
-            return result.to_dict()
+
+        except Exception as e:
+            # ---- System-level failure ----
+            error_msg = str(e)
+            self.logger.exception(
+                f"Unexpected error syncing sales_receipt {sales_receipt.id}"
+            )
+
+            self._update_sales_receipt_sync_status(
+                sales_receipt.id,
+                SalesReceiptSyncStatus.FAILED.value
+            )
+            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+
+            return SalesReceiptSyncResult(
+                status=SalesReceiptSyncStatus.FAILED,
+                success=False,
+                error_message=error_msg
+            )
