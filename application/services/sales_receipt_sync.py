@@ -149,14 +149,24 @@ class SalesReceiptSyncService:
         """
         Update the sync status of a sales_receipt
         """
-        sales_receipt = TblStudentWallet.get_by_id(sales_receipt_id)
-        if sales_receipt:
-            with db_manager.get_mis_session() as session:
-                sales_receipt.sync_status = status
+        with db_manager.get_mis_session() as session:
+            sales_receipt = session.get(TblStudentWallet, sales_receipt_id)
+
+            if not sales_receipt:
+                self.logger.warning(
+                    f"Sales receipt {sales_receipt_id} not found while updating sync status"
+                )
+                return
+
+            sales_receipt.sync_status = status
+
+            if quickbooks_id is not None:
                 sales_receipt.quickbooks_id = quickbooks_id
+
+            if sync_token is not None:
                 sales_receipt.sync_token = sync_token
-                session.commit()
-                session.close()
+
+            session.commit()
             
 
     def _log_sync_audit(self, sales_receipt_id: int, status: str, error_message: str):
