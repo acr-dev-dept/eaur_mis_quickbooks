@@ -29,12 +29,16 @@ class SalesReceiptSyncResult:
     status: SalesReceiptSyncStatus
     error_message: Optional[str] = None
     success: bool = True
+    details: Optional[dict] = None
+    quickbooks_id: Optional[str] = None
+    
     
 
 
-    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None):
+    def __init__(self, status: SalesReceiptSyncStatus, error_message: Optional[str] = None, success: bool = True):
         self.status = status
         self.error_message = error_message
+        self.success = success
 
     def to_dict(self) -> dict:
         """Convert the object to a dictionary."""
@@ -77,7 +81,7 @@ class SalesReceiptSyncService:
             else:
                 current_app.logger.info("Customer not found in database")
                 raise Exception("Customer not found in database")
-            sales_receipt["customer_id"] = customer_id
+            
 
         try:
             quickbooks_data = {
@@ -93,7 +97,7 @@ class SalesReceiptSyncService:
                     }
                 ],
                 "CustomerRef": {
-                    "value": sales_receipt["customer_id"]
+                    "value": customer_id
                 }
             
             }
