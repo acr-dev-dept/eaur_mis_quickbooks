@@ -828,7 +828,7 @@ class TblImvoice(MISBaseModel):
     pushed_date = db.Column(DateTime)
     quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Invoice ID
     sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
-    wallet_ref = db.Column(db.string(255))
+    wallet_ref = db.Column(db.String(255))
     # Define relationships between levels, modules, and intakes
     # This is not implemented on database level, we need them for joins
     level = relationship("TblLevel", backref="invoices", lazy='joined')
