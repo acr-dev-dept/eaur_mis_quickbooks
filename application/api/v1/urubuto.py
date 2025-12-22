@@ -360,7 +360,7 @@ def payment_callback():
     amount = data.get('amount')
     payment_date_time = data.get('payment_date_time')
     payer_code = data.get('payer_code')
-    payment_chanel = data.get('channel_name')
+    payment_chanel = data.get('payment_channel_name')
 
     # Generate a random internal transaction in form of 625843
     internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
@@ -814,6 +814,13 @@ def initiate_payment():
         wallet_data = TblStudentWallet.get_by_reference_number(payer_code)
         if wallet_data:
             amount = wallet_data.dept
+            if wallet_data.is_paid and wallet_data.external_transaction_id:
+                return jsonify({
+                    "message": "Wallet payment is already made",
+                    "status": 400
+                }), 400
+
+                    
 
         # Initiate payment
         try:
