@@ -367,17 +367,24 @@ class InvoiceSyncService:
 
             # check if there is a wallet already paid and append to the payload
             if invoice.wallet_ref:
-                current_app.logger.info(f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}")
+                current_app.logger.info(
+                    f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
+                )
+
                 wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(fee_description)
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
 
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
-                if wallet_data and wallet_data.dept > 0:
-                    current_app.logger.info(f"Wallet data found for invoice {invoice.id}: {wallet_data}")
+
+                if wallet_data and wallet_data.dept and wallet_data.dept > 0:
+                    current_app.logger.info(
+                        f"Wallet data found for invoice {invoice.id}: {wallet_data}"
+                    )
+
                     qb_invoice['Line'].append({
-                        "Amount": float(0 - amount),
+                        "Amount": float(-amount),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
@@ -387,12 +394,17 @@ class InvoiceSyncService:
                                 "value": class_ref_id
                             },
                             "Qty": 1,
-                            "UnitPrice": float(0 - amount)
+                            "UnitPrice": float(-amount)
                         },
-                        "Description": f"Synced the invoice by deducting from the wallet (Unearned revenue)"
+                        "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
                     })
-                current_app.logger.error(f"Wallet data is not valid for invoice {invoice.id}: {wallet_data.to_dict()}")
-                return None, None, None
+
+                else:
+                    current_app.logger.error(
+                        f"Wallet data is not valid for invoice {invoice.id}: "
+                        f"{wallet_data.to_dict() if wallet_data else 'None'}"
+                    )
+                    return None, None, None
 
             return qb_invoice, customer_id, quickbooks_id
 
