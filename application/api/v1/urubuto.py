@@ -395,7 +395,7 @@ def payment_callback():
     if transaction_status == "VALID":
         try:
             updated = None
-            wallet_pyt = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
+            wallet_pyt = TblStudentWallet.get_by_reference_number(payer_code)
             
             if wallet_pyt:
                 updated = TblStudentWallet.update_wallet_pyt_status(payer_code, transaction_id, payment_chanel)
@@ -616,12 +616,28 @@ def payment_notification():
             invoice = session.query(TblImvoice).filter(TblImvoice.id == payer_code).first()
 
             if not invoice:
-                current_app.logger.error(f"No invoice found for payer_code: {payer_code}")
+                wallet = TblStudentWallet.get_by_reference_number(payer_code)
+
+                if not wallet:
+                    current_app.logger.error(f"No invoice or wallet found for payer_code: {payer_code}")
+                    return jsonify({
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "message": f"No data found for this code: {payer_code}",
+                        "status": 404
+                    }), 404
+                if wallet.external_transaction_id == transaction_id:
+                    current_app.logger.warning(f"The wallet payment is already made")
+                    return jsonify({
+                        "message": "Wallet payment is already made",
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "status": 400
+                    }), 400
+                # return success
                 return jsonify({
+                    "message": "Notification received",
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "message": f"No data found for this code: {payer_code}",
-                    "status": 404
-                }), 404
+                    "status": 200
+                }), 200
 
             # Check if payment already exists
             from application.models.mis_models import Payment
