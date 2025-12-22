@@ -797,7 +797,7 @@ def initiate_payment():
         # Validate the amount from invoice or wallet
         wallet_data = TblStudentWallet.get_by_reference_number(payer_code)
         if wallet_data:
-            amount = wallet_data.amount
+            amount = wallet_data.dept
 
         # Initiate payment
         try:
