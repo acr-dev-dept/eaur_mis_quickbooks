@@ -525,7 +525,7 @@ class TblStudentWallet(MISBaseModel):
         try:
             with cls.get_session() as session:
                 record = session.query(cls).filter(cls.reference_number == reference_number).first()
-                return record.to_dict() if record else None
+                return record if record else None
         except Exception as e:
             current_app.logger.error(f"Error getting wallet record for reference_number {reference_number}: {str(e)}")
             return None
