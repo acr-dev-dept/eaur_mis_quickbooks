@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblOnlineApplication, Payment
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
@@ -160,8 +160,22 @@ def payer_validation():
         current_app.logger.info(f"Payer validation request - Merchant: {merchant_code}, Payer: {payer_code}")
 
         # get invoice details given the reference number (payer_code)
-        try:            
+        try:  
+            
             invoice_bal = TblImvoice.get_invoice_balance(payer_code)
+            
+            if not invoice_bal:
+                wallet = TblStudentWallet.get_by_reference_number(payer_code)
+                if wallet:
+                    invoice_bal_wallet = wallet.dept
+                else:
+                    invoice_bal_wallet = 0
+                invoice_balance = invoice_bal_wallet
+                current_app.logger.info(f"Invoice balance retrieved from wallet: {invoice_balance}")
+                return jsonify({
+                    "message": "Successful",
+                    "status": 200}), 200
+            
             invoice_deposit_amount = TblImvoice.get_invoice_deposit_amount(payer_code)
 
             invoice_balance = invoice_bal or invoice_deposit_amount
@@ -181,7 +195,7 @@ def payer_validation():
                     "message": f"Invoice : {payer_code} has already been paid in full.",
                     "status": 400
                 }), 400
-            #make sure it doesn't have decimal places
+            # make sure it doesn't have decimal places
             invoice_balance = int(float(invoice_balance))
             current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
             current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
@@ -779,6 +793,11 @@ def initiate_payment():
         except Exception as e:
             current_app.logger.error(f"Error accessing Urubuto Pay service code: {str(e)}")
             current_app.logger.error(traceback.format_exc())
+        
+        # Validate the amount from invoice or wallet
+        wallet_data = TblStudentWallet.get_by_reference_number(payer_code)
+        if wallet_data:
+            amount = wallet_data.amount
 
         # Initiate payment
         try:

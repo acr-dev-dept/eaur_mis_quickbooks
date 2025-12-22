@@ -63,7 +63,7 @@ def create_sales_receipt():
                 'message': 'id is required',
                 'timestamp': datetime.now().isoformat()
             }), 400
-        if sales_data.is_paid.lower() != "Yes":
+        if sales_data.is_paid.lower() != "yes":
             current_app.logger.info(f"Wallet data is not paid:")
             return jsonify({
                 'success': False,
