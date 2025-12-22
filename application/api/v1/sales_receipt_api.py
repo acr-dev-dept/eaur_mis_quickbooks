@@ -63,7 +63,14 @@ def create_sales_receipt():
                 'message': 'id is required',
                 'timestamp': datetime.now().isoformat()
             }), 400
-
+        if sales_data.is_paid.lower() != "Yes":
+            current_app.logger.info(f"Wallet data is not paid:")
+            return jsonify({
+                'success': False,
+                'message': 'Wallet data is not paid',
+                'timestamp': datetime.now().isoformat()
+            }), 400
+        
         result = sync_service.sync_single_sales_receipt(sales_data)
         if not result.success:
             return jsonify({
