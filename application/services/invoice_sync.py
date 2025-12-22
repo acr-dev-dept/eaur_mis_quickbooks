@@ -369,11 +369,11 @@ class InvoiceSyncService:
             if invoice.wallet_ref:
                 current_app.logger.info(f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}")
                 wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
-                item_data = TblIncomeCategory.get_by_id(wallet_data.fee_category)
-                if item_data:
-                    item_qb_id = item_data.QuickBk_ctgId
-                    if not item_qb_id:
-                        raise ValueError
+                cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(fee_description)
+                quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
+
+                if not quickbooks_id_:
+                    raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
                 if wallet_data and wallet_data.dept > 0:
                     current_app.logger.info(f"Wallet data found for invoice {invoice.id}: {wallet_data}")
                     qb_invoice['Line'].append({
@@ -381,7 +381,7 @@ class InvoiceSyncService:
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
-                                "value": item_qb_id,
+                                "value": quickbooks_id_,
                             },
                             "ClassRef": {
                                 "value": class_ref_id
