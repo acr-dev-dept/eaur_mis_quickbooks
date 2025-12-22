@@ -18,7 +18,7 @@ from flask import current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblLevel, TblIncomeCategory, Payment, TblOnlineApplication, TblRegisterProgramUg
+from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblStudentWallet, TblIncomeCategory, Payment, TblOnlineApplication, TblRegisterProgramUg
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
@@ -365,6 +365,34 @@ class InvoiceSyncService:
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.id}, Student: {invoice.reg_no}",
             }
 
+            # check if there is a wallet already paid and append to the payload
+            if invoice.wallet_ref:
+                current_app.logger.info(f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}")
+                wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
+                item_data = TblIncomeCategory.get_by_id(wallet_data.fee_category)
+                if item_data:
+                    item_qb_id = item_data.QuickBk_ctgId
+                    if not item_qb_id:
+                        raise ValueError
+                if wallet_data and wallet_data.dept > 0:
+                    current_app.logger.info(f"Wallet data found for invoice {invoice.id}: {wallet_data}")
+                    qb_invoice['Line'].append({
+                        "Amount": float(0 - amount),
+                        "DetailType": "SalesItemLineDetail",
+                        "SalesItemLineDetail": {
+                            "ItemRef": {
+                                "value": item_qb_id,
+                            },
+                            "ClassRef": {
+                                "value": class_ref_id
+                            },
+                            "Qty": 1,
+                            "UnitPrice": float(0 - amount)
+                        },
+                        "Description": f"Synced the invoice by deducting from the wallet (Unearned revenue)"
+                    })
+                current_app.logger.error(f"Wallet data is not valid for invoice {invoice.id}: {wallet_data}")
+                return None, None, None
 
             return qb_invoice, customer_id, quickbooks_id
 
