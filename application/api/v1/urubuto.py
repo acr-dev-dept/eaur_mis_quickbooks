@@ -427,7 +427,7 @@ def payment_callback():
             except Exception as e:
                 current_app.logger.error(f"Error logging integration operation: {str(e)}")
                 current_app.logger.error(traceback.format_exc())
-                
+
             current_app.logger.info(f"Wallet updated: {updated}")
             # Update invoice balance
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
@@ -831,7 +831,7 @@ def initiate_payment():
         wallet_data = TblStudentWallet.get_by_reference_number(payer_code)
         if wallet_data:
             amount = wallet_data.dept
-            if wallet_data.is_paid and wallet_data.external_transaction_id:
+            if wallet_data.is_paid == 'Yes' and wallet_data.external_transaction_id:
                 return jsonify({
                     "message": "Wallet payment is already made",
                     "status": 400
