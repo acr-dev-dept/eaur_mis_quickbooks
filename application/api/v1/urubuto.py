@@ -432,8 +432,9 @@ def payment_callback():
             try:
                 log = IntegrationLog.log_integration_operation(
                     system_name = "UrubutoPay",
-                    operation = "Wallet Payment",
+                    operation = "Invoice Payment",
                     status = "success",
+                    response_data = data,
                     started_at = started_at if started_at else datetime.now(),
                     completed_at = datetime.now()
                 )
