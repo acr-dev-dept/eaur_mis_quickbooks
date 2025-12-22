@@ -391,7 +391,7 @@ class InvoiceSyncService:
                         },
                         "Description": f"Synced the invoice by deducting from the wallet (Unearned revenue)"
                     })
-                current_app.logger.error(f"Wallet data is not valid for invoice {invoice.id}: {wallet_data}")
+                current_app.logger.error(f"Wallet data is not valid for invoice {invoice.id}: {wallet_data.to_dict()}")
                 return None, None, None
 
             return qb_invoice, customer_id, quickbooks_id
