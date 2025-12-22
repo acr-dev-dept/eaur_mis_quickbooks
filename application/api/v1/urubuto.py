@@ -399,6 +399,7 @@ def payment_callback():
             
             if wallet_pyt:
                 updated = TblStudentWallet.update_wallet_pyt_status(payer_code, transaction_id, payment_chanel)
+                
                 if not updated:
                     current_app.logger.warning(f"failed to update the wallet")
                     return jsonify({
@@ -411,7 +412,19 @@ def payment_callback():
                     "status": 200
                 }), 200
         
-
+            from application.models.central_models import IntegrationLog
+            log = IntegrationLog.log_integration_operation(
+                system_name = "UrubutoPay",
+                operation = "Wallet Payment",
+                status = "success",
+                started_at = datetime.now(),
+                completed_at = datetime.now()
+            )
+            if log:
+                current_app.logger.info(f"Integration log created: {log}")
+            else:
+                current_app.logger.warning(f"Failed to create integration log")
+            current_app.logger.info(f"Wallet updated: {updated}")
             # Update invoice balance
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")

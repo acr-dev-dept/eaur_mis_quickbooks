@@ -14,6 +14,7 @@ import traceback
 from flask import current_app
 from application import db
 from sqlalchemy import or_, and_, cast, String
+from application.utils.database import db_manager
 
 
 # Use Flask-SQLAlchemy's Model base class
@@ -24,6 +25,11 @@ class BaseModel(db.Model):
     id = Column(Integer, primary_key=True)
     created_at = Column(DateTime, default=datetime.now(), nullable=False)
     updated_at = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=False)
+
+    @classmethod
+    def get_session(cls):
+        """Get database session for MIS database"""
+        return db_manager.get_mis_session()
 
 class QuickBooksConfig(BaseModel):
     """QuickBooks integration configuration for single-tenant EAUR system"""
@@ -173,6 +179,20 @@ class IntegrationLog(BaseModel):
     
     def __repr__(self):
         return f'<IntegrationLog {self.system_name} - {self.operation}>'
+    
+    @classmethod
+    def log_integration_operation(cls, **kwargs):
+        """Log an integration operation"""
+        try:
+            with cls.get_session() as session:
+                log = cls(**kwargs)
+                db.session.add(log)
+                db.session.commit()
+                return log
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
 
 class ApiClient(BaseModel):
     """
