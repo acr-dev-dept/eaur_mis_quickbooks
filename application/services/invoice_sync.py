@@ -372,7 +372,9 @@ class InvoiceSyncService:
                 )
 
                 wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
-                cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(fee_description)
+                category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
+                category_name= category.get('name') if category else None
+                cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
 
                 if not quickbooks_id_:
@@ -384,7 +386,7 @@ class InvoiceSyncService:
                     )
 
                     qb_invoice['Line'].append({
-                        "Amount": float(-amount),
+                        "Amount": float(-min(wallet_data.dept, amount)),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
@@ -394,11 +396,17 @@ class InvoiceSyncService:
                                 "value": class_ref_id
                             },
                             "Qty": 1,
-                            "UnitPrice": float(-amount)
+                            "UnitPrice": float(-min(wallet_data.dept, amount))
                         },
                         "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
                     })
-
+                    balance = max(0, amount - wallet_data.dept)
+                    new_balance = TblImvoice.update_invoice_balance(invoice.id, balance)
+                    if new_balance:
+                        current_app.logger.info(f"Updated invoice balance for invoice {invoice.id}: {new_balance}")
+                    else:
+                        current_app.logger.error(f"Failed to update invoice balance for invoice {invoice.id}")
+                        raise ValueError(f"Failed to update invoice balance for invoice {invoice.id}")
                 else:
                     current_app.logger.error(
                         f"Wallet data is not valid for invoice {invoice.id}: "

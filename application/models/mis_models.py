@@ -940,6 +940,29 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error getting deposit amount for invoice {reference_number}: {str(e)}")
             return None
 
+    @classmethod
+    def update_invoice_balance(cls, id, amount_paid):
+        """
+        Update invoice balance by id
+
+        Args:
+            id (int): Invoice ID
+            amount_paid (float): Amount paid to deduct from balance
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoice = session.query(cls).filter(cls.id == id).first()
+                if invoice:
+                    invoice.balance = amount_paid
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            current_app.logger.error(f"Error updating invoice balance for id {id}: {str(e)}")
+            return False
+
+
+        
 
 
 
