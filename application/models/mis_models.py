@@ -581,6 +581,37 @@ class TblStudentWallet(MISBaseModel):
                 return sales_data
             return None
 
+    @classmethod
+    def get_payment_details_by_external_id(cls, external_transaction_id):
+        """
+        Get detailed payment information by external transaction ID
+
+        Args:
+            external_transaction_id (str): External transaction ID
+
+        Returns:
+            dict: Payment details or None if not found
+        """
+        with cls.get_session() as session:
+            student_wallet = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
+            if student_wallet:
+                return student_wallet
+            return []
+            
+    @classmethod
+    def update_wallet_pyt_status(cls, reference_number, transaction_id, payment_chanel):
+        """
+        Update wallet payment status
+        """
+        with cls.get_session() as session:
+            student_wallet = session.query(cls).filter(cls.reference_number == reference_number).first()
+            if student_wallet:
+                student_wallet.is_paid = "Yes"
+                student_wallet.external_transaction_id = transaction_id
+                student_wallet.payment_chanel = payment_chanel
+                session.commit()
+                return True
+            return False
 
 
 

@@ -346,14 +346,20 @@ def payment_callback():
     amount = data.get('amount')
     payment_date_time = data.get('payment_date_time')
     payer_code = data.get('payer_code')
+    payment_chanel = data.get('channel_name')
+
     # Generate a random internal transaction in form of 625843
     internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
 
-    payment_sync_service = PaymentSyncService()
+    from application.models.mis_models import TblStudentWallet
 
     # Check if the transaction_id is not in the payment table so that we do not duplicate payments
     try:
-        existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
+        payment = Payment.get_payment_details_by_external_id(transaction_id)
+        wallet_payment = None
+        if not payment:
+            wallet_payment = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
+        existing_payment = payment or wallet_payment
         current_app.logger.info(f"Existing payment check for transaction {transaction_id}: {existing_payment}")
         if existing_payment:
             message = f"Payment already exists for transaction: {transaction_id}"
@@ -373,13 +379,32 @@ def payment_callback():
     # check the transaction status so that we know how to update the balance in invoice
     # table and the payment table
     if transaction_status == "VALID":
-        # Update invoice balance
         try:
+            updated = None
+            wallet_pyt = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
+            
+            if wallet_pyt:
+                updated = TblStudentWallet.update_wallet_pyt_status(payer_code, transaction_id, payment_chanel)
+                if not updated:
+                    current_app.logger.warning(f"failed to update the wallet")
+                    return jsonify({
+                        "message": "Failed to update the wallet",
+                        "status": 500
+                    }), 500
+                current_app.logger.info(f"Wallet updated: {updated}")
+                return jsonify({
+                    "message": "Successful",
+                    "status": 200
+                }), 200
+        
+
+            # Update invoice balance
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
             current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
             # Make sure the invoice balance has been updated before creating payment record
             if updated[0] is not None: # The method returns (new_balance, invoice) tuple
                 # Create payment record
+                
                 try:
                     payment = Payment.create_payment(
                         external_transaction_id=transaction_id,
@@ -424,7 +449,7 @@ def payment_callback():
                 # Create payment record
                 try:
                     payment = Payment.create_payment(
-                        external_transaction_id=transaction_id,
+                    external_transaction_id=transaction_id,
                     description=f"Urubuto Pay Via Microservice",
                     trans_code=transaction_id,
                     payment_chanel=data.get('payment_chanel_name'),
