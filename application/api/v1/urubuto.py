@@ -407,6 +407,20 @@ def payment_callback():
                         "message": "Failed to update the wallet",
                         "status": 500
                     }), 500
+                from application.models.central_models import IntegrationLog
+                try:
+                    log = IntegrationLog.log_integration_operation(
+                        system_name = "UrubutoPay",
+                        operation = "Wallet Payment",
+                        status = "success",
+                        started_at = started_at if started_at else datetime.now(),
+                        completed_at = datetime.now()
+                    )
+                    current_app.logger.info(f"Integration log created: {log}")
+                except Exception as e:
+                    current_app.logger.error(f"Error logging integration operation: {str(e)}")
+                    current_app.logger.error(traceback.format_exc())
+
                 current_app.logger.info(f"Wallet updated: {updated}")
                 return jsonify({
                     "message": "Successful",
@@ -420,7 +434,7 @@ def payment_callback():
                     system_name = "UrubutoPay",
                     operation = "Wallet Payment",
                     status = "success",
-                    started_at = started_at,
+                    started_at = started_at if started_at else datetime.now(),
                     completed_at = datetime.now()
                 )
                 current_app.logger.info(f"Integration log created: {log}")
