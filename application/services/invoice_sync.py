@@ -403,31 +403,21 @@ class InvoiceSyncService:
                     invoice_balance = invoice.balance or invoice.dept
                     amount_paid = min(wallet_data.dept, invoice_balance)
 
-                    new_balance = TblImvoice.apply_payment_to_invoice(
-                        invoice.id,
-                        amount_paid
-                    )
-
-                    if new_balance is not None:
-                        current_app.logger.info(
-                            f"Updated invoice balance for invoice {invoice.id}: {new_balance}"
-                        )
-                    else:
-                        current_app.logger.error(
-                            f"Failed to update invoice balance for invoice {invoice.id}"
-                        )
-                        raise ValueError(
-                            f"Failed to update invoice balance for invoice {invoice.id}"
-                        )
-
+                    
                 else:
                     current_app.logger.error(
                         f"Wallet data is not valid for invoice {invoice.id}: "
                         f"{wallet_data.to_dict() if wallet_data else 'None'}"
                     )
                     return None, None, None
+            meta = {
+                'qb_invoice': qb_invoice,
+                'customer_id': customer_id,
+                'quickbooks_id': quickbooks_id,
+                'amount_paid': amount_paid if amount_paid else 0
+            }
+            return qb_invoice, meta
 
-            return qb_invoice, customer_id, quickbooks_id
 
         except Exception as e:
             logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
@@ -579,13 +569,19 @@ class InvoiceSyncService:
             qb_service = self._get_qb_service()
 
             # Map invoice data
-            qb_invoice_data = self.map_invoice_to_quickbooks(invoice)[0]
 
-            qb_item_id = self.map_invoice_to_quickbooks(invoice)[2]
+            qb_invoice_data, meta = self.map_invoice_to_quickbooks(invoice)
+
+
+            qb_item_id = meta.get('item_id')
+            qb_customer_id = meta.get('customer_id')
+            amount_paid = meta.get('amount_paid')
+
+
+
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
             
-            qb_customer_id = self.map_invoice_to_quickbooks(invoice)[1]
             if not qb_customer_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
 
@@ -606,6 +602,25 @@ class InvoiceSyncService:
 
                 # Log successful sync
                 self._log_sync_audit(invoice.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_invoice_id}")
+                
+                # Update the invoice Balance
+                new_balance = TblImvoice.apply_payment_to_invoice(
+                        invoice.id,
+                        amount_paid
+                    )
+
+                if new_balance is not None:
+                    current_app.logger.info(
+                        f"Updated invoice balance for invoice {invoice.id}: {new_balance}"
+                    )
+                else:
+                    current_app.logger.error(
+                        f"Failed to update invoice balance for invoice {invoice.id}"
+                    )
+                    raise ValueError(
+                        f"Failed to update invoice balance for invoice {invoice.id}"
+                    )
+
 
                 return SyncResult(
                     invoice_id=invoice.id,
