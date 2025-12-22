@@ -343,6 +343,7 @@ def payment_callback():
     current_app.logger.info(f"data received: {request.get_json()}")
 
     # Process the callback data
+    started_at = datetime.now()
     data = request.get_json()
     current_app.logger.info(f"Callback data: {data}")
     if not data:
@@ -413,17 +414,20 @@ def payment_callback():
                 }), 200
         
             from application.models.central_models import IntegrationLog
-            log = IntegrationLog.log_integration_operation(
-                system_name = "UrubutoPay",
-                operation = "Wallet Payment",
-                status = "success",
-                started_at = datetime.now(),
-                completed_at = datetime.now()
-            )
-            if log:
+            
+            try:
+                log = IntegrationLog.log_integration_operation(
+                    system_name = "UrubutoPay",
+                    operation = "Wallet Payment",
+                    status = "success",
+                    started_at = started_at,
+                    completed_at = datetime.now()
+                )
                 current_app.logger.info(f"Integration log created: {log}")
-            else:
-                current_app.logger.warning(f"Failed to create integration log")
+            except Exception as e:
+                current_app.logger.error(f"Error logging integration operation: {str(e)}")
+                current_app.logger.error(traceback.format_exc())
+                
             current_app.logger.info(f"Wallet updated: {updated}")
             # Update invoice balance
             updated = TblImvoice.update_invoice_balance(payer_code, amount)
