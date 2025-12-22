@@ -411,7 +411,6 @@ class InvoiceSyncService:
                     )
                     return None, None, None
             meta = {
-                'qb_invoice': qb_invoice,
                 'customer_id': customer_id,
                 'quickbooks_id': quickbooks_id,
                 'amount_paid': amount_paid if amount_paid else 0
@@ -573,7 +572,7 @@ class InvoiceSyncService:
             qb_invoice_data, meta = self.map_invoice_to_quickbooks(invoice)
 
 
-            qb_item_id = meta.get('item_id')
+            qb_item_id = meta.get('quickbooks_id')
             qb_customer_id = meta.get('customer_id')
             amount_paid = meta.get('amount_paid')
 
