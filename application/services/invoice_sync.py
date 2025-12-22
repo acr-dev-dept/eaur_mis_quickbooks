@@ -400,13 +400,26 @@ class InvoiceSyncService:
                         },
                         "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
                     })
-                    balance = max(0, amount - wallet_data.dept)
-                    new_balance = TblImvoice.update_invoice_balance(invoice.id, balance)
-                    if new_balance:
-                        current_app.logger.info(f"Updated invoice balance for invoice {invoice.id}: {new_balance}")
+                    invoice_balance = invoice.balance or invoice.dept
+                    amount_paid = min(wallet_data.dept, invoice_balance)
+
+                    new_balance = TblImvoice.apply_payment_to_invoice(
+                        invoice.id,
+                        amount_paid
+                    )
+
+                    if new_balance is not None:
+                        current_app.logger.info(
+                            f"Updated invoice balance for invoice {invoice.id}: {new_balance}"
+                        )
                     else:
-                        current_app.logger.error(f"Failed to update invoice balance for invoice {invoice.id}")
-                        raise ValueError(f"Failed to update invoice balance for invoice {invoice.id}")
+                        current_app.logger.error(
+                            f"Failed to update invoice balance for invoice {invoice.id}"
+                        )
+                        raise ValueError(
+                            f"Failed to update invoice balance for invoice {invoice.id}"
+                        )
+
                 else:
                     current_app.logger.error(
                         f"Wallet data is not valid for invoice {invoice.id}: "

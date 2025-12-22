@@ -941,25 +941,32 @@ class TblImvoice(MISBaseModel):
             return None
 
     @classmethod
-    def update_invoice_balance(cls, id, amount_paid):
+    def apply_payment_to_invoice(cls, invoice_id, amount_paid):
         """
-        Update invoice balance by id
+        Deduct a payment amount from an invoice balance.
+        """
+        if amount_paid <= 0:
+            raise ValueError("amount_paid must be greater than zero")
 
-        Args:
-            id (int): Invoice ID
-            amount_paid (float): Amount paid to deduct from balance
-        """
         try:
             with MISBaseModel.get_session() as session:
-                invoice = session.query(cls).filter(cls.id == id).first()
-                if invoice:
-                    invoice.balance = amount_paid
-                    session.commit()
-                    return True
-                return False
+                invoice = session.query(cls).filter(cls.id == invoice_id).first()
+                invoice_balance = invoice.balance or invoice.dept
+                if not invoice:
+                    return None
+                
+                    
+                invoice.balance = max(0, invoice_balance - amount_paid)
+                session.commit()
+
+                return invoice.balance
+
         except Exception as e:
-            current_app.logger.error(f"Error updating invoice balance for id {id}: {str(e)}")
-            return False
+            current_app.logger.error(
+                f"Error updating invoice balance for id {invoice_id}: {str(e)}"
+            )
+            return None
+
 
 
         
