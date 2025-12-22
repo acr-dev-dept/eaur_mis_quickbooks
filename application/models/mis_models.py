@@ -609,6 +609,7 @@ class TblStudentWallet(MISBaseModel):
                 student_wallet.is_paid = "Yes"
                 student_wallet.external_transaction_id = transaction_id
                 student_wallet.payment_chanel = payment_chanel
+                student_wallet.payment_date = datetime.now()
                 session.commit()
                 return True
             return False
