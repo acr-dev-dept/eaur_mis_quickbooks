@@ -265,8 +265,7 @@ def delete_invoice_qb(invoice_id):
             )
             return create_response(
                 success=False,
-                error='Failed to delete invoice',
-                detail=result.error_message or 'Unknown error',
+                error=result.error_message or 'Unknown error',
                 status_code=400
             )
 
