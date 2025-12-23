@@ -1022,7 +1022,7 @@ class InvoiceSyncService:
         qb_inv_data = self.map_invoice_for_deletion(invoice)
 
         try:
-            qb_service.delete_invoice(realm_id=qb_service.realm_id, invoice_data=qb_inv_data)
+            qb_service.delete_invoice(realm_id=qb_service.realm_id, invoice_dict=qb_inv_data)
 
             return SyncResult(invoice_id=invoice.get('id'), success=True)
         except Exception as e:
