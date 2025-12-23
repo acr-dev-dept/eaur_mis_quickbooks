@@ -420,7 +420,9 @@ def payment_callback():
                 except Exception as e:
                     current_app.logger.error(f"Error logging integration operation: {str(e)}")
                     current_app.logger.error(traceback.format_exc())
-
+                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                response = sync_wallet_to_quickbooks_task.delay(wallet_pyt.id)
+                        
                 current_app.logger.info(f"Wallet updated: {updated}")
                 return jsonify({
                     "message": "Successful",
