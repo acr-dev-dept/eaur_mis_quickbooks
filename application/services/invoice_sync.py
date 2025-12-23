@@ -539,7 +539,7 @@ class InvoiceSyncService:
 
 
             # check if there is a wallet already paid and append to the payload
-            if invoice.wallet_ref:
+            if invoice.get('wallet_ref'):
                 current_app.logger.info(
                     f"Wallet reference found for invoice {invoice['id']}: {invoice['wallet_ref']}"
                 )
