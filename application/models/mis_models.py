@@ -211,7 +211,8 @@ class Payment(MISBaseModel):
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
             'qk_id': self.qk_id,
-            'sync_token': self.sync_token
+            'sync_token': self.sync_token,
+            
         }
     
     @classmethod
