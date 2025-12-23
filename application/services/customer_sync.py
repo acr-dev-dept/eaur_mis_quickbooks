@@ -503,7 +503,7 @@ class CustomerSyncService:
                 qb_customer_update.update({
                     "DisplayName": f"{applicant_data['tracking_id'] }",
                     "GivenName": applicant_data['first_name'],
-                    "FamilyName": applicant_data['family_name'],
+                    "FamilyName": applicant_data['last_name'],
                     "MiddleName": applicant_data['middlename'],
                     "CompanyName": f"{applicant_data['first_name']} {applicant_data['family_name']}",
                     "PrimaryPhone": {"FreeFormNumber": applicant_data['phone']} if applicant_data.get('phone') else None,
