@@ -362,13 +362,13 @@ class SalesReceiptSyncService:
                     f"Synced to QuickBooks ID: {qb_id}"
                 )
 
-                return SalesReceiptSyncResult(
-                    status=SalesReceiptSyncStatus.SYNCED,
-                    success=True,
-                    error_message=f"SalesReceipt {sales_receipt.id} synchronized successfully",
-                    details=response,
-                    quickbooks_id=qb_id
-                )
+                return {
+                    "status":SalesReceiptSyncStatus.SYNCED,
+                    "success":True,
+                    "error_message":f"SalesReceipt {sales_receipt.id} synchronized successfully",
+                    "details":response,
+                    "quickbooks_id":qb_id
+                }
 
             # ---- QuickBooks business error ----
             error_msg = (
@@ -383,12 +383,12 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return SalesReceiptSyncResult(
-                status=SalesReceiptSyncStatus.FAILED,
-                success=False,
-                error_message=error_msg,
-                details=response
-            )
+            return {
+                "status" :SalesReceiptSyncStatus.FAILED,
+                "success" :False,
+                "error_message" :"error_msg",
+                "details":"response"
+            }
 
         except Exception as e:
             # ---- System-level failure ----
@@ -403,8 +403,8 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return SalesReceiptSyncResult(
-                status=SalesReceiptSyncStatus.FAILED,
-                success=False,
-                error_message=error_msg
-            )
+            return {
+                "status" :SalesReceiptSyncStatus.FAILED,
+                "success" :False,
+                "error_message":"error_msg"
+            }
