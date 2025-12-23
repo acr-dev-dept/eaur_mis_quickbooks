@@ -375,7 +375,7 @@ def payment_callback():
         if not payment:
             wallet_payment = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
         existing_payment = payment or wallet_payment
-        current_app.logger.info(f"Existing payment check for transaction {transaction_id}: {existing_payment}")
+        current_app.logger.info(f"Existing payment check for transaction {transaction_id}: {existing_payment.to_dict() if existing_payment else "None"}")
         if existing_payment:
             message = f"Payment already exists for transaction: {transaction_id}"
             return jsonify({
