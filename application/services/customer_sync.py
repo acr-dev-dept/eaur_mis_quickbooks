@@ -550,18 +550,6 @@ class CustomerSyncService:
         student_data = student if isinstance(student, dict) else student.to_dict_for_quickbooks()
 
         try:
-            # Prepare custom fields
-            custom_fields_list = [
-                {"DefinitionId": "1000000001", "StringValue": "Student"},
-                {"DefinitionId": "1000000002", "StringValue": str(student_data.get('reg_no', ''))},
-                {"DefinitionId": "1000000003", "StringValue": student_data.get('sex', '')},
-                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": student_data.get('national_id', '')},
-                {"DefinitionId": "1000000005", "StringValue": student_data.get('campus_name', '')},
-                {"DefinitionId": "1000000006", "Name": "Intake", "StringValue": str(student_data.get('intake_details', ''))},
-                {"DefinitionId": "1000000009", "StringValue": student_data.get('program_type', '')}
-
-            ]
-            filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
             
             email = student_data.get('email1')
             if not self.is_valid_email(str(email)):
@@ -586,9 +574,7 @@ class CustomerSyncService:
                     } if student_data.get('phone') else None,
                     "PrimaryEmailAddr": {
                         "Address": email
-                    } if email else None,
-                    "CustomField": filtered_custom_fields,
-                        "Notes": f"Student Updated from MIS - Reg_No: {student_data.get('reg_no', '')}"
+                    } if email else None
                 })
                 qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
 
