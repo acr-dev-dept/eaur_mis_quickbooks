@@ -891,7 +891,7 @@ class QuickBooks:
                 }
             }
 
-    def delete_invoice(self, realm_id, invoice_id):
+    def delete_invoice(self, realm_id, invoice_dict):
         """
         Delete an invoice by ID from QuickBooks.
 
@@ -902,10 +902,10 @@ class QuickBooks:
         Returns:
             dict: The response from the QuickBooks API.
         """
-        endpoint = f"{realm_id}/invoice/{invoice_id}"
+        endpoint = f"{realm_id}/invoice?operation=delete"
         try:
-            current_app.logger.info(f"Deleting invoice with ID: {invoice_id}")
-            response = self.make_request(endpoint, method="DELETE")
+            current_app.logger.info(f"Deleting invoice with ID: {invoice_dict['Id']}")
+            response = self.make_request(endpoint, method="POST", data=invoice_dict)
             current_app.logger.info(f"Invoice deleted successfully: {response}")
             return response
         except Exception as e:

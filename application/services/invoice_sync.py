@@ -575,7 +575,7 @@ class InvoiceSyncService:
                     })
                     invoice_balance = invoice['balance'] or ['invoice.dept']
                     amount_paid = min(wallet_data.dept, invoice_balance)
-
+                    
                     
                 else:
                     current_app.logger.error(
@@ -596,7 +596,7 @@ class InvoiceSyncService:
             raise
 
 
-            
+
 
         
 
@@ -987,3 +987,43 @@ class InvoiceSyncService:
             overall_results['end_time'] = datetime.now()
             overall_results['error'] = str(e)
             return overall_results
+        
+    def map_invoice_for_deletion(self, invoice: TblImvoice) -> Dict:
+        qb_id = invoice.get('quickbooks_id')
+        sync_token = invoice.get('sync_token')
+
+        if sync_token is None:
+            # fetch the invoice for synctoken retrival
+            qb_service = self._get_qb_service()
+            invoice_qb = qb_service.get_invoice(invoice_id=invoice.get('quickbooks_id'), realm_id=qb_service.realm_id)
+            current_app.logger.info(f"Fetched invoice {invoice.get('id')} from QuickBooks for SyncToken retrieval for invoice deletion: {invoice_qb}")
+            sync_token = invoice_qb.get('Invoice', {}).get('SyncToken')
+        if not qb_id or not sync_token:
+            return None
+        
+        inv_del = {
+            "Id": qb_id,
+            "SyncToken": sync_token
+        }
+        
+        return inv_del
+    
+    def delete_invoice_from_quickbooks(self, invoice):
+        """
+        Delete an invoice from QuickBooks
+
+        Args:
+            invoice: MIS invoice object to delete
+
+        Returns:
+            SyncResult: Result of the deletion attempt
+        """
+        qb_service = self._get_qb_service()
+        qb_inv_data = self.map_invoice_for_deletion(invoice)
+
+        try:
+            qb_service.delete_invoice(realm_id=qb_service.realm_id, invoice_data=qb_inv_data)
+
+            return SyncResult(invoice_id=invoice.get('id'), success=True)
+        except Exception as e:
+            return SyncResult(invoice_id=invoice.get('id'), success=False, error_message=str(e))

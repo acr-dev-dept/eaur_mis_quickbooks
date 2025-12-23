@@ -968,6 +968,18 @@ class TblImvoice(MISBaseModel):
             )
             return None
 
+    @classmethod
+    def update_invoice_quickbooks_row(cls, invoice_id):
+        with cls.get_invoice_balance() as session:
+            invoice = session.query(cls).filter(cls.id == invoice_id).first()
+            if invoice:
+                invoice.quickbooks_id = None,
+                invoice.sync_toke = None,
+                invoice.QuickBk_Status = None
+                session.commit()
+                return True
+            return False
+
 
 
         
