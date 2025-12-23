@@ -253,7 +253,23 @@ def delete_invoice_qb(invoice_id):
                 message='Invoice not found',
                 status_code=404
             )
-        
+        if invoice_data.wallet_ref:
+            current_app.logger.info("Skip wallet based invoice deletion")
+            return create_response(
+                success=False,
+                error='Wallet based invoice deletion is not supported',
+                message='Wallet based invoice deletion is not supported',
+                status_code=400
+            )
+        if invoice_data.balance is not None:
+            current_app.logger.info("Skip balance based invoice deletion because it is linked with a payment")
+            return create_response(
+                success=False,
+                error='Balance based invoice deletion is not supported',
+                message='Balance based invoice deletion is not supported',
+                status_code=400
+            )
+        current_app.logger.info(f'Deleting invoice in QuickBooks with ID: {invoice_id}')
         invoice_sync_service = InvoiceSyncService()
         result = invoice_sync_service.delete_invoice_from_quickbooks(invoice_data)
 
@@ -271,12 +287,13 @@ def delete_invoice_qb(invoice_id):
 
         current_app.logger.info("Invoice deleted successfully")
         QuickbooksAuditLog.add_audit_log(
-            action_type="Delete single invoice",
+            action_type=f"Delete single invoice {invoice_id}",
             operation_status=200,
             error_message=None,
         )
         # Update the invoice record
         update_invoice = TblImvoice.update_invoice_quickbooks_row(invoice_id)
+
         if not update_invoice:
             current_app.logger.info("Failed to update invoice record")
         else:

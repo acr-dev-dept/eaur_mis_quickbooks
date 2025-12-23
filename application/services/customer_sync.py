@@ -489,7 +489,6 @@ class CustomerSyncService:
                 {"DefinitionId": "1000000001", "StringValue": "Applicant"},
                 {"DefinitionId": "1000000002", "StringValue": str(applicant_data['tracking_id'])},
                 {"DefinitionId": "1000000003", "StringValue": applicant_data['sex']},
-                {"DefinitionId": "1000000008", "Name": "NationalID", "StringValue": applicant_data['nation_Id_passPort_no']},
                 {"DefinitionId": "1000000005", "StringValue": applicant_data['camp_id']},
                 {"DefinitionId": "1000000009", "StringValue": applicant_data['prg_mode_id']}
             ]
