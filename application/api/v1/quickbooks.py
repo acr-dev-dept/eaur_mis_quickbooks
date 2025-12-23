@@ -1363,10 +1363,14 @@ def sync_single_item():
                 'error': 'No data provided',
                 'message': 'Please provide item data in JSON format'
             }), 400
-        required_item_types = ['Service', 'Inventory', 'NonInventory', 'Bundle']
         payload = request.json
         income_category_id = payload.get('income_category_id')
-
+        if not income_category_id:
+            return jsonify({
+                'success': False,
+                'error': 'Missing income category ID',
+                'message': 'Please provide an income category ID'
+            }), 400
         income_category = TblIncomeCategory.get_category_by_id_not_synced(income_category_id)
 
         if not income_category:
