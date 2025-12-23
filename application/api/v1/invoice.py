@@ -239,7 +239,7 @@ def create_invoice():
         )
 
 
-@invoices_bp.route('/<invoice_id>', methods=['PUT'])
+@invoices_bp.route('/update/<invoice_id>', methods=['PUT'])
 def update_invoice(invoice_id):
     """Update an existing invoice."""
     try:
