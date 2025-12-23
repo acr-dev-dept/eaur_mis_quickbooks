@@ -970,7 +970,7 @@ class TblImvoice(MISBaseModel):
 
     @classmethod
     def update_invoice_quickbooks_row(cls, invoice_id):
-        with cls.get_invoice_balance() as session:
+        with MISBaseModel.get_session() as session:
             invoice = session.query(cls).filter(cls.id == invoice_id).first()
             if invoice:
                 invoice.quickbooks_id = None
