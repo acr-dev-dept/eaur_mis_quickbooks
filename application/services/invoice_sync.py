@@ -541,11 +541,11 @@ class InvoiceSyncService:
             # check if there is a wallet already paid and append to the payload
             if invoice.wallet_ref:
                 current_app.logger.info(
-                    f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
+                    f"Wallet reference found for invoice {invoice['id']}: {invoice['wallet_ref']}"
                 )
 
-                wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
-                category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
+                wallet_data = TblStudentWallet.get_by_reference_number(invoice['wallet_ref'])
+                category = TblIncomeCategory.get_category_by_id(wallet_data['fee_category'])
                 category_name= category.get('name') if category else None
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
@@ -553,13 +553,13 @@ class InvoiceSyncService:
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
 
-                if wallet_data and wallet_data.dept and wallet_data.dept > 0:
+                if wallet_data and wallet_data['dept'] and wallet_data['dept'] > 0:
                     current_app.logger.info(
-                        f"Wallet data found for invoice {invoice.id}: {wallet_data}"
+                        f"Wallet data found for invoice {invoice['id']}: {wallet_data}"
                     )
 
                     qb_invoice['Line'].append({
-                        "Amount": float(-min(wallet_data.dept, amount)),
+                        "Amount": float(-min(wallet_data['dept'], amount)),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
@@ -569,17 +569,17 @@ class InvoiceSyncService:
                                 "value": class_ref_id
                             },
                             "Qty": 1,
-                            "UnitPrice": float(-min(wallet_data.dept, amount))
+                            "UnitPrice": float(-min(wallet_data['dept'], amount))
                         },
                         "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
                     })
-                    invoice_balance = invoice.balance or invoice.dept
-                    amount_paid = min(wallet_data.dept, invoice_balance)
+                    invoice_balance = invoice['balance'] or ['invoice.dept']
+                    amount_paid = min(wallet_data['dept'], invoice_balance)
 
                     
                 else:
                     current_app.logger.error(
-                        f"Wallet data is not valid for invoice {invoice.id}: "
+                        f"Wallet data is not valid for invoice {invoice['id']}: "
                         f"{wallet_data.to_dict() if wallet_data else 'None'}"
                     )
                     return None, None, None
