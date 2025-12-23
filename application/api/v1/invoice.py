@@ -298,8 +298,7 @@ def delete_invoice_qb(invoice_id):
         )
         return create_response(
             success=False,
-            error='Error deleting invoice',
-            details=str(e),
+            error=f'Error deleting invoice {str(e)}',
             status_code=500
         )
 
