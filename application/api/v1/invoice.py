@@ -279,7 +279,9 @@ def delete_invoice_qb(invoice_id):
         update_invoice = TblImvoice.update_invoice_quickbooks_row(invoice_id)
         if not update_invoice:
             current_app.logger.info("Failed to update invoice record")
-        current_app.logger.info("Invoice record updated successfully")
+        else:
+            current_app.logger.info("Invoice record updated successfully")
+
             
         return create_response(
             success=True,
@@ -288,7 +290,7 @@ def delete_invoice_qb(invoice_id):
         )
 
     except Exception as e:
-        current_app.logger.error("Error deleting invoice: {e}")
+        current_app.logger.error(f"Error deleting invoice: {e}")
         current_app.logger.error(traceback.format_exc,)
         QuickbooksAuditLog.add_audit_log(
             action_type="Delete single invoice",
@@ -297,7 +299,7 @@ def delete_invoice_qb(invoice_id):
         )
         return create_response(
             success=False,
-            error=f'Error deleting invoice {str(e)}',
+            error=f'Error deleting invoice {e}',
             status_code=500
         )
 

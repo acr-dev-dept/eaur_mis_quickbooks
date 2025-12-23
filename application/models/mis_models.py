@@ -973,8 +973,8 @@ class TblImvoice(MISBaseModel):
         with cls.get_invoice_balance() as session:
             invoice = session.query(cls).filter(cls.id == invoice_id).first()
             if invoice:
-                invoice.quickbooks_id = None,
-                invoice.sync_toke = None,
+                invoice.quickbooks_id = None
+                invoice.sync_token = None
                 invoice.QuickBk_Status = None
                 session.commit()
                 return True
