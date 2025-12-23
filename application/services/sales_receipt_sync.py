@@ -313,7 +313,8 @@ class SalesReceiptSyncService:
                 "success" :False,
                 "error_message":"Sales receipt not found",
                 "details":None
-            })
+            }), 404
+
         
         if sales_receipt.quickbooks_id:
             return jsonify({
@@ -322,7 +323,8 @@ class SalesReceiptSyncService:
                 "error_message":"Sales receipt already synced",
                 "details":None,
                 "quickbooks_id":sales_receipt.quickbooks_id
-            })
+            }), 200
+
 
         try:
             qb_service = self._get_qb_service()
@@ -344,7 +346,8 @@ class SalesReceiptSyncService:
                     "status":"FAILED",
                     "success":False,
                     "error_message":map_error
-                })
+                }), 500
+
 
             # ---- Send to QuickBooks ----
             self.logger.info(
@@ -385,7 +388,8 @@ class SalesReceiptSyncService:
                     "error_message":f"SalesReceipt {sales_receipt.id} synchronized successfully",
                     "details":response,
                     "quickbooks_id":qb_id
-                })
+                }), 200
+
 
             # ---- QuickBooks business error ----
             error_msg = (
@@ -406,7 +410,8 @@ class SalesReceiptSyncService:
                 "success" :False,
                 "error_message" :error_msg,
                 "details":response
-            })
+            }), 500
+
 
         except Exception as e:
             # ---- System-level failure ----
@@ -425,4 +430,5 @@ class SalesReceiptSyncService:
                 "status" :"FAILED",
                 "success" :False,
                 "error_message":error_msg
-            })
+            }), 500
+        
