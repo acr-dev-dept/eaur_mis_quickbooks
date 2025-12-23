@@ -364,4 +364,5 @@ FLUSH PRIVILEGES;
 1. Intuit app, playground and proceed with keys generation and select the account to connect to
 
 
-
+# API Protection
+1. Network level protection via nginx and UFW

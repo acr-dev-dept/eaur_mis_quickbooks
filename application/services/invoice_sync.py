@@ -576,8 +576,6 @@ class InvoiceSyncService:
             qb_customer_id = meta.get('customer_id')
             amount_paid = meta.get('amount_paid')
 
-
-
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
             

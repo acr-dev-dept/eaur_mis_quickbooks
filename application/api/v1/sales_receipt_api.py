@@ -70,7 +70,13 @@ def create_sales_receipt():
                 'message': 'Wallet data is not paid',
                 'timestamp': datetime.now().isoformat()
             }), 400
-        
+        if sales_data.quickbooks_id:
+            current_app.logger.info(f"Wallet data is already synced:")
+            return jsonify({
+                'success': False,
+                'message': 'Wallet data is already synced',
+                'timestamp': datetime.now().isoformat()
+            }), 400
         result = sync_service.sync_single_sales_receipt(sales_data)
         if not result.success:
             return jsonify({
