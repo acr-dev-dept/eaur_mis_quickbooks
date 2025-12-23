@@ -484,16 +484,8 @@ class CustomerSyncService:
         applicant_data = applicant if isinstance(applicant, dict) else applicant.to_dict_for_quickbooks()
 
         try:
-            # Prepare custom fields
-            custom_fields_list = [
-                {"DefinitionId": "1000000001", "StringValue": "Applicant"},
-                {"DefinitionId": "1000000002", "StringValue": str(applicant_data['tracking_id'])},
-                {"DefinitionId": "1000000003", "StringValue": applicant_data['sex']},
-                {"DefinitionId": "1000000005", "StringValue": applicant_data['camp_id']},
-                {"DefinitionId": "1000000009", "StringValue": applicant_data['prg_mode_id']}
-            ]
+            
 
-            filtered_custom_fields = [f for f in custom_fields_list if f.get('StringValue')]
 
             email = applicant_data.get('email')
             if not self.is_valid_email(str(email)):
@@ -516,7 +508,6 @@ class CustomerSyncService:
                     "CompanyName": f"{applicant_data['first_name']} {applicant_data['family_name']}",
                     "PrimaryPhone": {"FreeFormNumber": applicant_data['phone']} if applicant_data.get('phone') else None,
                     "PrimaryEmailAddr": {"Address": email} if email else None,
-                    "CustomField": filtered_custom_fields,
                     "Notes": f"Applicant Updated from MIS - Tracking ID: {applicant_data['tracking_id']}"
                 })
                 qb_customer_update = {k: v for k, v in qb_customer_update.items() if v is not None}
