@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from enum import Enum
-from flask import current_app
+from flask import current_app, jsonify
 from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus
 from application.services.quickbooks import QuickBooks
 import traceback
@@ -307,6 +307,23 @@ class SalesReceiptSyncService:
         """
         map_error = None
         sales_receipt = TblStudentWallet.get_sales_data(wallet_id)
+        if not sales_receipt:
+            return jsonify({
+                "status" :"FAILED",
+                "success" :False,
+                "error_message":"Sales receipt not found",
+                "details":None
+            })
+        
+        if sales_receipt.quickbooks_id:
+            return jsonify({
+                "status" :"ALREADY_SYNCED",
+                "success" :True,
+                "error_message":"Sales receipt already synced",
+                "details":None,
+                "quickbooks_id":sales_receipt.quickbooks_id
+            })
+
         try:
             qb_service = self._get_qb_service()
 
@@ -323,11 +340,11 @@ class SalesReceiptSyncService:
                     SalesReceiptSyncStatus.FAILED.value
                 )
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
-                return SalesReceiptSyncResult(
-                    status=SalesReceiptSyncStatus.FAILED,
-                    success=False,
-                    error_message=map_error
-                )
+                return jsonify({
+                    "status":"FAILED",
+                    "success":False,
+                    "error_message":map_error
+                })
 
             # ---- Send to QuickBooks ----
             self.logger.info(
@@ -362,13 +379,13 @@ class SalesReceiptSyncService:
                     f"Synced to QuickBooks ID: {qb_id}"
                 )
 
-                return {
-                    "status":SalesReceiptSyncStatus.SYNCED,
+                return jsonify({
+                    "status":"SYNCED SUCCESSFULLY",
                     "success":True,
                     "error_message":f"SalesReceipt {sales_receipt.id} synchronized successfully",
                     "details":response,
                     "quickbooks_id":qb_id
-                }
+                })
 
             # ---- QuickBooks business error ----
             error_msg = (
@@ -383,12 +400,13 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return {
-                "status" :SalesReceiptSyncStatus.FAILED,
+            return jsonify(
+                {
+                "status" :"FAILED",
                 "success" :False,
-                "error_message" :"error_msg",
-                "details":"response"
-            }
+                "error_message" :error_msg,
+                "details":response
+            })
 
         except Exception as e:
             # ---- System-level failure ----
@@ -403,8 +421,8 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return {
-                "status" :SalesReceiptSyncStatus.FAILED,
+            return jsonify({
+                "status" :"FAILED",
                 "success" :False,
-                "error_message":"error_msg"
-            }
+                "error_message":error_msg
+            })
