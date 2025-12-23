@@ -592,7 +592,7 @@ class InvoiceSyncService:
 
 
         except Exception as e:
-            logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
+            logger.error(f"Error mapping invoice {invoice['id']} to QuickBooks format: {e}")
             raise
 
 
