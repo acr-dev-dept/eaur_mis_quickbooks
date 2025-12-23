@@ -301,30 +301,28 @@ class SalesReceiptSyncService:
                 error_message=error_msg
             )
         
-    def sync_single_sales_receipt_async(self, wallet_id: int) -> SalesReceiptSyncResult:
+    def sync_single_sales_receipt_async(self, wallet_id: int) -> dict:
         """
-        Synchronize a single sales_receipt to QuickBooks
+        Synchronize a single sales_receipt to QuickBooks.
+        Returns a JSON-serializable dict for both Celery and Flask consumption.
         """
-        map_error = None
         sales_receipt = TblStudentWallet.get_sales_data(wallet_id)
         if not sales_receipt:
-            return jsonify({
-                "status" :"FAILED",
-                "success" :False,
-                "error_message":"Sales receipt not found",
-                "details":None
-            }), 404
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": "Sales receipt not found",
+                "details": None
+            }
 
-        
         if sales_receipt.quickbooks_id:
-            return jsonify({
-                "status" :"ALREADY_SYNCED",
-                "success" :True,
-                "error_message":"Sales receipt already synced",
-                "details":None,
-                "quickbooks_id":sales_receipt.quickbooks_id
-            }), 200
-
+            return {
+                "status": "ALREADY_SYNCED",
+                "success": True,
+                "error_message": "Sales receipt already synced",
+                "details": None,
+                "quickbooks_id": sales_receipt.quickbooks_id
+            }
 
         try:
             qb_service = self._get_qb_service()
@@ -335,24 +333,19 @@ class SalesReceiptSyncService:
             except Exception as e:
                 map_error = str(e)
                 qb_sales_receipt_data = None
-
-            if map_error:
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
                     SalesReceiptSyncStatus.FAILED.value
                 )
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
-                return jsonify({
-                    "status":"FAILED",
-                    "success":False,
-                    "error_message":map_error
-                }), 500
-
+                return {
+                    "status": "FAILED",
+                    "success": False,
+                    "error_message": map_error
+                }
 
             # ---- Send to QuickBooks ----
-            self.logger.info(
-                f"Sending SalesReceipt {sales_receipt.id} "
-            )
+            self.logger.info(f"Sending SalesReceipt {sales_receipt.id}")
 
             response = qb_service.create_sales_receipt(
                 qb_service.realm_id,
@@ -382,14 +375,13 @@ class SalesReceiptSyncService:
                     f"Synced to QuickBooks ID: {qb_id}"
                 )
 
-                return jsonify({
-                    "status":"SYNCED SUCCESSFULLY",
-                    "success":True,
-                    "error_message":f"SalesReceipt {sales_receipt.id} synchronized successfully",
-                    "details":response,
-                    "quickbooks_id":qb_id
-                }), 200
-
+                return {
+                    "status": "SYNCED_SUCCESSFULLY",
+                    "success": True,
+                    "error_message": f"SalesReceipt {sales_receipt.id} synchronized successfully",
+                    "details": response,
+                    "quickbooks_id": qb_id
+                }
 
             # ---- QuickBooks business error ----
             error_msg = (
@@ -404,21 +396,17 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return jsonify(
-                {
-                "status" :"FAILED",
-                "success" :False,
-                "error_message" :error_msg,
-                "details":response
-            }), 500
-
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg,
+                "details": response
+            }
 
         except Exception as e:
             # ---- System-level failure ----
             error_msg = str(e)
-            self.logger.exception(
-                f"Unexpected error syncing sales_receipt {sales_receipt.id}"
-            )
+            self.logger.exception(f"Unexpected error syncing sales_receipt {sales_receipt.id}")
 
             self._update_sales_receipt_sync_status(
                 sales_receipt.id,
@@ -426,9 +414,8 @@ class SalesReceiptSyncService:
             )
             self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return jsonify({
-                "status" :"FAILED",
-                "success" :False,
-                "error_message":error_msg
-            }), 500
-        
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg
+            }
