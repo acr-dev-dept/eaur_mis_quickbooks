@@ -9,8 +9,8 @@ celery = make_celery(app)
 celery.autodiscover_tasks([
     'application.config_files',
     'application.config_files.payment_sync',
-    # or just:
-    'application',
+    'application.config_files.wallet_sync',
+    'application.config_files.tasks'
 ])
 
 #celery.set_default()
