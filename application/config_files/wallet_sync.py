@@ -1,3 +1,5 @@
+## 
+
 from application.config_files.celery_app import celery
 from application.services.sales_receipt_sync import SalesReceiptSyncService
 
