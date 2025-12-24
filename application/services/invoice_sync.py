@@ -338,6 +338,7 @@ class InvoiceSyncService:
 
             # Create QuickBooks invoice structure
             current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+            amount_paid = 0
             qb_invoice = {
                 "Line": [
                     {
@@ -376,7 +377,6 @@ class InvoiceSyncService:
                 category_name= category.get('name') if category else None
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
-                amount_paid = None
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
 
@@ -413,7 +413,7 @@ class InvoiceSyncService:
             meta = {
                 'customer_id': customer_id,
                 'quickbooks_id': quickbooks_id,
-                'amount_paid': amount_paid if amount_paid else 0
+                'amount_paid': amount_paid 
             }
             return qb_invoice, meta
 
