@@ -55,6 +55,10 @@ def make_celery(app):
                 "task": "application.config_files.tasks.bulk_sync_applicants_task",
                 "schedule": crontab(hour=0, minute=0),
             },
+            "sync_students_every_midnight": {
+                "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+                "schedule": crontab(minute='*/1') #
+            }
         },
     )
 
