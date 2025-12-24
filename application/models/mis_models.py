@@ -2928,31 +2928,47 @@ class TblPersonalUg(MISBaseModel):
             return 0
 
     @staticmethod
-    def get_unsynced_students(limit: int = 20):
+    def get_unsynced_students(limit: int = 50, offset: int = 0):
         """
-        Get a list of students not yet synced to QuickBooks.
+        Fetch unsynced students in a deterministic, offset-based manner
+        for bulk synchronization with QuickBooks.
 
         Args:
             limit (int): Maximum number of records to retrieve
+            offset (int): Offset for pagination
 
         Returns:
-            list: List of unsynced student records
+            list[dict]: List of student records formatted for QuickBooks
         """
         try:
             students = (
                 TblPersonalUg.query
                 .filter(TblPersonalUg.QuickBk_status.is_(None))
-                .options(load_only(TblPersonalUg.reg_no, TblPersonalUg.fname, TblPersonalUg.lname, TblPersonalUg.email1))  # Only fetch needed columns
+                .order_by(TblPersonalUg.id.asc())  # REQUIRED for offset safety
+                .options(
+                    load_only(
+                        TblPersonalUg.id,
+                        TblPersonalUg.reg_no,
+                        TblPersonalUg.fname,
+                        TblPersonalUg.lname,
+                        TblPersonalUg.email1,
+                        TblPersonalUg.QuickBk_status,
+                    )
+                )
+                .offset(offset)
                 .limit(limit)
                 .all()
             )
-            return [student.to_dict_for_quickbooks() for student in students] if students else []
-        
+
+            return [student.to_dict_for_quickbooks() for student in students]
+
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(f"Error fetching unsynced students: {str(e)}")
-            return []
-        
+            current_app.logger.error(
+                f"Error fetching unsynced students (limit={limit}, offset={offset}): {str(e)}"
+            )
+            raise
+
     def get_all_students():
         """
         Get all student records from tbl_personal_ug
