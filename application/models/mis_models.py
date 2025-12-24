@@ -1302,9 +1302,10 @@ class TblImvoice(MISBaseModel):
     from sqlalchemy import or_, not_
 
 
+   
     @staticmethod
-    def get_unsynced_invoices(limit=100, offset=0):
-        EXCLUDED_FEE_CATEGORIES = []
+    def get_unsynced_invoices(limit: int = 100, offset: int = 0):
+        EXCLUDED_FEE_CATEGORIES=[]
         """
         EXCLUDED_FEE_CATEGORIES = [
             1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -1318,30 +1319,43 @@ class TblImvoice(MISBaseModel):
         103, 106, 107, 108, 109, 110, 111, 112, 113, 114, 122, 123,
         124, 125
         ]
-        Get invoices that are not yet synced to QuickBooks,
-        only invoices from Jan 01, 2025 up to date, and
-        EXCLUDING certain fee categories
+        Fetch unsynced invoices in a deterministic, offset-based manner
+        for bulk synchronization with QuickBooks.
+
+        Args:
+            limit (int): Maximum number of records to retrieve
+            offset (int): Offset for pagination
+
+        Returns:
+            list[dict]: List of invoice records
         """
         try:
             with MISBaseModel.get_session() as session:
-                unsynced_invoices = (
+                invoices = (
                     session.query(TblImvoice)
                     .filter(
                         TblImvoice.quickbooks_id.is_(None),
                         TblImvoice.invoice_date >= datetime(2025, 1, 1),
-                        TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES)
+                        TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES),
                     )
-                    .order_by(TblImvoice.invoice_date.desc())
+                    # REQUIRED: stable ordering for offset pagination
+                    .order_by(TblImvoice.id.asc())
                     .offset(offset)
                     .limit(limit)
                     .all()
                 )
-                return [invoice.to_dict() for invoice in unsynced_invoices] if unsynced_invoices else []
+
+                return [invoice.to_dict() for invoice in invoices]
+
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(f"Error getting unsynced invoices: {str(e)}")
-            return []
-            
+            current_app.logger.error(
+                f"Error getting unsynced invoices "
+                f"(limit={limit}, offset={offset}): {str(e)}"
+            )
+            # IMPORTANT: propagate error to task
+            raise
+
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""
     __tablename__ = 'tbl_income_category'
@@ -2943,7 +2957,7 @@ class TblPersonalUg(MISBaseModel):
         try:
             students = (
                 TblPersonalUg.query
-                .filter(TblPersonalUg.QuickBk_status.is_(None))
+                .filter(TblPersonalUg.per_id_ug.is_(None))
                 .order_by(TblPersonalUg.per_id_ug.asc())  # REQUIRED for offset safety
                 .options(
                     load_only(
