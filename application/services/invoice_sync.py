@@ -376,7 +376,7 @@ class InvoiceSyncService:
                 category_name= category.get('name') if category else None
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
-
+                amount_paid = None
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
 
@@ -630,7 +630,8 @@ class InvoiceSyncService:
 
             qb_item_id = meta.get('quickbooks_id')
             qb_customer_id = meta.get('customer_id')
-            amount_paid = meta.get('amount_paid')
+            amount_paid = meta.get('amount_paid') if meta.get('amount_paid') else None
+
 
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
@@ -652,28 +653,31 @@ class InvoiceSyncService:
                     quickbooks_id=qb_invoice_id,
                     sync_token=response['Invoice'].get('SyncToken')
                 )
-
+                new_balance = None
                 # Log successful sync
                 self._log_sync_audit(invoice.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_invoice_id}")
                 
-                # Update the invoice Balance
-                new_balance = TblImvoice.apply_payment_to_invoice(
+                # Update the invoice balance only when applicable
+                new_balance = None
+
+                if amount_paid and amount_paid > 0:
+                    new_balance = TblImvoice.apply_payment_to_invoice(
                         invoice.id,
                         amount_paid
                     )
 
-                if new_balance is not None:
-                    current_app.logger.info(
-                        f"Updated invoice balance for invoice {invoice.id}: {new_balance}"
-                    )
+                    if new_balance is not None:
+                        current_app.logger.info(
+                            f"Invoice {invoice.id} balance updated successfully. New balance: {new_balance}"
+                        )
+                    else:
+                        current_app.logger.warning(
+                            f"Invoice {invoice.id} payment applied, but no balance update was required."
+                        )
                 else:
-                    current_app.logger.error(
-                        f"Failed to update invoice balance for invoice {invoice.id}"
+                    current_app.logger.info(
+                        f"Skipping invoice {invoice.id} balance update — no amount paid."
                     )
-                    raise ValueError(
-                        f"Failed to update invoice balance for invoice {invoice.id}"
-                    )
-
 
                 return SyncResult(
                     invoice_id=invoice.id,

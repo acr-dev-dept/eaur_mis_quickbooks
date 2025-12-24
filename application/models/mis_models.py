@@ -1304,7 +1304,7 @@ class TblImvoice(MISBaseModel):
 
    
     @staticmethod
-    def get_unsynced_invoices(limit: int = 100, offset: int = 0):
+    def get_unsynced_invoices(limit: int = 50, offset: int = 0):
         EXCLUDED_FEE_CATEGORIES=[]
         """
         EXCLUDED_FEE_CATEGORIES = [
