@@ -2947,7 +2947,7 @@ class TblPersonalUg(MISBaseModel):
                 .order_by(TblPersonalUg.per_id_ug.asc())  # REQUIRED for offset safety
                 .options(
                     load_only(
-                        TblPersonalUg.id,
+                        TblPersonalUg.per_id_ug,
                         TblPersonalUg.reg_no,
                         TblPersonalUg.fname,
                         TblPersonalUg.lname,
