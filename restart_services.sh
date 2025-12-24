@@ -45,7 +45,7 @@ if pgrep -f "celery" > /dev/null; then
 else
     echo "xxx No other running Celery processes found."
 fi
-
+: << COMMENT
 echo "Starting Celery worker..."
 nohup celery -A application.config_files.celery_app.celery worker \
     -Q celery,payment_sync_queue,wallet_sync_queue \
@@ -67,7 +67,7 @@ else
     echo "xxx Failed to start Celery beat."
     echo "Check logs at: $LOG_DIR/celery_beat.log"
 fi
-
+COMMENT
 echo "Checking and restarting Gunicorn..."
 if pgrep -f "gunicorn" > /dev/null; then
     pkill -f "gunicorn"
