@@ -70,6 +70,12 @@ def sync_income_category():
                 'error': 'Not Found',
                 'message': f'Income category with ID {category_data["id"]} not found',
             }), 404
+        if category.income_account_qb:
+            return jsonify({
+                'success': False,
+                'error':'Duplication error',
+                'message': f'Income category with ID {category_data["id"]} is already synced to QuickBooks',
+            }), 400
         result = sync_service.sync_income_category(category=category)
         
         return jsonify({
