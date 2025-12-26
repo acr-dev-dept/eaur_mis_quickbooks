@@ -165,6 +165,7 @@ class Payment(MISBaseModel):
     pushed_date = db.Column(DateTime)
     qk_id = db.Column(db.String(255))  # QuickBooks Payment ID
     sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
+    student_wallet_ref = db.Column(db.String(250))
     # Relationships
     level = relationship("TblLevel", backref="payments", lazy='joined')
     bank = relationship("TblBank", backref="payments", lazy='joined')
@@ -212,6 +213,8 @@ class Payment(MISBaseModel):
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
             'qk_id': self.qk_id,
             'sync_token': self.sync_token,
+            'student_wallet_ref': self.student_wallet_ref
+        
             
         }
     
@@ -433,6 +436,24 @@ class Payment(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced payment count: {str(e)}")
             return 0
+    @staticmethod
+    def get_amount_paid_by_ref(reference_number):
+        """
+        Get amount paid by reference number
+
+        Args:
+            reference_number (str): Reference number
+
+        Returns:
+            float: Amount paid or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                payment = session.query(Payment).filter(Payment.invoi_ref == reference_number, Payment.student_wallet_ref != None).first()
+                return payment.amount if payment else None
+        except Exception as e:
+            current_app.logger.error(f"Error getting amount paid by reference number {reference_number}: {str(e)}")
+            return None
 
 class TblStudentWallet(MISBaseModel):
     """Model for tbl_student_wallet table"""

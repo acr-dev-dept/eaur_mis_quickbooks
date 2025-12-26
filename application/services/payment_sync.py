@@ -503,6 +503,15 @@ class PaymentSyncService:
         """
         Synchronize a single payment to QuickBooks
         """
+        if not payment:
+            raise ValueError(f"Payment with ID {payment.id} not found.")
+        if payment.is_prepayment:
+            return PaymentSyncResult(
+                status=PaymentSyncStatus.NOT_SYNCED,
+                message=f"Prepayments payments can not be synced to QuickBooks.",
+                success=False,
+                error_message="Prepayments payments can not be synced to QuickBooks."
+            )            
         try:
             qb_service = self._get_qb_service()
             qb_payment_data, map_error = self.map_payment_to_quickbooks(payment)
@@ -522,14 +531,7 @@ class PaymentSyncService:
             self.logger.info(f"sending a payment with invoice ref {payment.invoi_ref} to QuickBooks and data mapped is {qb_payment_data}")
             response = qb_service.create_payment(qb_service.realm_id, qb_payment_data)
             # write this response to the log file
-            log_path = "/var/log/hrms/quickbooks_response.log"
-            try:
-                with open(log_path, 'a') as log_file:
-                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Response: {response}\n")
-                    log_file.write(f"{datetime.now().isoformat()} - Payment ID {payment.id} Request: {qb_payment_data}\n")
-            except Exception as e:
-                self.logger.error(f"Error writing QuickBooks log for payment {payment.id}: {e}")
-            self.logger.debug(f"QuickBooks response for payment {payment.id}: {json.dumps(response, cls=EnhancedJSONEncoder)}")
+
 
             if 'Payment' in response and response['Payment'].get('Id'):
                 qb_payment_id = response['Payment']['Id']

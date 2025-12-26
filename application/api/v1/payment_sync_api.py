@@ -42,7 +42,8 @@ def sync_payment(payment_id):
 
         if payment.qk_id is not None:
             return jsonify({'message': 'Payment already synchronized'}), 200
-
+        if payment.is_prepayment:
+            return jsonify({'message': 'Prepayment payments cannot be synced'})
         if not payment:
             return jsonify({'error': 'Payment not found'}), 404
 
