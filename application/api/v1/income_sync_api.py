@@ -70,7 +70,7 @@ def sync_income_category():
                 'error': 'Not Found',
                 'message': f'Income category with ID {category_data["id"]} not found',
             }), 404
-        if category.income_account_qb:
+        if category.get('income_account_qb'):
             return jsonify({
                 'success': False,
                 'error':'Duplication error',
