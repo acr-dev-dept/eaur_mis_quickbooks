@@ -376,10 +376,15 @@ class InvoiceSyncService:
                     current_app.logger.error("Payment not found")
                     raise ValueError("Payment not found")
                 
-                paid_amount = payment.amount 
-                wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
-                category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
-                category_name= category.get('name') if category else None
+                paid_amount = payment.amount
+                wallet_ref = payment.student_wallet_ref
+                wallet_data = TblStudentWallet.get_by_reference_number(wallet_ref)
+                if not wallet_data:
+                    current_app.logger.error("Wallet data not found")
+                    raise ValueError("Wallet data not found")
+
+                wallet_category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
+                category_name= wallet_category.get('name') if category else None
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
                 if not quickbooks_id_:
