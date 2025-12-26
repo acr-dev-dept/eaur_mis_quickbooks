@@ -389,6 +389,10 @@ class PaymentSyncService:
             customer_ref_id = None
             customer_name = None
 
+            if payment.is_prepayment:
+                return None, "Prepayments payments can not be synced to QuickBooks."
+
+
             if payment.appl_Id and payment.online_application:
                 # Assuming applicant has been synced as a customer
                 customer_ref_id = payment.online_application.tracking_id # Use tracking_id for QuickBooks customer lookup if needed
