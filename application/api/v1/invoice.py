@@ -253,7 +253,8 @@ def delete_invoice_qb(invoice_id):
                 message='Invoice not found',
                 status_code=404
             )
-        if invoice_data.wallet_ref:
+        """
+        if invoice_data.is_prepayment:
             current_app.logger.info("Skip wallet based invoice deletion")
             return create_response(
                 success=False,
@@ -261,6 +262,7 @@ def delete_invoice_qb(invoice_id):
                 message='Wallet based invoice deletion is not supported',
                 status_code=400
             )
+        """
         if invoice_data.balance is not None:
             current_app.logger.info("Skip balance based invoice deletion because it is linked with a payment")
             return create_response(
