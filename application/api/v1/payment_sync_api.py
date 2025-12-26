@@ -34,6 +34,9 @@ def sync_payment(payment_id):
     try:
         current_app.logger.info(f"Starting sync for payment ID: {payment_id}")
         # get the payment object given the payment_id
+        if not payment:
+            return jsonify({'error': 'Payment not found'}), 404
+        
         payment = Payment.get_payment_by_id(payment_id)
         payment_date = parse_date(payment.date)
 
@@ -44,8 +47,7 @@ def sync_payment(payment_id):
             return jsonify({'message': 'Payment already synchronized'}), 200
         if payment.is_prepayment:
             return jsonify({'message': 'Prepayment payments cannot be synced'})
-        if not payment:
-            return jsonify({'error': 'Payment not found'}), 404
+        
 
         payment_dict = payment.to_dict() if payment else {}
         current_app.logger.info(f"Attempting to sync payment: {payment_dict}")

@@ -1,36 +1,53 @@
-from datetime import datetime
+from datetime import datetime, date
 
 def parse_date(date_str, formats=None):
     """
-    Parse a date string using multiple common date formats.
-    
+    Parse a date or datetime string using multiple common formats.
+
     Args:
-        date_str: String representation of a date
+        date_str: String or date/datetime representation
         formats: List of date format strings to try (optional)
-        
+
     Returns:
         date: Parsed date object
-        
+
     Raises:
         ValueError: If date string cannot be parsed with any format
     """
+
+    # Already a date/datetime object
+    if isinstance(date_str, date):
+        return date_str if not isinstance(date_str, datetime) else date_str.date()
+
+    if not date_str:
+        raise ValueError("Date value is empty or None")
+
     if formats is None:
         formats = [
-            '%Y-%m-%d',      # 2025-01-06
-            '%Y/%m/%d',      # 2025/01/06
-            '%Y.%m.%d',      # 2025.01.06
-            '%d-%m-%Y',      # 06-01-2025
-            '%d/%m/%Y',      # 06/01/2025
-            '%m/%d/%Y',      # 01/06/2025 (US format)
-            '%d.%m.%Y',      # 06.01.2025
+            # Date-only formats
+            '%Y-%m-%d',
+            '%Y/%m/%d',
+            '%Y.%m.%d',
+            '%d-%m-%Y',
+            '%d/%m/%Y',
+            '%m/%d/%Y',
+            '%d.%m.%Y',
+
+            # Datetime formats (NEW)
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d %H:%M:%S.%f',
+            '%Y/%m/%d %H:%M:%S',
         ]
-    
-    date_str = date_str.strip()
-    
+
+    date_str = str(date_str).strip()
+
     for fmt in formats:
         try:
             return datetime.strptime(date_str, fmt).date()
         except ValueError:
             continue
-    
-    raise ValueError(f"Unable to parse date '{date_str}'. Expected formats: YYYY-MM-DD, YYYY/MM/DD, etc.")
+
+    raise ValueError(
+        f"Unable to parse date '{date_str}'. Expected formats include "
+        f"YYYY-MM-DD or YYYY-MM-DD HH:MM:SS"
+    )

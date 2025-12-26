@@ -1016,6 +1016,8 @@ class TblImvoice(MISBaseModel):
                 invoice.quickbooks_id = None
                 invoice.sync_token = None
                 invoice.QuickBk_Status = None
+                invoice.pushed_by = None
+                invoice.pushed_date = None
                 session.commit()
                 return True
             return False
