@@ -34,10 +34,12 @@ def sync_payment(payment_id):
     try:
         current_app.logger.info(f"Starting sync for payment ID: {payment_id}")
         # get the payment object given the payment_id
-        if not payment:
-            return jsonify({'error': 'Payment not found'}), 404
+        
         
         payment = Payment.get_payment_by_id(payment_id)
+
+        if not payment:
+            return jsonify({'error': 'Payment not found'}), 404
         payment_date = parse_date(payment.date)
 
         if payment_date < datetime(2025, 1, 1).date():
