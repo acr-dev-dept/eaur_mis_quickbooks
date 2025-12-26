@@ -263,7 +263,7 @@ def delete_invoice_qb(invoice_id):
                 status_code=400
             )
         """
-        if invoice_data.balance is not None:
+        if invoice_data.get('balance') is not None:
             current_app.logger.info("Skip balance based invoice deletion because it is linked with a payment")
             return create_response(
                 success=False,
