@@ -323,7 +323,7 @@ class InvoiceSyncService:
             if student_ref:
                 customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
-                class_ref_id = 834761
+                class_ref_id = 109150
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
