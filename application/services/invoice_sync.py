@@ -329,7 +329,7 @@ class InvoiceSyncService:
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
                 current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
-                class_ref_id = 834762
+                class_ref_id = 109150
 
             # Log a warning if no customer reference is found
             else:
@@ -371,7 +371,12 @@ class InvoiceSyncService:
                 current_app.logger.info(
                     f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
                 )
-                paid_amount = Payment.get_amount_paid_by_ref(invoice.reference_number)
+                payment = Payment.get_by_reference_number(invoice.reference_number)
+                if not payment:
+                    current_app.logger.error("Payment not found")
+                    raise ValueError("Payment not found")
+                
+                paid_amount = payment.amount 
                 wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
                 category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
                 category_name= category.get('name') if category else None

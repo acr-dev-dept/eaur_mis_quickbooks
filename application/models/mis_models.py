@@ -454,6 +454,22 @@ class Payment(MISBaseModel):
         except Exception as e:
             current_app.logger.error(f"Error getting amount paid by reference number {reference_number}: {str(e)}")
             return None
+    @staticmethod
+    def get_by_reference_number(reference_number):
+        """
+        Get wallet record by reference number
+
+        Args:
+            reference number (str): Reference number
+        returns:
+            Object: Payment record
+            """
+        try: 
+            with MISBaseModel.get_session() as session:
+                payment = session.query(Payment).filter(Payment.invoi_ref == reference_number).first()
+                return payment
+        except Exception as e:
+            return None
 
 class TblStudentWallet(MISBaseModel):
     """Model for tbl_student_wallet table"""
