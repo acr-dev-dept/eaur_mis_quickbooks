@@ -166,6 +166,8 @@ class Payment(MISBaseModel):
     qk_id = db.Column(db.String(255))  # QuickBooks Payment ID
     sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
     student_wallet_ref = db.Column(db.String(250))
+    is_prepayment = db.Column(db.Boolean, default=False)
+
     # Relationships
     level = relationship("TblLevel", backref="payments", lazy='joined')
     bank = relationship("TblBank", backref="payments", lazy='joined')
@@ -213,7 +215,8 @@ class Payment(MISBaseModel):
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
             'qk_id': self.qk_id,
             'sync_token': self.sync_token,
-            'student_wallet_ref': self.student_wallet_ref
+            'student_wallet_ref': self.student_wallet_ref,
+            'is_prepayment': self.is_prepayment
         
             
         }
