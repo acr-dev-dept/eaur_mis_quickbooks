@@ -367,11 +367,11 @@ class InvoiceSyncService:
             }
 
             # check if there is a wallet already paid and append to the payload
-            if invoice.wallet_ref:
+            if invoice.is_prepayment:
                 current_app.logger.info(
                     f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
                 )
-
+                paid_amount = Payment.get_amount_paid_by_ref(invoice.reference_number)
                 wallet_data = TblStudentWallet.get_by_reference_number(invoice.wallet_ref)
                 category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
                 category_name= category.get('name') if category else None
@@ -380,36 +380,23 @@ class InvoiceSyncService:
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
 
-                if wallet_data and wallet_data.dept and wallet_data.dept > 0:
-                    current_app.logger.info(
-                        f"Wallet data found for invoice {invoice.id}: {wallet_data}"
-                    )
-
-                    qb_invoice['Line'].append({
-                        "Amount": float(-min(wallet_data.dept, amount)),
-                        "DetailType": "SalesItemLineDetail",
-                        "SalesItemLineDetail": {
-                            "ItemRef": {
-                                "value": quickbooks_id_,
-                            },
-                            "ClassRef": {
-                                "value": class_ref_id
-                            },
-                            "Qty": 1,
-                            "UnitPrice": float(-min(wallet_data.dept, amount))
+                qb_invoice['Line'].append({
+                    "Amount": float(-paid_amount),
+                    "DetailType": "SalesItemLineDetail",
+                    "SalesItemLineDetail": {
+                        "ItemRef": {
+                            "value": quickbooks_id_,
                         },
-                        "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
-                    })
-                    invoice_balance = invoice.balance or invoice.dept
-                    amount_paid = min(wallet_data.dept, invoice_balance)
+                        "ClassRef": {
+                            "value": class_ref_id
+                        },
+                        "Qty": 1,
+                        "UnitPrice": float(-paid_amount)
+                    },
+                    "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
+                })
+                amount_paid = paid_amount
 
-                    
-                else:
-                    current_app.logger.error(
-                        f"Wallet data is not valid for invoice {invoice.id}: "
-                        f"{wallet_data.to_dict() if wallet_data else 'None'}"
-                    )
-                    return None, None, None
             meta = {
                 'customer_id': customer_id,
                 'quickbooks_id': quickbooks_id,
@@ -421,6 +408,116 @@ class InvoiceSyncService:
         except Exception as e:
             logger.error(f"Error mapping invoice {invoice.id} to QuickBooks format: {e}")
             raise
+
+
+    def sync_single_invoice(self, invoice: TblImvoice) -> SyncResult:
+        """
+        Synchronize a single invoice to QuickBooks
+
+        Args:
+            invoice: MIS invoice object to synchronize
+
+        Returns:
+            SyncResult: Result of the synchronization attempt
+        """
+        """
+        if invoice.quickbooks_id:
+            logger.info(f"Invoice {invoice.id} already synced with QuickBooks ID {invoice.quickbooks_id}")
+            raise Exception(f"Invoice {invoice.id} is already synchronized with QuickBooks.")
+        """
+        try:
+            # Mark invoice as in progress
+            current_app.logger.info(f"Invoice data: {invoice}")
+
+            # Get QuickBooks service
+            qb_service = self._get_qb_service()
+
+            # Map invoice data
+
+            qb_invoice_data, meta = self.map_invoice_to_quickbooks(invoice)
+
+
+            qb_item_id = meta.get('quickbooks_id')
+            qb_customer_id = meta.get('customer_id')
+            amount_paid = meta.get('amount_paid') if meta.get('amount_paid') else None
+
+
+            if not qb_item_id:
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+            
+            if not qb_customer_id:
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+
+            
+
+            # Create invoice in QuickBooks
+            response = qb_service.create_invoice(qb_service.realm_id, qb_invoice_data)
+
+            if 'Invoice' in response:
+                # Success - update sync status
+                qb_invoice_id = response['Invoice']['Id']
+                self._update_invoice_sync_status(
+                    invoice.id,
+                    SyncStatus.SYNCED.value,
+                    quickbooks_id=qb_invoice_id,
+                    sync_token=response['Invoice'].get('SyncToken')
+                )
+                new_balance = None
+                # Log successful sync
+                self._log_sync_audit(invoice.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_invoice_id}")
+                
+                # Update the invoice balance only when applicable
+                new_balance = None
+
+                if amount_paid and amount_paid > 0:
+                    new_balance = TblImvoice.apply_payment_to_invoice(
+                        invoice.id,
+                        amount_paid
+                    )
+
+                    if new_balance is not None:
+                        current_app.logger.info(
+                            f"Invoice {invoice.id} balance updated successfully. New balance: {new_balance}"
+                        )
+                    else:
+                        current_app.logger.warning(
+                            f"Invoice {invoice.id} payment applied, but no balance update was required."
+                        )
+                else:
+                    current_app.logger.info(
+                        f"Skipping invoice {invoice.id} balance update — no amount paid."
+                    )
+
+                return SyncResult(
+                    invoice_id=invoice.id,
+                    success=True,
+                    quickbooks_id=qb_invoice_id,
+                    details=response
+                )
+            else:
+                # Handle API error
+                error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
+                self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+                self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+
+                return SyncResult(
+                    invoice_id=invoice.id,
+                    success=False,
+                    error_message=error_msg,
+                    details=response
+                )
+
+        except Exception as e:
+            # Handle exception
+            error_msg = str(e)
+            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
+            self._log_sync_audit(invoice.id, 'ERROR', error_msg)
+
+            return SyncResult(
+                invoice_id=invoice.id,
+                success=False,
+                error_message=error_msg
+            )
 
     def map_invoice_to_quickbooks_update(self, invoice: TblImvoice) -> Dict:
         """
@@ -594,121 +691,6 @@ class InvoiceSyncService:
         except Exception as e:
             logger.error(f"Error mapping invoice {invoice['id']} to QuickBooks format: {e}")
             raise
-
-
-
-
-        
-
-
-    def sync_single_invoice(self, invoice: TblImvoice) -> SyncResult:
-        """
-        Synchronize a single invoice to QuickBooks
-
-        Args:
-            invoice: MIS invoice object to synchronize
-
-        Returns:
-            SyncResult: Result of the synchronization attempt
-        """
-        """
-        if invoice.quickbooks_id:
-            logger.info(f"Invoice {invoice.id} already synced with QuickBooks ID {invoice.quickbooks_id}")
-            raise Exception(f"Invoice {invoice.id} is already synchronized with QuickBooks.")
-        """
-        try:
-            # Mark invoice as in progress
-            current_app.logger.info(f"Invoice data: {invoice}")
-
-            # Get QuickBooks service
-            qb_service = self._get_qb_service()
-
-            # Map invoice data
-
-            qb_invoice_data, meta = self.map_invoice_to_quickbooks(invoice)
-
-
-            qb_item_id = meta.get('quickbooks_id')
-            qb_customer_id = meta.get('customer_id')
-            amount_paid = meta.get('amount_paid') if meta.get('amount_paid') else None
-
-
-            if not qb_item_id:
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
-            
-            if not qb_customer_id:
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
-
-            
-
-            # Create invoice in QuickBooks
-            response = qb_service.create_invoice(qb_service.realm_id, qb_invoice_data)
-
-            if 'Invoice' in response:
-                # Success - update sync status
-                qb_invoice_id = response['Invoice']['Id']
-                self._update_invoice_sync_status(
-                    invoice.id,
-                    SyncStatus.SYNCED.value,
-                    quickbooks_id=qb_invoice_id,
-                    sync_token=response['Invoice'].get('SyncToken')
-                )
-                new_balance = None
-                # Log successful sync
-                self._log_sync_audit(invoice.id, 'SUCCESS', f"Synced to QuickBooks ID: {qb_invoice_id}")
-                
-                # Update the invoice balance only when applicable
-                new_balance = None
-
-                if amount_paid and amount_paid > 0:
-                    new_balance = TblImvoice.apply_payment_to_invoice(
-                        invoice.id,
-                        amount_paid
-                    )
-
-                    if new_balance is not None:
-                        current_app.logger.info(
-                            f"Invoice {invoice.id} balance updated successfully. New balance: {new_balance}"
-                        )
-                    else:
-                        current_app.logger.warning(
-                            f"Invoice {invoice.id} payment applied, but no balance update was required."
-                        )
-                else:
-                    current_app.logger.info(
-                        f"Skipping invoice {invoice.id} balance update — no amount paid."
-                    )
-
-                return SyncResult(
-                    invoice_id=invoice.id,
-                    success=True,
-                    quickbooks_id=qb_invoice_id,
-                    details=response
-                )
-            else:
-                # Handle API error
-                error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
-                self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
-                self._log_sync_audit(invoice.id, 'ERROR', error_msg)
-
-                return SyncResult(
-                    invoice_id=invoice.id,
-                    success=False,
-                    error_message=error_msg,
-                    details=response
-                )
-
-        except Exception as e:
-            # Handle exception
-            error_msg = str(e)
-            self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
-            self._log_sync_audit(invoice.id, 'ERROR', error_msg)
-
-            return SyncResult(
-                invoice_id=invoice.id,
-                success=False,
-                error_message=error_msg
-            )
 
     def update_single_invoice(self, invoice):
         """
