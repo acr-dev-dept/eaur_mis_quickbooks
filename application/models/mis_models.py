@@ -867,6 +867,8 @@ class TblImvoice(MISBaseModel):
     quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Invoice ID
     sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
     wallet_ref = db.Column(db.String(255))
+    is_prepayment = db.Column(db.Boolean, default=False)
+
     # Define relationships between levels, modules, and intakes
     # This is not implemented on database level, we need them for joins
     level = relationship("TblLevel", backref="invoices", lazy='joined')
@@ -912,7 +914,8 @@ class TblImvoice(MISBaseModel):
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
             'quickbooks_id': self.quickbooks_id,
-            'wallet_ref': self.wallet_ref
+            'wallet_ref': self.wallet_ref,
+            'is_prepayment': self.is_prepayment
         }
     
     @classmethod
