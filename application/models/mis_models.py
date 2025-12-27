@@ -1817,7 +1817,6 @@ class TblOnlineApplication(MISBaseModel):
     status = db.Column(db.Integer)
     quickbooks_id = db.Column(db.String(255))  # To store QuickBooks Customer ID
     sync_token = db.Column(db.String(10))  # To store QuickBooks SyncToken
-
     # Relationships for performance optimization
     intake = relationship("TblIntake", backref="applications", lazy='select')
 
@@ -1887,7 +1886,7 @@ class TblOnlineApplication(MISBaseModel):
             'pushed_by': self.pushed_by,
             'pushed_date': self.pushed_date.isoformat() if self.pushed_date else None,
             'quickbooks_id': self.quickbooks_id,
-            'sync_token': self.sync_token
+            'sync_token': self.sync_token,
 
         }
 
