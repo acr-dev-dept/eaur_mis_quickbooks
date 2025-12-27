@@ -24,6 +24,17 @@ def parse_date(date_str, formats=None):
 
     if formats is None:
         formats = [
+            # ISO 8601 datetime formats (most common for APIs)
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%dT%H:%M:%S.%f',
+            '%Y-%m-%dT%H:%M:%SZ',
+            '%Y-%m-%dT%H:%M:%S.%fZ',
+            
+            # Standard datetime formats with space
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d %H:%M:%S.%f',
+            '%Y/%m/%d %H:%M:%S',
+            
             # Date-only formats
             '%Y-%m-%d',
             '%Y/%m/%d',
@@ -32,11 +43,6 @@ def parse_date(date_str, formats=None):
             '%d/%m/%Y',
             '%m/%d/%Y',
             '%d.%m.%Y',
-
-            # Datetime formats (NEW)
-            '%Y-%m-%d %H:%M:%S',
-            '%Y-%m-%d %H:%M:%S.%f',
-            '%Y/%m/%d %H:%M:%S',
         ]
 
     date_str = str(date_str).strip()
@@ -49,5 +55,5 @@ def parse_date(date_str, formats=None):
 
     raise ValueError(
         f"Unable to parse date '{date_str}'. Expected formats include "
-        f"YYYY-MM-DD or YYYY-MM-DD HH:MM:SS"
+        f"YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, or YYYY-MM-DDTHH:MM:SS"
     )
