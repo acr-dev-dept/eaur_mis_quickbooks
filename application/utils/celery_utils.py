@@ -54,18 +54,21 @@ def make_celery(app):
         beat_schedule={
             "sync_applicants_every_midnight": {
                 "task": "application.config_files.tasks.bulk_sync_applicants_task",
-                "schedule": crontab(hour=10, minute=18),
-            },
-            "sync_students_every_midnight": {
-                "task": "application.config_files.sync_students_task.bulk_sync_students_task",
-                "schedule": crontab(hour=0, minute=10),
-            },
-            "sync_invoices_every_midnight": {
-                "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-                "schedule": crontab(hour=0, minute=20)
-            },
+                "schedule": crontab(minute='*/10'),
+            }
         },
     )
 
     log.info("Celery fully configured and ready")
     return celery
+
+"""
+"sync_students_every_midnight": {
+    "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+    "schedule": crontab(hour=0, minute=10),
+},
+"sync_invoices_every_midnight": {
+    "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+    "schedule": crontab(hour=0, minute=20)
+},
+"""
