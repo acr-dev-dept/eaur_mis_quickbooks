@@ -54,6 +54,9 @@ class Config:
     MIS_DB_PASSWORD = os.environ.get('MIS_DB_PASSWORD')
     MIS_DB_NAME = os.environ.get('MIS_DB_NAME')
     
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MIS_DB_USER}:{MIS_DB_PASSWORD}@{MIS_DB_HOST}:{MIS_DB_PORT}/{MIS_DB_NAME}?charset=utf8mb4"
+    DATABASE_URL = SQLALCHEMY_DATABASE_URI
+
     # Celery Configuration
     REDIS_URL = 'redis://localhost:6379/0'
     broker_url = os.environ.get('broker_url', REDIS_URL)
@@ -103,8 +106,6 @@ class DevelopmentConfig(Config):
     TESTING = False
     
     # Central database for development
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///dev_central.db'
     
     # QuickBooks sandbox for development
     QUICKBOOKS_BASE_URL = Config.QUICKBOOKS_SANDBOX_BASE_URL
@@ -115,7 +116,7 @@ class TestingConfig(Config):
     TESTING = True
     
     # Use in-memory database for testing
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = Config.DATABASE_URL
     
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
@@ -129,8 +130,7 @@ class ProductionConfig(Config):
     TESTING = False
     
     # Production database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        os.environ.get('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = Config.DATABASE_URL
     
     # Production QuickBooks
     QUICKBOOKS_BASE_URL = Config.QUICKBOOKS_PRODUCTION_BASE_URL
