@@ -579,12 +579,26 @@ class CustomerSyncService:
 
     def is_valid_email(self, email: str) -> bool:
         """
-        Validate email format using email_validator library
+        Validate email format compatible with QuickBooks requirements
         """
         try:
-            # validate and get normalized form
-            validate_email(email, check_deliverability=False)
+            result = validate_email(
+                email,
+                check_deliverability=False,
+                allow_smtputf8=False
+            )
+
+            # Enforce minimum TLD length (QuickBooks requirement)
+            domain = result.domain
+            if "." not in domain:
+                return False
+
+            tld = domain.rsplit(".", 1)[-1]
+            if len(tld) < 2:
+                return False
+
             return True
+
         except EmailNotValidError:
             return False
     
