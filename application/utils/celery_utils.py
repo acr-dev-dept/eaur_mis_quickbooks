@@ -28,7 +28,6 @@ def make_celery(app):
             with app.app_context():
                 return self.run(*args, **kwargs)
     celery.Task = ContextTask
-
     # Critical: Initialize MIS DB connection
     with app.app_context():
         app.logger.info("Initializing DatabaseManager in Celery worker process")
@@ -38,6 +37,8 @@ def make_celery(app):
 
     # Move all your beat/queues/routes here (or in create_app)
     celery.conf.update(
+        timezone='Africa/Kigali',
+        enable_utc=True,
         task_queues=(
             Queue("celery"),
             Queue("payment_sync_queue"),
@@ -53,7 +54,7 @@ def make_celery(app):
         beat_schedule={
             "sync_applicants_every_midnight": {
                 "task": "application.config_files.tasks.bulk_sync_applicants_task",
-                "schedule": crontab(hour=0, minute=0),
+                "schedule": crontab(hour=10, minute=18),
             },
             "sync_students_every_midnight": {
                 "task": "application.config_files.sync_students_task.bulk_sync_students_task",
