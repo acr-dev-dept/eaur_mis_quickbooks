@@ -313,13 +313,12 @@ requirements needed:
    2. We found that only applicants are not there, so they need to be synced, with quickbooks_id, and quickbooks_status, and Sync token
    3. With students who are already synced, we'll consider the qkbooks_id during sync and skip those with quickbooks_id not null
    4. Date formats to match the local format.
-   5. Syncing Applicants Starting from Jan 01 2025
+   5. Syncing Applicants Starting from Sept 01 2025
    6. Application of reference number (Urubuto, Invoices,Payments)
 
 
 ## Requirements
    1. IncomeAccountRef (which demands the corresponding income account for a specific item)
-   
    2. ItemRef id while syncing invoices to quickbooks
    3. IncomeAccountRef while referencing syncing Payments to QB
    4. Classes (Student, Applicant)

@@ -28,6 +28,8 @@ from application.helpers.json_field_helper import JSONFieldHelper
 from application.helpers.json_encoder import EnhancedJSONEncoder
 from application.helpers.SafeStringify import safe_stringify
 from email_validator import validate_email, EmailNotValidError
+from application.helpers.parse_date import parse_date
+
 
 logger = logging.getLogger(__name__)
 
@@ -1083,6 +1085,22 @@ class CustomerSyncService:
             CustomerSyncResult: Result of the synchronization attempt
         """
         current_app.logger.info(f"Syncing single applicant: {applicant} and the type is {type(applicant)}")
+        if not applicant:
+            return CustomerSyncResult(
+                customer_id="Not found",
+                    customer_type='Applicant',
+                    success=False,
+                    quickbooks_id=None,
+                    details="Applicant not found in database"
+                )
+        if parse_date(applicant.get('appl_date')) < datetime(2024, 9, 1).date():
+            return CustomerSyncResult(
+                customer_id=applicant.get['tracking_id'],
+                customer_type='Applicant',
+                success=False,
+                quickbooks_id=None,
+                details="Applicants from dates before 1st sept 2024 are not synced to QuickBooks"
+            )
         try:
             # Get QuickBooks service
             qb_service = self._get_qb_service()

@@ -474,7 +474,7 @@ def sync_single_applicant(tracking_id: int):
                     status_code=404
                 )
 
-            if applicant.get('quickbooks_status') == 1:
+            if applicant.get('quickbooks_status') == 1 or applicant.get('quickbooks_id'):
                 return create_response(
                     success=False,
                     error=f"Applicant {tracking_id} has already been synchronized to QuickBooks",
