@@ -1093,7 +1093,7 @@ class CustomerSyncService:
                     quickbooks_id=None,
                     details="Applicant not found in database"
                 )
-        if parse_date(applicant.get('appl_date')) < datetime(2024, 9, 1).date():
+        if parse_date(applicant.get('application_date')) < datetime(2024, 9, 1).date():
             return CustomerSyncResult(
                 customer_id=applicant.get['tracking_id'],
                 customer_type='Applicant',
