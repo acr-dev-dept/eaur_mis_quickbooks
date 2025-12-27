@@ -3001,8 +3001,8 @@ class TblPersonalUg(MISBaseModel):
         try:
             students = (
                 TblPersonalUg.query
-                .filter(TblPersonalUg.per_id_ug.is_(None))
-                .order_by(TblPersonalUg.per_id_ug.asc())  # REQUIRED for offset safety
+                .filter(TblPersonalUg.qk_id.is_(None))
+                .order_by(TblPersonalUg.per_id_ug.desc())  # REQUIRED for offset safety
                 .options(
                     load_only(
                         TblPersonalUg.per_id_ug,
