@@ -365,3 +365,6 @@ FLUSH PRIVILEGES;
 
 # API Protection
 1. Network level protection via nginx and UFW
+
+# Reccurring actions (automated repettive tasks)
+Sync applicants, students, invoices, payments 
