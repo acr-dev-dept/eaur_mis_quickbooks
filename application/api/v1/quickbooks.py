@@ -1318,7 +1318,7 @@ def create_item():
             }), 400
 
         qb = QuickBooks()
-        current_app.logger.info('Creating new item')
+        current_app.logger.info(f'Creating new item {item_data.get("Name")}')
 
         result = qb.create_item(qb.realm_id, item_data)
 
