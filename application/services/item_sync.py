@@ -33,6 +33,15 @@ class ItemSyncService:
             batch = unsynced_categories[i:i + batch_size]
             for category in batch:
                 try:
+                    category_name = None
+                    if len(category['name']) > 95:
+                        category_name = category['name'][:95]+'mis'
+                    else:
+                        category_name = category['name']+'mis'
+
+
+                        
+                    """
                     if category['Quickbk_Status'] == 1:
                         results.append({'id': category['id'], 'status': 'skipped', 'reason': 'Already synced'})
                         continue
@@ -42,9 +51,9 @@ class ItemSyncService:
                         current_app.logger.info(f"Category {category['id']} skipped due to duplicate name")
                         total_skipped += 1
                         continue  
-
+                        """
                     item_data = {
-                        "Name": category['name']+'_',
+                        "Name": category_name,
                         "Type": "Service",
                         "IncomeAccountRef": {
                             "value": category['income_account_qb'],
