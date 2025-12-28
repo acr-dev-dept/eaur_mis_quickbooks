@@ -10,7 +10,7 @@ CELERY_SERVICE="celery"               # systemd service name
 REDIS_SERVICE="redis-server"          # redis or redis-server
 REDIS_DB="0"                          # Redis DB index used by Celery
 REDIS_CLI="/usr/bin/redis-cli"
-CELERY_BIN="/usr/bin/celery"
+CELERY_BIN="/home/eaur/eaur_mis_quickbooks/venv/bin/celery"
 
 ########################################
 # UTILITY FUNCTIONS
