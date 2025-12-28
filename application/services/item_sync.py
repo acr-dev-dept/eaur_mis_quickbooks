@@ -35,9 +35,9 @@ class ItemSyncService:
                 try:
                     category_name = None
                     if len(category['name']) > 95:
-                        category_name = category['name'][:95]+'mis'
+                        category_name = category['name'][:95]+'_mis'
                     else:
-                        category_name = category['name']+'mis'
+                        category_name = category['name']+'_mis'
 
 
                         
