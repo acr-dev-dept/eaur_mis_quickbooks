@@ -44,7 +44,7 @@ class ItemSyncService:
                         continue  
 
                     item_data = {
-                        "Name": category['name']+'_mis',
+                        "Name": category['name']+'_',
                         "Type": "Service",
                         "IncomeAccountRef": {
                             "value": category['income_account_qb'],
