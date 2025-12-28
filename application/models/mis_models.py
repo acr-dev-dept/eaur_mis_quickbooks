@@ -3042,6 +3042,24 @@ class TblPersonalUg(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error fetching all students: {str(e)}")
             return []
+    def update_student_status(reg_no, status):
+        """
+        Docstring for update_student_status
+        """
+        try:
+            with TblPersonalUg.get_session() as session:
+                student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+                if student:
+                    student.QuickBk_status = status
+                    session.commit()
+                    return True
+                return False
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error updating student status for reg_no {reg_no}: {str(e)}")
+            return False
+
+
 
 class TblRegisterProgramUg(MISBaseModel):
     """Model for tbl_register_program_ug table"""
