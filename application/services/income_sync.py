@@ -90,7 +90,7 @@ class IncomeSyncService:
             category_name = category['name'][:95] if len(category['name']) > 95 else category['name'].strip()
             # Prepare payload for QuickBooks
             payload = {
-                "Name": category_name + '_mis',
+                "Name": category_name + '_act',
                 "AccountType": "Income",
             }
             qb_service = self._get_qb_service()
