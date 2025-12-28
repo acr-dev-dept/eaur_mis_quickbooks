@@ -317,19 +317,19 @@ class InvoiceSyncService:
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             customer_id = None
-            class_ref_id = None
+            class_ref_id = 400000000001103496 # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
             
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
                 current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
-                class_ref_id = 109150
+                
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
                 current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
-                class_ref_id = 109150
+                
 
             # Log a warning if no customer reference is found
             else:

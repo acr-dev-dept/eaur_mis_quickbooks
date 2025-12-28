@@ -48,6 +48,7 @@ class IncomeSyncResult:
         }
     
 class IncomeSyncService:
+    
     """Service to handle income category synchronization with QuickBooks."""
 
     def __init__(self):
@@ -164,3 +165,32 @@ class IncomeSyncService:
                 qb_sync_token=None,
                 status=IncomeSyncStatus.FAILED
             )
+
+    def sync_all_unsynced_categories_in_batches(self, batch_size: int = 10):
+        offset = 0
+        total_succeeded = 0
+        total_failed = 0
+
+        while True:
+            categories = TblIncomeCategory.batch_get_unsynced_income_categories(
+                limit=batch_size,
+                offset=offset
+            )
+
+            if not categories:
+                break
+
+            for category in categories:
+                result = self.sync_income_category(category)
+
+                if result.status == IncomeSyncStatus.SYNCED:
+                    total_succeeded += 1
+                else:
+                    total_failed += 1
+
+            offset += batch_size
+
+        return {
+            "total_succeeded": total_succeeded,
+            "total_failed": total_failed,
+        }

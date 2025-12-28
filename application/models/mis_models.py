@@ -1648,7 +1648,48 @@ class TblIncomeCategory(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting unsynced income categories for income accounts: {str(e)}")
             return []
-        
+    
+    @staticmethod
+    def batch_get_unsynced_income_categories(limit: int = 10, offset: int = 0):
+        """
+        Get income categories that have not been synced as income accounts to QuickBooks,
+        with pagination support.
+
+        Args:
+            limit (int): Number of records to fetch
+            offset (int): Number of records to skip
+
+        Returns:
+            List[Dict]: List of income category dictionaries
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                query = (
+                    session.query(TblIncomeCategory)
+                    .filter(
+                        or_(
+                            TblIncomeCategory.income_account_status != 1,
+                            TblIncomeCategory.income_account_status.is_(None)
+                        ),
+                        TblIncomeCategory.status_Id == 1
+                    )
+                    .order_by(TblIncomeCategory.id.asc())  # deterministic pagination
+                    .limit(limit)
+                    .offset(offset)
+                )
+
+                categories = query.all()
+                return [cat.to_dict() for cat in categories] if categories else []
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(
+                f"Error getting unsynced income categories for income accounts: {str(e)}",
+                exc_info=True
+            )
+            return []
+
+
     @staticmethod
     def get_unsynced_income_count():
         """Count income categories that have not been synced as income accounts to QuickBooks"""
