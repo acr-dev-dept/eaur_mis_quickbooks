@@ -87,10 +87,10 @@ class IncomeSyncService:
 
             if len(category['name']) > 100:
                 raise ValueError("Income category name exceeds 100 characters limit, as per QuickBooks API constraints.")
-
+            category_name = category['name'][:95] if len(category['name']) > 95 else category['name'].strip()
             # Prepare payload for QuickBooks
             payload = {
-                "Name": category['name'],
+                "Name": category_name + '_mis',
                 "AccountType": "Income",
             }
             qb_service = self._get_qb_service()
