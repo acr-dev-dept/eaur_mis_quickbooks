@@ -1408,7 +1408,7 @@ def sync_single_item():
             }), 400
 
         item_data = {
-            "Name": income_category['name'],
+            "Name": income_category['name']+'_mis',
             "Type": "Service",
             "IncomeAccountRef": {
                 "value": income_category['income_account_qb'],
