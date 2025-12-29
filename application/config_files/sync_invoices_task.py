@@ -333,7 +333,7 @@ def scheduled_invoice_sync_task():
 
         async_result = bulk_sync_invoices_task.delay(
             invoice_ids=None,
-            batch_size=100,
+            batch_size=50,
             filter_unsynced=True,
             reset_offset=False,
         )

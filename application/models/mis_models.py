@@ -399,7 +399,7 @@ class Payment(MISBaseModel):
         """
         pass
     @staticmethod
-    def get_unsynced_payments(limit=100, offset=0):
+    def get_unsynced_payments(limit=50, offset=0):
         """Get payments not yet synced to QuickBooks,
         Args:
             limit (int): Number of records to fetch
