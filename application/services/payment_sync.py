@@ -471,7 +471,7 @@ class PaymentSyncService:
                     })
                 else:
                     self.logger.warning(f"Associated invoice {payment.invoi_ref} not synced to QuickBooks or not found.")
-
+            
 
             # Construct the QuickBooks Payment payload
             qb_payment_data = {

@@ -2327,7 +2327,7 @@ class TblOnlineApplication(MISBaseModel):
             with TblOnlineApplication.get_session() as session:
                 applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
                 if applicant:
-                    applicant.status = status
+                    applicant.QuickBk_status = status
                     session.commit()
                     return True
                 return False
@@ -3175,23 +3175,46 @@ class TblRegisterProgramUg(MISBaseModel):
         }
     
     @staticmethod
-    def get_campus_id_by_reg_no(reg_no):
+    def get_campus_id_by_reg_no(reg_no, invoice_date):
         """
-        Get campus ID by student registration number
+        Get campus ID by student registration number where invoice date 
+        is in the same range as registration date
 
         Args:
             reg_no (str): Student registration number
+            invoice_date (datetime): Invoice date to match against registration date
 
         Returns:
             int: Campus ID or None if not found
         """
         try:
+            from datetime import datetime, timedelta
+            
             with TblRegisterProgramUg.get_session() as session:
-                reg_program = session.query(TblRegisterProgramUg).filter(TblRegisterProgramUg.reg_no == reg_no).first()
+                # Convert invoice_date to datetime if it's a string
+                if isinstance(invoice_date, str):
+                    invoice_date = datetime.strptime(invoice_date, '%Y-%m-%d')
+                
+                # Define the date range (you can adjust the range as needed)
+                # Example: same academic year, same semester, same month, etc.
+                
+                # Option 1: Same year range
+                start_of_year = datetime(invoice_date.year, 1, 1)
+                end_of_year = datetime(invoice_date.year, 12, 31, 23, 59, 59)
+                
+                reg_program = session.query(TblRegisterProgramUg).filter(
+                    TblRegisterProgramUg.reg_no == reg_no,
+                    TblRegisterProgramUg.reg_date >= start_of_year,
+                    TblRegisterProgramUg.reg_date <= end_of_year
+                ).first()
+                
                 return reg_program.camp_id if reg_program else None
+                
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(f"Error getting campus ID for reg no {reg_no}: {str(e)}")
+            current_app.logger.error(
+                f"Error getting campus ID for reg no {reg_no} with invoice date {invoice_date}: {str(e)}"
+            )
             return None
 
 class TblSponsor(MISBaseModel):
