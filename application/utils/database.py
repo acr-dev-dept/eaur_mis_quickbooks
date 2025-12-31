@@ -50,8 +50,8 @@ class DatabaseManager:
                 pool_size=10,
                 max_overflow=20,
                 pool_pre_ping=True,
-                pool_recycle=3600,
-                echo=config.get('DEBUG')
+                pool_recycle=3600
+                #echo=config.get('DEBUG')
             )
             from application import db
             # Bind db to the new engine

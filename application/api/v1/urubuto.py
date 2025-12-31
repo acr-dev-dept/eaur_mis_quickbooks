@@ -475,7 +475,7 @@ def payment_callback():
                         # Use the endpoint to sync single payment
                         # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
                         from application.config_files.payment_sync import sync_payment_to_quickbooks_task
-                        response = sync_payment_to_quickbooks_task.delay(payment_id)
+                        #response = sync_payment_to_quickbooks_task.delay(payment_id)
                         
                     except Exception as e:
                         current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
