@@ -156,7 +156,7 @@ def process_payments_batch(payment_ids, batch_num, total_batches, job_id):
                     results["synced"] += 1
                     
                 else:
-                    raise RuntimeError(result.error_message)
+                    raise RuntimeError(result['error_message'])
 
             except Exception as e:
                 results["failed"] += 1
