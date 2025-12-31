@@ -139,8 +139,8 @@ def process_payments_batch(payment_ids, batch_num, total_batches, job_id):
                 if not QuickBooksConfig.is_connected():
                     raise RuntimeError("QuickBooks not connected")
 
-                payment = Payment.get_payment_details(payment_id)
-
+                payment_obj = Payment.get_payment_by_id(payment_id)
+                payment = payment_obj
                 if not payment:
                     raise ValueError("Payment not found")
 
