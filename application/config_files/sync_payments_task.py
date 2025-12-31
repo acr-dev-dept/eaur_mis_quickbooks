@@ -144,10 +144,12 @@ def process_payments_batch(payment_ids, batch_num, total_batches, job_id):
                 if not payment:
                     raise ValueError("Payment not found")
 
-                if payment.get("quickbooks_status") == 1:
+                if payment.qk_id:
                     results["skipped"] += 1
                     continue
-
+                if payment.is_prepayment or payment.student_wallet_ref is not None:
+                    results["skipped"] += 1
+                    continue
                 result = sync_service.sync_single_payment(payment)
 
                 if result.success:
