@@ -51,7 +51,7 @@ def bulk_sync_payments_task(payment_ids=None, batch_size=50, filter_unsynced=Tru
                 else:
                     raise ValueError("No payments left to process")
 
-                payment_ids = [p.payment_id for p in payments if p.payment_id is not None]
+                payment_ids = [p.id for p in payments if p.id is not None]
             else:
                 current_offset = None
 
