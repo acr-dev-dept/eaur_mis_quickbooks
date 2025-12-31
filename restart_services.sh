@@ -49,7 +49,11 @@ fi
 echo "Starting Celery worker..."
 nohup celery -A application.config_files.celery_app.celery worker \
     -Q celery,payment_sync_queue,wallet_sync_queue \
-    --loglevel=info > "$LOG_DIR/celery_worker.log" 2>&1 &
+    --pool=threads \
+    --concurrency=6 \
+    --prefetch-multiplier=1 \
+    --loglevel=info \
+    > "$LOG_DIR/celery_worker.log" 2>&1 &
 sleep 2
 if pgrep -f "celery worker" > /dev/null; then
     echo "=== Celery worker started successfully."
