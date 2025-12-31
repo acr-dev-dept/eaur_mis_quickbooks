@@ -152,7 +152,7 @@ def process_payments_batch(payment_ids, batch_num, total_batches, job_id):
                     continue
                 result = sync_service.sync_single_payment(payment)
 
-                if result.success:
+                if result['success']:
                     results["synced"] += 1
                     
                 else:
