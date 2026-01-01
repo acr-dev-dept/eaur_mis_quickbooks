@@ -18,6 +18,25 @@ urubuto_bp = Blueprint('urubuto', __name__)
 from application.services.urubuto_pay import UrubutoPay
 urubuto_service = UrubutoPay()
 
+
+def resolve_payer_code(payer_code):
+    """
+    Determines whether payer_code is:
+    - an invoice reference
+    - a student registration number
+    """
+    invoice = TblImvoice.get_invoice_details(payer_code)
+    if invoice:
+        return "INVOICE", invoice
+
+    student = TblPersonalUg.get_student_data(payer_code)
+    if student:
+        return "STUDENT", student
+
+    return None, None
+
+
+
 @urubuto_bp.route('/authentication', methods=['POST'])
 def authentication():
     """
@@ -159,54 +178,76 @@ def payer_validation():
 
         current_app.logger.info(f"Payer validation request - Merchant: {merchant_code}, Payer: {payer_code}")
 
-        # get invoice details given the reference number (payer_code)
-        try:  
-            
-            invoice_bal = TblImvoice.get_invoice_balance(payer_code)
-            
-            if not invoice_bal:
-                wallet = TblStudentWallet.get_by_reference_number(payer_code)
-                if wallet:
-                    invoice_bal_wallet = wallet.dept
-                else:
-                    invoice_bal_wallet = 0
-                invoice_balance = invoice_bal_wallet
-                current_app.logger.info(f"Invoice balance retrieved from wallet: {invoice_balance}")
-                return jsonify({
-                    "message": "Successful",
-                    "status": 200}), 200
-            
-            invoice_deposit_amount = TblImvoice.get_invoice_deposit_amount(payer_code)
-
-            invoice_balance = invoice_bal or invoice_deposit_amount
-
-            if invoice_balance is None:
-                current_app.logger.warning(f"No invoice found for payer_code: {payer_code}")
-                return jsonify({
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "message": f"No data found for this code: {payer_code}",
-                    "status": 400
-                }), 400
-            # Make sure the balance is greater than zero
-            if float(invoice_balance) == 0.0:
-                current_app.logger.warning(f"Invoice balance is zero for payer_code: {payer_code}")
-                return jsonify({
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "message": f"Invoice : {payer_code} has already been paid in full.",
-                    "status": 400
-                }), 400
-            # make sure it doesn't have decimal places
-            invoice_balance = int(float(invoice_balance))
-            current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
-            current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
-        except Exception as e:
-            current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
-            current_app.logger.error(traceback.format_exc())
+        
+        payer_type, entity = resolve_payer_code(payer_code)
+        
+        if payer_type is None:
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": f"Error retrieving invoice details: {str(e)}",
-                "status": 500
-            }), 500
+                "message": f"No data found for this code: {payer_code}",
+                "status": 400
+            }), 400
+        # get invoice details given the reference number (payer_code)
+        
+        if payer_type == "INVOICE":
+            
+            try:  
+                
+                invoice_bal = TblImvoice.get_invoice_balance(payer_code)
+                
+                if not invoice_bal:
+                    wallet = TblStudentWallet.get_by_reference_number(payer_code)
+                    if wallet:
+                        invoice_bal_wallet = wallet.dept
+                    else:
+                        invoice_bal_wallet = 0
+                    invoice_balance = invoice_bal_wallet
+                    current_app.logger.info(f"Invoice balance retrieved from wallet: {invoice_balance}")
+                    return jsonify({
+                        "message": "Successful",
+                        "status": 200}), 200
+                
+                invoice_deposit_amount = TblImvoice.get_invoice_deposit_amount(payer_code)
+
+                invoice_balance = invoice_bal or invoice_deposit_amount
+                amount = invoice_balance
+                
+                if invoice_balance is None:
+                    current_app.logger.warning(f"No invoice found for payer_code: {payer_code}")
+                    return jsonify({
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "message": f"No data found for this code: {payer_code}",
+                        "status": 400
+                    }), 400
+                # Make sure the balance is greater than zero
+                if float(invoice_balance) == 0.0:
+                    current_app.logger.warning(f"Invoice balance is zero for payer_code: {payer_code}")
+                    return jsonify({
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "message": f"Invoice : {payer_code} has already been paid in full.",
+                        "status": 400
+                    }), 400
+                # make sure it doesn't have decimal places
+                invoice_balance = int(float(invoice_balance))
+                current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
+                current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
+            except Exception as e:
+                current_app.logger.error(f"Error retrieving invoice details from Urubuto Pay: {str(e)}")
+                current_app.logger.error(traceback.format_exc())
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": f"Error retrieving invoice details: {str(e)}",
+                    "status": 500
+                }), 500
+            
+        elif payer_type == "STUDENT":
+            # Explicitly ignore balances
+            amount = 0
+
+            current_app.logger.info(
+                f"Payer code {payer_code} identified as student registration number. "
+                "No balance validation required."
+            )
 
         
         # We are going to stop here and respond with successful response
@@ -221,7 +262,7 @@ def payer_validation():
                 "department_code": "0",
                 "department_name": "Unknown Department",
                 "class_name": "Unknown Class",
-                "amount": invoice_balance,
+                "amount": amount,
                 "currency": "RWF",
                 "payer_must_pay_total_amount": "NO"
             }
