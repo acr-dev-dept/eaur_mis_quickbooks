@@ -2913,6 +2913,22 @@ class TblPersonalUg(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting student details for reg_no {reg_no}: {str(e)}")
             return []
+    @classmethod
+    def get_student_data(cls, reg_no):
+        with cls.get_session() as session:
+            student = (
+                session.query(
+                    cls.per_id_ug,
+                    cls.reg_no,
+                    cls.fname,
+                    cls.lname
+                )
+                .filter(cls.reg_no == reg_no)
+                .first()
+            )
+            return student
+
+
 
     @staticmethod
     def count_students():

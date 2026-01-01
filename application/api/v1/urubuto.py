@@ -358,9 +358,9 @@ def payment_callback():
     transaction_id = data.get('transaction_id')
     status = data.get('status')
     transaction_status = data.get('transaction_status')
-    amount = data.get('amount')
+    amount = data.get('amount').strip()
     payment_date_time = data.get('payment_date_time')
-    payer_code = data.get('payer_code')
+    payer_code = data.get('payer_code').strip()
     payment_chanel = data.get('payment_channel_name')
 
     # Generate a random internal transaction in form of 625843
@@ -428,7 +428,29 @@ def payment_callback():
                     "message": "Successful",
                     "status": 200
                 }), 200
-        
+
+            student = TblPersonalUg.get_student_data(payer_code)
+            if student:
+                # Create wallet
+                from application.models.mis_models import TblStudentWallet
+                import random
+                try:
+                    updated = TblStudentWallet.create_wallet_entry(
+                        reg_prg_id=random.randint(100000, 999999),
+                        reg_no=student.reg_no,
+                        reference_number=random.randint(100000, 999999),
+                        trans_code=transaction_id,
+                        payment_chanel=payment_chanel,
+                        payment_date=payment_date_time,
+                        is_paid="Yes",
+                        dept=amount,
+                        bank_id=2
+                    )
+                    current_app.logger.info(f"Wallet created: {updated}")
+                except Exception as e:
+                    current_app.logger.error(f"Error creating wallet entry: {str(e)}")
+                    current_app.logger.error(traceback.format_exc())
+                
             from application.models.central_models import IntegrationLog
             
             try:
@@ -803,11 +825,16 @@ def initiate_payment():
             }), 400
 
         # Extract and validate required fields
-        payer_code = data.get('payer_code')
-        amount = data.get('amount')
+        payer_code = data.get('payer_code').strip()
+        amount = data.get('amount').stripy()
         channel_name = data.get('channel_name')
         service_code = data.get('service_code')
         merchant_code = data.get('merchant_code')
+        phone_number=data.get('phone_number')
+        card_type=data.get('card_type')
+        redirection_url=data.get('redirection_url')
+        payer_names=data.get('payer_names')
+        payer_email=data.get('payer_email')
 
         if not all([payer_code,  channel_name]):
             return jsonify({
@@ -854,7 +881,7 @@ def initiate_payment():
                     "status": 400
                 }), 400
 
-                    
+        
 
         # Initiate payment
         try:
@@ -862,11 +889,11 @@ def initiate_payment():
                 payer_code=payer_code,
                 amount=amount,
                 channel_name=channel_name,
-                phone_number=data.get('phone_number'),
-                card_type=data.get('card_type'),
-                redirection_url=data.get('redirection_url'),
-                payer_names=data.get('payer_names'),
-                payer_email=data.get('payer_email'),
+                phone_number=phone_number,
+                card_type=card_type,
+                redirection_url=redirection_url,
+                payer_names=payer_names,
+                payer_email=payer_email,
                 service_code=service_code,
                 merchant_code=merchant_code
             )
