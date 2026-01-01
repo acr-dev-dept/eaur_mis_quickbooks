@@ -482,6 +482,8 @@ def payment_callback():
                         reg_no=student.reg_no,
                         reference_number=random.randint(100000, 999999),
                         trans_code=transaction_id,
+                        external_transaction_id=transaction_id,
+                        description=f"Urubuto Pay Via Microservice",
                         payment_chanel=payment_chanel,
                         payment_date=date.today(),
                         is_paid="Yes",
@@ -671,7 +673,7 @@ def payment_notification():
 
         # Validate required fields
         required_fields = ['transaction_id', 'merchant_code',
-                          'payer_code', 'payment_chanel', 'amount', 'currency', 'payment_date_time']
+                          'payer_code', 'payment_channel', 'amount', 'currency', 'payment_date_time', 'payment_channel_name']
 
         missing_fields = [field for field in required_fields if not data.get(field)]
         if missing_fields:
