@@ -54,7 +54,7 @@ def make_celery(app):
         beat_schedule={
             "sync_payments_every_midnight": {
             "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
-            "schedule": crontab(minute='*/6')
+            "schedule": crontab(minute='*/7')
             },
             "sync_invoices_every_midnight": {
             "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
