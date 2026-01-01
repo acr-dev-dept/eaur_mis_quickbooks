@@ -399,9 +399,9 @@ def payment_callback():
     transaction_id = data.get('transaction_id')
     status = data.get('status')
     transaction_status = data.get('transaction_status')
-    amount = data.get('amount').strip()
+    amount = data.get('amount')
     payment_date_time = data.get('payment_date_time')
-    payer_code = data.get('payer_code').strip()
+    payer_code = data.get('payer_code')
     payment_chanel = data.get('payment_channel_name')
 
     # Generate a random internal transaction in form of 625843
@@ -866,8 +866,8 @@ def initiate_payment():
             }), 400
 
         # Extract and validate required fields
-        payer_code = data.get('payer_code').strip()
-        amount = data.get('amount').stripy()
+        payer_code = data.get('payer_code')
+        amount = data.get('amount')
         channel_name = data.get('channel_name')
         service_code = data.get('service_code')
         merchant_code = data.get('merchant_code')
