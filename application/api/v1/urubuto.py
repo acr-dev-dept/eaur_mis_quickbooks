@@ -483,7 +483,6 @@ def payment_callback():
                         reference_number=random.randint(100000, 999999),
                         trans_code=transaction_id,
                         external_transaction_id=transaction_id,
-                        description=f"Urubuto Pay Via Microservice",
                         payment_chanel=payment_chanel,
                         payment_date=date.today(),
                         is_paid="Yes",
