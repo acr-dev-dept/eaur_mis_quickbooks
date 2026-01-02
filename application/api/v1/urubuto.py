@@ -474,25 +474,32 @@ def payment_callback():
             if student:
                 # Create wallet
                 from application.models.mis_models import TblStudentWallet
-                import random
-                from datetime import date
-                try:
-                    created = TblStudentWallet.create_wallet_entry(
-                        reg_prg_id=random.randint(100000, 999999),
-                        reg_no=student.reg_no,
-                        reference_number=random.randint(100000, 999999),
-                        trans_code=transaction_id,
-                        external_transaction_id=transaction_id,
-                        payment_chanel=payment_chanel,
-                        payment_date=date.today(),
-                        is_paid="Yes",
-                        dept=amount,
-                        bank_id=2
-                    )
-                    current_app.logger.info(f"Wallet created: {created}")
-                except Exception as e:
-                    current_app.logger.error(f"Error creating wallet entry: {str(e)}")
-                    current_app.logger.error(traceback.format_exc())
+
+                if student.external_transaction_id == transaction_id:
+                    return jsonify({
+                        "message": "Wallet already exists",
+                        "status": 400
+                    }), 400
+                else :
+                    import random
+                    from datetime import date
+                    try:
+                        created = TblStudentWallet.create_wallet_entry(
+                            reg_prg_id=random.randint(100000, 999999),
+                            reg_no=student.reg_no,
+                            reference_number=random.randint(100000, 999999),
+                            trans_code=transaction_id,
+                            external_transaction_id=transaction_id,
+                            payment_chanel=payment_chanel,
+                            payment_date=date.today(),
+                            is_paid="Yes",
+                            dept=amount,
+                            bank_id=2
+                        )
+                        current_app.logger.info(f"Wallet created: {created}")
+                    except Exception as e:
+                        current_app.logger.error(f"Error creating wallet entry: {str(e)}")
+                        current_app.logger.error(traceback.format_exc())
                 
             from application.models.central_models import IntegrationLog
             

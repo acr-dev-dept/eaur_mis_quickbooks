@@ -2194,12 +2194,19 @@ class TblOnlineApplication(MISBaseModel):
     @staticmethod
     def count_applicants():
         """
-        Count total number of applicants
+        Count total number of applicants from 2025-01-01 onwards
         """
         try:
             with MISBaseModel.get_session() as session:
-                count = session.query(TblOnlineApplication).count()
+                start_date = date(2025, 1, 1)
+
+                count = (
+                    session.query(TblOnlineApplication)
+                    .filter(TblOnlineApplication.appl_date >= start_date)
+                    .count()
+                )
                 return count
+
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error counting applicants: {str(e)}")
