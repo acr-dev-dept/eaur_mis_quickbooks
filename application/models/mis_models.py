@@ -277,11 +277,22 @@ class Payment(MISBaseModel):
             
     @staticmethod
     def count_payments():
-        """Count total payments"""
+        """
+        Count total payments from 2025-01-01 onwards
+        """
         try:
             with MISBaseModel.get_session() as session:
-                return session.query(func.count(Payment.id)).scalar()
+                start_date = date(2025, 1, 1)
+
+                return (
+                    session.query(func.count(Payment.id))
+                    .filter(Payment.recorded_date >= start_date)
+                    .scalar()
+                )
+
         except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error counting payments: {str(e)}")
             return 0
 
     @staticmethod
@@ -1280,11 +1291,20 @@ class TblImvoice(MISBaseModel):
 
     @staticmethod
     def count_invoices():
-        """Count total number of invoices in the database"""
+        """
+        Count total number of invoices from 2025-01-01 onwards
+        """
         try:
             with MISBaseModel.get_session() as session:
-                total_invoices = session.query(TblImvoice).count()
+                start_date = date(2025, 1, 1)
+
+                total_invoices = (
+                    session.query(TblImvoice)
+                    .filter(TblImvoice.date >= start_date)
+                    .count()
+                )
                 return total_invoices
+
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error counting total invoices: {str(e)}")
