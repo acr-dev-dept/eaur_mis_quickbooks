@@ -2219,7 +2219,7 @@ class TblOnlineApplication(MISBaseModel):
         """
         try:
             with MISBaseModel.get_session() as session:
-                count = session.query(TblOnlineApplication).filter(TblOnlineApplication.QuickBk_Status == 1, TblOnlineApplication.quickbooks_id != None).count()
+                count = session.query(TblOnlineApplication).filter(TblOnlineApplication.quickbooks_id != None).count()
                 return count
         except Exception as e:
             from flask import current_app
