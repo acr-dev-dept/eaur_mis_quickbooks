@@ -554,11 +554,12 @@ def payment_callback():
                 from application.models.mis_models import TblStudentWallet
                 existing_wallet = TblStudentWallet.get_by_reference_number(payer_code)
 
-                if existing_wallet.external_transaction_id == transaction_id:
-                    return jsonify({
-                        "message": "Wallet already exists",
-                        "status": 400
-                    }), 400
+                if existing_wallet:
+                    if existing_wallet.external_transaction_id == transaction_id:
+                        return jsonify({
+                            "message": "Wallet already exists",
+                            "status": 400
+                        }), 400
                 else :
                     import random
                     from datetime import date
