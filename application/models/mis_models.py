@@ -2307,6 +2307,26 @@ class TblOnlineApplication(MISBaseModel):
             return []
 
     @staticmethod
+    def get_applicant_data(tracking_id):
+        """
+        Get applicant data by tracking ID
+
+        Args:
+            tracking_id (str): Applicant tracking ID
+
+        Returns:
+            object: Applicant data or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == tracking_id).first()
+                return applicant
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting applicant data for tracking ID {tracking_id}: {str(e)}")
+            return None
+
+    @staticmethod
     def get_all_applicants(limit: int = 20):
         """
         Get all applicants from last year september with a limit for processing

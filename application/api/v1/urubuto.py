@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
@@ -30,6 +30,9 @@ def resolve_payer_code(payer_code):
         return "INVOICE", invoice
 
     student = TblPersonalUg.get_student_data(payer_code)
+    applicant = TblOnlineApplication.get_applicant_data(payer_code)
+    if applicant:
+        return "APPLICANT", applicant
     if student:
         return "STUDENT", student
 
@@ -180,7 +183,7 @@ def payer_validation():
 
         
         payer_type, entity = resolve_payer_code(payer_code)
-        
+        payer_names=""
         if payer_type is None:
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -243,12 +246,26 @@ def payer_validation():
         elif payer_type == "STUDENT":
             # Explicitly ignore balances
             amount = 0
+            payer_names=f"{entity.fname or ''} {entity.lname or ''}".strip()
+            if not payer_names:
+                payer_names = entity.reg_no
 
             current_app.logger.info(
                 f"Payer code {payer_code} identified as student registration number. "
                 "No balance validation required."
             )
 
+        elif payer_type == "APPLICANT":
+            # Explicitly ignore balances
+            amount = 0
+            payer_names = f"{entity.first_name or ''} {entity.family_name or ''}".strip()
+            if not payer_names:
+                payer_names = entity.tracking_id
+
+            current_app.logger.info(
+                f"Payer code {payer_code} identified as applicant. "
+                "No balance validation required."
+            )
         
         # We are going to stop here and respond with successful response
         return jsonify({
