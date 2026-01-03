@@ -682,6 +682,14 @@ class TblStudentWallet(MISBaseModel):
                 return True
             return False
 
+    @classmethod
+    def get_by_external_transaction_id(cls, external_transaction_id):
+        with cls.get_session() as session:
+            student_wallet = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
+            if student_wallet:
+                return True
+            return False
+
 
 class TblBank(MISBaseModel):
     """Model for tbl_bank table"""
