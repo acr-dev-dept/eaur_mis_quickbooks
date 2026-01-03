@@ -456,88 +456,20 @@ def payment_callback():
             updated = None
             wallet_pyt = TblStudentWallet.get_by_reference_number(payer_code)
             
-            if wallet_pyt:
-                updated = TblStudentWallet.update_wallet_pyt_status(payer_code, transaction_id, payment_chanel)
-                
-                if not updated:
-                    current_app.logger.warning(f"failed to update the wallet")
-                    return jsonify({
-                        "message": "Failed to update the wallet",
-                        "status": 500
-                    }), 500
-                from application.models.central_models import IntegrationLog
-                try:
-                    log = IntegrationLog.log_integration_operation(
-                        system_name = "UrubutoPay",
-                        operation = "Wallet Payment",
-                        status = "success",
-                        started_at = started_at if started_at else datetime.now(),
-                        completed_at = datetime.now()
-                    )
-                    current_app.logger.info(f"Integration log created: {log}")
-                except Exception as e:
-                    current_app.logger.error(f"Error logging integration operation: {str(e)}")
-                    current_app.logger.error(traceback.format_exc())
-                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                response = sync_wallet_to_quickbooks_task.delay(wallet_pyt.id)
-                        
-                current_app.logger.info(f"Wallet updated: {updated}")
-                return jsonify({
-                    "message": "Successful",
-                    "status": 200
-                }), 200
-
+            
             student = TblPersonalUg.get_student_data(payer_code)
             applicant = TblOnlineApplication.get_applicant_data(payer_code)
             if student:
                 # Create wallet
                 from application.models.mis_models import TblStudentWallet
-                existing_wallet = TblStudentWallet.get_by_reference_number(payer_code)
-
-                if existing_wallet.external_transaction_id == transaction_id:
-                    return jsonify({
-                        "message": "Wallet already exists",
-                        "status": 400
-                    }), 400
-                else :
-                    import random
-                    from datetime import date
-                    try:
-                        created = TblStudentWallet.create_wallet_entry(
-                            reg_prg_id=random.randint(100000, 999999),
-                            reg_no=student.reg_no,
-                            reference_number=random.randint(100000, 999999),
-                            trans_code=transaction_id,
-                            external_transaction_id=transaction_id,
-                            payment_chanel=payment_chanel,
-                            payment_date=date.today(),
-                            is_paid="Yes",
-                            dept=amount,
-                            bank_id=2
-                        )
-                        current_app.logger.info(f"Wallet created: {created}")
-                    except Exception as e:
-                        current_app.logger.error(f"Error creating wallet entry: {str(e)}")
-                        current_app.logger.error(traceback.format_exc())
-            if student:
-                # Create wallet
-                from application.models.mis_models import TblStudentWallet
-                existing_wallet = TblStudentWallet.get_by_reference_number(payer_code)
-
-                if existing_wallet:
-                    if existing_wallet.external_transaction_id == transaction_id:
+                if wallet_pyt:
+                    if wallet_pyt.external_transaction_id == transaction_id:
                         return jsonify({
                             "message": "Wallet already exists",
                             "status": 400
                         }), 400
                     updated = TblStudentWallet.topup_wallet(payer_code, amount)
                     current_app.logger.info(f"Wallet updated: {updated}")
-                    
-                if student.external_transaction_id == transaction_id:
-                    return jsonify({
-                        "message": "Wallet already exists",
-                        "status": 400
-                    }), 400
                 else :
                     import random
                     from datetime import date
@@ -593,9 +525,6 @@ def payment_callback():
                     except Exception as e:
                         current_app.logger.error(f"Error creating wallet entry: {str(e)}")
                         current_app.logger.error(traceback.format_exc())
-            
-            
-
 
             from application.models.central_models import IntegrationLog
             
