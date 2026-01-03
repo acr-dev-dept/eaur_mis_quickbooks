@@ -3,15 +3,14 @@
 LOG_DIR="logs"
 LOG_FILE="$LOG_DIR/gunicorn.log"
 
-# Ensure log directory exists
 mkdir -p "$LOG_DIR"
 
 echo "----------------------------------------" >> "$LOG_FILE"
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Deployment script started" >> "$LOG_FILE"
 
-if pgrep -f gunicorn > /dev/null; then
+if pgrep -x gunicorn > /dev/null; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn is running. Stopping it..." >> "$LOG_FILE"
-    pkill -f gunicorn
+    pkill -x gunicorn
     sleep 2
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn stopped." >> "$LOG_FILE"
 else
