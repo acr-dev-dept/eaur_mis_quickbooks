@@ -453,81 +453,53 @@ def payment_callback():
     # table and the payment table
     if transaction_status == "VALID":
         try:
-            updated = None
-            wallet_pyt = TblStudentWallet.get_by_reference_number(payer_code)
-            
-            
+            from application.models.mis_models import TblStudentWallet
+            from datetime import date
+
+            # Resolve payer (student or applicant)
             student = TblPersonalUg.get_student_data(payer_code)
             applicant = TblOnlineApplication.get_applicant_data(payer_code)
-            if student:
-                # Create wallet
-                from application.models.mis_models import TblStudentWallet
-                if wallet_pyt:
-                    if wallet_pyt.external_transaction_id == transaction_id:
-                        return jsonify({
-                            "message": "Wallet already exists",
-                            "status": 400
-                        }), 400
-                    updated = TblStudentWallet.topup_wallet(payer_code, amount)
-                    current_app.logger.info(f"Wallet updated: {updated}")
-                else :
-                    import random
-                    from datetime import date
-                    try:
-                        created = TblStudentWallet.create_wallet_entry(
-                            reg_prg_id=random.randint(100000, 999999),
-                            reg_no=student.reg_no,
-                            reference_number=random.randint(100000, 999999),
-                            trans_code=transaction_id,
-                            external_transaction_id=transaction_id,
-                            payment_chanel=payment_chanel,
-                            payment_date=date.today(),
-                            is_paid="Yes",
-                            dept=amount,
-                            bank_id=2
-                        )
-                        current_app.logger.info(f"Wallet created: {created}")
-                    except Exception as e:
-                        current_app.logger.error(f"Error creating wallet entry: {str(e)}")
-                        current_app.logger.error(traceback.format_exc())
-            
-            if applicant:
-                # Create wallet
-                from application.models.mis_models import TblStudentWallet
-                existing_wallet = TblStudentWallet.get_by_reference_number(payer_code)
 
-                if existing_wallet:
-                    if existing_wallet.external_transaction_id == transaction_id:
-                        return jsonify({
-                            "message": "Wallet already exists",
-                            "status": 400
-                        }), 400
-                    updated = TblStudentWallet.topup_wallet(payer_code, amount)
-                    current_app.logger.info(f"Wallet updated: {updated}")
-                    
-                else :
-                    import random
-                    from datetime import date
-                    try:
-                        created = TblStudentWallet.create_wallet_entry(
-                            reg_prg_id=random.randint(100000, 999999),
-                            reg_no=applicant.tracking_id,
-                            reference_number=random.randint(100000, 999999),
-                            trans_code=transaction_id,
-                            external_transaction_id=transaction_id,
-                            payment_chanel=payment_chanel,
-                            payment_date=date.today(),
-                            is_paid="Yes",
-                            dept=amount,
-                            bank_id=2
-                        )
-                        current_app.logger.info(f"Wallet created: {created}")
-                    except Exception as e:
-                        current_app.logger.error(f"Error creating wallet entry: {str(e)}")
-                        current_app.logger.error(traceback.format_exc())
+            if not student and not applicant:
+                return jsonify({
+                    "message": "Payer not found",
+                    "status": 404
+                }), 404
 
+            reg_no = student.reg_no if student else applicant.tracking_id
+
+            # Idempotency check (CRITICAL)
+            existing_wallet = TblStudentWallet.get_by_external_transaction_id(transaction_id)
+            if existing_wallet:
+                current_app.logger.warning(
+                    f"Duplicate transaction ignored: {transaction_id}"
+                )
+                return jsonify({
+                    "message": "Transaction already processed",
+                    "status": 200
+                }), 200
+
+            wallet = TblStudentWallet.get_by_reference_number(payer_code)
+
+            if wallet:
+                updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
+                current_app.logger.info(f"Wallet topped up: {updated}")
+            else:
+                created = TblStudentWallet.create_wallet_entry(
+                    reg_prg_id=reg_no,
+                    reg_no=reg_no,
+                    reference_number=payer_code,
+                    trans_code=transaction_id,
+                    external_transaction_id=transaction_id,
+                    payment_chanel=payment_chanel,
+                    payment_date=date.today(),
+                    is_paid="Yes",
+                    dept=amount,
+                    bank_id=2
+                )
+                current_app.logger.info(f"Wallet created: {created}")
             from application.models.central_models import IntegrationLog
-            
+        
             try:
                 log = IntegrationLog.log_integration_operation(
                     system_name = "UrubutoPay",
@@ -542,88 +514,22 @@ def payment_callback():
                 current_app.logger.error(f"Error logging integration operation: {str(e)}")
                 current_app.logger.error(traceback.format_exc())
 
-            current_app.logger.info(f"Wallet updated: {updated}")
-            # Update invoice balance
-            updated = TblImvoice.update_invoice_balance(payer_code, amount)
-            current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
-            # Make sure the invoice balance has been updated before creating payment record
-            if updated[0] is not None: # The method returns (new_balance, invoice) tuple
-                # Create payment record
-                
-                try:
-                    payment = Payment.create_payment(
-                        external_transaction_id=transaction_id,
-                        trans_code=transaction_id,
-                        description=f"Urubuto Pay Via Microservice",
-                        payment_chanel=data.get('payment_chanel_name'),
-                        invoi_ref=payer_code,
-                        amount=amount,
-                        level_id=updated[1].level_id if updated[1] else None,
-                        fee_category=updated[1].fee_category if updated[1] else None,
-                        reg_no=updated[1].reg_no if updated[1] else None,
-                        appl_Id=updated[1].appl_Id if updated[1] else None,
-                        user="URUBUTOPAY",
-                        bank_id=2
-                    )
-                    current_app.logger.info(f"Payment record created: {payment}")
-                    #sync the payment to quickbooks
-                    try:
-                        payment_id = payment.get('id')
-                        # Use the endpoint to sync single payment
-                        # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
-                        from application.config_files.payment_sync import sync_payment_to_quickbooks_task
-                        response = sync_payment_to_quickbooks_task.delay(payment_id)
-                        
-                    except Exception as e:
-                        current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
-                        current_app.logger.error(traceback.format_exc())
-                except Exception as e:
-                    current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
-                    current_app.logger.error(traceback.format_exc())
+            return jsonify({
+                "message": "Wallet processed successfully",
+                "status": 200
+            }), 200
+
         except Exception as e:
-            current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
+            current_app.logger.error(f"Wallet processing failed: {str(e)}")
             current_app.logger.error(traceback.format_exc())
+            return jsonify({
+                "message": "Internal server error",
+                "status": 500
+            }), 500
+
     elif transaction_status == "PENDING_SETTLEMENT":  # tHIS SHOWS THAT THE STUDENT HAS PAID, ONLY THAT THE BANK HAS NOT CREDITED THE MERCHANT
         current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} is pending.")
         # WE update the balance because the student has paid, only that the bank has not credited the merchant
-        try:
-            updated = TblImvoice.update_invoice_balance(payer_code, amount)
-            current_app.logger.info(f"Invoice {payer_code} balance updated: {updated}")
-            # Make sure the invoice balance has been updated before creating payment record
-            if updated[0] is not None: # The method returns (new_balance, invoice) tuple
-                # Create payment record
-                try:
-                    payment = Payment.create_payment(
-                    external_transaction_id=transaction_id,
-                    description=f"Urubuto Pay Via Microservice",
-                    trans_code=transaction_id,
-                    payment_chanel=data.get('payment_chanel_name'),
-                    invoi_ref=payer_code,
-                    level_id=updated[1].level_id if updated[1] else None,
-                    amount=amount,
-                    fee_category=updated[1].fee_category if updated[1] else None,
-                    reg_no=updated[1].reg_no if updated[1] else None,
-                    appl_Id=updated[1].appl_Id if updated[1] else None,
-                    user="URUBUTOPAY",
-                    bank_id=2
-                    )
-                    current_app.logger.info(f"Payment record created: {payment}")
-                    #sync the payment to quickbooks
-                    try:
-                        payment_id = payment.get('id')
-                        # Use the endpoint to sync single payment
-                        url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
-                        response = requests.post(url, timeout=30)
-                        current_app.logger.info(f"Payment {payment} sync to QuickBooks result: {response}")
-                    except Exception as e:
-                        current_app.logger.error(f"Error syncing payment {payment} to QuickBooks: {str(e)}")
-                        current_app.logger.error(traceback.format_exc())
-                except Exception as e:
-                    current_app.logger.error(f"Error creating payment record for transaction {transaction_id}: {str(e)}")
-                    current_app.logger.error(traceback.format_exc())
-        except Exception as e:
-            current_app.logger.error(f"Error updating invoice balance for {payer_code}: {str(e)}")
-            current_app.logger.error(traceback.format_exc())
     else:
         current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
         # Log the transaction status

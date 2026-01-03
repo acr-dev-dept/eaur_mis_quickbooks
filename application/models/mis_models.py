@@ -667,7 +667,7 @@ class TblStudentWallet(MISBaseModel):
             return False
 
     @classmethod
-    def topup_wallet(cls, reg_no, amount):
+    def topup_wallet(cls, reg_no,transaction_id, amount):
         """
             update wallet amount
         """
@@ -675,6 +675,9 @@ class TblStudentWallet(MISBaseModel):
             student_wallet = session.query(cls).filter(cls.reg_no == reg_no).first()
             if student_wallet:
                 student_wallet.dept += amount
+                student_wallet.external_transaction_id = transaction_id
+                student_wallet.trans_code = transaction_id
+                student_wallet.payment_date = datetime.now()
                 session.commit()
                 return True
             return False
