@@ -1,12 +1,32 @@
+#!/bin/bash
+
+LOG_DIR="logs"
+LOG_FILE="$LOG_DIR/gunicorn.log"
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
+
+echo "----------------------------------------" >> "$LOG_FILE"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Deployment script started" >> "$LOG_FILE"
+
 if pgrep -f gunicorn > /dev/null; then
-    echo "Gunicorn is running. Stopping it..."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn is running. Stopping it..." >> "$LOG_FILE"
     pkill -f gunicorn
-    echo "Gunicorn stopped."
+    sleep 2
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn stopped." >> "$LOG_FILE"
 else
-    echo "Gunicorn is not running."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn is not running." >> "$LOG_FILE"
 fi
 
-echo "Starting Gunicorn..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting Gunicorn..." >> "$LOG_FILE"
 
-gunicorn app:app -w 2 -k gevent --worker-connections 20000 -b 0.0.0.0:9000 --daemon
-echo "Gunicorn started."
+gunicorn app:app \
+    -w 2 \
+    -k gevent \
+    --worker-connections 20000 \
+    -b 0.0.0.0:9000 \
+    --access-logfile "$LOG_FILE" \
+    --error-logfile "$LOG_FILE" \
+    --daemon
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Gunicorn start command issued" >> "$LOG_FILE"
