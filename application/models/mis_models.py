@@ -667,20 +667,70 @@ class TblStudentWallet(MISBaseModel):
             return False
 
     @classmethod
-    def topup_wallet(cls, reg_no,transaction_id, amount):
+    def topup_wallet(cls, reg_no, transaction_id, amount):
         """
-            update wallet amount
+        Update wallet amount and record wallet history
         """
+        from application.models.mis_models import TblStudentWalletHistory
+        from datetime import datetime
+
+        if amount <= 0:
+            raise ValueError("Top-up amount must be greater than zero")
+
         with cls.get_session() as session:
-            student_wallet = session.query(cls).filter(cls.reg_no == reg_no).first()
-            if student_wallet:
-                student_wallet.dept += amount
-                student_wallet.external_transaction_id = transaction_id
-                student_wallet.trans_code = transaction_id
-                student_wallet.payment_date = datetime.now()
-                session.commit()
-                return True
-            return False
+
+            student_wallet = (
+                session.query(cls)
+                .filter(cls.reg_no == reg_no)
+                .with_for_update()
+                .first()
+            )
+
+            if not student_wallet:
+                return False
+
+            # Idempotency check (critical)
+            existing_history = (
+                session.query(TblStudentWalletHistory)
+                .filter(
+                    TblStudentWalletHistory.external_transaction_id == transaction_id
+                )
+                .first()
+            )
+
+            if existing_history:
+                return True  # already processed safely
+
+            balance_before = student_wallet.dept or 0.0
+            balance_after = balance_before + amount
+
+            # Record wallet history (ledger)
+            history = TblStudentWalletHistory(
+                wallet_id=student_wallet.id,
+                reg_no=student_wallet.reg_no,
+                reference_number=student_wallet.reference_number,
+                transaction_type="TOPUP",
+                amount=amount,
+                balance_before=balance_before,
+                balance_after=balance_after,
+                trans_code=transaction_id,
+                external_transaction_id=transaction_id,
+                payment_chanel=student_wallet.payment_chanel,
+                bank_id=student_wallet.bank_id,
+                comment="Wallet top-up",
+                created_by="SYSTEM"
+            )
+            session.add(history)
+
+            # Update wallet balance
+            student_wallet.dept = balance_after
+            student_wallet.external_transaction_id = transaction_id
+            student_wallet.trans_code = transaction_id
+            student_wallet.payment_date = datetime.now()
+
+            session.commit()
+            return True
+
 
     @classmethod
     def get_by_external_transaction_id(cls, external_transaction_id):
@@ -689,6 +739,130 @@ class TblStudentWallet(MISBaseModel):
             if student_wallet:
                 return True
             return False
+
+class TblStudentWalletHistory(MISBaseModel):
+    """Ledger / history for wallet transactions"""
+    __tablename__ = "tbl_student_wallet_history"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    wallet_id = db.Column(
+        db.Integer,
+        db.ForeignKey("tbl_student_wallet.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    reg_no = db.Column(db.String(200), nullable=True, index=True)
+    reference_number = db.Column(db.String(255), nullable=True)
+
+    transaction_type = db.Column(
+        db.Enum("TOPUP", "DEBIT", "REFUND", "ADJUSTMENT", name="wallet_transaction_type"),
+        nullable=False
+    )
+
+    amount = db.Column(db.Float, nullable=False)
+
+    balance_before = db.Column(db.Float, nullable=False)
+    balance_after = db.Column(db.Float, nullable=False)
+
+    trans_code = db.Column(db.String(255), nullable=True)
+    external_transaction_id = db.Column(db.Text, nullable=True, index=True)
+
+    payment_chanel = db.Column(db.String(100), nullable=True)
+    bank_id = db.Column(db.Integer, nullable=True)
+
+    comment = db.Column(db.String(900), nullable=True)
+
+    created_by = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP")
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "external_transaction_id",
+            name="uq_wallet_history_external_transaction"
+        ),
+    )
+
+    def __repr__(self):
+        return (
+            f"<TblStudentWalletHistory "
+            f"id={self.id} "
+            f"wallet_id={self.wallet_id} "
+            f"reg_no={self.reg_no} "
+            f"type={self.transaction_type} "
+            f"amount={self.amount}>"
+        )
+
+
+    def to_dict(self):
+        """Serialize wallet history record"""
+        return {
+            "id": self.id,
+            "wallet_id": self.wallet_id,
+            "reg_no": self.reg_no,
+            "reference_number": self.reference_number,
+            "transaction_type": self.transaction_type,
+            "amount": float(self.amount) if self.amount is not None else 0.0,
+            "balance_before": float(self.balance_before),
+            "balance_after": float(self.balance_after),
+            "trans_code": self.trans_code,
+            "external_transaction_id": self.external_transaction_id,
+            "payment_chanel": self.payment_chanel,
+            "bank_id": self.bank_id,
+            "comment": self.comment,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+    @classmethod
+    def record_history(
+        cls,
+        *,
+        wallet,
+        transaction_type,
+        amount,
+        balance_before,
+        balance_after,
+        transaction_id=None,
+        payment_chanel=None,
+        bank_id=None,
+        reference_number=None,
+        comment=None,
+        created_by=None
+    ):
+        """
+            Record an immutable wallet history entry.
+            This method MUST be called inside an active DB transaction.
+        """
+
+        if amount <= 0:
+            raise ValueError("Amount must be greater than zero")
+        
+        with cls.get_session() as session:
+            history = cls(
+                wallet_id=wallet.id,
+                reg_no=wallet.reg_no,
+                reference_number=reference_number or wallet.reference_number,
+                transaction_type=transaction_type,
+                amount=amount,
+                balance_before=balance_before,
+                balance_after=balance_after,
+                trans_code=transaction_id,
+                external_transaction_id=transaction_id,
+                payment_chanel=payment_chanel,
+                bank_id=bank_id,
+                comment=comment,
+                created_by=created_by
+            )
+            session.add(history)
+            session.commit()
+            return history
+
 
 
 class TblBank(MISBaseModel):

@@ -9,6 +9,7 @@ import jwt
 import os
 from application.services.payment_sync import PaymentSyncService
 import requests
+import random
 
 # Import the Celery task for syncing payment to QuickBooks
 
@@ -486,9 +487,9 @@ def payment_callback():
                 current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(
-                    reg_prg_id=reg_no,
+                    reg_prg_id=random.randint(100000, 999999),
                     reg_no=reg_no,
-                    reference_number=payer_code,
+                    reference_number=random.randint(100000000, 999999999),
                     trans_code=transaction_id,
                     external_transaction_id=transaction_id,
                     payment_chanel=payment_chanel,
