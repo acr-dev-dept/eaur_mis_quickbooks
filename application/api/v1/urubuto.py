@@ -275,7 +275,7 @@ def payer_validation():
             "data": {
                 "merchant_code": merchant_code,
                 "payer_code": payer_code,
-                "payer_names": "Unknown Student",
+                "payer_names": payer_names or "Unknown Student",
                 "department_code": "0",
                 "department_name": "Unknown Department",
                 "class_name": "Unknown Class",
