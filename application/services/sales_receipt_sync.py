@@ -290,7 +290,7 @@ class SalesReceiptSyncService:
 
             # ---- Mapping phase ----
             try:
-                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(sales_receipt)
+                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(is_update=False,sales_receipt=sales_receipt)
             except Exception as e:
                 map_error = str(e)
                 qb_sales_receipt_data = None
