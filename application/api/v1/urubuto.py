@@ -468,6 +468,7 @@ def payment_callback():
                 }), 404
 
             reg_no = student.reg_no if student else applicant.tracking_id
+            is_student = True if student else False
 
             # Idempotency check (CRITICAL)
             existing_wallet = TblStudentWallet.get_by_external_transaction_id(transaction_id)
@@ -502,8 +503,10 @@ def payment_callback():
                     bank_id=2
                 )
                 current_app.logger.info(f"Wallet created: {created}")
-                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                sync_wallet_to_quickbooks_task.delay(created.get('id'))
+                if is_student:
+                    from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                    sync_wallet_to_quickbooks_task.delay(created.get('id'))
+                
             from application.models.central_models import IntegrationLog
         
             try:
