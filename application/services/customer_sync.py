@@ -1109,7 +1109,7 @@ class CustomerSyncService:
                 )
         if parse_date(applicant.get('application_date')) < datetime(2024, 9, 1).date():
             return CustomerSyncResult(
-                customer_id=applicant.get['tracking_id'],
+                customer_id=applicant.get('tracking_id'),
                 customer_type='Applicant',
                 success=False,
                 quickbooks_id=None,
