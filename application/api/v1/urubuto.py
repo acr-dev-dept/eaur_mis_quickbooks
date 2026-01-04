@@ -496,6 +496,7 @@ def payment_callback():
                     payment_date=date.today(),
                     is_paid="Yes",
                     dept=amount,
+                    fee_category=1,
                     bank_id=2
                 )
                 current_app.logger.info(f"Wallet created: {created}")

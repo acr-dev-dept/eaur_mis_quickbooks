@@ -63,7 +63,7 @@ class SalesReceiptSyncService:
         self.success = None
         
 
-    def map_sales_receipt_to_quickbooks(self, sales_receipt: TblStudentWallet) -> dict:
+    def map_sales_receipt_to_quickbooks(self, is_update: bool, sales_receipt: TblStudentWallet) -> dict:
         """
             Map MIS sales receipt data to quickbooks format.
         """
@@ -104,32 +104,51 @@ class SalesReceiptSyncService:
         bank_qb_id = bank.get("qk_id")
         location_id = TblCampus.get_location_id_by_camp_id(student_camp_id)
 
-
-
-        quickbooks_data = {
-            "Line": [
-                {
-                    "DetailType": "SalesItemLineDetail",
-                    "Amount": float(sales_receipt.dept),
+        if is_update == True:
+            quickbooks_data = {
+                "SyncToken": sales_receipt.sync_token, 
+                "Line": [
+                    {
+                    "DetailType": "SalesItemLineDetail", 
+                    "Amount": float(sales_receipt.dept), 
+                    "Description": "Updated wallet amount", 
                     "SalesItemLineDetail": {
+                        "Qty": 1, 
+                        "UnitPrice": float(sales_receipt.dept), 
                         "ItemRef": {
-                            "value": item_id
+                        "value": item_id
                         }
                     }
-                }
-            ],
-            "CustomerRef": {
-                "value": customer_id
-            },
+                    }
+                ], 
+                "Id": sales_receipt.quickbooks_id, 
+                "sparse": True,
+            }
+        else:
+            quickbooks_data = {
+                "Line": [
+                    {
+                        "DetailType": "SalesItemLineDetail",
+                        "Amount": float(sales_receipt.dept),
+                        "SalesItemLineDetail": {
+                            "ItemRef": {
+                                "value": item_id
+                            }
+                        }
+                    }
+                ],
+                "CustomerRef": {
+                    "value": customer_id
+                },
 
-            "TotalAmt":float(sales_receipt.dept),
+                "TotalAmt":float(sales_receipt.dept),
 
-            "DepositToAccountRef" :{
-                "value": bank_qb_id
-            },
-            "DepartmentRef": {"value": int(location_id) if location_id else ''}
-        
-        }
+                "DepositToAccountRef" :{
+                    "value": bank_qb_id
+                },
+                "DepartmentRef": {"value": int(location_id) if location_id else ''}
+            
+            }
         current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
         return quickbooks_data
         
@@ -329,7 +348,7 @@ class SalesReceiptSyncService:
 
             # ---- Mapping phase ----
             try:
-                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(sales_receipt)
+                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(True,sales_receipt)
             except Exception as e:
                 map_error = str(e)
                 qb_sales_receipt_data = None
@@ -347,7 +366,7 @@ class SalesReceiptSyncService:
             # ---- Send to QuickBooks ----
             self.logger.info(f"Sending SalesReceipt {sales_receipt.id}")
 
-            response = qb_service.create_sales_receipt(
+            response = qb_service.update_sales_receipt(
                 qb_service.realm_id,
                 qb_sales_receipt_data
             )
@@ -407,6 +426,139 @@ class SalesReceiptSyncService:
             # ---- System-level failure ----
             error_msg = str(e)
             self.logger.exception(f"Unexpected error syncing sales_receipt {sales_receipt.id}")
+
+            self._update_sales_receipt_sync_status(
+                sales_receipt.id,
+                SalesReceiptSyncStatus.FAILED.value
+            )
+            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg
+            }
+
+    def update_single_sales_receipt(self,wallet_id: int) -> dict:
+        """
+        Update an already-synced SalesReceipt in QuickBooks.
+        Requires quickbooks_id and sync_token to be present.
+        """
+
+        sales_receipt = TblStudentWallet.get_sales_data(wallet_id)
+        if not sales_receipt:
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": "Sales receipt not found",
+                "details": None
+            }
+
+        if not sales_receipt.quickbooks_id or not sales_receipt.sync_token:
+            return {
+                "status": "NOT_SYNCED",
+                "success": False,
+                "error_message": "Sales receipt has not been synced before",
+                "details": None
+            }
+
+        try:
+            qb_service = self._get_qb_service()
+
+            # ---- Mapping phase ----
+            try:
+                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(
+                    sales_receipt,
+                    is_update=True
+                )
+
+                # Required for QuickBooks update
+                qb_sales_receipt_data["Id"] = sales_receipt.quickbooks_id
+                qb_sales_receipt_data["SyncToken"] = sales_receipt.sync_token
+
+            except Exception as e:
+                map_error = str(e)
+
+                self._update_sales_receipt_sync_status(
+                    sales_receipt.id,
+                    SalesReceiptSyncStatus.FAILED.value
+                )
+                self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
+
+                return {
+                    "status": "FAILED",
+                    "success": False,
+                    "error_message": map_error
+                }
+
+            # ---- Send update to QuickBooks ----
+            self.logger.info(
+                f"Updating SalesReceipt {sales_receipt.id} "
+                f"(QB ID: {sales_receipt.quickbooks_id})"
+            )
+
+            response = qb_service.update_sales_receipt(
+                qb_service.realm_id,
+                qb_sales_receipt_data
+            )
+
+            self.logger.debug(
+                f"QuickBooks update response for sales_receipt {sales_receipt.id}: "
+                f"{json.dumps(response, cls=EnhancedJSONEncoder)}"
+            )
+
+            # ---- Success path ----
+            if 'SalesReceipt' in response:
+                qb_id = response['SalesReceipt']['Id']
+                new_sync_token = response['SalesReceipt'].get('SyncToken')
+
+                self._update_sales_receipt_sync_status(
+                    sales_receipt.id,
+                    SalesReceiptSyncStatus.SYNCED.value,
+                    quickbooks_id=qb_id,
+                    sync_token=new_sync_token
+                )
+
+                self._log_sync_audit(
+                    sales_receipt.id,
+                    'SUCCESS',
+                    f"Updated QuickBooks SalesReceipt ID: {qb_id}"
+                )
+
+                return {
+                    "status": "UPDATED_SUCCESSFULLY",
+                    "success": True,
+                    "error_message": f"SalesReceipt {sales_receipt.id} updated successfully",
+                    "details": response,
+                    "quickbooks_id": qb_id
+                }
+
+            # ---- QuickBooks business error ----
+            error_msg = (
+                response.get('Fault', {})
+                .get('Error', [{}])[0]
+                .get('Detail', 'Unknown QuickBooks error')
+            )
+
+            self._update_sales_receipt_sync_status(
+                sales_receipt.id,
+                SalesReceiptSyncStatus.FAILED.value
+            )
+            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg,
+                "details": response
+            }
+
+        except Exception as e:
+            # ---- System-level failure ----
+            error_msg = str(e)
+            self.logger.exception(
+                f"Unexpected error updating sales_receipt {sales_receipt.id}"
+            )
 
             self._update_sales_receipt_sync_status(
                 sales_receipt.id,

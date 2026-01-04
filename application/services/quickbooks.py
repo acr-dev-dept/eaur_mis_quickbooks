@@ -1721,7 +1721,28 @@ class QuickBooks:
                 }
             }
         
-
+    def update_sales_receipt(self, realm_id, sales_receipt_data):
+        """
+        Update sales receipts in quickbooks.
+        """
+        enpoint = f"{realm_id}/salesreceipt"
+        
+        try:
+            current_app.logger.info(f"Updating sales receipt with data: {sales_receipt_data}")
+            response = self.make_request(enpoint, method="POST", data=sales_receipt_data)
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error updating sales receipt: {str(e)}")
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error updating sales receipt: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
 
 
 def setup_quickbooks_from_env():
