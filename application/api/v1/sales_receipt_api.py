@@ -101,3 +101,83 @@ def create_sales_receipt():
             'details': traceback_str,
             'timestamp': datetime.now().isoformat()
         }), 500
+
+@sales_receipt_api.route('/update', methods=['POST'])
+def update_sales_receipt():
+    """
+    API endpoint to update an existing SalesReceipt in QuickBooks.
+
+    Expects JSON payload:
+    {
+        "id": 123
+    }
+    """
+
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        payload = request.get_json(silent=True) or {}
+        wallet_id = payload.get("id")
+
+        if not wallet_id:
+            return jsonify({
+                "success": False,
+                "error": "Invalid input",
+                "message": "id is required",
+                "timestamp": datetime.now().isoformat()
+            }), 400
+
+        sales_data = TblStudentWallet.get_sales_data(wallet_id)
+
+        if not sales_data:
+            return jsonify({
+                "success": False,
+                "message": "Sales receipt not found",
+                "timestamp": datetime.now().isoformat()
+            }), 404
+
+        if sales_data.is_paid.lower() != "yes":
+            return jsonify({
+                "success": False,
+                "message": "Wallet data is not paid",
+                "timestamp": datetime.now().isoformat()
+            }), 400
+
+        # Must already be synced to update
+        if not sales_data.quickbooks_id or not sales_data.sync_token:
+            return jsonify({
+                "success": False,
+                "message": "Sales receipt has not been synced before",
+                "timestamp": datetime.now().isoformat()
+            }), 400
+
+        sync_service = SalesReceiptSyncService()
+        result = sync_service.update_single_sales_receipt(wallet_id)
+
+        if not result.get("success"):
+            return jsonify({
+                "success": False,
+                "error": "Failed to update sales receipt",
+                "details": result.get("error_message"),
+                "timestamp": datetime.now().isoformat()
+            }), 500
+
+        return jsonify({
+            "success": True,
+            "data": result,
+            "message": "Sales receipt updated successfully",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        current_app.logger.exception("Error updating sales receipt")
+
+        return jsonify({
+            "success": False,
+            "error": "Failed to update sales receipt",
+            "details": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
