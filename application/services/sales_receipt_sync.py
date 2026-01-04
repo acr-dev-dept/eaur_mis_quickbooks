@@ -93,7 +93,7 @@ class SalesReceiptSyncService:
             current_app.logger.info("Bank not found in database")
             raise Exception("Bank not found in database")
 
-        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no, sales_receipt.payment_date)
+        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no)
         
         if not student_camp_id:
             current_app.logger.info("Student campus ID not found in database")
