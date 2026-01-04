@@ -389,122 +389,255 @@ class SalesReceiptSyncService:
         
     def sync_single_sales_receipt_async(self, wallet_id: int) -> dict:
         """
-        Synchronize a single sales_receipt to QuickBooks.
-        Returns a JSON-serializable dict for both Celery and Flask consumption.
+        Synchronize a single sales receipt to QuickBooks.
+        
+        Args:
+            wallet_id: ID of the wallet transaction to sync
+            
+        Returns:
+            dict: JSON-serializable result containing status, success flag, and details
         """
+        # Validate sales receipt exists
         sales_receipt = TblStudentWallet.get_sales_data(wallet_id)
         if not sales_receipt:
-            return {
-                "status": "FAILED",
-                "success": False,
-                "error_message": "Sales receipt not found",
-                "details": None
-            }
+            return self._create_response(
+                status="FAILED",
+                success=False,
+                error_message="Sales receipt not found"
+            )
 
+        # Check if already synced
         if sales_receipt.quickbooks_id:
-            return {
-                "status": "ALREADY_SYNCED",
-                "success": True,
-                "error_message": "Sales receipt already synced",
-                "details": None,
-                "quickbooks_id": sales_receipt.quickbooks_id
-            }
+            return self._create_response(
+                status="ALREADY_SYNCED",
+                success=True,
+                error_message="Sales receipt already synced",
+                quickbooks_id=sales_receipt.quickbooks_id
+            )
 
         try:
             qb_service = self._get_qb_service()
+            
+            # Determine if this is an update or create operation
+            is_update = bool(sales_receipt.quickbooks_id)
+            
+            # Map sales receipt to QuickBooks format
+            qb_sales_receipt_data = self._map_sales_receipt(sales_receipt, is_update)
+            if not qb_sales_receipt_data:
+                return self._handle_mapping_failure(sales_receipt.id)
+            
+            # Send to QuickBooks
+            response = self._send_to_quickbooks(qb_service, qb_sales_receipt_data, is_update)
+            
+            # Process QuickBooks response
+            return self._process_quickbooks_response(sales_receipt.id, response)
+            
+        except Exception as e:
+            return self._handle_system_failure(sales_receipt.id, e)
 
-            # ---- Mapping phase ----
-            try:
-                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(True,sales_receipt)
-            except Exception as e:
-                map_error = str(e)
-                qb_sales_receipt_data = None
-                self._update_sales_receipt_sync_status(
-                    sales_receipt.id,
-                    SalesReceiptSyncStatus.FAILED.value
-                )
-                self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
-                return {
-                    "status": "FAILED",
-                    "success": False,
-                    "error_message": map_error
-                }
 
-            # ---- Send to QuickBooks ----
-            self.logger.info(f"Sending SalesReceipt {sales_receipt.id}")
-
-            response = qb_service.update_sales_receipt(
-                qb_service.realm_id,
-                qb_sales_receipt_data
+    def _map_sales_receipt(self, sales_receipt: TblStudentWallet, is_update: bool) -> dict | None:
+        """
+        Map sales receipt to QuickBooks format with error handling.
+        
+        Args:
+            sales_receipt: Sales receipt to map
+            is_update: Whether this is an update operation
+            
+        Returns:
+            dict | None: Mapped QuickBooks data or None if mapping fails
+        """
+        try:
+            return SalesReceiptSyncService.map_sales_receipt_to_quickbooks(
+                is_update=is_update,
+                sales_receipt=sales_receipt
             )
-
-            self.logger.debug(
-                f"QuickBooks response for sales_receipt {sales_receipt.id}: "
-                f"{json.dumps(response, cls=EnhancedJSONEncoder)}"
+        except Exception as e:
+            self.logger.error(f"Mapping failed for sales receipt {sales_receipt.id}: {str(e)}")
+            self._update_sales_receipt_sync_status(
+                sales_receipt.id,
+                SalesReceiptSyncStatus.FAILED.value
             )
+            self._log_sync_audit(sales_receipt.id, 'ERROR', f"Mapping error: {str(e)}")
+            return None
 
-            # ---- Success path ----
-            if 'SalesReceipt' in response:
-                qb_id = response['SalesReceipt']['Id']
-                sync_token = response['SalesReceipt'].get('SyncToken')
 
-                self._update_sales_receipt_sync_status(
-                    sales_receipt.id,
-                    SalesReceiptSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_id,
-                    sync_token=sync_token
-                )
+    def _send_to_quickbooks(self, qb_service, qb_data: dict, is_update: bool) -> dict:
+        """
+        Send sales receipt data to QuickBooks API.
+        
+        Args:
+            qb_service: QuickBooks service instance
+            qb_data: Formatted QuickBooks data
+            is_update: Whether this is an update operation
+            
+        Returns:
+            dict: QuickBooks API response
+        """
+        self.logger.info(f"Sending {'update' if is_update else 'create'} request to QuickBooks")
+        
+        if is_update:
+            response = qb_service.update_sales_receipt(qb_service.realm_id, qb_data)
+        else:
+            response = qb_service.create_sales_receipt(qb_service.realm_id, qb_data)
+        
+        self.logger.debug(
+            f"QuickBooks response: {json.dumps(response, cls=EnhancedJSONEncoder)}"
+        )
+        
+        return response
 
-                self._log_sync_audit(
-                    sales_receipt.id,
-                    'SUCCESS',
-                    f"Synced to QuickBooks ID: {qb_id}"
-                )
 
-                return {
-                    "status": "SYNCED_SUCCESSFULLY",
-                    "success": True,
-                    "error_message": f"SalesReceipt {sales_receipt.id} synchronized successfully",
-                    "details": response,
-                    "quickbooks_id": qb_id
-                }
+    def _process_quickbooks_response(self, sales_receipt_id: int, response: dict) -> dict:
+        """
+        Process QuickBooks API response and update local records.
+        
+        Args:
+            sales_receipt_id: ID of the sales receipt being synced
+            response: QuickBooks API response
+            
+        Returns:
+            dict: Standardized response dictionary
+        """
+        # Check for successful response
+        if 'SalesReceipt' in response:
+            qb_id = response['SalesReceipt']['Id']
+            sync_token = response['SalesReceipt'].get('SyncToken')
+            
+            self._update_sales_receipt_sync_status(
+                sales_receipt_id,
+                SalesReceiptSyncStatus.SYNCED.value,
+                quickbooks_id=qb_id,
+                sync_token=sync_token
+            )
+            
+            self._log_sync_audit(
+                sales_receipt_id,
+                'SUCCESS',
+                f"Synced to QuickBooks ID: {qb_id}"
+            )
+            
+            return self._create_response(
+                status="SYNCED_SUCCESSFULLY",
+                success=True,
+                error_message=f"SalesReceipt {sales_receipt_id} synchronized successfully",
+                details=response,
+                quickbooks_id=qb_id
+            )
+        
+        # Handle QuickBooks business error
+        error_msg = self._extract_quickbooks_error(response)
+        
+        self._update_sales_receipt_sync_status(
+            sales_receipt_id,
+            SalesReceiptSyncStatus.FAILED.value
+        )
+        self._log_sync_audit(sales_receipt_id, 'ERROR', error_msg)
+        
+        return self._create_response(
+            status="FAILED",
+            success=False,
+            error_message=error_msg,
+            details=response
+        )
 
-            # ---- QuickBooks business error ----
-            error_msg = (
+
+    def _handle_mapping_failure(self, sales_receipt_id: int) -> dict:
+        """
+        Handle failure during sales receipt mapping phase.
+        
+        Args:
+            sales_receipt_id: ID of the sales receipt
+            
+        Returns:
+            dict: Standardized error response
+        """
+        return self._create_response(
+            status="FAILED",
+            success=False,
+            error_message="Failed to map sales receipt to QuickBooks format"
+        )
+
+
+    def _handle_system_failure(self, sales_receipt_id: int, exception: Exception) -> dict:
+        """
+        Handle system-level failures during sync process.
+        
+        Args:
+            sales_receipt_id: ID of the sales receipt
+            exception: The exception that was raised
+            
+        Returns:
+            dict: Standardized error response
+        """
+        error_msg = str(exception)
+        self.logger.exception(f"Unexpected error syncing sales receipt {sales_receipt_id}")
+        
+        self._update_sales_receipt_sync_status(
+            sales_receipt_id,
+            SalesReceiptSyncStatus.FAILED.value
+        )
+        self._log_sync_audit(sales_receipt_id, 'ERROR', error_msg)
+        
+        return self._create_response(
+            status="FAILED",
+            success=False,
+            error_message=error_msg
+        )
+
+
+    def _extract_quickbooks_error(self, response: dict) -> str:
+        """
+        Extract error message from QuickBooks API response.
+        
+        Args:
+            response: QuickBooks API response
+            
+        Returns:
+            str: Error message
+        """
+        try:
+            return (
                 response.get('Fault', {})
                 .get('Error', [{}])[0]
                 .get('Detail', 'Unknown QuickBooks error')
             )
+        except (KeyError, IndexError, TypeError):
+            return 'Unknown QuickBooks error'
 
-            self._update_sales_receipt_sync_status(
-                sales_receipt.id,
-                SalesReceiptSyncStatus.FAILED.value
-            )
-            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
 
-            return {
-                "status": "FAILED",
-                "success": False,
-                "error_message": error_msg,
-                "details": response
-            }
-
-        except Exception as e:
-            # ---- System-level failure ----
-            error_msg = str(e)
-            self.logger.exception(f"Unexpected error syncing sales_receipt {sales_receipt.id}")
-
-            self._update_sales_receipt_sync_status(
-                sales_receipt.id,
-                SalesReceiptSyncStatus.FAILED.value
-            )
-            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
-
-            return {
-                "status": "FAILED",
-                "success": False,
-                "error_message": error_msg
-            }
+    def _create_response(
+        self, 
+        status: str, 
+        success: bool, 
+        error_message: str | None = None,
+        details: dict | None = None,
+        quickbooks_id: str | None = None
+    ) -> dict:
+        """
+        Create a standardized response dictionary.
+        
+        Args:
+            status: Status code (e.g., "SYNCED_SUCCESSFULLY", "FAILED")
+            success: Whether the operation succeeded
+            error_message: Optional error or success message
+            details: Optional additional details
+            quickbooks_id: Optional QuickBooks ID
+            
+        Returns:
+            dict: Standardized response dictionary
+        """
+        response = {
+            "status": status,
+            "success": success,
+            "error_message": error_message,
+            "details": details
+        }
+        
+        if quickbooks_id:
+            response["quickbooks_id"] = quickbooks_id
+        
+        return response
 
     def update_single_sales_receipt(self,wallet_id: int) -> dict:
         """
