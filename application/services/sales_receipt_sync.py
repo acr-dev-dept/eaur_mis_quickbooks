@@ -65,92 +65,159 @@ class SalesReceiptSyncService:
 
     def map_sales_receipt_to_quickbooks(self, is_update: bool, sales_receipt: TblStudentWallet) -> dict:
         """
-            Map MIS sales receipt data to quickbooks format.
+        Map MIS sales receipt data to QuickBooks format.
+        
+        Args:
+            is_update: Whether this is an update operation or new record
+            sales_receipt: Student wallet transaction record
+            
+        Returns:
+            dict: QuickBooks-formatted sales receipt data
+            
+        Raises:
+            ValueError: If sales_receipt is None or required data is missing
         """
-
         if not sales_receipt:
             raise ValueError("sales_receipt cannot be None")
 
-
-        current_app.logger.info("Mapping sales receipt to quickbooks format...")
-        item = TblIncomeCategory.get_by_id(sales_receipt.fee_category)
+        current_app.logger.info("Mapping sales receipt to QuickBooks format...")
         
-
-        if not item or not item.income_account_qb:
-            current_app.logger.info("Item not found in database")
-            raise Exception("Item not found in database")
-
+        # Fetch and validate required data
+        item_id = self._get_item_id(sales_receipt.fee_category)
+        customer_id = self._get_customer_id(sales_receipt.reg_no)
+        bank_qb_id = self._get_bank_id(sales_receipt.bank_id)
+        location_id = self._get_location_id(sales_receipt.reg_no)
         
-        customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
-        if not customer or not customer.qk_id:
-            current_app.logger.info("Customer not found in database")
-            raise Exception("Customer not found in database")
-
-        
-        
-        bank = TblBank.get_bank_details(sales_receipt.bank_id)
-        if not bank:
-            current_app.logger.info("Bank not found in database")
-            raise Exception("Bank not found in database")
-
-        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no)
-        
-        if not student_camp_id:
-            current_app.logger.info("Student campus ID not found in database")
-            raise Exception("Student campus ID not found in database")
-        
-        item_id = item.QuickBk_ctgId
-        customer_id = customer.qk_id
-        bank_qb_id = bank.get("qk_id")
-        location_id = TblCampus.get_location_id_by_camp_id(student_camp_id)
-
-        if is_update == True:
-            quickbooks_data = {
-                "SyncToken": sales_receipt.sync_token, 
-                "Line": [
-                    {
-                    "DetailType": "SalesItemLineDetail", 
-                    "Amount": float(sales_receipt.dept), 
-                    "Description": "Updated wallet amount", 
-                    "SalesItemLineDetail": {
-                        "Qty": 1, 
-                        "UnitPrice": float(sales_receipt.dept), 
-                        "ItemRef": {
-                        "value": item_id
-                        }
-                    }
-                    }
-                ], 
-                "Id": sales_receipt.quickbooks_id, 
-                "sparse": True,
+        # Build the base line item structure
+        amount = float(sales_receipt.dept)
+        line_item = {
+            "DetailType": "SalesItemLineDetail",
+            "Amount": amount,
+            "SalesItemLineDetail": {
+                "ItemRef": {"value": item_id}
             }
+        }
+        
+        # Add description for updates
+        if is_update:
+            line_item["Description"] = "Updated wallet amount"
+            line_item["SalesItemLineDetail"]["Qty"] = 1
+            line_item["SalesItemLineDetail"]["UnitPrice"] = amount
+        
+        # Build base QuickBooks data structure
+        quickbooks_data = {"Line": [line_item]}
+        
+        # Add update-specific or create-specific fields
+        if is_update:
+            quickbooks_data.update({
+                "SyncToken": sales_receipt.sync_token,
+                "Id": sales_receipt.quickbooks_id,
+                "sparse": True
+            })
         else:
-            quickbooks_data = {
-                "Line": [
-                    {
-                        "DetailType": "SalesItemLineDetail",
-                        "Amount": float(sales_receipt.dept),
-                        "SalesItemLineDetail": {
-                            "ItemRef": {
-                                "value": item_id
-                            }
-                        }
-                    }
-                ],
-                "CustomerRef": {
-                    "value": customer_id
-                },
-
-                "TotalAmt":float(sales_receipt.dept),
-
-                "DepositToAccountRef" :{
-                    "value": bank_qb_id
-                },
-                "DepartmentRef": {"value": int(location_id) if location_id else ''}
-            
-            }
-        current_app.logger.info("Sales receipt mapped to quickbooks format successfully.")
+            quickbooks_data.update({
+                "CustomerRef": {"value": customer_id},
+                "TotalAmt": amount,
+                "DepositToAccountRef": {"value": bank_qb_id},
+                "DepartmentRef": {"value": location_id}
+            })
+        
+        current_app.logger.info("Sales receipt mapped to QuickBooks format successfully.")
         return quickbooks_data
+
+
+    def _get_item_id(self, fee_category_id: int) -> str:
+        """
+        Get QuickBooks item ID for a fee category.
+        
+        Args:
+            fee_category_id: Fee category identifier
+            
+        Returns:
+            str: QuickBooks item ID
+            
+        Raises:
+            ValueError: If item not found or missing QuickBooks ID
+        """
+        item = TblIncomeCategory.get_by_id(fee_category_id)
+        
+        if not item or not item.income_account_qb:
+            current_app.logger.error(f"Income category {fee_category_id} not found or missing QuickBooks mapping")
+            raise ValueError(f"Income category {fee_category_id} not found in database or missing QuickBooks account")
+        
+        return item.QuickBk_ctgId
+
+
+    def _get_customer_id(self, reg_no: str) -> str:
+        """
+        Get QuickBooks customer ID for a student.
+        
+        Args:
+            reg_no: Student registration number
+            
+        Returns:
+            str: QuickBooks customer ID
+            
+        Raises:
+            ValueError: If customer not found or missing QuickBooks ID
+        """
+        customer = TblPersonalUg.get_student_by_reg_no(reg_no)
+        
+        if not customer or not customer.qk_id:
+            current_app.logger.error(f"Student {reg_no} not found or missing QuickBooks ID")
+            raise ValueError(f"Customer {reg_no} not found in database or missing QuickBooks ID")
+        
+        return customer.qk_id
+
+
+    def _get_bank_id(self, bank_id: int) -> str:
+        """
+        Get QuickBooks account ID for a bank.
+        
+        Args:
+            bank_id: Bank identifier
+            
+        Returns:
+            str: QuickBooks account ID
+            
+        Raises:
+            ValueError: If bank not found or missing QuickBooks ID
+        """
+        bank = TblBank.get_bank_details(bank_id)
+        
+        if not bank or not bank.get("qk_id"):
+            current_app.logger.error(f"Bank {bank_id} not found or missing QuickBooks ID")
+            raise ValueError(f"Bank {bank_id} not found in database or missing QuickBooks ID")
+        
+        return bank.get("qk_id")
+
+
+    def _get_location_id(self, reg_no: str) -> int:
+        """
+        Get QuickBooks location/department ID for a student's campus.
+        
+        Args:
+            reg_no: Student registration number
+            
+        Returns:
+            int: QuickBooks location ID
+            
+        Raises:
+            ValueError: If campus or location not found
+        """
+        campus_id = TblRegisterProgramUg.get_campus_id_by_reg_no(reg_no)
+        
+        if not campus_id:
+            current_app.logger.error(f"Campus ID not found for student {reg_no}")
+            raise ValueError(f"Campus ID not found for student {reg_no}")
+        
+        location_id = TblCampus.get_location_id_by_camp_id(campus_id)
+        
+        if not location_id:
+            current_app.logger.error(f"Location ID not found for campus {campus_id}")
+            raise ValueError(f"QuickBooks location ID not found for campus {campus_id}")
+        
+        return int(location_id)
         
 
 
