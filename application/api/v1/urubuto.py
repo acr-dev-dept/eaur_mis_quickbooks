@@ -480,7 +480,7 @@ def payment_callback():
                     "status": 200
                 }), 200
 
-            wallet = TblStudentWallet.get_by_reference_number(payer_code)
+            wallet = TblStudentWallet.get_by_reg_no(payer_code)
 
             if wallet:
                 updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
