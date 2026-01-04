@@ -535,8 +535,7 @@ class SalesReceiptSyncService:
             # ---- Mapping phase ----
             try:
                 qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(
-                    sales_receipt,
-                    is_update=True
+                    True,sales_receipt
                 )
 
                 # Required for QuickBooks update
