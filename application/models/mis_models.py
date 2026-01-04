@@ -546,22 +546,13 @@ class TblStudentWallet(MISBaseModel):
 
     @classmethod
     def get_by_reg_no(cls, reg_no):
-        """
-        Get all wallet records for a student by registration number
-
-        Args:
-            reg_no (str): Student registration number
-
-        Returns:
-            list: List of wallet records as dictionaries
-        """
         try:
             with cls.get_session() as session:
-                records = session.query(cls).filter(cls.reg_no == reg_no).all()
-                return [r.to_dict() for r in records] if records else []
+                return session.query(cls).filter(cls.reg_no == reg_no).first()
         except Exception as e:
-            current_app.logger.error(f"Error getting wallet records for reg_no {reg_no}: {str(e)}")
-            return []
+            current_app.logger.error(f"Error getting wallet for reg_no {reg_no}: {str(e)}")
+            return None
+
 
     @classmethod
     def get_by_reference_number(cls, reference_number):
