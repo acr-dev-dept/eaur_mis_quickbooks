@@ -81,7 +81,7 @@ class SalesReceiptSyncService:
             raise Exception("Item not found in database")
 
         
-        customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no)
+        customer = TblPersonalUg.get_student_by_reg_no(sales_receipt.reg_no, None)
         if not customer or not customer.qk_id:
             current_app.logger.info("Customer not found in database")
             raise Exception("Customer not found in database")
@@ -93,7 +93,7 @@ class SalesReceiptSyncService:
             current_app.logger.info("Bank not found in database")
             raise Exception("Bank not found in database")
 
-        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no)
+        student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(sales_receipt.reg_no, )
         
         if not student_camp_id:
             current_app.logger.info("Student campus ID not found in database")
