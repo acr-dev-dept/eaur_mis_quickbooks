@@ -502,6 +502,8 @@ def payment_callback():
                     bank_id=2
                 )
                 current_app.logger.info(f"Wallet created: {created}")
+                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                sync_wallet_to_quickbooks_task.delay(created.id)
             from application.models.central_models import IntegrationLog
         
             try:
