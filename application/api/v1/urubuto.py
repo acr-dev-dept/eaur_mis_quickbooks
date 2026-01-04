@@ -484,6 +484,8 @@ def payment_callback():
 
             if wallet:
                 updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
+                from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
+                update_wallet_to_quickbooks_task.delay(wallet.id)
                 current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(

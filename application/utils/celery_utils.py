@@ -50,16 +50,12 @@ def make_celery(app):
             "application.config_files.wallet_sync.sync_wallet_to_quickbooks_task": {
                 "queue": "wallet_sync_queue"
             },
+            "application.config_files.wallet_sync.update_wallet_to_quickbooks_task": {
+                "queue": "wallet_sync_queue"
+            },
         },
         beat_schedule={
-            "sync_payments_every_midnight": {
-            "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
-            "schedule": crontab(minute='*/7')
-            },
-            "sync_invoices_every_midnight": {
-            "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-            "schedule": crontab(minute='*/6')
-        },
+            
 
         },
     )

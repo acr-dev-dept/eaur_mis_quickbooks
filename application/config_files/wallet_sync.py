@@ -16,3 +16,15 @@ def sync_wallet_to_quickbooks_task(self, wallet_id: int):
     # No need to create app or push context — it's automatic!
     service = SalesReceiptSyncService()
     return service.sync_single_sales_receipt_async(wallet_id)
+
+@celery.task(
+    bind=True,
+    name="application.config_files.wallet_sync.update_wallet_to_quickbooks_task",
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    retry_kwargs={"max_retries": 5},
+    retry_jitter=True,
+)
+def update_wallet_to_quickbooks_task(self, wallet_id: int):
+    service = SalesReceiptSyncService()
+    return service.update_single_sales_receipt(wallet_id)
