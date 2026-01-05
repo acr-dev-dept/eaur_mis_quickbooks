@@ -508,6 +508,7 @@ class TblStudentWallet(MISBaseModel):
     quickbooks_id = db.Column(db.String(255), nullable=True)
     sync_token = db.Column(db.String(10), nullable=True)
     sync_status = db.Column(db.Integer, nullable=True)
+    is_applicant = db.Column(db.Boolean, nullable=True)
 
 
 

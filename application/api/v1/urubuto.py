@@ -504,7 +504,8 @@ def payment_callback():
                     is_paid="Yes",
                     dept=amount,
                     fee_category=1,
-                    bank_id=2
+                    bank_id=2,
+                    is_applicant=False if student else True
                 )
                 current_app.logger.info(f"Wallet created: {created}")
                 if is_student:
