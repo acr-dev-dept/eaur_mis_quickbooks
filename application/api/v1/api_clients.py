@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from application import db
 from application.models.central_models import ApiClient
-
+import os
 admin_api_clients_bp = Blueprint(
     "admin_api_clients",
     __name__,
@@ -31,8 +31,8 @@ def setup_urubuto_pay_client_api():
 
         client = ApiClient.create_client(
             client_name="Urubuto Pay",
-            username="urubuto_pay_client",
-            password="urubuto_secure_password_2024",  # ENV in prod
+            username="urubuto_pay",
+            password=os.getenv("URUBUTO_PAY_PASSWORD"),
             client_type="payment_gateway",
             gateway_name="urubuto_pay",
             permissions=["validation", "notifications", "status_check"]
