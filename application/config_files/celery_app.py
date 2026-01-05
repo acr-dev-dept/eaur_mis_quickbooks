@@ -10,8 +10,8 @@ celery.autodiscover_tasks([
     'application.config_files',
     'application.config_files.payment_sync',
     'application.config_files.wallet_sync',
-    #'application.config_files.tasks',
-    #'application.config_files.sync_students_task',
+    'application.config_files.tasks',
+    'application.config_files.sync_students_task',
     #'application.config_files.sync_invoices_task',
     #'application.config_files.sync_payments_task',
 
