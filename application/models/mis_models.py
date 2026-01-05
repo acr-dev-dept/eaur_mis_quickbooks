@@ -2473,7 +2473,7 @@ class TblOnlineApplication(MISBaseModel):
         try:
             with MISBaseModel.get_session() as session:
                 now = datetime.now()
-                last_year_september = datetime(year=now.year - 1, month=9, day=1)
+                last_year_september = datetime(year=2024, month=9, day=1)
 
                 unsynced_applicants = (
                     session.query(TblOnlineApplication)
