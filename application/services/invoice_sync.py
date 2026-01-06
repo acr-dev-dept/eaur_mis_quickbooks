@@ -659,7 +659,8 @@ class InvoiceSyncService:
                 "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date,
                 "SyncToken": f"{sync_token}",
-                "sparse": "false",
+                "sparse": False,
+                "DocNumber": f"MIS-{invoice.get('id')}",
                 "PrivateNote": f"Updated from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
