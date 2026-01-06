@@ -592,7 +592,8 @@ class InvoiceSyncService:
                 current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
             """
-            reg_no = invoice.reg_no
+            reg_no = invoice.get('reg_no')
+            
             current_app.logger.info(f"Mapping invoice {invoice.get('id')} for student {reg_no}")
 
 
