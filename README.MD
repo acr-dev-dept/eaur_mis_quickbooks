@@ -368,3 +368,12 @@ FLUSH PRIVILEGES;
 
 # Reccurring actions (automated repettive tasks)
 Sync applicants, students, invoices, payments 
+
+
+# Switching from sandbox to live
+
+1. Change the db
+2. Change the qb credentials
+3. inspect celery utils for beat tasks and update accordingly
+4. kill celery
+5. and Flush all for redis
