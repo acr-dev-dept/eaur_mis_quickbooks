@@ -634,22 +634,30 @@ class InvoiceSyncService:
             # Create QuickBooks invoice structure
             current_app.logger.info(f"Customer ID for invoice {invoice.get('id')}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
             amount_paid = 0
+
+            sales_detail={
+                "Qty": 1,
+                "UnitPrice": float(invoice.get('dept') or 0)
+            }
+
+            if quickbooks_id:
+                sales_detail['ItemRef'] = {
+                    "value": quickbooks_id
+                }
+            if class_ref_id:
+                sales_detail['ClassRef'] = {
+                    "value": class_ref_id
+                }
+
+
             qb_invoice = {
+                "Id": invoice.get('quickbooks_id'),
+                "SyncToken": f"{sync_token}",
                 "Line": [
                     {
                         "Amount": float(invoice.get('dept') or 0),
                         "DetailType": "SalesItemLineDetail",
-                        "SalesItemLineDetail": {
-                            "ItemRef": {
-                                "value": quickbooks_id if quickbooks_id else ''  # must exist in QB
-                            },
-                            "ClassRef": {
-                                "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
-                            },
-                            "Qty": 1,
-                            "UnitPrice": float(invoice.get('dept') or 0)
-                        },
-                        "Id": invoice.get('quickbooks_id'),
+                        "SalesItemLineDetail": {sales_detail},
                         "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
                     }
                 ],
@@ -658,8 +666,7 @@ class InvoiceSyncService:
                 },
                 "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date,
-                "SyncToken": f"{sync_token}",
-                "sparse": False,
+                "sparse": True,
                 "PrivateNote": f"Updated from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
