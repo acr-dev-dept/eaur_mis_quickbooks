@@ -608,18 +608,18 @@ class InvoiceSyncService:
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
-                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
+                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.get('reg_no')}")
                 
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
-                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
+                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.get('reg_no')}")
                 
 
             # Log a warning if no customer reference is found
             else:
-                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
+                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.get('reg_no')}")
                 raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
 
             if not sync_token:
