@@ -377,3 +377,5 @@ Sync applicants, students, invoices, payments
 3. inspect celery utils for beat tasks and update accordingly
 4. kill celery
 5. and Flush all for redis
+6. Get qb info to check qb connection
+7. dashboard web to check db connected

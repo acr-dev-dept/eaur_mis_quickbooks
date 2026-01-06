@@ -317,7 +317,9 @@ class InvoiceSyncService:
             student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
             applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             customer_id = None
-            class_ref_id = 400000000001103496 # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
+            import os
+            flask_env = os.getenv('FLASK_ENV_2')
+            class_ref_id = 400000000001103496 if flask_env == "PRODUCTION" else '' # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
             
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
