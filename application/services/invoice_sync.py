@@ -544,7 +544,7 @@ class InvoiceSyncService:
         try:
             # Get fee category description
             fee_description = ""  # Default
-            if invoice.fee_category_rel:
+            if invoice.get('fee_category_rel'):
                 fee_description = getattr(invoice.fee_category_rel, 'name', '')
                 current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
