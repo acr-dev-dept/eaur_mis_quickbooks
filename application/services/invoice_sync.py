@@ -563,7 +563,7 @@ class InvoiceSyncService:
                     current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
                     raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
                 camp_id = None
-                student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.get('reg_no'), invoice.get('date'))
+                student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.get('reg_no'), invoice_obj.date)
                 if student_camp_id is None:
                     # check from online application
                     camp_id = TblOnlineApplication.get_campus_id_by_tracking_id(invoice.get('reg_no'))
