@@ -319,7 +319,7 @@ class InvoiceSyncService:
             customer_id = None
             import os
             flask_env = os.getenv('FLASK_ENV_2')
-            class_ref_id = 400000000001103496 if flask_env == "PRODUCTION" else '' # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
+            class_ref_id = 109150 if flask_env == "SANDBOX" else 400000000001103496 # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
             
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
@@ -634,7 +634,8 @@ class InvoiceSyncService:
                             "Qty": 1,
                             "UnitPrice": float(amount)
                         },
-                        "Description": f"{fee_description} - {invoice.get('comment') or 'Student Fee'}"
+                        "Id": invoice.quickbooks_id,
+                        "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
                     }
                 ],
                 "CustomerRef": {
@@ -643,6 +644,7 @@ class InvoiceSyncService:
                 "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date,
                 "SyncToken": f"{sync_token}",
+                "sparse": "false",
                 "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
