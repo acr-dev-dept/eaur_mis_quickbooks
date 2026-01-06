@@ -1551,6 +1551,32 @@ class TblImvoice(MISBaseModel):
             current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
             return None
 
+    @staticmethod
+    def get_invoice_obj_by_id(invoice_id):
+        """
+        Get invoice by ID
+
+        Args:
+            invoice_id (int): Invoice ID
+
+        Returns:
+            TblImvoice: Invoice record or None if not found
+        """
+        try:
+            with MISBaseModel.get_session() as session:
+                invoice = (
+                    session.query(TblImvoice)
+                    .filter(TblImvoice.id == invoice_id)
+                    .first()
+                )
+                if not invoice:
+                    return None
+                return invoice
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting invoice for ID {invoice_id}: {str(e)}")
+            return None
+
     from sqlalchemy import or_, not_
 
 

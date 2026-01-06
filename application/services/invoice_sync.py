@@ -531,7 +531,7 @@ class InvoiceSyncService:
                 error_message=error_msg
             )
 
-    def map_invoice_to_quickbooks_update(self, invoice: TblImvoice):
+    def map_invoice_to_quickbooks_update(self,invoice_obj, invoice):
         """
         Map MIS invoice data to QuickBooks invoice format
 
@@ -544,8 +544,8 @@ class InvoiceSyncService:
         try:
             # Get fee category description
             fee_description = ""  # Default
-            if invoice.get('fee_category_rel'):
-                fee_description = getattr(invoice.get('fee_category_rel'), 'name', '')
+            if invoice_obj.fee_category_rel:
+                fee_description = getattr(invoice_obj.fee_category_rel, 'name', '')
                 current_app.logger.debug(f"Fee category for invoice {invoice.get('id')}: {fee_description}")
             # Format invoice date
             invoice_date = invoice.get('invoice_date') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
@@ -747,7 +747,8 @@ class InvoiceSyncService:
             qb_service = self._get_qb_service()
 
             # Map invoice data for update
-            qb_invoice_data, meta = self.map_invoice_to_quickbooks_update(invoice)
+            invoice_obj = TblImvoice.get_invoice_obj_by_id(invoice.get('id'))
+            qb_invoice_data, meta = self.map_invoice_to_quickbooks_update(invoice_obj=invoice_obj,invoice=invoice)
             qb_item_id = meta.get('quickbooks_id')
             qb_customer_id = meta.get('customer_id')
 
