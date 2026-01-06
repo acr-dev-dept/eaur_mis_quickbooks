@@ -667,7 +667,7 @@ class InvoiceSyncService:
                 "DepartmentRef": {"value": int(location_id) if location_id else ''},
                 "TxnDate": invoice_date,
                 "sparse": True,
-                "PrivateNote": f"Updated from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
+                "PrivateNote": f"Update on {datetime.now().strftime('%d/%m/%Y')} from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
 
@@ -694,7 +694,7 @@ class InvoiceSyncService:
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
-
+                
                 qb_invoice['Line'].append({
                     "Amount": float(-paid_amount),
                     "DetailType": "SalesItemLineDetail",
@@ -778,7 +778,8 @@ class InvoiceSyncService:
                     invoice.get('id'),
                     SyncStatus.SYNCED.value,
                     quickbooks_id=qb_invoice_id,
-                    sync_token=response['Invoice'].get('SyncToken')
+                    sync_token=response['Invoice'].get('SyncToken'),
+                    balance=response['Invoice'].get('Balance')
                 )
 
                 # Log successful sync
@@ -882,7 +883,7 @@ class InvoiceSyncService:
             results['errors'].append({'general_error': str(e)})
             return results
 
-    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[int] = None, sync_token: Optional[str] = None):
+    def _update_invoice_sync_status(self, invoice_id: int, status: int, quickbooks_id: Optional[int] = None, sync_token: Optional[str] = None, balance: Optional[float] = None):
         """
         Update invoice synchronization status in MIS database
 
@@ -900,7 +901,7 @@ class InvoiceSyncService:
                     invoice.pushed_by = "InvoiceSyncService",
                     invoice.quickbooks_id = quickbooks_id if quickbooks_id else invoice.quickbooks_id,
                     invoice.sync_token = sync_token if sync_token else invoice.sync_token
-
+                    invoice.balance = balance if balance else invoice.dept
                 # Store QuickBooks ID in a custom field or comment if needed
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
                     current_comment = invoice.comment or ""
