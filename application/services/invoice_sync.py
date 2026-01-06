@@ -706,6 +706,8 @@ class InvoiceSyncService:
                 })
                 amount_paid = paid_amount
 
+            current_app.logger.info(f"mapped Invoice data: {qb_invoice}")
+
             meta = {
                 'customer_id': customer_id,
                 'quickbooks_id': quickbooks_id,
