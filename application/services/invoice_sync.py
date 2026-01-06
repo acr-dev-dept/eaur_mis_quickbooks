@@ -621,7 +621,7 @@ class InvoiceSyncService:
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.get('reg_no')}")
                 raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
-
+            sync_token = invoice.get('sync_token')
             if not sync_token:
                 qb_service = self._get_qb_service()
                 invoice_qb = qb_service.get_invoice(invoice_id=invoice.get('quickbooks_id'), realm_id=qb_service.realm_id)
