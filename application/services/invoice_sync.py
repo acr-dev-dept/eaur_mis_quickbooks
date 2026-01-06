@@ -546,7 +546,7 @@ class InvoiceSyncService:
             fee_description = ""  # Default
             if invoice.get('fee_category_rel'):
                 fee_description = getattr(invoice.fee_category_rel, 'name', '')
-                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
+                current_app.logger.debug(f"Fee category for invoice {invoice.get('id')}: {fee_description}")
             # Format invoice date
             invoice_date = invoice.get('invoice_date') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
 
@@ -561,7 +561,7 @@ class InvoiceSyncService:
                 # Get campus ID and location ID
                 if not quickbooks_id:
                     current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
-                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                    raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
                 camp_id = None
                 student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.get('reg_no'), invoice.get('date'))
                 if student_camp_id is None:
@@ -619,7 +619,7 @@ class InvoiceSyncService:
             # Log a warning if no customer reference is found
             else:
                 current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
 
             if not sync_token:
                 qb_service = self._get_qb_service()
@@ -631,7 +631,7 @@ class InvoiceSyncService:
                     raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.get('id')} from QuickBooks.")
 
             # Create QuickBooks invoice structure
-            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+            current_app.logger.info(f"Customer ID for invoice {invoice.get('id')}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
             amount_paid = 0
             qb_invoice = {
                 "Line": [
@@ -664,11 +664,11 @@ class InvoiceSyncService:
 
 
             # check if there is a wallet already paid and append to the payload
-            if invoice.is_prepayment:
+            if invoice.get('is_prepayment'):
                 current_app.logger.info(
-                    f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
+                    f"Wallet reference found for invoice {invoice.get('id')}: {invoice.get('wallet_ref')}"
                 )
-                payment = Payment.get_by_reference_number(invoice.reference_number)
+                payment = Payment.get_by_reference_number(invoice.get('reference_number'))
                 if not payment:
                     current_app.logger.error("Payment not found")
                     raise ValueError("Payment not found")
