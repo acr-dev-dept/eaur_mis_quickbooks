@@ -548,7 +548,7 @@ class InvoiceSyncService:
                 fee_description = getattr(invoice.fee_category_rel, 'name', '')
                 current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
-            invoice_date = invoice.get('invoice_date').strftime('%Y-%m-%d') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
+            invoice_date = invoice.get('invoice_date') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
 
             # Get fee category for item mapping
             if invoice.get('fee_category'):
