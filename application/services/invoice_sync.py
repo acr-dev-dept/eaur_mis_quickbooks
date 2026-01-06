@@ -641,7 +641,7 @@ class InvoiceSyncService:
             qb_invoice = {
                 "Line": [
                     {
-                        "Amount": float(invoice.dept or 0),
+                        "Amount": float(invoice.get('dept') or 0),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
@@ -651,7 +651,7 @@ class InvoiceSyncService:
                                 "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
                             },
                             "Qty": 1,
-                            "UnitPrice": float(amount.dept or 0)
+                            "UnitPrice": float(invoice.get('dept') or 0)
                         },
                         "Id": invoice.quickbooks_id,
                         "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
