@@ -56,7 +56,10 @@ def make_celery(app):
         },
         beat_schedule={
 
-
+            "sync_invoices_every_midnight": {
+            "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+            "schedule": crontab(minute='*/2')
+            }
         },
     )
 

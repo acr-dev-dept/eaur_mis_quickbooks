@@ -203,12 +203,12 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches, job_id):
 
                 if not invoice:
                     raise ValueError("Invoice not found")
-
-                if invoice.QuickBk_Status == 1:
-                    results["skipped"] += 1
-                    continue
-
-                result = sync_service.sync_single_invoice(invoice)
+                
+                if invoice.quickbooks_id and invoice.is_prepayment:
+                    invoice_dict = TblImvoice.get_invoice_by_id(invoice_id)
+                    result = sync_service.update_single_invoice(invoice=invoice_dict)
+                else:
+                    result = sync_service.sync_single_invoice(invoice)
 
                 if result.success:
                     results["synced"] += 1
