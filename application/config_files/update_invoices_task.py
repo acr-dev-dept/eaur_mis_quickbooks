@@ -327,7 +327,6 @@ def scheduled_invoice_update_task():
     Celery Beat entrypoint for progressive invoice syncing
     """
     app = get_flask_app()
-
     with app.app_context():
         current_app.logger.info("Scheduled invoice sync triggered")
 
