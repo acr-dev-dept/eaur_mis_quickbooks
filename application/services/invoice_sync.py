@@ -541,73 +541,91 @@ class InvoiceSyncService:
         Returns:
             Dictionary formatted for QuickBooks API
         """
-        invoice_id = getattr(invoice, 'id', None) or invoice.get('id')
-        current_app.logger.info(f"Mapping invoice for update with ID: {invoice_id}")
-        invoice_date = invoice.get('recorded_date').strftime('%Y-%m-%d') if invoice.get('recorded_date') else datetime.now().strftime('%Y-%m-%d')
-        current_app.logger.info(f"Invoice date for invoice {invoice.get('id')}: {invoice_date} with type {type(invoice_date)}")
-        if not invoice_id:
-            raise ValueError("Invoice ID is required for mapping.")
-        current_app.logger.info(f"Mapping invoice for update__: {invoice}")
         try:
             # Calculate amounts
-            amount = float(invoice.get('dept') or 0) - float(invoice.get('credit') or 0)
+            amount = float(invoice.dept or 0) - float(invoice.credit or 0)
             if amount <= 0:
-                amount = float(invoice.get('dept') or 0)  # Use debit amount if calculation results in zero/negative
+                amount = float(invoice.dept or 0)  # Use debit amount if calculation results in zero/negative
 
             # Get fee category description
-            fee_description = "Tuition Fee"  # Default
-            if invoice.get('fee_category_rel'):
-                fee_description = invoice.get('fee_category_rel', {}).get('name', 'Tuition Fee')
-                current_app.logger.debug(f"Fee category for invoice {invoice.get('id')}: {fee_description}")
+            fee_description = ""  # Default
+            if invoice.fee_category_rel:
+                fee_description = getattr(invoice.fee_category_rel, 'name', '')
+                current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
-            invoice_date = invoice.get('recorded_date').strftime('%Y-%m-%d') if invoice.get('recorded_date') else datetime.now().strftime('%Y-%m-%d')
-            current_app.logger.info(f"Invoice date for invoice {invoice.get('id')}: {invoice_date} with type {type(invoice_date)}")
+            invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
 
             # Get fee category for item mapping
-            if invoice.get('fee_category'):
-                category = TblIncomeCategory.get_category_by_id(invoice.get('fee_category'))
-                quickbooks_id = category.get('QuickBk_ctgId') if category else None
-                camp_id = category.get('camp_id') if category else None
+            if invoice.fee_category:
+                cat_name = fee_description if fee_description else None
+                current_app.logger.info(f"Fee category name for invoice {invoice.id}: {cat_name}")
+                __categ = TblIncomeCategory.get_qb_synced_category_by_name(cat_name) if cat_name else None
+                current_app.logger.info(f"Category for invoice {invoice.id}: {cat_name}, QuickBooks ID: {__categ.get('QuickBk_ctgId') if __categ else None}")
+                quickbooks_id = __categ.get('QuickBk_ctgId') if __categ else None
+                current_app.logger.info(f"QuickBooks category ID for invoice {invoice.id}: {quickbooks_id}")
+                # Get campus ID and location ID
+                if not quickbooks_id:
+                    current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                camp_id = None
+                student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.reg_no, invoice.date)
+                if student_camp_id is None:
+                    # check from online application
+                    camp_id = TblOnlineApplication.get_campus_id_by_tracking_id(invoice.reg_no)
+                else:
+                    camp_id = student_camp_id
+                if camp_id is None:
+                    current_app.logger.warning(f"No Campus ID found for student {invoice.reg_no} on invoice {invoice.id}")
+                    raise ValueError(f"Invoice {invoice.id} has no valid Campus mapped for student {invoice.reg_no}.")
                 location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
-                current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
-
-                if not location_id:
+                if location_id is None:
                     current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
-                    raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks Location mapped.")
+                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+                current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
 
             # if no category found
             if not quickbooks_id:
-                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
-                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
+                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
 
-            reg_no = invoice.get('reg_no')
-            current_app.logger.info(f"Mapping invoice {invoice.get('id')} for student {reg_no}")
+            if not location_id:
+                current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+
+            """
+            if location_id == 0 or location_id is None:
+                current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+            """
+            reg_no = invoice.reg_no
+            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
 
 
             # Attempt to find student or applicant reference by registration number
-            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.get('reg_no'))
-            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.get('reg_no'))
+            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
             customer_id = None
-            class_ref_id = None
-
+            import os
+            flask_env = os.getenv('FLASK_ENV_2')
+            class_ref_id = 109150 if flask_env == "SANDBOX" else 400000000001103496 # OFFICE OF DVC-ACADEMICS AFFAIRS AND RESEARCH
+            
             # Check if the student reference exists and extract the QuickBooks customer ID
             if student_ref:
                 customer_id = student_ref.qk_id
-                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.get('reg_no')}")
-                class_ref_id = 834761
+                current_app.logger.info(f"Found Student customer ID {customer_id} for student {invoice.reg_no}")
+                
 
             # If no student reference, check the applicant reference
             elif applicant_ref:
                 customer_id = applicant_ref.get('quickbooks_id')
-                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.get('reg_no')}")
-                class_ref_id = 834762
+                current_app.logger.info(f"Found Applicant customer ID {customer_id} for applicant {invoice.reg_no}")
+                
 
             # Log a warning if no customer reference is found
             else:
-                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.get('reg_no')}")
-                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks CustomerRef mapped.")
-            sync_token = getattr(invoice, 'sync_token', None)
-            # If sync token is missing, pull it from QuickBooks
+                current_app.logger.warning(f"No QuickBooks customer reference found for student {invoice.reg_no}")
+                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks CustomerRef mapped.")
+
             if not sync_token:
                 qb_service = self._get_qb_service()
                 invoice_qb = qb_service.get_invoice(invoice_id=invoice.get('quickbooks_id'), realm_id=qb_service.realm_id)
@@ -616,13 +634,14 @@ class InvoiceSyncService:
                 
                 if not sync_token:
                     raise ValueError(f"Could not retrieve SyncToken for invoice {invoice.get('id')} from QuickBooks.")
-            # Create QuickBooks invoice structure
-            current_app.logger.info(f"Customer ID for invoice {invoice.get('id')}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
 
+            # Create QuickBooks invoice structure
+            current_app.logger.info(f"Customer ID for invoice {invoice.id}: {customer_id}, QuickBooks Item ID: {quickbooks_id}")
+            amount_paid = 0
             qb_invoice = {
                 "Line": [
                     {
-                        "Amount": float(amount),
+                        "Amount": float(invoice.dept or 0),
                         "DetailType": "SalesItemLineDetail",
                         "SalesItemLineDetail": {
                             "ItemRef": {
@@ -632,7 +651,7 @@ class InvoiceSyncService:
                                 "value": int(class_ref_id) if class_ref_id else ''  # must exist in QB
                             },
                             "Qty": 1,
-                            "UnitPrice": float(amount)
+                            "UnitPrice": float(amount.dept or 0)
                         },
                         "Id": invoice.quickbooks_id,
                         "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
@@ -650,54 +669,50 @@ class InvoiceSyncService:
 
 
             # check if there is a wallet already paid and append to the payload
-            if invoice.get('wallet_ref'):
+            if invoice.is_prepayment:
                 current_app.logger.info(
-                    f"Wallet reference found for invoice {invoice['id']}: {invoice['wallet_ref']}"
+                    f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
                 )
+                payment = Payment.get_by_reference_number(invoice.reference_number)
+                if not payment:
+                    current_app.logger.error("Payment not found")
+                    raise ValueError("Payment not found")
+                
+                paid_amount = payment.amount
+                wallet_ref = payment.student_wallet_ref
+                wallet_data = TblStudentWallet.get_by_reference_number(wallet_ref)
+                if not wallet_data:
+                    current_app.logger.error("Wallet data not found")
+                    raise ValueError("Wallet data not found")
 
-                wallet_data = TblStudentWallet.get_by_reference_number(invoice['wallet_ref'])
-                category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
-                category_name= category.get('name') if category else None
+                wallet_category = TblIncomeCategory.get_category_by_id(wallet_data.fee_category)
+                category_name= wallet_category.get('name') if category else None
                 cat_name_ = TblIncomeCategory.get_qb_synced_category_by_name(category_name) 
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
-
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
 
-                if wallet_data and wallet_data.dept and wallet_data.dept > 0:
-                    current_app.logger.info(
-                        f"Wallet data found for invoice {invoice['id']}: {wallet_data}"
-                    )
-
-                    qb_invoice['Line'].append({
-                        "Amount": float(-min(wallet_data.dept, amount)),
-                        "DetailType": "SalesItemLineDetail",
-                        "SalesItemLineDetail": {
-                            "ItemRef": {
-                                "value": quickbooks_id_,
-                            },
-                            "ClassRef": {
-                                "value": class_ref_id
-                            },
-                            "Qty": 1,
-                            "UnitPrice": float(-min(wallet_data.dept, amount))
+                qb_invoice['Line'].append({
+                    "Amount": float(-paid_amount),
+                    "DetailType": "SalesItemLineDetail",
+                    "SalesItemLineDetail": {
+                        "ItemRef": {
+                            "value": quickbooks_id_,
                         },
-                        "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
-                    })
-                    invoice_balance = invoice['balance'] or ['invoice.dept']
-                    amount_paid = min(wallet_data.dept, invoice_balance)
-                    
-                    
-                else:
-                    current_app.logger.error(
-                        f"Wallet data is not valid for invoice {invoice['id']}: "
-                        f"{wallet_data.to_dict() if wallet_data else 'None'}"
-                    )
-                    return None, None, None
+                        "ClassRef": {
+                            "value": class_ref_id
+                        },
+                        "Qty": 1,
+                        "UnitPrice": float(-paid_amount)
+                    },
+                    "Description": "Synced the invoice by deducting from the wallet (Unearned revenue)"
+                })
+                amount_paid = paid_amount
+
             meta = {
                 'customer_id': customer_id,
                 'quickbooks_id': quickbooks_id,
-                'amount_paid': amount_paid if amount_paid else 0
+                'amount_paid': amount_paid 
             }
             return qb_invoice, meta
 
