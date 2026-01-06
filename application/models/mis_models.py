@@ -1633,6 +1633,33 @@ class TblImvoice(MISBaseModel):
             )
             # IMPORTANT: propagate error to task
             raise
+    @staticmethod
+    def get_invoices_to_update(limit: int = 50, offset: int = 0):
+        try:
+            with MISBaseModel.get_session() as session:
+                invoices = (
+                    session.query(TblImvoice)
+                    .filter(
+                        TblImvoice.quickbooks_id.isnot(None),
+                        TblImvoice.invoice_date >= datetime(2025, 1, 1),
+                    )
+                    # REQUIRED: stable ordering for offset pagination
+                    .order_by(TblImvoice.invoice_date.desc())
+                    .offset(offset)
+                    .limit(limit)
+                    .all()
+                )
+
+                return [invoice.to_dict() for invoice in invoices]
+
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(
+                f"Error getting invoices to update"
+                f"(limit={limit}, offset={offset}): {str(e)}"
+            )
+            # IMPORTANT: propagate error to task
+            raise
 
 class TblIncomeCategory(MISBaseModel):
     """Model for tbl_income_category table"""

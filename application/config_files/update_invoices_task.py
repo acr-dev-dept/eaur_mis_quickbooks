@@ -32,7 +32,7 @@ def get_flask_app():
 # MAIN BULK SYNC TASK (OFFSET-BASED)
 # -------------------------------------------------------------------
 @shared_task
-def bulk_sync_invoices_task(
+def bulk_update_invoices_task(
     invoice_ids=None,
     batch_size=50,
     filter_unsynced=True,
@@ -54,7 +54,7 @@ def bulk_sync_invoices_task(
 
     app = get_flask_app()
     start_time = datetime.now()
-    offset_key = "invoice_sync:offset"
+    offset_key = "invoice_update:offset"
 
     with app.app_context():
         try:
@@ -74,7 +74,7 @@ def bulk_sync_invoices_task(
                 if not filter_unsynced:
                     raise ValueError("Bulk invoice sync must filter unsynced invoices")
 
-                invoices = TblImvoice.get_unsynced_invoices(
+                invoices = TblImvoice.get_invoices_to_update(
                     limit=batch_size,
                     offset=current_offset
                 )
@@ -199,17 +199,17 @@ def process_invoices_batch(invoice_ids, batch_num, total_batches, job_id):
                 if not QuickBooksConfig.is_connected():
                     raise RuntimeError("QuickBooks not connected")
 
-                invoice = sync_service.fetch_invoice_data(invoice_id)
+                invoice = TblImvoice.get_invoice_by_id(invoice_id)
 
                 if not invoice:
                     raise ValueError("Invoice not found")
 
-                if invoice.quickbooks_id:
+                if invoice.get('quickbooks_id') is None:
                     results["skipped"] += 1
                     continue
                 
                 
-                result = sync_service.sync_single_invoice(invoice)
+                result = sync_service.update_single_invoice(invoice)
 
                 if result.success:
                     results["synced"] += 1
@@ -322,7 +322,7 @@ def aggregate_invoice_results(batch_results, job_id, current_offset):
 # CELERY BEAT WRAPPER (NON-BLOCKING)
 # -------------------------------------------------------------------
 @shared_task
-def scheduled_invoice_sync_task():
+def scheduled_invoice_update_task():
     """
     Celery Beat entrypoint for progressive invoice syncing
     """
@@ -331,7 +331,7 @@ def scheduled_invoice_sync_task():
     with app.app_context():
         current_app.logger.info("Scheduled invoice sync triggered")
 
-        async_result = bulk_sync_invoices_task.delay(
+        async_result = bulk_update_invoices_task.delay(
             invoice_ids=None,
             batch_size=50,
             filter_unsynced=True,
