@@ -649,7 +649,7 @@ class InvoiceSyncService:
                             "Qty": 1,
                             "UnitPrice": float(invoice.get('dept') or 0)
                         },
-                        "Id": invoice.quickbooks_id,
+                        "Id": invoice.get('quickbooks_id'),
                         "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
                     }
                 ],
@@ -660,7 +660,7 @@ class InvoiceSyncService:
                 "TxnDate": invoice_date,
                 "SyncToken": f"{sync_token}",
                 "sparse": "false",
-                "PrivateNote": f"Synchronized from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
+                "PrivateNote": f"Updated from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
 
