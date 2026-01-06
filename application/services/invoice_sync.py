@@ -548,44 +548,44 @@ class InvoiceSyncService:
                 fee_description = getattr(invoice.fee_category_rel, 'name', '')
                 current_app.logger.debug(f"Fee category for invoice {invoice.id}: {fee_description}")
             # Format invoice date
-            invoice_date = invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else datetime.now().strftime('%Y-%m-%d')
+            invoice_date = invoice.get('invoice_date').strftime('%Y-%m-%d') if invoice.get('invoice_date') else datetime.now().strftime('%Y-%m-%d')
 
             # Get fee category for item mapping
-            if invoice.fee_category:
+            if invoice.get('fee_category'):
                 cat_name = fee_description if fee_description else None
-                current_app.logger.info(f"Fee category name for invoice {invoice.id}: {cat_name}")
+                current_app.logger.info(f"Fee category name for invoice {invoice.get('id')}: {cat_name}")
                 __categ = TblIncomeCategory.get_qb_synced_category_by_name(cat_name) if cat_name else None
-                current_app.logger.info(f"Category for invoice {invoice.id}: {cat_name}, QuickBooks ID: {__categ.get('QuickBk_ctgId') if __categ else None}")
+                current_app.logger.info(f"Category for invoice {invoice.get('id')}: {cat_name}, QuickBooks ID: {__categ.get('QuickBk_ctgId') if __categ else None}")
                 quickbooks_id = __categ.get('QuickBk_ctgId') if __categ else None
-                current_app.logger.info(f"QuickBooks category ID for invoice {invoice.id}: {quickbooks_id}")
+                current_app.logger.info(f"QuickBooks category ID for invoice {invoice.get('id')}: {quickbooks_id}")
                 # Get campus ID and location ID
                 if not quickbooks_id:
-                    current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
+                    current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
                     raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
                 camp_id = None
-                student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.reg_no, invoice.date)
+                student_camp_id = TblRegisterProgramUg.get_campus_id_by_reg_no(invoice.get('reg_no'), invoice.get('date'))
                 if student_camp_id is None:
                     # check from online application
-                    camp_id = TblOnlineApplication.get_campus_id_by_tracking_id(invoice.reg_no)
+                    camp_id = TblOnlineApplication.get_campus_id_by_tracking_id(invoice.get('reg_no'))
                 else:
                     camp_id = student_camp_id
                 if camp_id is None:
-                    current_app.logger.warning(f"No Campus ID found for student {invoice.reg_no} on invoice {invoice.id}")
-                    raise ValueError(f"Invoice {invoice.id} has no valid Campus mapped for student {invoice.reg_no}.")
+                    current_app.logger.warning(f"No Campus ID found for student {invoice.get('reg_no')} on invoice {invoice.get('id')}")
+                    raise ValueError(f"Invoice {invoice.get('id')} has no valid Campus mapped for student {invoice.get('reg_no')}.")
                 location_id = TblCampus.get_location_id_by_camp_id(camp_id) if camp_id is not None else None
                 if location_id is None:
                     current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
-                    raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+                    raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks Location mapped.")
                 current_app.logger.info(f"Location ID for campus {camp_id}: {location_id}")
 
             # if no category found
             if not quickbooks_id:
-                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.id}, using default item")
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
+                current_app.logger.warning(f"No QuickBooks category ID found for invoice {invoice.get('id')}, using default item")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks ItemRef mapped.")
 
             if not location_id:
                 current_app.logger.warning(f"No Location ID found for campus {camp_id}, using default location")
-                raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
+                raise ValueError(f"Invoice {invoice.get('id')} has no valid QuickBooks Location mapped.")
 
             """
             if location_id == 0 or location_id is None:
@@ -593,12 +593,12 @@ class InvoiceSyncService:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks Location mapped.")
             """
             reg_no = invoice.reg_no
-            current_app.logger.info(f"Mapping invoice {invoice.id} for student {reg_no}")
+            current_app.logger.info(f"Mapping invoice {invoice.get('id')} for student {reg_no}")
 
 
             # Attempt to find student or applicant reference by registration number
-            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.reg_no)
-            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.reg_no)
+            student_ref = TblPersonalUg.get_student_by_reg_no(invoice.get('reg_no'))
+            applicant_ref = TblOnlineApplication.get_applicant_details(invoice.get('reg_no'))
             customer_id = None
             import os
             flask_env = os.getenv('FLASK_ENV_2')
