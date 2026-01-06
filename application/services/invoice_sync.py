@@ -694,6 +694,9 @@ class InvoiceSyncService:
                 quickbooks_id_ = cat_name_.get('QuickBk_ctgId') if cat_name_ else None
                 if not quickbooks_id_:
                     raise ValueError("QuickBooks ItemRef ID is required but was not provided.")
+                if payment.amount > invoice.get('dept'):
+                    self._log_sync_audit(invoice.get('id'), 'ERROR', f"Amount paid is greater than the invoice amount.")
+                    raise ValueError(f"Amount paid is greater than the invoice amount.")
                 
                 qb_invoice['Line'].append({
                     "Amount": float(-paid_amount),
