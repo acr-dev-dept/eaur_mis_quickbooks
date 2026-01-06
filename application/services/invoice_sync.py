@@ -531,7 +531,7 @@ class InvoiceSyncService:
                 error_message=error_msg
             )
 
-    def map_invoice_to_quickbooks_update(self, invoice: TblImvoice) -> Dict:
+    def map_invoice_to_quickbooks_update(self, invoice: TblImvoice):
         """
         Map MIS invoice data to QuickBooks invoice format
 
@@ -542,11 +542,6 @@ class InvoiceSyncService:
             Dictionary formatted for QuickBooks API
         """
         try:
-            # Calculate amounts
-            amount = float(invoice.dept or 0) - float(invoice.credit or 0)
-            if amount <= 0:
-                amount = float(invoice.dept or 0)  # Use debit amount if calculation results in zero/negative
-
             # Get fee category description
             fee_description = ""  # Default
             if invoice.fee_category_rel:
