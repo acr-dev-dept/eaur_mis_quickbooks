@@ -660,7 +660,6 @@ class InvoiceSyncService:
                 "TxnDate": invoice_date,
                 "SyncToken": f"{sync_token}",
                 "sparse": False,
-                "DocNumber": f"MIS-{invoice.get('id')}",
                 "PrivateNote": f"Updated from MIS - Invoice ID: {invoice.get('id')}, Student: {invoice.get('reg_no')}",
             }
 
