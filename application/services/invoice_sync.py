@@ -657,7 +657,7 @@ class InvoiceSyncService:
                     {
                         "Amount": float(invoice.get('dept') or 0),
                         "DetailType": "SalesItemLineDetail",
-                        "SalesItemLineDetail": {sales_detail},
+                        "SalesItemLineDetail": sales_detail,
                         "Description": f"Invoice Update {datetime.now().strftime('%d/%m/%Y')} {fee_description} - {invoice.get('comment') or 'Student Fee'}"
                     }
                 ],
