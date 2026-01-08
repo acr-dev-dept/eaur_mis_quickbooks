@@ -15,6 +15,14 @@ from application.models.central_models import QuickbooksAuditLog
 
 invoices_bp = Blueprint('invoices', __name__)
 
+import re
+
+def extract_quickbooks_txn_id(error_details: str) -> str | None:
+    match = re.search(r"TxnId=(\d+)", error_details)
+    return match.group(1) if match else None
+
+
+
 # Standard response format
 def create_response(success=True, data=None, message="", error=None, details=None, status_code=200):
     """
@@ -113,6 +121,22 @@ def sync_single_invoice():
         current_app.logger.info(f'Sync result: {result}')
 
         if not result.success:
+            current_app.logger.error(f"Failed to sync invoice: {result.error_message}")
+            txn_id = extract_quickbooks_txn_id(result.error_message)
+            if txn_id:
+                update_invoice = TblImvoice.update_invoice_quickbooks_status(
+                    quickbooks_id=txn_id,
+                    pushed_by="InvoiceSyncService",
+                    pushed_date=datetime.now(),
+                    QuickBk_Status=1,
+                    invoice_id=invoice_id
+                )
+                return create_response(
+                    success=True,
+                    details='invoice updated successfully from QB',
+                    status_code=200
+                )
+
             return create_response(
                 success=False,
                 error='Failed to sync invoice',

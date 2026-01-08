@@ -60,6 +60,11 @@ class SyncResult:
     quickbooks_id: Optional[str] = None
     error_message: Optional[str] = None
     details: Optional[Dict] = None
+import re
+
+def extract_quickbooks_txn_id(error_details: str) -> str | None:
+    match = re.search(r"TxnId=(\d+)", error_details)
+    return match.group(1) if match else None
 
 class InvoiceSyncService:
     """
@@ -509,6 +514,21 @@ class InvoiceSyncService:
             else:
                 # Handle API error
                 error_msg = response.get('Fault', {}).get('Error', [{}])[0].get('Detail', 'Unknown error')
+                txn_id = extract_quickbooks_txn_id(error_msg)
+                if txn_id:
+                    self._update_invoice_sync_status(
+                    invoice.id,
+                    SyncStatus.SYNCED.value,
+                    quickbooks_id=txn_id,
+                    sync_token=0
+                )
+                    return SyncResult(
+                        invoice_id=invoice.id,
+                        success=True,
+                        quickbooks_id=txn_id,
+                        details=response
+                    )
+                        
                 self._update_invoice_sync_status(invoice.id, SyncStatus.FAILED.value)
                 self._log_sync_audit(invoice.id, 'ERROR', error_msg)
 
