@@ -1625,7 +1625,7 @@ class TblImvoice(MISBaseModel):
                         TblImvoice.fee_category.notin_(EXCLUDED_FEE_CATEGORIES),
                     )
                     # REQUIRED: stable ordering for offset pagination
-                    .order_by(TblImvoice.invoice_date.desc())
+                    .order_by(TblImvoice.invoice_date.asc()) 
                     .offset(offset)
                     .limit(limit)
                     .all()
