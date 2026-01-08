@@ -217,8 +217,17 @@ class SalesReceiptSyncService:
         Raises:
             ValueError: If campus or location not found
         """
-        campus_id = TblRegisterProgramUg.get_campus_id_by_reg_no(reg_no)
+        student_campus_id = TblRegisterProgramUg.get_campus_id_by_reg_no(reg_no)
+        applicants_campus_id = TblOnlineApplication.get_campus_id_by_tracking_id(reg_no)
+
+        if student_campus_id:
+            campus_id = student_campus_id
+        elif applicants_campus_id:
+            campus_id = applicants_campus_id
+        else:
+            raise ValueError(f"Campus ID not found for student {reg_no}")
         
+
         if not campus_id:
             current_app.logger.error(f"Campus ID not found for student {reg_no}")
             raise ValueError(f"Campus ID not found for student {reg_no}")
