@@ -3513,7 +3513,8 @@ class TblRegisterProgramUg(MISBaseModel):
         Get campus ID by student registration number.
 
         - If invoice_date is provided:
-            Fetch registration within the same year as invoice_date.
+            1. Try to fetch registration within the same year as invoice_date.
+            2. If none found, fall back to the most recent registration record.
         - If invoice_date is not provided:
             Fetch the most recent registration record.
 
@@ -3526,10 +3527,15 @@ class TblRegisterProgramUg(MISBaseModel):
         """
         try:
             from datetime import datetime
+            from flask import current_app
 
             with TblRegisterProgramUg.get_session() as session:
 
-                # CASE 1: Invoice date NOT provided → get most recent record
+                # Normalize invoice_date if provided as string
+                if isinstance(invoice_date, str):
+                    invoice_date = datetime.strptime(invoice_date, "%Y-%m-%d")
+
+                # CASE 1: No invoice date → get most recent registration
                 if not invoice_date:
                     reg_program = (
                         session.query(TblRegisterProgramUg)
@@ -3539,33 +3545,44 @@ class TblRegisterProgramUg(MISBaseModel):
                     )
                     return reg_program.camp_id if reg_program else None
 
-                # CASE 2: Invoice date provided → match by year
-                if isinstance(invoice_date, str):
-                    invoice_date = datetime.strptime(invoice_date, "%Y-%m-%d")
-
+                # CASE 2: Invoice date provided → try same-year match first
                 start_of_year = datetime(invoice_date.year, 1, 1)
-                end_of_year = datetime(invoice_date.year, 12, 31, 23, 59, 59)
+                start_of_next_year = datetime(invoice_date.year + 1, 1, 1)
 
                 reg_program = (
                     session.query(TblRegisterProgramUg)
                     .filter(
                         TblRegisterProgramUg.reg_no == reg_no,
                         TblRegisterProgramUg.reg_date >= start_of_year,
-                        TblRegisterProgramUg.reg_date <= end_of_year,
+                        TblRegisterProgramUg.reg_date < start_of_next_year,
                     )
                     .order_by(TblRegisterProgramUg.reg_date.desc())
                     .first()
                 )
 
+                # FALLBACK: No registration found in invoice year → get most recent
+                if not reg_program:
+                    current_app.logger.info(
+                        f"No registration found in year {invoice_date.year} for reg_no={reg_no}. "
+                        f"Falling back to most recent registration."
+                    )
+
+                    reg_program = (
+                        session.query(TblRegisterProgramUg)
+                        .filter(TblRegisterProgramUg.reg_no == reg_no)
+                        .order_by(TblRegisterProgramUg.reg_date.desc())
+                        .first()
+                    )
+
                 return reg_program.camp_id if reg_program else None
 
         except Exception as e:
             from flask import current_app
-            current_app.logger.error(
-                f"Error getting campus ID for reg_no={reg_no}, "
-                f"invoice_date={invoice_date}: {str(e)}"
+            current_app.logger.exception(
+                f"Error getting campus ID for reg_no={reg_no}, invoice_date={invoice_date}"
             )
             return None
+
 
 class TblSponsor(MISBaseModel):
     __tablename__ = 'tbl_sponsor'
