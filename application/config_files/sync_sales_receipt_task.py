@@ -212,9 +212,9 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
                         raise RuntimeError(result.error_message)
                 
                 else:
-                    result = sync_service.sync_single_sales_receipt_async(sales_receipt.id)
+                    result = sync_service.sync_single_sales_receipt(sales_receipt)
 
-                    if result.get('success'):
+                    if result.success:
                         results["synced"] += 1
                     else:
                         raise RuntimeError(result.error_message)
