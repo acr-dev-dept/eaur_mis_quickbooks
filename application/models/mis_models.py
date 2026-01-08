@@ -2431,6 +2431,26 @@ class TblOnlineApplication(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting applicant details for reg no {reg_no}: {str(e)}")
             return []
+        
+    @staticmethod
+    def get_applicant_by_registration_no(reg_no):
+        """
+        Get detailed applicant information by registration number
+
+        Args:
+            reg_no (str): Applicant registration number
+
+        Returns:
+            dict: Applicant details or None if not found
+        """
+        try:
+            with TblOnlineApplication.get_session() as session:
+                applicant = session.query(TblOnlineApplication).filter(TblOnlineApplication.tracking_id == reg_no).first()
+                return applicant
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting applicant details for reg no {reg_no}: {str(e)}")
+            return None
     @classmethod
     def update_applicant_quickbooks_status(cls, tracking_id, quickbooks_id, pushed_by, QuickBk_status, sync_token=None):
         """

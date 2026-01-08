@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from enum import Enum
 from flask import current_app, jsonify
-from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus
+from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus, TblOnlineApplication
 from application.services.quickbooks import QuickBooks
 import traceback
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
@@ -161,13 +161,25 @@ class SalesReceiptSyncService:
         Raises:
             ValueError: If customer not found or missing QuickBooks ID
         """
-        customer = TblPersonalUg.get_student_by_reg_no(reg_no)
+        student = TblPersonalUg.get_student_by_reg_no(reg_no)
+        applicant = TblOnlineApplication.get_applicant_by_registration_no(reg_no)
         
-        if not customer or not customer.qk_id:
-            current_app.logger.error(f"Student {reg_no} not found or missing QuickBooks ID")
+        if student:
+            customer_id=student.qk_id
+        elif applicant:
+            customer_id=applicant.quickbooks_id
+        else:
+            current_app.logger.error(f"Customer {reg_no} not found (neither student nor applicant)")
             raise ValueError(f"Customer {reg_no} not found in database or missing QuickBooks ID")
-        
-        return customer.qk_id
+
+        if not customer_id:
+            current_app.logger.error(
+                f"Customer {reg_no} found but missing QuickBooks ID"
+            )
+            raise ValueError(
+                f"Customer {reg_no} not found in database or missing QuickBooks ID"
+            )        
+        return customer_id
 
 
     def _get_bank_id(self, bank_id: int) -> str:
