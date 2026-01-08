@@ -55,11 +55,10 @@ def make_celery(app):
             },
         },
         beat_schedule={
-
-            "sync_sales_receipt_every_midnight": {
-            "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
-            "schedule": crontab(minute='*/2')
-            }
+            "sync_invoices_every_midnight": {
+            "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+            "schedule": crontab(minute='*/3')
+        }
         },
     )
 
@@ -82,5 +81,9 @@ def make_celery(app):
 "sync_payments_every_midnight": {
 "task": "application.config_files.sync_payments_task.scheduled_payment_sync_task",
 "schedule": crontab(minute='*/6')
-},   
+},
+"sync_sales_receipt_every_midnight": {
+"task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
+"schedule": crontab(minute='*/2')
+} 
 """
