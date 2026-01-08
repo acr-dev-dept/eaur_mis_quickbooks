@@ -206,15 +206,15 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
 
                 if sales_receipt.quickbooks_id:
                     result = sync_service.update_single_sales_receipt(sales_receipt.id)
-                    if result.success:
+                    if result.get('success'):
                         results["synced"] += 1
                     else:
                         raise RuntimeError(result.error_message)
                 
                 else:
-                    result = sync_service.sync_single_sales_receipt(sales_receipt.id)
+                    result = sync_service.sync_single_sales_receipt(sales_receipt)
 
-                    if result.success:
+                    if result.get('success'):
                         results["synced"] += 1
                     else:
                         raise RuntimeError(result.error_message)
