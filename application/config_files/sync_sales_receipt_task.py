@@ -42,7 +42,7 @@ def bulk_sync_sales_recepts_task(
     Orchestrates sales_receipt synchronization using offset-based batching.
 
     Args:
-        sales_receipt_ids (list[int] | None): Explicit invoice IDs to sync
+        sales_receipt_ids (list[int] | None): Explicit sales_receipt IDs to sync
         batch_size (int): Batch size
         filter_unsynced (bool): Only sync unsynced sales_receipts
         reset_offset (bool): Reset Redis offset before syncing
@@ -63,7 +63,7 @@ def bulk_sync_sales_recepts_task(
             # ----------------------------------------------------------
             if reset_offset:
                 redis_client.set(offset_key, 0)
-                current_app.logger.info("Invoice sync offset reset to 0")
+                current_app.logger.info("sales_receipt sync offset reset to 0")
 
             current_offset = int(redis_client.get(offset_key) or 0)
 
@@ -72,7 +72,7 @@ def bulk_sync_sales_recepts_task(
             # ----------------------------------------------------------
             if sales_receipt_ids is None:
                 if not filter_unsynced:
-                    raise ValueError("Bulk sales_receipt sync must filter unsynced invoices")
+                    raise ValueError("Bulk sales_receipt sync must filter unsynced sales_receipts")
 
                 sales_receipts = TblStudentWallet.get_sales_receipts(
                     limit=batch_size,
@@ -202,17 +202,17 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
                 sales_receipt = TblStudentWallet.get_sales_data(sales_receipt_id)
 
                 if not sales_receipt:
-                    raise ValueError("Invoice not found")
+                    raise ValueError("sales_receipt not found")
 
                 if sales_receipt.quickbooks_id:
-                    result = sync_service.update_single_sales_receipt(sales_receipt)
+                    result = sync_service.update_single_sales_receipt(sales_receipt.id)
                     if result.success:
                         results["synced"] += 1
                     else:
                         raise RuntimeError(result.error_message)
                 
                 else:
-                    result = sync_service.sync_single_sales_receipt(sales_receipt)
+                    result = sync_service.sync_single_sales_receipt(sales_receipt.id)
 
                     if result.success:
                         results["synced"] += 1
@@ -226,7 +226,7 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
                     "error": str(e),
                 })
                 current_app.logger.error(
-                    f"[Job {job_id}] Invoice {sales_receipt_id}: {str(e)}"
+                    f"[Job {job_id}] sales_receipt {sales_receipt_id}: {str(e)}"
                 )
 
         # --------------------------------------------------------------
