@@ -926,12 +926,21 @@ class InvoiceSyncService:
                     invoice.sync_token = sync_token if sync_token else invoice.sync_token
                     invoice.balance = balance if balance else invoice.dept
                 # Store QuickBooks ID in a custom field or comment if needed
+                MAX_COMMENT_LENGTH = 500
                 if quickbooks_id and status == SyncStatus.SYNCED.value:
                     current_comment = invoice.comment or ""
-                    if "QB_ID:" not in current_comment:
-                        invoice.comment = f"{current_comment} [QB_ID:{quickbooks_id}]".strip()
-                session.commit()
-                logger.info(f"Updated invoice {invoice_id} sync status to {status}")
+
+                    # Only add QB_ID if not already present
+                    if f"QB_ID:{quickbooks_id}" not in current_comment:
+                        new_comment = f"{current_comment} [QB_ID:{quickbooks_id}]".strip()
+
+                        # Ensure we do not exceed the max length
+                        if len(new_comment) > MAX_COMMENT_LENGTH:
+                            new_comment = new_comment[:MAX_COMMENT_LENGTH]
+
+                        invoice.comment = new_comment
+                    session.commit()
+                    logger.info(f"Updated invoice {invoice_id} sync status to {status}")
 
         except Exception as e:
             logger.error(f"Error updating invoice sync status: {e}")
