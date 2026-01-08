@@ -508,7 +508,6 @@ class TblStudentWallet(MISBaseModel):
     quickbooks_id = db.Column(db.String(255), nullable=True)
     sync_token = db.Column(db.String(10), nullable=True)
     sync_status = db.Column(db.Integer, nullable=True)
-    is_applicant = db.Column(db.Boolean, nullable=True)
 
 
 
@@ -657,6 +656,15 @@ class TblStudentWallet(MISBaseModel):
                 session.commit()
                 return True
             return False
+    @classmethod
+    def get_sales_receipts(cls, limit=50, offset=0):
+        """
+        Get sales receipts
+        """
+        with cls.get_session() as session:
+            sales_receipts = session.query(cls).order_by(cls.payment_date.asc()).offset(offset).limit(limit).all()
+            return [sales_receipt.to_dict() for sales_receipt in sales_receipts]
+
 
     @classmethod
     def topup_wallet(cls, reg_no, transaction_id, amount):

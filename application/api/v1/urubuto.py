@@ -486,12 +486,9 @@ def payment_callback():
             if wallet:
                 updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
-                if is_student is False:
-                    current_app.logger.info(f"Wallet for applicants is topped up by not syncable to quickbooks")
-                else:
-                    current_app.logger.info(f"Wallet topped up: {updated}")
-                    update_wallet_to_quickbooks_task.delay(wallet.id)
-                    current_app.logger.info(f"Wallet topped up: {updated}")
+                current_app.logger.info(f"Wallet topped up: {updated}")
+                update_wallet_to_quickbooks_task.delay(wallet.id)
+                current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(
                     reg_prg_id=random.randint(100000, 999999),
@@ -505,12 +502,10 @@ def payment_callback():
                     dept=amount,
                     fee_category=1,
                     bank_id=2,
-                    is_applicant=False if student else True
                 )
                 current_app.logger.info(f"Wallet created: {created}")
-                if is_student:
-                    from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                    sync_wallet_to_quickbooks_task.delay(created.get('id'))
+                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                sync_wallet_to_quickbooks_task.delay(created.get('id'))
                 
             from application.models.central_models import IntegrationLog
         
