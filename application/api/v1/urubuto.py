@@ -491,7 +491,7 @@ def payment_callback():
                 current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(
-                    reg_prg_id=random.randint(100000, 999999),
+                    reg_prg_id=None,
                     reg_no=reg_no,
                     reference_number=random.randint(100000000, 999999999),
                     trans_code=transaction_id,
@@ -500,7 +500,7 @@ def payment_callback():
                     payment_date=date.today(),
                     is_paid="Yes",
                     dept=amount,
-                    fee_category=1,
+                    fee_category=128,
                     bank_id=2,
                 )
                 current_app.logger.info(f"Wallet created: {created}")
