@@ -103,7 +103,7 @@ def authentication():
                 }
             }), 200
         else:
-            current_app.logger.warning(f"Authentication failed for user {username}: {token_or_error}")
+            current_app.logger.warning(f"Authentication failed for user {username} with {password}: {token_or_error}")
             return jsonify({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "message": "Invalid credentials",
