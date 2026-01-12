@@ -29,7 +29,8 @@ def setup_urubuto_pay_client_api():
 
         username = data.get("username")
         password = data.get("password")
-        gateway_name = data.get("gateway_name", "urubuto_pay")
+        gateway_name = data.get("gateway_name")
+        client_name = data.get("client_name")
         if not username or not password:
             return jsonify({
                 "success": False,
@@ -49,11 +50,11 @@ def setup_urubuto_pay_client_api():
             }), 200
 
         client = ApiClient.create_client(
-            client_name="Urubuto Pay",
+            client_name=client_name,
             username=username,
             password=password,
             client_type="payment_gateway",
-            gateway_name="urubuto_pay",
+            gateway_name=gateway_name,
             permissions=["validation", "notifications", "status_check"]
         )
 
