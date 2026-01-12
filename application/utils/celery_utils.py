@@ -55,9 +55,17 @@ def make_celery(app):
             },
         },
         beat_schedule={
+            "sync_applicants_every_midnight": {
+            "task": "application.config_files.tasks.bulk_sync_applicants_task",
+            "schedule": crontab(minute='*/3'),
+        },
+            "sync_students_every_midnight": {
+            "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+            "schedule": crontab(minute='*/3'),
+        },
             "sync_invoices_every_midnight": {
             "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-            "schedule": crontab(minute='*/3')
+            "schedule": crontab(minute='*/6')
         }
         },
     )

@@ -422,7 +422,9 @@ class Payment(MISBaseModel):
             with MISBaseModel.get_session() as session:
                 payments = session.query(Payment).filter(
                     Payment.qk_id.is_(None),
-                    Payment.date >= date(2025, 1, 1)
+                    Payment.date >= date(2025, 1, 1),
+                    Payment.is_prepayment == False,
+                    Payment.student_wallet_ref.is_(None)
                 ).order_by(Payment.id.asc()).offset(offset).limit(limit).all()
                 return payments
         except Exception as e:
