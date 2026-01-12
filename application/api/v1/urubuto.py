@@ -403,9 +403,9 @@ def payment_callback():
                 current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(
-                    reg_prg_id=None,
+                    reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
                     reg_no=reg_no,
-                    reference_number=random.randint(100000000, 999999999),
+                    reference_number=f"{int(datetime.now().strftime("%Y%m%d%H%M%S"))}_{payer_code}",
                     trans_code=transaction_id,
                     external_transaction_id=transaction_id,
                     payment_chanel=payment_chanel,
@@ -416,8 +416,9 @@ def payment_callback():
                     bank_id=2,
                 )
                 current_app.logger.info(f"Wallet created: {created}")
-                from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                sync_wallet_to_quickbooks_task.delay(created.get('id'))
+                if created:
+                    from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                    sync_wallet_to_quickbooks_task.delay(created.get('id'))
                 
             from application.models.central_models import IntegrationLog
         
