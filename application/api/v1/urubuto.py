@@ -75,7 +75,7 @@ def authentication():
             }), 400
 
         # Validate required parameters
-        username = data.get('username')
+        username = data.get('user_name')
         password = data.get('password')
 
         if not username or not password:
