@@ -80,7 +80,7 @@ else
     echo "xxx No running Gunicorn process found."
 fi
 
-nohup gunicorn -b 0.0.0.0:9000 -w 2 app:app > "$LOG_DIR/gunicorn.log" 2>&1 &
+nohup gunicorn -b 0.0.0.0:9000 -w 4 -k gevent --worker-connections 1000 app:app > "$LOG_DIR/gunicorn.log" 2>&1 &
 sleep 2
 if pgrep -f "gunicorn" > /dev/null; then
     echo "=== Gunicorn started successfully."
