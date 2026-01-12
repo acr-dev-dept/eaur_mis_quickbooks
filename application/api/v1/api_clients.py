@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify
 from application import db
 from application.models.central_models import ApiClient
 import os
+from flask import request
+
 admin_api_clients_bp = Blueprint(
     "admin_api_clients",
     __name__,
@@ -9,15 +11,32 @@ admin_api_clients_bp = Blueprint(
 )
 
 
-@admin_api_clients_bp.route("/urubuto-pay/setup", methods=["POST"])
+@admin_api_clients_bp.route("/payment-gateway/setup", methods=["POST"])
 def setup_urubuto_pay_client_api():
     """
     Setup API client for Urubuto Pay
+    Expects JSON body with: username, password
     """
     try:
         db.create_all()
 
-        existing_client = ApiClient.get_by_gateway("urubuto_pay")
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({
+                "success": False,
+                "message": "Invalid or missing JSON payload"
+            }), 400
+
+        username = data.get("username")
+        password = data.get("password")
+        gateway_name = data.get("gateway_name", "urubuto_pay")
+        if not username or not password:
+            return jsonify({
+                "success": False,
+                "message": "username and password are required"
+            }), 400
+
+        existing_client = ApiClient.get_by_gateway(gateway_name)
         if existing_client:
             return jsonify({
                 "success": True,
@@ -31,8 +50,8 @@ def setup_urubuto_pay_client_api():
 
         client = ApiClient.create_client(
             client_name="Urubuto Pay",
-            username="urubuto_pay",
-            password=os.getenv("URUBUTO_PAY_PASSWORD"),
+            username=username,
+            password=password,
             client_type="payment_gateway",
             gateway_name="urubuto_pay",
             permissions=["validation", "notifications", "status_check"]
@@ -51,9 +70,9 @@ def setup_urubuto_pay_client_api():
     except Exception as e:
         return jsonify({
             "success": False,
+            "message": "Failed to setup Urubuto Pay client",
             "error": str(e)
         }), 500
-
 
 @admin_api_clients_bp.route("/school-gear/setup", methods=["POST"])
 def setup_school_gear_client_api():
