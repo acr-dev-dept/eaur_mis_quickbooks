@@ -405,7 +405,7 @@ def payment_callback():
                 created = TblStudentWallet.create_wallet_entry(
                     reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
                     reg_no=reg_no,
-                    reference_number=f"{int(datetime.now().strftime("%Y%m%d%H%M%S"))}_{payer_code}",
+                    reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{payer_code}",
                     trans_code=transaction_id,
                     external_transaction_id=transaction_id,
                     payment_chanel=payment_chanel,
