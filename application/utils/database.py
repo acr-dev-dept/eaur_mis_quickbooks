@@ -43,14 +43,18 @@ class DatabaseManager:
             logger.warning("MIS database URL not configured")
             return
         
+        if 'mis' in self.engines:
+            return
+
+
         try:
             engine = create_engine(
                 config.get('SQLALCHEMY_DATABASE_URI'),
                 poolclass=QueuePool,
-                pool_size=10,
-                max_overflow=20,
+                pool_size=3,
+                max_overflow=2,
                 pool_pre_ping=True,
-                pool_recycle=3600
+                pool_recycle=300
                 #echo=config.get('DEBUG')
             )
             from application import db
@@ -62,10 +66,10 @@ class DatabaseManager:
             self._add_connection_listeners(engine)
             
             self.engines['mis'] = engine
-            self.session_factories['mis'] = scoped_session(
-                sessionmaker(bind=engine, expire_on_commit=False)
+            self.session_factories['mis'] = sessionmaker(
+                bind=engine,
+                expire_on_commit=False
             )
-            
             logger.info("MIS database connection established")
             
         except Exception as e:
