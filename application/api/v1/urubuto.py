@@ -368,7 +368,6 @@ def payment_callback():
         try:
             from application.models.mis_models import TblStudentWallet
             from datetime import date
-
             # Resolve payer (student or applicant)
             student = TblPersonalUg.get_student_data(payer_code)
             applicant = TblOnlineApplication.get_applicant_data(payer_code)
