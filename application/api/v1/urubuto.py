@@ -198,25 +198,9 @@ def payer_validation():
             try:  
                 
                 invoice_bal = TblImvoice.get_invoice_balance(payer_code)
+                amount = invoice_bal
                 
-                if not invoice_bal:
-                    wallet = TblStudentWallet.get_by_reference_number(payer_code)
-                    if wallet:
-                        invoice_bal_wallet = wallet.dept
-                    else:
-                        invoice_bal_wallet = 0
-                    invoice_balance = invoice_bal_wallet
-                    current_app.logger.info(f"Invoice balance retrieved from wallet: {invoice_balance}")
-                    return jsonify({
-                        "message": "Successful",
-                        "status": 200}), 200
-                
-                invoice_deposit_amount = TblImvoice.get_invoice_deposit_amount(payer_code)
-
-                invoice_balance = invoice_bal or invoice_deposit_amount
-                amount = invoice_balance
-                
-                if invoice_balance is None:
+                if invoice_bal is None:
                     current_app.logger.warning(f"No invoice found for payer_code: {payer_code}")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -224,7 +208,7 @@ def payer_validation():
                         "status": 400
                     }), 400
                 # Make sure the balance is greater than zero
-                if float(invoice_balance) == 0.0:
+                if float(invoice_bal) == 0.0:
                     current_app.logger.warning(f"Invoice balance is zero for payer_code: {payer_code}")
                     return jsonify({
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -232,7 +216,7 @@ def payer_validation():
                         "status": 400
                     }), 400
                 # make sure it doesn't have decimal places
-                invoice_balance = int(float(invoice_balance))
+                invoice_balance = int(float(invoice_bal))
                 current_app.logger.info(f"Invoice balance retrieved from MIS: {invoice_balance}")
                 current_app.logger.info(f"Invoice balance type: {type(invoice_balance)} and value: {invoice_balance}")
             except Exception as e:

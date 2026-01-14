@@ -1163,7 +1163,7 @@ class TblImvoice(MISBaseModel):
         try:
             with cls.get_session() as session:
                 invoice = session.query(cls).filter(cls.reference_number == reference_number).first()
-                return invoice.balance if invoice else None
+                return invoice.balance if invoice else invoice.dept
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting invoice balance for reference {reference_number}: {str(e)}")
