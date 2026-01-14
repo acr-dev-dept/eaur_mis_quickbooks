@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
+from application.config_files.payment_sync import sync_payment_to_quickbooks_task
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
@@ -355,19 +356,19 @@ def payment_callback():
             # Resolve payer (student or applicant)
             student = TblPersonalUg.get_student_data(payer_code)
             applicant = TblOnlineApplication.get_applicant_data(payer_code)
-
-            if not student and not applicant:
+            invoice = TblImvoice.get_invoice_details(payer_code)
+            if not student and not applicant and not invoice:
                 return jsonify({
                     "message": "Payer not found",
                     "status": 404
                 }), 404
 
             reg_no = student.reg_no if student else applicant.tracking_id
-            is_student = True if student else False
 
             # Idempotency check (CRITICAL)
             existing_wallet = TblStudentWallet.get_by_external_transaction_id(transaction_id)
-            if existing_wallet:
+            existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
+            if existing_wallet or existing_payment:
                 current_app.logger.warning(
                     f"Duplicate transaction ignored: {transaction_id}"
                 )
@@ -377,6 +378,7 @@ def payment_callback():
                 }), 200
 
             wallet = TblStudentWallet.get_by_reg_no(payer_code)
+            updated_invoice = TblImvoice.update_invoice_balance(payer_code, amount)
 
             if wallet:
                 updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
@@ -384,6 +386,30 @@ def payment_callback():
                 current_app.logger.info(f"Wallet topped up: {updated}")
                 update_wallet_to_quickbooks_task.delay(wallet.id)
                 current_app.logger.info(f"Wallet topped up: {updated}")
+            elif updated_invoice[0] is not None:
+                payment_record = Payment.create_payment(
+                    external_transaction_id=transaction_id,
+                    trans_code=transaction_id,
+                    description=f"Urubuto Pay Via Microservice",
+                    payment_chanel=data.get('payment_channel_name'),
+                    invoi_ref=payer_code,
+                    amount=amount,
+                    level_id=updated[1].level_id if updated[1] else None,
+                    fee_category=updated[1].fee_category if updated[1] else None,
+                    reg_no=updated[1].reg_no if updated[1] else None,
+                    appl_Id=updated[1].appl_Id if updated[1] else None,
+                    user="URUBUTOPAY",
+                    bank_id=2
+                )
+                current_app.logger.info(f"Payment record created: {payment_record}")
+                #sync the payment to quickbooks
+                if payment_record:
+                    payment_id = payment_record.get('id')
+                # Use the endpoint to sync single payment
+                # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
+                
+                response = sync_payment_to_quickbooks_task.delay(payment_id)
+                
             else:
                 created = TblStudentWallet.create_wallet_entry(
                     reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
