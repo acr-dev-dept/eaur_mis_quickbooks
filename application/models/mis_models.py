@@ -543,7 +543,8 @@ class TblStudentWallet(MISBaseModel):
             'is_paid': self.is_paid,
             'sync_token': self.sync_token,
             'sync_status': self.sync_status,
-            'quickbooks_id': self.quickbooks_id
+            'quickbooks_id': self.quickbooks_id,
+            'slip_no': self.slip_no
         }
 
     @classmethod

@@ -552,6 +552,8 @@ def payment_notification():
             # check the status of the transaction
             try:
                 status = TblStudentWallet.get_by_external_transaction_id(transaction_id)
+                wallet_info = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
+                current_app.logger.info(f"Wallet info retrieved: {wallet_info.to_dict() if wallet_info else 'None'}")
                 current_app.logger.info(f"Transaction status check result: {status}")
                 if status:
                     # update slip number if any
