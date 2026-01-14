@@ -744,6 +744,7 @@ class TblStudentWallet(MISBaseModel):
                 reg_no=student_wallet.reg_no,
                 reference_number=student_wallet.reference_number,
                 transaction_type="TOPUP",
+                slip_no=student_wallet.slip_no if student_wallet.slip_no else None,
                 amount=amount,
                 balance_before=balance_before,
                 balance_after=balance_after,
