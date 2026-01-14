@@ -772,6 +772,18 @@ class TblStudentWallet(MISBaseModel):
             if student_wallet:
                 return True
             return False
+    @classmethod
+    def update_slip_no(cls, external_transaction_id, slip_no):
+        """
+        Update slip number for a wallet entry
+        """
+        with cls.get_session() as session:
+            student_wallet = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
+            if student_wallet:
+                student_wallet.slip_no = slip_no
+                session.commit()
+                return True
+            return False
 
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""
@@ -804,7 +816,7 @@ class TblStudentWalletHistory(MISBaseModel):
 
     payment_chanel = db.Column(db.String(100), nullable=True)
     bank_id = db.Column(db.Integer, nullable=True)
-
+    slip_no = db.Column(db.String(255), nullable=True)
     comment = db.Column(db.String(900), nullable=True)
 
     created_by = db.Column(db.String(50), nullable=True)
@@ -895,7 +907,18 @@ class TblStudentWalletHistory(MISBaseModel):
             session.add(history)
             session.commit()
             return history
-
+    @classmethod
+    def update_slip_no(cls, external_transaction_id, slip_no):
+        """
+        Update slip number for a wallet history entry
+        """
+        with cls.get_session() as session:
+            wallet_history = session.query(cls).filter(cls.external_transaction_id == external_transaction_id).first()
+            if wallet_history:
+                wallet_history.slip_no = slip_no
+                session.commit()
+                return True
+            return False
 
 
 class TblBank(MISBaseModel):
