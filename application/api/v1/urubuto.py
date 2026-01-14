@@ -357,13 +357,20 @@ def payment_callback():
             student = TblPersonalUg.get_student_data(payer_code)
             applicant = TblOnlineApplication.get_applicant_data(payer_code)
             invoice = TblImvoice.get_invoice_details(payer_code)
+            reg_no = ""
             if not student and not applicant and not invoice:
                 return jsonify({
                     "message": "Payer not found",
                     "status": 404
                 }), 404
 
-            reg_no = student.reg_no if student else applicant.tracking_id
+            if student:
+                reg_no = student.reg_no
+            elif applicant:
+                reg_no = applicant.tracking_id
+            else:
+                reg_no = invoice.reg_no
+
 
             # Idempotency check (CRITICAL)
             existing_wallet = TblStudentWallet.get_by_external_transaction_id(transaction_id)
@@ -378,13 +385,17 @@ def payment_callback():
                 }), 200
 
             wallet = TblStudentWallet.get_by_reg_no(payer_code)
-            updated_invoice = TblImvoice.update_invoice_balance(payer_code, amount)
+            invoice_balance = invoice.balance if invoice.balance is not None else invoice.dept if invoice else 0
+            amount_paid = min(amount, float(invoice_balance))
+            remaining_amount = amount - amount_paid
+            updated_invoice = TblImvoice.update_invoice_balance(payer_code, amount_paid)
 
             if wallet:
                 updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
                 current_app.logger.info(f"Wallet topped up: {updated}")
-                update_wallet_to_quickbooks_task.delay(wallet.id)
+                if updated:
+                    update_wallet_to_quickbooks_task.delay(wallet.id)
                 current_app.logger.info(f"Wallet topped up: {updated}")
             elif updated_invoice[0] is not None:
                 payment_record = Payment.create_payment(
@@ -394,10 +405,10 @@ def payment_callback():
                     payment_chanel=data.get('payment_channel_name'),
                     invoi_ref=payer_code,
                     amount=amount,
-                    level_id=updated[1].level_id if updated[1] else None,
-                    fee_category=updated[1].fee_category if updated[1] else None,
-                    reg_no=updated[1].reg_no if updated[1] else None,
-                    appl_Id=updated[1].appl_Id if updated[1] else None,
+                    level_id=updated_invoice[1].level_id if updated_invoice[1] else None,
+                    fee_category=updated_invoice[1].fee_category if updated_invoice[1] else None,
+                    reg_no=updated_invoice[1].reg_no if updated_invoice[1] else None,
+                    appl_Id=updated_invoice[1].appl_Id if updated_invoice[1] else None,
                     user="URUBUTOPAY",
                     bank_id=2
                 )
@@ -408,8 +419,41 @@ def payment_callback():
                 # Use the endpoint to sync single payment
                 # url = f"https://api.eaur.ac.rw/api/v1/sync/payments/sync_payment/{payment_id}"
                 
-                response = sync_payment_to_quickbooks_task.delay(payment_id)
-                
+                    response = sync_payment_to_quickbooks_task.delay(payment_id)
+                if remaining_amount > 0:
+                    # Top up the wallet with the remaining amount
+                    existing_wallet = TblStudentWallet.get_by_reg_no(reg_no)
+                    if not existing_wallet:
+                        # Create wallet entry for remaining amount
+                        wallet_entry = TblStudentWallet.create_wallet_entry(
+                            reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
+                            reg_no=reg_no,
+                            reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{payer_code}",
+                            trans_code=transaction_id,
+                            external_transaction_id=transaction_id,
+                            payment_chanel=payment_chanel,
+                            payment_date=date.today(),
+                            is_paid="Yes",
+                            dept=remaining_amount,
+                            fee_category=128,
+                            bank_id=2,
+                        )
+                        current_app.logger.info(f"Wallet created: {wallet_entry}")
+                        if wallet_entry:
+                            from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                            sync_wallet_to_quickbooks_task.delay(wallet_entry.get('id'))
+                    else:
+                        # Update existing wallet entry with remaining amount
+                        updated_wallet = TblStudentWallet.topup_wallet(
+                            payer_code=reg_no,
+                            transaction_id=transaction_id,
+                            amount=remaining_amount
+                        )
+                        current_app.logger.info(f"Wallet topped up: {updated_wallet}")
+                        # Use the endpoint to sync single payment
+                        if updated_wallet:
+                            from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
+                            update_wallet_to_quickbooks_task.delay(existing_wallet.id)
             else:
                 created = TblStudentWallet.create_wallet_entry(
                     reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
