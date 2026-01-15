@@ -374,15 +374,11 @@ class InvoiceSyncService:
             }
 
             # check if there is a wallet already paid and append to the payload
-            if invoice.is_prepayment:
+            payment = Payment.get_by_reference_number(invoice.reference_number)
+            if payment and payment.student_wallet_ref is not None:
                 current_app.logger.info(
                     f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
                 )
-                payment = Payment.get_by_reference_number(invoice.reference_number)
-                if not payment:
-                    current_app.logger.error("Payment not found")
-                    raise ValueError("Payment not found")
-                
                 paid_amount = payment.amount
                 wallet_ref = payment.student_wallet_ref
                 wallet_data = TblStudentWallet.get_by_reference_number(wallet_ref)
