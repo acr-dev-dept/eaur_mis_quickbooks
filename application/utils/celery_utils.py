@@ -21,7 +21,7 @@ def make_celery(app):
         
     )
 
-    celery.conf.update(app.config)
+    celery.conf.update(app.config, result_expires=3600)
 
     # All tasks automatically get app context
     class ContextTask(celery.Task):

@@ -53,10 +53,6 @@ nohup celery -A application.config_files.celery_app.celery worker \
     --concurrency=8 \
     --prefetch-multiplier=1 \
     --loglevel=info \
-    --max-tasks-per-child=1000 \
-    --logfile="$LOG_DIR/celery_worker.log" \
-    --logfile-max-size=50MB \
-    --logfile-backup-count=5
     > "$LOG_DIR/celery_worker.log" 2>&1 &
 sleep 2
 if pgrep -f "celery worker" > /dev/null; then
