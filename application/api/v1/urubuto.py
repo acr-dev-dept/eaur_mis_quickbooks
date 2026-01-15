@@ -267,7 +267,13 @@ def payer_validation():
                 f"Payer code {payer_code} identified as applicant. "
                 "No balance validation required."
             )
-        
+        else:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Unknown payer type",
+                "status": 400
+            }), 400
+        current_app.logger.info(f"Payer validation successful for payer_code: {payer_code} with amount: {amount}")
         # We are going to stop here and respond with successful response
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
