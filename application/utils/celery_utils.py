@@ -17,11 +17,11 @@ def make_celery(app):
     celery = Celery(
         app.import_name,
         broker=app.config["broker_url"],
-        backend=app.config["RESULT_BACKEND"],
-        result_expires=3600
+        backend=app.config["RESULT_BACKEND"]
+        
     )
 
-    celery.conf.update(app.config)
+    celery.conf.update(app.config, result_expires=3600)
 
     # All tasks automatically get app context
     class ContextTask(celery.Task):
