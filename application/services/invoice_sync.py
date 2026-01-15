@@ -377,7 +377,7 @@ class InvoiceSyncService:
             payment = Payment.get_by_reference_number(invoice.reference_number)
             if payment and payment.student_wallet_ref is not None:
                 current_app.logger.info(
-                    f"Wallet reference found for invoice {invoice.id}: {invoice.wallet_ref}"
+                    f"Wallet reference found for invoice {invoice.id}"
                 )
                 paid_amount = payment.amount
                 wallet_ref = payment.student_wallet_ref
