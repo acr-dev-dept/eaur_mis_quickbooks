@@ -7,7 +7,7 @@ reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 
 
-@reconciliation_bp.route("/reconciliation/valid-payments/total", methods=["GET"])
+@reconciliation_bp.route("/valid-payments/total", methods=["GET"])
 def get_total_valid_payments():
     """
     Returns the total amount and count of VALID payments from IntegrationLogs.
