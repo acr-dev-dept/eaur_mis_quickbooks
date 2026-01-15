@@ -24,7 +24,16 @@ def get_total_valid_payments():
 
         for log in logs:
             try:
-                response = json.loads(log.response_data)
+                if isinstance(log.response_data, dict):
+                    response = log.response_data
+                elif isinstance(log.response_data, str):
+                    response = json.loads(log.response_data)
+                else:
+                    current_app.logger.warning(
+                        f"Unsupported response_data type in IntegrationLogs id={log.id}"
+                    )
+                    continue
+
             except json.JSONDecodeError:
                 current_app.logger.warning(
                     f"Invalid JSON in IntegrationLogs id={log.id}"
