@@ -4,7 +4,7 @@ EAUR MIS-QuickBooks Integration Application Factory
 
 import os
 import logging
-from flask import Flask
+from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -178,6 +178,9 @@ def register_blueprints(app):
 
     app.register_blueprint(admin_api_clients_bp)
 
+    from application.api.v1.reconciliation import reconciliation_bp
+
+    app.register_blueprint(reconciliation_bp)
 
 
 def register_error_handlers(app):
