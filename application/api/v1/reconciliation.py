@@ -7,7 +7,7 @@ reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 
 
-@reconciliation_bp.route("/api/v1/reconciliation/valid-payments/total", methods=["GET"])
+@reconciliation_bp.route("/reconciliation/valid-payments/total", methods=["GET"])
 def get_total_valid_payments():
     """
     Returns the total amount and count of VALID payments from IntegrationLogs.
@@ -73,7 +73,7 @@ def get_total_valid_payments():
         }), 500
 
 
-@reconciliation_bp.route("/api/v1/reconciliation/clean-duplicate-logs", methods=["POST"])
+@reconciliation_bp.route("/clean-duplicate-logs", methods=["POST"])
 def clean_duplicate_integration_logs():
     """
     Removes duplicate IntegrationLog records based on external_transaction_id.

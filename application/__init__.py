@@ -180,7 +180,7 @@ def register_blueprints(app):
 
     from application.api.v1.reconciliation import reconciliation_bp
 
-    app.register_blueprint(reconciliation_bp)
+    app.register_blueprint(reconciliation_bp, url_prefix='/api/v1/reconciliation')
 
 
 def register_error_handlers(app):
