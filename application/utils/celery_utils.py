@@ -18,6 +18,7 @@ def make_celery(app):
         app.import_name,
         broker=app.config["broker_url"],
         backend=app.config["RESULT_BACKEND"],
+        result_expires=3600
     )
 
     celery.conf.update(app.config)
@@ -55,18 +56,26 @@ def make_celery(app):
             },
         },
         beat_schedule={
-            "sync_applicants_every_midnight": {
+            "sync_applicants": {
             "task": "application.config_files.tasks.bulk_sync_applicants_task",
-            "schedule": crontab(minute='*/30'),
+            "schedule": crontab(hour='7,15,23', minute=0),
         },
-            "sync_students_every_midnight": {
+            "sync_students": {
             "task": "application.config_files.sync_students_task.bulk_sync_students_task",
-            "schedule": crontab(minute='*/45'),
+            "schedule": crontab(hour='7,15,23', minute=30),
         },
             "sync_sales_receipt_every_midnight": {
             "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
             "schedule": crontab(minute='*/10')
-            } 
+        },
+            "sync_invoices_every_midnight": {
+            "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+            "schedule": crontab(hour="0,1,2,3,4,5", minute=0)
+        },
+            "update_invoices": {
+            "task": "application.config_files.update_sync_invoices_task.scheduled_invoice_update_task",
+            "schedule": crontab(hour="0,1,2,3,4,5", minute=30)
+        },
         },
     )
 
