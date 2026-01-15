@@ -161,12 +161,11 @@ class IntegrationLog(BaseModel):
     system_name = Column(String(50), nullable=False)  # 'QuickBooks', 'UrubutoPayy', 'SchoolGear'
     operation = Column(String(100), nullable=False)
     status = Column(String(20), nullable=False)  # 'Success', 'Failure', 'Pending'
-    
+    external_transaction_id = Column(String(255), nullable=True)
     request_data = Column(JSON, nullable=True)
     response_data = Column(JSON, nullable=True)
     error_details = Column(Text, nullable=True)
-    
-    # Timing information
+    payer_code = Column(String(255), nullable=True)
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
     duration_ms = Column(Integer, nullable=True)
@@ -186,6 +185,10 @@ class IntegrationLog(BaseModel):
             db.session.rollback()
             raise e
 
+    @classmethod
+    def get_log_by_transaction_id(cls, transaction_id):
+        """Retrieve log by external transaction ID"""
+        return cls.query.filter_by(external_transaction_id=transaction_id).first()
 
 class ApiClient(BaseModel):
     """

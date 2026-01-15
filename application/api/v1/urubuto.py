@@ -426,12 +426,21 @@ def payment_callback():
                     sync_wallet_to_quickbooks_task.delay(created.get('id'))
                 
             from application.models.central_models import IntegrationLog
-        
+            existing_log = IntegrationLog.get_log_by_transaction_id(transaction_id)
+            if existing_log:
+                current_app.logger.info(f"Integration log already exists for transaction {transaction_id}: {existing_log}")
+                return jsonify({
+                    "message": "Integration log already exists",
+                    "status": 200
+                }), 200
+
             try:
                 log = IntegrationLog.log_integration_operation(
                     system_name = "UrubutoPay",
-                    operation = "Invoice Payment",
-                    status = "success",
+                    operation = "Wallet Payment",
+                    status = transaction_status,
+                    external_transaction_id = transaction_id,
+                    payer_code = payer_code,
                     response_data = data,
                     started_at = started_at if started_at else datetime.now(),
                     completed_at = datetime.now()
