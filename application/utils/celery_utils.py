@@ -73,7 +73,7 @@ def make_celery(app):
             "schedule": crontab(hour="0,1,2,3,4,5", minute=0)
         },
             "update_invoices": {
-            "task": "application.config_files.update_sync_invoices_task.scheduled_invoice_update_task",
+            "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
             "schedule": crontab(hour="0,1,2,3,4,5", minute=30)
         },
         },
