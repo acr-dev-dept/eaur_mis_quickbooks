@@ -426,7 +426,7 @@ class Payment(MISBaseModel):
                     Payment.date >= date(2025, 1, 1),
                     Payment.is_prepayment == False,
                     Payment.student_wallet_ref.is_(None)
-                ).order_by(Payment.id.asc()).offset(offset).limit(limit).all()
+                ).order_by(Payment.id.desc()).offset(offset).limit(limit).all()
                 return payments
         except Exception as e:
             from flask import current_app

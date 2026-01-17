@@ -57,12 +57,16 @@ def make_celery(app):
         },
         beat_schedule={
             "sync_payments_every_midnight": {
-            "task": "application.config_files.sync_payments_task.scheduled_payment_sync_task",
-            "schedule": crontab(hour='18,19,20,1,22,23,0,1,2,3,4,5', minute='6,42')
+            "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
+            "schedule": crontab(hour='18,19,20,21,22,23,0,1,2,3,4,5', minute='6,42')
+            },
+            "sync_payments_every_midnight": {
+            "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
+            "schedule": crontab(minute='*/2')
             },
             "sync_sales_receipt_every_midnight": {
             "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
-            "schedule": crontab(hour="18,19,20,1,22,23,0,1,2,3,4,5", minute='12,48'),
+            "schedule": crontab(hour="18,19,20,21,22,23,0,1,2,3,4,5", minute='12,48'),
         },
             "sync_invoices_every_midnight": {
             "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
@@ -70,7 +74,7 @@ def make_celery(app):
         },
             "update_invoices": {
             "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
-            "schedule": crontab(hour="18,19,20,1,22,23,0,1,2,3,4,5", minute='30,57'),
+            "schedule": crontab(hour="18,19,20,21,22,23,0,1,2,3,4,5", minute='30,57'),
         },
         },
     )
