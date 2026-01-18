@@ -11,6 +11,8 @@ fi
 LOG_DIR="/home/eaur/eaur_mis_quickbooks/logs"
 mkdir -p "$LOG_DIR"
 FLOWER_PORT=${FLOWER_PORT:-5555}
+USER_NAME=${USER_NAME:admin}
+USER_PASS=${USER_PASS:Bijdad@432}
 APP_MODULE=${APP_MODULE:-application.config_files.celery_app.celery}
 PID_DIR=${PID_DIR:-/home/eaur/eaur_mis_quickbooks/pids}
 
@@ -95,6 +97,7 @@ celery -A $APP_MODULE flower \
     --port=$FLOWER_PORT \
     --loglevel=info \
     --pidfile="$PID_DIR/flower.pid" \
+    --basic_auth=$USER_NAME:$USER_PASS \
     --logfile="$LOG_DIR/flower.log" &
 echo "=== Flower started."
 echo "Logs are available in: $LOG_DIR/"
