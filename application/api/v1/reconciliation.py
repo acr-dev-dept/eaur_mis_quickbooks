@@ -185,7 +185,11 @@ def get_duplicate_external_transaction_ids():
 def analyze_transactions_file():
     """
     Receives a file path and returns transaction statistics
-    grouped by payer code with transaction-level details
+    grouped by payer code with transaction-level details.
+
+    Assumes:
+    - First row is header
+    - Only Txn Status = SUCCESSFUL is included
     """
 
     data = request.get_json(silent=True)
@@ -206,9 +210,16 @@ def analyze_transactions_file():
         }), 404
 
     try:
-        df = pd.read_csv(file_path)
+        # Explicitly tell pandas first row is header
+        df = pd.read_csv(
+            file_path,
+            header=0,
+            skip_blank_lines=True
+        )
 
-        # Required columns
+        # Normalize column names (important for bank files)
+        df.columns = df.columns.str.strip()
+
         required_columns = {
             "Payer Code",
             "Paid Amount",
@@ -225,38 +236,47 @@ def analyze_transactions_file():
                 "missing_columns": list(missing)
             }), 400
 
-        # ----------------------------------------
+        # ------------------------------------
         # Filter SUCCESSFUL transactions only
-        # ----------------------------------------
-        df = df[df["Txn Status"].astype(str).str.upper() == "SUCCESSFUL"]
+        # ------------------------------------
+        df["Txn Status"] = df["Txn Status"].astype(str).str.strip().str.upper()
+        df = df[df["Txn Status"] == "SUCCESSFUL"]
 
-        # Ensure numeric amount
+        # ------------------------------------
+        # Convert paid amount safely
+        # ------------------------------------
+        df["Paid Amount"] = (
+            df["Paid Amount"]
+            .astype(str)
+            .str.replace(",", "", regex=False)
+        )
+
         df["Paid Amount"] = pd.to_numeric(
             df["Paid Amount"],
             errors="coerce"
         ).fillna(0)
 
-        # ----------------------------------------
+        # ------------------------------------
         # Overall summary
-        # ----------------------------------------
+        # ------------------------------------
         total_transactions = int(len(df))
         total_amount = float(df["Paid Amount"].sum())
 
-        # ----------------------------------------
-        # Group by payer code
-        # ----------------------------------------
-        grouped_data = {}
+        # ------------------------------------
+        # Group per payer code
+        # ------------------------------------
+        per_payer_code = {}
 
         for payer_code, group in df.groupby("Payer Code"):
             transactions = []
 
             for _, row in group.iterrows():
                 transactions.append({
-                    "transaction_reference": row["Ext. Txn Ref."],
+                    "transaction_reference": row["Int. Txn Ref."],
                     "paid_amount": float(row["Paid Amount"])
                 })
 
-            grouped_data[payer_code] = {
+            per_payer_code[str(payer_code)] = {
                 "transaction_count": int(len(group)),
                 "total_paid_amount": float(group["Paid Amount"].sum()),
                 "transactions": transactions
@@ -269,7 +289,7 @@ def analyze_transactions_file():
                 "total_transactions": total_transactions,
                 "total_paid_amount": round(total_amount, 2)
             },
-            "per_payer_code": grouped_data
+            "per_payer_code": per_payer_code
         }), 200
 
     except Exception as e:
