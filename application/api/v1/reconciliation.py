@@ -3,6 +3,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, current_app
 from application import db
 from application.models.central_models import IntegrationLog
+from application.models.mis_models import TblStudentWallet
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 
@@ -125,3 +126,60 @@ def clean_duplicate_integration_logs():
             "message": "Internal server error",
             "error": str(e)
         }), 500
+
+
+@reconciliation_bp.route("/duplicate-wallets", methods=["GET"])
+def get_duplicate_external_transaction_ids():
+    """
+    Returns wallet records that have duplicate external_transaction_id
+    """
+
+    # Step 1: find duplicated external_transaction_ids
+    duplicate_ids_subquery = (
+        db.session.query(
+            TblStudentWallet.external_transaction_id
+        )
+        .filter(TblStudentWallet.external_transaction_id.isnot(None))
+        .group_by(TblStudentWallet.external_transaction_id)
+        .having(func.count(TblStudentWallet.id) > 1)
+        .subquery()
+    )
+
+    # Step 2: fetch all records with those duplicated IDs
+    duplicate_records = (
+        db.session.query(TblStudentWallet)
+        .filter(
+            TblStudentWallet.external_transaction_id.in_(
+                duplicate_ids_subquery
+            )
+        )
+        .order_by(
+            TblStudentWallet.external_transaction_id,
+            TblStudentWallet.date.asc()
+        )
+        .all()
+    )
+
+    results = []
+
+    for record in duplicate_records:
+        results.append({
+            "id": record.id,
+            "external_transaction_id": record.external_transaction_id,
+            "reg_no": record.reg_no,
+            "reference_number": record.reference_number,
+            "trans_code": record.trans_code,
+            "amount": record.dept,
+            "payment_date": (
+                record.payment_date.isoformat()
+                if record.payment_date else None
+            ),
+            "is_paid": record.is_paid,
+            "date": record.date.isoformat(),
+        })
+
+    return jsonify({
+        "status": "success",
+        "duplicate_count": len(results),
+        "records": results
+    }), 200

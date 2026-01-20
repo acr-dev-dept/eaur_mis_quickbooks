@@ -10,6 +10,12 @@ import os
 from application.services.payment_sync import PaymentSyncService
 import requests
 import random
+import uuid
+from application.utils.database import db_manager  # ← adjust to wherever db_manager is defined
+from datetime import datetime, date
+from application.models.central_models import IntegrationLog
+
+
 
 # Import the Celery task for syncing payment to QuickBooks
 
@@ -304,108 +310,121 @@ def payer_validation():
 @urubuto_bp.route('/callback', methods=['POST'])
 @require_auth('notifications')
 @require_gateway(['urubuto_pay', 'school_gear'])
+
+# Assuming db_manager is accessible (imported or via current_app)
+
+
 def payment_callback():
     """
     Payment callback endpoint for Urubuto Pay integration.
-
-    This endpoint receives payment callbacks from Urubuto Pay and updates
-    payment records in the MIS payments table.
+    Idempotent processing using atomic MIS session transaction.
     """
+    if request.method != 'POST':
+        current_app.logger.warning(f"Invalid method {request.method} on callback endpoint")
+        return jsonify({"message": "Method not allowed"}), 405
+
     current_app.logger.info("PAYMENT CALLBACK ENDPOINT CALLED ===")
-    current_app.logger.info(f"Request method: {request.method}")
-    current_app.logger.info(f"Request endpoint: {request.endpoint}")
     current_app.logger.info(f"Request remote addr: {request.remote_addr}")
     current_app.logger.info(f"Request content type: {request.content_type}")
-    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
-    current_app.logger.info(f"data received: {request.get_json()}")
 
-    # Process the callback data
-    started_at = datetime.now()
-    data = request.get_json()
-    current_app.logger.info(f"Callback data: {data}")
-    if not data:
-        message = f"No data found for this code: {data.get('payer_code')}"
+    data = request.get_json(silent=True)
+    if not data or not isinstance(data, dict):
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": message,
-            "status": 404
-        }), 404
+            "message": "Invalid or empty JSON payload",
+            "status": 400
+        }), 400
 
-    # Fetch some data from the callback for logging
-    transaction_id = data.get('transaction_id')
-    status = data.get('status')
-    transaction_status = data.get('transaction_status')
-    amount = data.get('amount')
-    payment_date_time = data.get('payment_date_time')
-    payer_code = data.get('payer_code')
-    payment_chanel = data.get('payment_channel_name')
+    # Required fields validation
+    required_fields = ['transaction_id', 'transaction_status', 'amount', 'payer_code']
+    missing = [f for f in required_fields if f not in data or data[f] is None]
+    if missing:
+        current_app.logger.warning(f"Missing required fields in callback: {missing}")
+        return jsonify({
+            "message": f"Missing required fields: {', '.join(missing)}",
+            "status": 400
+        }), 400
 
-    # Generate a random internal transaction in form of 625843
-    internal_transaction_id = str(datetime.now().timestamp()).replace('.', '')[:20]
+    transaction_id = data['transaction_id']
+    transaction_status = data['transaction_status']
+    payer_code = data['payer_code']
+    amount = data['amount']  # TODO: add type/positive validation if needed
+    payment_channel = data.get('payment_channel_name')
+    # payment_date_time = data.get('payment_date_time')  # unused for now
 
-    from application.models.mis_models import TblStudentWallet
+    started_at = datetime.now()
 
-    # Check if the transaction_id is not in the payment table so that we do not duplicate payments
     try:
-        payment = Payment.get_payment_details_by_external_id(transaction_id)
-        wallet_payment = None
-        if not payment:
-            wallet_payment = TblStudentWallet.get_payment_details_by_external_id(transaction_id)
-        existing_payment = payment or wallet_payment
-        current_app.logger.info(f"Existing payment check for transaction {transaction_id}: {existing_payment.to_dict() if existing_payment else 'None'}")
-        if existing_payment:
-            message = f"Payment already exists for transaction: {transaction_id}"
-            return jsonify({
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Successful",
-                "status": 200,
-                "data": {
-                    "external_transaction_id": transaction_id,
-                    "internal_transaction_id": str(existing_payment.id)
-                }
-            }), 200
-    except Exception as e:
-        current_app.logger.error(f"Error checking existing payment for transaction {transaction_id}: {str(e)}")
-        current_app.logger.error(traceback.format_exc())
-
-    # check the transaction status so that we know how to update the balance in invoice
-    # table and the payment table
-    if transaction_status == "VALID":
-        try:
-            from application.models.mis_models import TblStudentWallet
-            from datetime import date
-            # Resolve payer (student or applicant)
-            student = TblPersonalUg.get_student_data(payer_code)
-            applicant = TblOnlineApplication.get_applicant_data(payer_code)
-
-            if not student and not applicant:
-                return jsonify({
-                    "message": "Payer not found",
-                    "status": 404
-                }), 404
-
-            reg_no = student.reg_no if student else applicant.tracking_id
-            is_student = True if student else False
-
-            # Idempotency check (CRITICAL)
+        with db_manager.get_mis_session() as session:
+            # ────────────────────────────────────────────────
+            #   IDEMPOTENCY CHECK – inside transaction
+            # ────────────────────────────────────────────────
             existing_wallet = TblStudentWallet.get_by_external_transaction_id(transaction_id)
+
             if existing_wallet:
-                current_app.logger.warning(
-                    f"Duplicate transaction ignored: {transaction_id}"
-                )
+                current_app.logger.info(f"Duplicate callback ignored (already processed): {transaction_id}")
                 return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "message": "Transaction already processed",
-                    "status": 200
+                    "status": 200,
+                    "data": {
+                        "external_transaction_id": transaction_id,
+                        "internal_transaction_id": str(existing_wallet.id)
+                    }
                 }), 200
 
+            # Optional: add check in other tables if still needed
+            # existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
+            # if existing_payment: ...
+
+            # ────────────────────────────────────────────────
+            #   Only new transaction → proceed
+            # ────────────────────────────────────────────────
+            if transaction_status != "VALID":
+                current_app.logger.info(
+                    f"Non-VALID status '{transaction_status}' received for {transaction_id} – acknowledged, no processing"
+                )
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": f"Received {transaction_status}",
+                    "status": 200,
+                    "data": {"external_transaction_id": transaction_id}
+                }), 200
+
+            # ────────────────────────────────────────────────
+            #   Resolve payer
+            # ────────────────────────────────────────────────
+            student = TblPersonalUg.get_student_data(payer_code)
+            applicant = None
+            if not student:
+                # from application.models.mis_models import TblOnlineApplication
+                applicant = TblOnlineApplication.get_applicant_data(payer_code)
+
+            if not student and not applicant:
+                current_app.logger.error(f"Payer code not found: {payer_code}")
+                return jsonify({"message": "Payer not found", "status": 404}), 404
+
+            reg_no = student.reg_no if student else applicant.tracking_id
+
+            # ────────────────────────────────────────────────
+            #   Generate secure internal ID only now
+            # ────────────────────────────────────────────────
+            internal_transaction_id = uuid.uuid4().hex
+
+            # ────────────────────────────────────────────────
+            #   Wallet processing
+            # ────────────────────────────────────────────────
             wallet = TblStudentWallet.get_by_reg_no(payer_code)
 
             if wallet:
-                updated = TblStudentWallet.topup_wallet(payer_code,transaction_id, amount)
+                updated = TblStudentWallet.topup_wallet(
+                    payer_code=payer_code,
+                    external_transaction_id=transaction_id,
+                    amount=amount
+                )
+                current_app.logger.info(f"Wallet topped up for {payer_code}: {updated}")
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
-                current_app.logger.info(f"Wallet topped up: {updated}")
                 update_wallet_to_quickbooks_task.delay(wallet.id)
-                current_app.logger.info(f"Wallet topped up: {updated}")
             else:
                 created = TblStudentWallet.create_wallet_entry(
                     reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
@@ -413,74 +432,54 @@ def payment_callback():
                     reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{payer_code}",
                     trans_code=transaction_id,
                     external_transaction_id=transaction_id,
-                    payment_chanel=payment_chanel,
+                    payment_chanel=payment_channel,
                     payment_date=date.today(),
                     is_paid="Yes",
                     dept=amount,
                     fee_category=128,
                     bank_id=2,
                 )
-                current_app.logger.info(f"Wallet created: {created}")
-                if created:
+                current_app.logger.info(f"New wallet entry created for payer {payer_code}")
+                if created and 'id' in created:
                     from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                    sync_wallet_to_quickbooks_task.delay(created.get('id'))
-                
-            from application.models.central_models import IntegrationLog
-            existing_log = IntegrationLog.get_log_by_transaction_id(transaction_id)
-            if existing_log:
-                current_app.logger.info(f"Integration log already exists for transaction {transaction_id}: {existing_log}")
-                return jsonify({
-                    "message": "Integration log already exists",
-                    "status": 200
-                }), 200
+                    sync_wallet_to_quickbooks_task.delay(created['id'])
 
-            try:
-                log = IntegrationLog.log_integration_operation(
-                    system_name = "UrubutoPay",
-                    operation = "Wallet Payment",
-                    status = transaction_status,
-                    external_transaction_id = transaction_id,
-                    payer_code = payer_code,
-                    response_data = data,
-                    started_at = started_at if started_at else datetime.now(),
-                    completed_at = datetime.now()
-                )
-                current_app.logger.info(f"Integration log created: {log}")
-            except Exception as e:
-                current_app.logger.error(f"Error logging integration operation: {str(e)}")
-                current_app.logger.error(traceback.format_exc())
+            # ────────────────────────────────────────────────
+            #   Integration log
+            # ────────────────────────────────────────────────
+            IntegrationLog.log_integration_operation(
+                system_name="UrubutoPay",
+                operation="Wallet Payment",
+                status=transaction_status,
+                external_transaction_id=transaction_id,
+                payer_code=payer_code,
+                response_data=data,
+                started_at=started_at,
+                completed_at=datetime.now()
+            )
 
-            return jsonify({
-                "message": "Wallet processed successfully",
-                "status": 200
-            }), 200
+            # Session commits automatically on normal exit from with block
 
-        except Exception as e:
-            current_app.logger.error(f"Wallet processing failed: {str(e)}")
-            current_app.logger.error(traceback.format_exc())
-            return jsonify({
-                "message": "Internal server error",
-                "status": 500
-            }), 500
-
-    elif transaction_status == "PENDING_SETTLEMENT":  # tHIS SHOWS THAT THE STUDENT HAS PAID, ONLY THAT THE BANK HAS NOT CREDITED THE MERCHANT
-        current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} is pending.")
-        # WE update the balance because the student has paid, only that the bank has not credited the merchant
-    else:
-        current_app.logger.warning(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
-        # Log the transaction status
-        current_app.logger.info(f"Transaction {transaction_id} for {payer_code} has status: {transaction_status}. No balance update performed.")
-
-
-    return jsonify(
-        {
+    except Exception as e:
+        current_app.logger.error(f"Payment callback processing failed for {transaction_id}: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        # Rollback is automatic via get_mis_session() on exception
+        return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "Successful",
-            "data": {
-                "external_transaction_id": transaction_id,
-                "internal_transaction_id": internal_transaction_id
-            }
-        }), 200
+            "message": "Internal server error during payment processing",
+            "status": 500
+        }), 500
+
+    # Success
+    return jsonify({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message": "Wallet processed successfully",
+        "status": 200,
+        "data": {
+            "external_transaction_id": transaction_id,
+            "internal_transaction_id": internal_transaction_id
+        }
+    }), 200
 
 @urubuto_bp.route('/payments/notification', methods=['POST'])
 @require_auth('notifications')
