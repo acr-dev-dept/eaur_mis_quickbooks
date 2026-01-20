@@ -74,12 +74,13 @@ def get_total_valid_payments():
         }), 500
 
 
+"""
 @reconciliation_bp.route("/clean-duplicate-logs", methods=["POST"])
 def clean_duplicate_integration_logs():
-    """
-    Removes duplicate IntegrationLog records based on external_transaction_id.
-    Keeps the oldest record and deletes the rest.
-    """
+    
+    #Removes duplicate IntegrationLog records based on external_transaction_id.
+    #Keeps the oldest record and deletes the rest.
+    
 
     try:
         # Step 1: find transaction_ids with duplicates
@@ -127,7 +128,7 @@ def clean_duplicate_integration_logs():
             "error": str(e)
         }), 500
 
-
+"""
 @reconciliation_bp.route("/duplicate-wallets", methods=["GET"])
 def get_duplicate_external_transaction_ids():
     """
@@ -175,7 +176,7 @@ def get_duplicate_external_transaction_ids():
                 if record.payment_date else None
             ),
             "is_paid": record.is_paid,
-            "date": record.date.isoformat(),
+            "date": record.date.isoformat() if record.date else None,
         })
 
     return jsonify({
