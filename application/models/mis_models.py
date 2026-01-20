@@ -499,7 +499,7 @@ class TblStudentWallet(MISBaseModel):
     bank_id = db.Column(db.Integer, nullable=True)
     slip_no = db.Column(db.String(200), nullable=True)
     trans_code = db.Column(db.String(255), nullable=True)
-    external_transaction_id = db.Column(db.Text, nullable=True)
+    external_transaction_id = db.Column(db.Text, nullable=True, unique=True)
     payment_chanel = db.Column(db.String(100), nullable=True)
     fee_category = db.Column(db.Integer, nullable=True)
     dept = db.Column(db.Float, nullable=True)  # this seems to be the amount

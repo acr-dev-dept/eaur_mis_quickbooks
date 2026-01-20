@@ -1,13 +1,13 @@
 import json
 from decimal import Decimal
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
 from application.models.mis_models import TblStudentWallet
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
-
-
+import pandas as pd
+import os
 @reconciliation_bp.route("/valid-payments/total", methods=["GET"])
 def get_total_valid_payments():
     """
@@ -172,8 +172,6 @@ def get_duplicate_external_transaction_ids():
                 "amount": str(record.dept),
                 "date": record.payment_date.isoformat() if record.payment_date else None,
             }
-            
-
         })
 
     return jsonify({
@@ -181,3 +179,79 @@ def get_duplicate_external_transaction_ids():
         "duplicate_count": len(results),
         "records": results
     }), 200
+
+
+@reconciliation_bp.route("/analyze-transactions", methods=["POST"])
+def analyze_transactions_file():
+    """
+    Receives a file path and returns transaction statistics
+    """
+
+    data = request.get_json()
+
+    if not data or "file_path" not in data:
+        return jsonify({
+            "status": "error",
+            "message": "file_path is required"
+        }), 400
+
+    file_path = data["file_path"]
+
+    if not os.path.exists(file_path):
+        return jsonify({
+            "status": "error",
+            "message": "File not found",
+            "file_path": file_path
+        }), 404
+
+    try:
+        df = pd.read_csv(file_path)
+
+        # Validate required columns
+        required_columns = {"Payer Code", "Paid Amount"}
+        missing = required_columns - set(df.columns)
+
+        if missing:
+            return jsonify({
+                "status": "error",
+                "message": "Missing required columns",
+                "missing_columns": list(missing)
+            }), 400
+
+        # Ensure numeric
+        df["Paid Amount"] = pd.to_numeric(
+            df["Paid Amount"],
+            errors="coerce"
+        ).fillna(0)
+
+        # Overall stats
+        total_transactions = int(len(df))
+        total_amount = float(df["Paid Amount"].sum())
+
+        # Per payer_code aggregation
+        grouped = (
+            df.groupby("Payer Code")
+            .agg(
+                transaction_count=("Payer Code", "count"),
+                total_paid_amount=("Paid Amount", "sum")
+            )
+            .reset_index()
+        )
+
+        per_payer = grouped.to_dict(orient="records")
+
+        return jsonify({
+            "status": "success",
+            "file_path": file_path,
+            "summary": {
+                "total_transactions": total_transactions,
+                "total_paid_amount": round(total_amount, 2)
+            },
+            "per_payer_code": per_payer
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
