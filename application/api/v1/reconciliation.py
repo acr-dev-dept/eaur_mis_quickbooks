@@ -165,18 +165,16 @@ def get_duplicate_external_transaction_ids():
 
     for record in duplicate_records:
         results.append({
-            "id": record.id,
-            "external_transaction_id": record.external_transaction_id,
-            "reg_no": record.reg_no,
-            "reference_number": record.reference_number,
-            "trans_code": record.trans_code,
-            "amount": record.dept,
-            "payment_date": (
-                record.payment_date.isoformat()
-                if record.payment_date else None
-            ),
-            "is_paid": record.is_paid,
-            "date": record.date.isoformat() if record.date else None,
+            
+            record.external_transaction_id: {
+                "id": record.id,
+                "payer_code": record.payer_code,
+                "amount": str(record.amount),
+                "date": record.date.isoformat() if record.date else None,
+                "description": record.description
+            }
+            
+
         })
 
     return jsonify({
