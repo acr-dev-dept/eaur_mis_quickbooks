@@ -168,7 +168,7 @@ def get_duplicate_external_transaction_ids():
             
             record.external_transaction_id: {
                 "id": record.id,
-                "payer_code": record.payer_code,
+                "payer_code": record.reg_no,
                 "amount": str(record.amount),
                 "date": record.date.isoformat() if record.date else None,
                 "description": record.description
