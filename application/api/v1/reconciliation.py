@@ -213,7 +213,7 @@ def analyze_transactions_file():
             "Payer Code",
             "Paid Amount",
             "Txn Status",
-            "Ext. Txn Ref."
+            "Int. Txn Ref."
         }
 
         missing = required_columns - set(df.columns)
