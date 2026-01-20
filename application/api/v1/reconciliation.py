@@ -185,9 +185,10 @@ def get_duplicate_external_transaction_ids():
 def analyze_transactions_file():
     """
     Receives a file path and returns transaction statistics
+    grouped by payer code with transaction-level details
     """
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     if not data or "file_path" not in data:
         return jsonify({
@@ -207,8 +208,14 @@ def analyze_transactions_file():
     try:
         df = pd.read_csv(file_path)
 
-        # Validate required columns
-        required_columns = {"Payer Code", "Paid Amount"}
+        # Required columns
+        required_columns = {
+            "Payer Code",
+            "Paid Amount",
+            "Txn Status",
+            "Ext. Txn Ref."
+        }
+
         missing = required_columns - set(df.columns)
 
         if missing:
@@ -218,27 +225,42 @@ def analyze_transactions_file():
                 "missing_columns": list(missing)
             }), 400
 
-        # Ensure numeric
+        # ----------------------------------------
+        # Filter SUCCESSFUL transactions only
+        # ----------------------------------------
+        df = df[df["Txn Status"].astype(str).str.upper() == "SUCCESSFUL"]
+
+        # Ensure numeric amount
         df["Paid Amount"] = pd.to_numeric(
             df["Paid Amount"],
             errors="coerce"
         ).fillna(0)
 
-        # Overall stats
+        # ----------------------------------------
+        # Overall summary
+        # ----------------------------------------
         total_transactions = int(len(df))
         total_amount = float(df["Paid Amount"].sum())
 
-        # Per payer_code aggregation
-        grouped = (
-            df.groupby("Payer Code")
-            .agg(
-                transaction_count=("Payer Code", "count"),
-                total_paid_amount=("Paid Amount", "sum")
-            )
-            .reset_index()
-        )
+        # ----------------------------------------
+        # Group by payer code
+        # ----------------------------------------
+        grouped_data = {}
 
-        per_payer = grouped.to_dict(orient="records")
+        for payer_code, group in df.groupby("Payer Code"):
+            transactions = []
+
+            for _, row in group.iterrows():
+                transactions.append({
+                    "transaction_reference": row["Ext. Txn Ref."],
+                    "paid_amount": float(row["Paid Amount"])
+                })
+
+            grouped_data[payer_code] = {
+                "transaction_count": int(len(group)),
+                "total_paid_amount": float(group["Paid Amount"].sum()),
+                "transactions": transactions
+            }
 
         return jsonify({
             "status": "success",
@@ -247,7 +269,7 @@ def analyze_transactions_file():
                 "total_transactions": total_transactions,
                 "total_paid_amount": round(total_amount, 2)
             },
-            "per_payer_code": per_payer
+            "per_payer_code": grouped_data
         }), 200
 
     except Exception as e:
