@@ -123,7 +123,7 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
         try:
             # Query for existing wallet
             wallet = TblStudentWallet.get_by_reg_no(payer_code)
-
+            logger.debug(f"  Existing wallet: {wallet}")
             total_amount = Decimal('0')
             wallet_existed = wallet is not None
 
@@ -138,7 +138,8 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                     wallet = TblStudentWallet(
                         reg_no=payer_code,
                         dept=0,
-                        is_paid="Yes"
+                        is_paid="Yes",
+                        reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{payer_code}",
                     )
                     db.session.add(wallet)
                     db.session.flush()
