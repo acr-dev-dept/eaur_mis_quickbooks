@@ -425,8 +425,7 @@ def payment_callback():
                 updated = TblStudentWallet.topup_wallet(
                     reg_no=payer_code,
                     external_transaction_id=transaction_id,
-                    amount=amount,
-                    slip_no=slip_no
+                    amount=amount
                 )
                 current_app.logger.info(f"Wallet topped up for {payer_code}: {updated}")
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
