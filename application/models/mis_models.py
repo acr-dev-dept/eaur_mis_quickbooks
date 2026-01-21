@@ -754,8 +754,7 @@ class TblStudentWallet(MISBaseModel):
                 payment_chanel=student_wallet.payment_chanel,
                 bank_id=student_wallet.bank_id,
                 comment="Wallet top-up",
-                created_by="SYSTEM",
-                slip_no=student_wallet.slip_no if student_wallet.slip_no else None
+                created_by="SYSTEM"
             )
             session.add(history)
 
