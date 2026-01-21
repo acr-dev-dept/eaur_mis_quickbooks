@@ -134,7 +134,7 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
 
         try:
             # Query for existing wallet
-            wallet = TblStudentWallet.get_by_reg_no(payer_code)
+            wallet = TblStudentWallet.get_by_reg_no(str(payer_code))
 
             # Only process if wallet exists
             if not wallet:
