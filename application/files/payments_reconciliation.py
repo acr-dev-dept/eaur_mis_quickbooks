@@ -208,18 +208,12 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                 
                 total_amount += amount
 
-                if not dry_run:
-                    # Call topup_wallet
-                    TblStudentWallet.topup_wallet(
-                        reg_no=payer_code,
-                        transaction_id=transaction_id,
-                        amount=float(amount),
-                        slip_no=slip_no if slip_no else None
-                    )
+            
 
             # Update final balance
             if not dry_run:
-                wallet.dept = float(total_amount)
+                wallet.comment = f"Reconciled batch total from {len(transactions)} transactions on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                wallet.dept = float(total_amount)   
                 db.session.commit()
 
             # Verify total matches summary
