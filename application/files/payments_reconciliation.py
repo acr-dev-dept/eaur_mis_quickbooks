@@ -9,13 +9,16 @@ Usage:
 import sys
 import json
 from pathlib import Path
-
+import os
+BASE_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(BASE_DIR))
 # ----------------------------------------
 # Flask app bootstrap
 # ----------------------------------------
 from application import create_app, db
 from application.models.mis_models import TblStudentWallet
 
+app = create_app(os.getenv('FLASK_ENV', 'development'))
 
 def import_wallet_transactions(json_path: str):
 
