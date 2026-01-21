@@ -425,7 +425,7 @@ def payment_callback():
             if wallet:
                 updated = TblStudentWallet.topup_wallet(
                     reg_no=payer_code,
-                    external_transaction_id=transaction_id,
+                    transaction_id=transaction_id,
                     amount=amount
                 )
                 current_app.logger.info(f"Wallet topped up for {payer_code}: {updated}")
