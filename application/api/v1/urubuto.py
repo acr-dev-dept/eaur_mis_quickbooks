@@ -589,7 +589,7 @@ def payment_notification():
             current_app.logger.exception("Error processing payment callback")
             return jsonify({"message": "Internal server error"}), 500
     else:
-        return jsonify({"message": "Invalid transaction ID"}), 400
+        return jsonify({"message": "Invalid transaction ID"}), 200
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
 @log_api_access('payment_initiation')
