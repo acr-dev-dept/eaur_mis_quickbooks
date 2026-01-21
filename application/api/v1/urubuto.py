@@ -573,7 +573,7 @@ def payment_notification():
 
             if not wallet_record:
                 current_app.logger.warning(f"Transaction not found: {transaction_id}")
-                return jsonify({"message": "Transaction not found"}), 404
+                return jsonify({"message": "Transaction not found"}), 200
 
             insert_slip = TblStudentWallet.update_slip_no(transaction_id, slip_no)
             if not insert_slip:
