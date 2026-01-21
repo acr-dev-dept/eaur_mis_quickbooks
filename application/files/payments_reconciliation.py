@@ -53,15 +53,23 @@ def setup_logging(verbose=False):
 
 def validate_transaction(txn: dict, payer_code: str) -> tuple[bool, str]:
     """Validate a single transaction record."""
-    if not txn.get("transaction_reference"):
-        return False, f"Missing transaction_reference for {payer_code}"
+    # Check transaction_reference
+    txn_ref = txn.get("transaction_reference")
+    if txn_ref is None or str(txn_ref).strip() == "":
+        return False, f"Missing transaction_reference"
     
+    # Check paid_amount
     try:
         amount = float(txn.get("paid_amount", 0))
         if amount <= 0:
-            return False, f"Invalid amount {amount} for {payer_code}"
+            return False, f"Invalid amount {amount}"
     except (ValueError, TypeError):
-        return False, f"Invalid paid_amount format for {payer_code}"
+        return False, f"Invalid paid_amount format: {txn.get('paid_amount')}"
+    
+    # slip_no is optional but should be string if present
+    slip_no = txn.get("slip_no")
+    if slip_no is not None and not isinstance(slip_no, str):
+        return False, f"slip_no must be string, got {type(slip_no).__name__}"
     
     return True, ""
 
@@ -103,6 +111,10 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
             continue
 
         logger.info(f"  Found {len(transactions)} transactions")
+        
+        # Show total_paid_amount from summary for verification
+        summary_total = payer_data.get("total_paid_amount", 0)
+        logger.debug(f"  Summary total: {summary_total}")
 
         # Validate all transactions before processing
         validation_errors = []
@@ -122,39 +134,36 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
 
         try:
             # Query for existing wallet
-            wallet = TblStudentWallet.get_by_reg_no(payer_code)
-            logger.debug(f"  Existing wallet: {wallet}")
-            total_amount = Decimal('0')
-            wallet_existed = wallet is not None
+            wallet = TblStudentWallet.query.filter_by(
+                reg_no=payer_code
+            ).first()
 
-            if wallet_existed:
-                logger.info(f"  Found existing wallet (current balance: {wallet.dept})")
-            else:
-                logger.info(f"  Creating new wallet")
+            # Only process if wallet exists
+            if not wallet:
+                logger.warning(f"  ⚠ Wallet not found for {payer_code} - skipping")
+                results["skipped"].append({
+                    "payer_code": payer_code,
+                    "reason": "Wallet does not exist in database"
+                })
+                continue
+
+            total_amount = Decimal('0')
+            
+            logger.info(f"  Found existing wallet (current balance: {wallet.dept})")
 
             if not dry_run:
-                # Create wallet if it doesn't exist
-                if not wallet:
-                    wallet = TblStudentWallet(
-                        reg_no=payer_code,
-                        dept=0,
-                        is_paid="Yes",
-                        reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{payer_code}",
-                    )
-                    db.session.add(wallet)
-                    db.session.flush()
-                else:
-                    # Reset debt for existing wallet
-                    wallet.dept = 0
-                    db.session.flush()
+                # Reset debt for existing wallet
+                wallet.dept = 0
+                db.session.flush()
 
             # Process all transactions
             for idx, txn in enumerate(transactions, 1):
+                # Handle large integer transaction references
                 transaction_id = str(txn.get("transaction_reference"))
                 amount = Decimal(str(txn.get("paid_amount", 0)))
-                slip_no = txn.get("slip_no", "N/A")
+                slip_no = txn.get("slip_no", "")
 
-                logger.debug(f"    Transaction {idx}: {transaction_id} | Amount: {amount} | Slip: {slip_no}")
+                logger.debug(f"    [{idx}] Ref: {transaction_id} | Amount: {amount:,.2f} | Slip: {slip_no}")
                 
                 total_amount += amount
 
@@ -164,7 +173,7 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                         payer_code=payer_code,
                         external_transaction_id=transaction_id,
                         amount=float(amount),
-                        slip_no=txn.get("slip_no")
+                        slip_no=slip_no if slip_no else None
                     )
 
             # Update final balance
@@ -172,7 +181,12 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                 wallet.dept = float(total_amount)
                 db.session.commit()
 
-            logger.info(f"  ✓ Success: {len(transactions)} transactions | Total: {total_amount}")
+            # Verify total matches summary
+            summary_total = payer_data.get("total_paid_amount", 0)
+            if abs(float(total_amount) - summary_total) > 0.01:
+                logger.warning(f"  ⚠ Amount mismatch! Calculated: {total_amount}, Summary: {summary_total}")
+
+            logger.info(f"  ✓ Success: {len(transactions)} txn(s) | Total: {total_amount:,.2f} RWF")
 
             result_entry = {
                 "payer_code": payer_code,
@@ -180,10 +194,7 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                 "transactions": len(transactions)
             }
 
-            if wallet_existed:
-                results["updated"].append(result_entry)
-            else:
-                results["created"].append(result_entry)
+            results["updated"].append(result_entry)
 
         except Exception as e:
             if not dry_run:
