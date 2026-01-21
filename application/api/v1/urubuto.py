@@ -310,10 +310,6 @@ def payer_validation():
 @urubuto_bp.route('/callback', methods=['POST'])
 @require_auth('notifications')
 @require_gateway(['urubuto_pay', 'school_gear'])
-
-# Assuming db_manager is accessible (imported or via current_app)
-
-
 def payment_callback():
     """
     Payment callback endpoint for Urubuto Pay integration.
@@ -373,16 +369,22 @@ def payment_callback():
                     }
                 }), 200
 
-            # Optional: add check in other tables if still needed
-            # existing_payment = Payment.get_payment_details_by_external_id(transaction_id)
-            # if existing_payment: ...
-
             # ────────────────────────────────────────────────
             #   Only new transaction → proceed
             # ────────────────────────────────────────────────
             if transaction_status != "VALID":
                 current_app.logger.info(
                     f"Non-VALID status '{transaction_status}' received for {transaction_id} – acknowledged, no processing"
+                )
+                IntegrationLog.log_integration_operation(
+                    system_name="UrubutoPay",
+                    operation="Wallet Payment",
+                    status=transaction_status,
+                    external_transaction_id=transaction_id,
+                    payer_code=payer_code,
+                    response_data=data,
+                    started_at=started_at,
+                    completed_at=datetime.now()
                 )
                 return jsonify({
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
