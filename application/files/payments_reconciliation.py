@@ -1,17 +1,25 @@
+#!/usr/bin/env python3
+"""
+Wallet reconciliation CLI importer
+
+Usage:
+    ./wallet_reconciliation_import.py /path/to/file.json
+"""
+
+import sys
 import json
-from application import db
+from pathlib import Path
+
+# ----------------------------------------
+# Flask app bootstrap
+# ----------------------------------------
+from application import create_app, db
 from application.models.mis_models import TblStudentWallet
 
 
-JSON_FILE_PATH = "/home/eaur/eaur_mis_quickbooks/application/files/payments_13_20.json"
+def import_wallet_transactions(json_path: str):
 
-
-def import_wallet_transactions():
-    """
-    Updates tbl_student_wallet using reconciliation JSON file
-    """
-
-    with open(JSON_FILE_PATH, "r") as f:
+    with open(json_path, "r") as f:
         data = json.load(f)
 
     per_payer_code = data.get("per_payer_code", {})
@@ -36,11 +44,10 @@ def import_wallet_transactions():
 
             total_amount = 0
 
-            # ----------------------------------
-            # Existing wallet
-            # ----------------------------------
+            # -------------------------------
+            # EXISTING WALLET
+            # -------------------------------
             if wallet:
-                # clear dept first
                 wallet.dept = 0
                 db.session.flush()
 
@@ -53,11 +60,11 @@ def import_wallet_transactions():
                     TblStudentWallet.topup_wallet(
                         payer_code=payer_code,
                         external_transaction_id=transaction_id,
-                        amount=amount
+                        amount=amount,
+                        slip_no=txn.get("slip_no", None)
                     )
 
                 wallet.dept = total_amount
-                db.session.add(wallet)
 
                 results["updated"].append({
                     "payer_code": payer_code,
@@ -65,9 +72,9 @@ def import_wallet_transactions():
                     "transactions": len(transactions)
                 })
 
-            # ----------------------------------
-            # Create new wallet
-            # ----------------------------------
+            # -------------------------------
+            # CREATE WALLET
+            # -------------------------------
             else:
                 wallet = TblStudentWallet(
                     reg_no=payer_code,
@@ -76,7 +83,7 @@ def import_wallet_transactions():
                 )
 
                 db.session.add(wallet)
-                db.session.flush()  # get ID
+                db.session.flush()
 
                 for txn in transactions:
                     transaction_id = str(txn.get("transaction_reference"))
@@ -109,3 +116,27 @@ def import_wallet_transactions():
             })
 
     return results
+
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage:")
+        print("  ./wallet_reconciliation_import.py <reconciliation.json>")
+        sys.exit(1)
+
+    json_file = Path(sys.argv[1])
+
+    if not json_file.exists():
+        print(f"File not found: {json_file}")
+        sys.exit(1)
+
+    app = create_app()
+
+    with app.app_context():
+        results = import_wallet_transactions(json_file)
+
+    print(json.dumps(results, indent=4))
+
+
+if __name__ == "__main__":
+    main()

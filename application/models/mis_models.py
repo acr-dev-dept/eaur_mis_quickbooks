@@ -702,7 +702,7 @@ class TblStudentWallet(MISBaseModel):
 
 
     @classmethod
-    def topup_wallet(cls, reg_no, transaction_id, amount):
+    def topup_wallet(cls, reg_no, transaction_id, amount, slip_no=None):
         """
         Update wallet amount and record wallet history
         """
@@ -754,7 +754,8 @@ class TblStudentWallet(MISBaseModel):
                 payment_chanel=student_wallet.payment_chanel,
                 bank_id=student_wallet.bank_id,
                 comment="Wallet top-up",
-                created_by="SYSTEM"
+                created_by="SYSTEM",
+                slip_no=student_wallet.slip_no if student_wallet.slip_no else None
             )
             session.add(history)
 
@@ -763,7 +764,7 @@ class TblStudentWallet(MISBaseModel):
             student_wallet.external_transaction_id = transaction_id
             student_wallet.trans_code = transaction_id
             student_wallet.payment_date = datetime.now()
-
+            student_wallet.slip_no = slip_no if slip_no else student_wallet.slip_no
             session.commit()
             return True
 
