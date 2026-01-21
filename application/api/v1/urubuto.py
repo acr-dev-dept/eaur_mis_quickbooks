@@ -400,15 +400,16 @@ def payment_callback():
             #   Resolve payer
             # ────────────────────────────────────────────────
             student = TblPersonalUg.get_student_data(payer_code)
+            current_app.logger.info(f"Student data retrieved for payer code {payer_code}: {student}")
             applicant = None
             if not student:
                 # from application.models.mis_models import TblOnlineApplication
                 applicant = TblOnlineApplication.get_applicant_data(payer_code)
+                current_app.logger.info(f"Applicant data retrieved for payer code {payer_code}: {applicant}")
 
             if not student and not applicant:
                 current_app.logger.error(f"Payer code not found: {payer_code}")
                 return jsonify({"message": "Payer not found", "status": 404}), 404
-
             reg_no = student.reg_no if student else applicant.tracking_id
 
             # ────────────────────────────────────────────────
@@ -420,7 +421,7 @@ def payment_callback():
             #   Wallet processing
             # ────────────────────────────────────────────────
             wallet = TblStudentWallet.get_by_reg_no(payer_code)
-
+            current_app.logger.info(f"Wallet record for payer {payer_code}: {wallet}")
             if wallet:
                 updated = TblStudentWallet.topup_wallet(
                     reg_no=payer_code,
