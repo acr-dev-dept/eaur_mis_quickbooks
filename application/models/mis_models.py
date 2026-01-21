@@ -494,7 +494,7 @@ class TblStudentWallet(MISBaseModel):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     reg_prg_id = db.Column(db.Integer, nullable=False, index=True)
     reference_number = db.Column(db.String(255), nullable=True)
-    reg_no = db.Column(db.String(200), nullable=True, index=True)
+    reg_no = db.Column(db.String(200), nullable=True, index=True, unique=True)
     level_id = db.Column(db.Integer, nullable=True)
     bank_id = db.Column(db.Integer, nullable=True)
     slip_no = db.Column(db.String(200), nullable=True)

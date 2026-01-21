@@ -273,7 +273,8 @@ def analyze_transactions_file():
             for _, row in group.iterrows():
                 transactions.append({
                     "transaction_reference": row["Int. Txn Ref."],
-                    "paid_amount": float(row["Paid Amount"])
+                    "paid_amount": float(row["Paid Amount"]),
+                    "slip_no": row.get("Bank Slip", None)
                 })
 
             per_payer_code[str(payer_code)] = {
