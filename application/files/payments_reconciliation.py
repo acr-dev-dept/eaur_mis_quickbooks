@@ -80,6 +80,19 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
     logger.info(f"Starting import from: {json_path}")
     logger.info(f"Dry run mode: {dry_run}")
     
+    # Test database connection
+    try:
+        wallet_count = db.session.query(TblStudentWallet).count()
+        logger.info(f"✓ Database connected - found {wallet_count} total wallets in database")
+        
+        # Show sample reg_no values
+        sample_wallets = db.session.query(TblStudentWallet.reg_no).limit(5).all()
+        sample_reg_nos = [w.reg_no for w in sample_wallets]
+        logger.info(f"Sample reg_no values: {sample_reg_nos}")
+    except Exception as e:
+        logger.error(f"✗ Database connection failed: {e}")
+        raise
+    
     with open(json_path, "r") as f:
         data = json.load(f)
 
@@ -134,13 +147,38 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
 
         try:
             # Query for existing wallet
-            logger.info(f"  Querying for wallet for {payer_code}")
-            logger.info(f"  reg_no type: {type(payer_code).__name__}, value: {payer_code}")
-            wallet = TblStudentWallet.query.filter_by(
-                reg_no=payer_code
-            ).first()
+            logger.info(f"  Looking up wallet: reg_no='{payer_code}' (type: {type(payer_code).__name__})")
+            
+            # Try multiple query methods to debug
+            try:
+                # Method 1: filter_by
+                wallet = TblStudentWallet.query.filter_by(reg_no=payer_code).first()
+                logger.info(f"  Query result (filter_by): {wallet}")
+                
+                # Method 2: Try with explicit string conversion
+                if not wallet:
+                    wallet = TblStudentWallet.query.filter_by(reg_no=str(payer_code)).first()
+                    logger.info(f"  Query result (with str()): {wallet}")
+                
+                # Method 3: Try direct SQL-like filter
+                if not wallet:
+                    wallet = TblStudentWallet.query.filter(TblStudentWallet.reg_no == payer_code).first()
+                    logger.info(f"  Query result (filter ==): {wallet}")
+                
+                # Debug: Check if similar values exist
+                if not wallet:
+                    similar = TblStudentWallet.query.filter(
+                        TblStudentWallet.reg_no.like(f'%{payer_code[-4:]}%')
+                    ).limit(3).all()
+                    if similar:
+                        logger.info(f"  Found similar reg_no values: {[w.reg_no for w in similar]}")
+                    else:
+                        logger.info(f"  No similar reg_no values found")
+                        
+            except Exception as query_error:
+                logger.error(f"  Query error: {query_error}")
+                raise
 
-            logger.info(f"  Queried wallet for {payer_code}: {wallet}")
             # Only process if wallet exists
             if not wallet:
                 logger.warning(f"  ⚠ Wallet not found for {payer_code} - skipping")
