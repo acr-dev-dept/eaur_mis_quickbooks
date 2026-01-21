@@ -347,6 +347,9 @@ def payment_callback():
     amount = data['amount']  # TODO: add type/positive validation if needed
     payment_channel = data.get('payment_channel_name')
     # payment_date_time = data.get('payment_date_time')  # unused for now
+    slip_no = data.get('slip_number') or data.get('initial_slip_number')
+    if not slip_no:
+        slip_no = "N/A"
 
     started_at = datetime.now()
 
@@ -420,9 +423,10 @@ def payment_callback():
 
             if wallet:
                 updated = TblStudentWallet.topup_wallet(
-                    payer_code=payer_code,
+                    reg_no=payer_code,
                     external_transaction_id=transaction_id,
-                    amount=amount
+                    amount=amount,
+                    slip_no=slip_no
                 )
                 current_app.logger.info(f"Wallet topped up for {payer_code}: {updated}")
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
