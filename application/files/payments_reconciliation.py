@@ -147,7 +147,7 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
 
         try:
             # Query for existing wallet
-            logger.info(f"  Looking up wallet: reg_no='{payer_code}' (type: {type(payer_code).__name__})")
+            logger.info(f"  Looking up wallet: reg_no='{payer_code}' (type: {type(payer_code).__name__}, characters: {len(str(payer_code))})")
             
             # Try multiple query methods to debug
             try:
