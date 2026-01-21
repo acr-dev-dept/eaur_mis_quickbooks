@@ -211,8 +211,8 @@ def import_wallet_transactions(json_path: str, logger: logging.Logger, dry_run=F
                 if not dry_run:
                     # Call topup_wallet
                     TblStudentWallet.topup_wallet(
-                        payer_code=payer_code,
-                        external_transaction_id=transaction_id,
+                        reg_no=payer_code,
+                        transaction_id=transaction_id,
                         amount=float(amount),
                         slip_no=slip_no if slip_no else None
                     )
