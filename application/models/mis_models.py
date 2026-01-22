@@ -741,9 +741,10 @@ class TblStudentWallet(MISBaseModel):
     @classmethod
     def topup_wallet(cls, reg_no, transaction_id, amount):
         """
-        Update wallet amount and record wallet history
+        Update wallet amount and record wallet history (100% idempotent)
         """
         from application.models.mis_models import TblStudentWalletHistory
+        from sqlalchemy.exc import IntegrityError
         from datetime import datetime
 
         if amount <= 0:
@@ -754,52 +755,53 @@ class TblStudentWallet(MISBaseModel):
             student_wallet = (
                 session.query(cls)
                 .filter(cls.reg_no == reg_no)
-                .with_for_update()
+                .with_for_update()  # locks wallet row for concurrency
                 .first()
             )
 
             if not student_wallet:
                 return False
 
-            # Idempotency check (critical)
-            existing_history = (
-                session.query(TblStudentWalletHistory)
-                .filter(
-                    TblStudentWalletHistory.external_transaction_id == transaction_id
+            # ──────────────────────────────────────────────
+            # Insert wallet history first (DB-level idempotency)
+            # ──────────────────────────────────────────────
+            try:
+                balance_before = student_wallet.dept or 0.0
+                balance_after = balance_before + amount
+
+                history = TblStudentWalletHistory(
+                    wallet_id=student_wallet.id,
+                    reg_no=student_wallet.reg_no,
+                    reference_number=student_wallet.reference_number,
+                    transaction_type="TOPUP",
+                    slip_no=student_wallet.slip_no if student_wallet.slip_no else None,
+                    amount=amount,
+                    balance_before=balance_before,
+                    balance_after=balance_after,
+                    trans_code=transaction_id,
+                    external_transaction_id=transaction_id,
+                    payment_chanel=student_wallet.payment_chanel,
+                    bank_id=student_wallet.bank_id,
+                    comment="Wallet top-up",
+                    created_by="SYSTEM"
                 )
-                .first()
-            )
 
-            if existing_history:
-                return True  # already processed safely
+                session.add(history)
+                session.flush()  # forces DB insert immediately
 
-            balance_before = student_wallet.dept or 0.0
-            balance_after = balance_before + amount
+            except IntegrityError:
+                session.rollback()
+                # Duplicate transaction — safe idempotency
+                return True
 
-            # Record wallet history (ledger)
-            history = TblStudentWalletHistory(
-                wallet_id=student_wallet.id,
-                reg_no=student_wallet.reg_no,
-                reference_number=student_wallet.reference_number,
-                transaction_type="TOPUP",
-                slip_no=student_wallet.slip_no if student_wallet.slip_no else None,
-                amount=amount,
-                balance_before=balance_before,
-                balance_after=balance_after,
-                trans_code=transaction_id,
-                external_transaction_id=transaction_id,
-                payment_chanel=student_wallet.payment_chanel,
-                bank_id=student_wallet.bank_id,
-                comment="Wallet top-up",
-                created_by="SYSTEM"
-            )
-            session.add(history)
-
-            # Update wallet balance
+            # ──────────────────────────────────────────────
+            # Update wallet balance after history insert
+            # ──────────────────────────────────────────────
             student_wallet.dept = balance_after
             student_wallet.external_transaction_id = transaction_id
             student_wallet.trans_code = transaction_id
             student_wallet.payment_date = datetime.now()
+
             session.commit()
             return True
 
@@ -833,7 +835,7 @@ class TblStudentWalletHistory(MISBaseModel):
     wallet_id = db.Column(
         db.Integer,
         db.ForeignKey("tbl_student_wallet.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True
     )
 
@@ -851,7 +853,7 @@ class TblStudentWalletHistory(MISBaseModel):
     balance_after = db.Column(db.Float, nullable=False)
 
     trans_code = db.Column(db.String(255), nullable=True)
-    external_transaction_id = db.Column(db.Text, nullable=True, index=True)
+    external_transaction_id = db.Column(db.Text, nullable=True, index=True, unique=True)
 
     payment_chanel = db.Column(db.String(100), nullable=True)
     bank_id = db.Column(db.Integer, nullable=True)
@@ -958,6 +960,17 @@ class TblStudentWalletHistory(MISBaseModel):
                 session.commit()
                 return True
             return False
+
+    @classmethod
+    def get_by_transaction_id(cls, transaction_id):
+        """
+        Get wallet history record by transaction ID
+        """
+        with cls.get_session() as session:
+            wallet_history = session.query(cls).filter(cls.external_transaction_id == transaction_id).first()
+            if wallet_history:
+                return wallet_history
+            return None
 
 
 class TblBank(MISBaseModel):
