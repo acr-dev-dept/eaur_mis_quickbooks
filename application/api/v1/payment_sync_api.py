@@ -165,3 +165,14 @@ def analyze_sync_requirements():
     except Exception as e:
         logging.error(f"Error analyzing sync requirements: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@payment_sync_bp.route('/wallet_payments', methods=['GET'])
+def wallet_payments():
+    """Retrieve payments made via wallet."""
+    try:
+        wallet_payments = Payment.get_wallet_payments()
+        payments_list = [payment.to_dict() for payment in wallet_payments]
+        return jsonify(payments_list), 200
+    except Exception as e:
+        logging.error(f"Error retrieving wallet payments: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
