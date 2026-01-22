@@ -491,23 +491,26 @@ class Payment(MISBaseModel):
     @staticmethod
     def get_wallet_payments():
         """
-        Get all wallet payments , only id, student_wallet_ref, amount and reg_no
+        Get wallet payments (minimal payload)
         """
         try:
             with MISBaseModel.get_session() as session:
-                payments = session.query(
-                    Payment.id,
-                    Payment.student_wallet_ref,
-                    Payment.amount,
-                    Payment.reg_no
-                ).filter(
-                    Payment.student_wallet_ref.isnot(None)
-                ).all()
-                return payments
+                return (
+                    session.query(
+                        Payment.id,
+                        Payment.student_wallet_ref,
+                        Payment.amount,
+                        Payment.reg_no
+                    )
+                    .filter(Payment.student_wallet_ref.isnot(None))
+                    .mappings()
+                    .all()
+                )
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting wallet payments: {str(e)}")
             return []
+
 
 class TblStudentWallet(MISBaseModel):
     """Model for tbl_student_wallet table"""
