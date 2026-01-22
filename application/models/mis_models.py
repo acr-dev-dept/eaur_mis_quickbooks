@@ -504,7 +504,6 @@ class Payment(MISBaseModel):
                 ).filter(
                     Payment.student_wallet_ref.isnot(None)
                 ).all()
-
                 return [
                     {
                         "id": p.id,
@@ -514,7 +513,6 @@ class Payment(MISBaseModel):
                     }
                     for p in payments
                 ]
-
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting wallet payments: {str(e)}")
