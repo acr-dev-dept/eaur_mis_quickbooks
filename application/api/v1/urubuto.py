@@ -443,6 +443,8 @@ def payment_callback():
                 wallet.external_transaction_id = transaction_id
                 wallet.trans_code = transaction_id
                 wallet.payment_date = datetime.now()
+                session.add(wallet)
+                session.flush()
                 current_app.logger.info(f"Wallet topped up for {reg_no}: {amount}")
 
                 # Async QuickBooks update
