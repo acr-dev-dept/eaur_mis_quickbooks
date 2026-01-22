@@ -504,15 +504,20 @@ class Payment(MISBaseModel):
                 ).filter(
                     Payment.student_wallet_ref.isnot(None)
                 ).all()
-                return [
-                    {
-                        "id": p.id,
-                        "student_wallet_ref": p.student_wallet_ref,
-                        "amount": float(p.amount),
-                        "reg_no": p.reg_no
-                    }
-                    for p in payments
-                ]
+                return {
+                    
+                    "Count": len(payments),
+                    "Total Amount": sum([float(p.amount) for p in payments]),
+                    "Payments": [
+                        {
+                            "id": p.id,
+                            "student_wallet_ref": p.student_wallet_ref,
+                            "amount": float(p.amount),
+                            "reg_no": p.reg_no
+                        }
+                        for p in payments
+                    ]
+                }
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting wallet payments: {str(e)}")
