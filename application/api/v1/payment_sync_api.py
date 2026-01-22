@@ -170,7 +170,8 @@ def analyze_sync_requirements():
 def wallet_payments():
     try:
         payments = Payment.get_wallet_payments()
-        return jsonify(list(payments)), 200
+        return jsonify(payments), 200
     except Exception as e:
         logging.error(f"Error retrieving wallet payments: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({"error": "Internal server error"}), 500
+
