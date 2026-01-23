@@ -731,12 +731,20 @@ class TblStudentWallet(MISBaseModel):
     @classmethod
     def get_sales_receipts(cls, limit=50, offset=0):
         """
-        Get sales receipts
+        Get sales receipts that have already been synced to QuickBooks
+        (quickbooks_id IS NOT NULL)
         """
         with cls.get_session() as session:
-            sales_receipts = session.query(cls).order_by(cls.payment_date.asc()).offset(offset).limit(limit).all()
-            return [sales_receipt.to_dict() for sales_receipt in sales_receipts]
+            sales_receipts = (
+                session.query(cls)
+                .filter(cls.quickbooks_id.isnot(None))
+                .order_by(cls.payment_date.asc())
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
 
+            return [sales_receipt.to_dict() for sales_receipt in sales_receipts]
 
     @classmethod
     def topup_wallet(cls, reg_no, transaction_id, amount):
