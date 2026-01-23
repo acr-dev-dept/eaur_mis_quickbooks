@@ -56,6 +56,10 @@ def make_celery(app):
             },
         },
         beat_schedule={
+            "sync_students": {
+            "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+            "schedule": crontab(hour='16,17,18,19,20,1,22,23,0,1,2,3,4,5', minute='6,42'),
+            },
             "sync_payments_every_midnight": {
             "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
             "schedule": crontab(hour='18,19,20,21,22,23,0,1,2,3,4,5', minute='6,42')
@@ -66,12 +70,63 @@ def make_celery(app):
         },
             "sync_invoices_every_midnight": {
             "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-            "schedule": crontab(hour="18,19,20,1,22,23,0,1,2,3,4,5", minute='24,54'),
+            "schedule": crontab(hour="16,17,18,19,20,1,22,23,0,1,2,3,4,5", minute='24,54'),
         },
             "update_invoices": {
             "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
-            "schedule": crontab(hour="18,19,20,21,22,23,0,1,2,3,4,5", minute='30,57'),
+            "schedule": crontab(hour="16,17,18,19,20,1,22,23,0,1,2,3,4,5", minute='30,57'),
         },
+
+        # WEEKEND SCHEDULES
+        "sync_applicants_every_weekend": {
+        "task": "application.config_files.tasks.bulk_sync_applicants_task",
+        "schedule": crontab(
+            minute='6,42',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+        "sync_students_every_weekend": {
+        "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+        "schedule": crontab(
+            minute='6,42',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+        "sync_invoices_every_weekend": {
+        "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+        "schedule": crontab(
+            minute='12,48',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+        "sync_sales_receipt_every_weekend": {
+        "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
+        "schedule": crontab(
+            minute='18,54',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+        "sync_update_invoices_every_weekend": {
+        "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
+        "schedule": crontab(
+            minute='24,57',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+        "sync_payments_every_weekend": {
+        "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
+        "schedule": crontab(
+            minute='30,54',
+            hour='0-23',
+            day_of_week='sat,sun'
+            ),
+        },
+
         },
     )
 
