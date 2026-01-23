@@ -505,3 +505,161 @@ def wallet_hist_vs_cloud_pyts():
             "status": "error",
             "message": str(e)
         }), 500
+
+
+@reconciliation_bp.route("/import_wallet_history_from_json", methods=["POST"])
+def import_wallet_history_from_json():
+    """
+    Imports cloud payment JSON into tbl_student_wallet_history.
+
+    Idempotency:
+        external_transaction_id is UNIQUE.
+
+    Prevents:
+        - duplicate credits
+        - callback replay
+        - double imports
+    """
+
+    try:
+        payload = request.get_json()
+
+        if not payload or "file_path" not in payload:
+            return jsonify({
+                "status": "error",
+                "message": "file_path is required"
+            }), 400
+
+        file_path = payload["file_path"]
+
+        if not os.path.exists(file_path):
+            return jsonify({
+                "status": "error",
+                "message": f"File not found: {file_path}"
+            }), 404
+
+        # -----------------------------------------------------------
+        # LOAD JSON
+        # -----------------------------------------------------------
+
+        with open(file_path, "r") as f:
+            cloud_json = json.load(f)
+
+        payer_blocks = cloud_json.get("per_payer_code", {})
+
+        inserted = []
+        skipped_duplicates = []
+        failed = []
+
+        # -----------------------------------------------------------
+        # PROCESS PAYMENTS
+        # -----------------------------------------------------------
+
+        for payer_code, block in payer_blocks.items():
+
+            for trx in block.get("transactions", []):
+
+                try:
+                    trx_ref = str(trx.get("transaction_reference"))
+                    amount = float(trx.get("paid_amount", 0))
+                    slip_no = trx.get("slip_no")
+
+                    if not trx_ref:
+                        continue
+
+                    # ---------------------------------------------------
+                    # IDEMPOTENCY CHECK
+                    # ---------------------------------------------------
+
+                    exists = (
+                        db.session.query(TblStudentWalletHistory.id)
+                        .filter(
+                            TblStudentWalletHistory.external_transaction_id == trx_ref
+                        )
+                        .first()
+                    )
+
+                    if exists:
+                        skipped_duplicates.append({
+                            "transaction_reference": trx_ref,
+                            "reason": "already exists"
+                        })
+                        continue
+
+                    # ---------------------------------------------------
+                    # FETCH CURRENT WALLET BALANCE
+                    # ---------------------------------------------------
+
+                    last_entry = (
+                        db.session.query(TblStudentWalletHistory)
+                        .filter(
+                            TblStudentWalletHistory.reg_no == payer_code
+                        )
+                        .order_by(TblStudentWalletHistory.created_at.desc())
+                        .first()
+                    )
+
+                    balance_before = last_entry.balance_after if last_entry else 0.0
+                    balance_after = balance_before + amount
+
+                    # ---------------------------------------------------
+                    # INSERT WALLET HISTORY
+                    # ---------------------------------------------------
+
+                    wallet_entry = TblStudentWalletHistory(
+                        wallet_id=None,  # optional if not available
+                        reg_no=payer_code,
+                        reference_number=slip_no,
+                        transaction_type="TOPUP",
+                        amount=amount,
+                        balance_before=balance_before,
+                        balance_after=balance_after,
+                        trans_code=slip_no,
+                        external_transaction_id=trx_ref,
+                        payment_chanel="CLOUD_IMPORT",
+                        slip_no=slip_no,
+                        comment="Imported from cloud payment JSON",
+                        created_by="system_reconciliation"
+                    )
+
+                    db.session.add(wallet_entry)
+                    db.session.flush()
+
+                    inserted.append({
+                        "transaction_reference": trx_ref,
+                        "amount": amount,
+                        "payer_code": payer_code
+                    })
+
+                except Exception as row_error:
+                    failed.append({
+                        "transaction_reference": trx.get("transaction_reference"),
+                        "error": str(row_error)
+                    })
+
+        db.session.commit()
+
+        # -----------------------------------------------------------
+        # RESPONSE
+        # -----------------------------------------------------------
+
+        return jsonify({
+            "status": "success",
+            "summary": {
+                "inserted": len(inserted),
+                "skipped_duplicates": len(skipped_duplicates),
+                "failed": len(failed)
+            },
+            "inserted": inserted,
+            "skipped_duplicates": skipped_duplicates,
+            "failed": failed
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Wallet JSON import failed")
+
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
