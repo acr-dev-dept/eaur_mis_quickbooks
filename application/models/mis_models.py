@@ -507,7 +507,7 @@ class Payment(MISBaseModel):
                 return {
                     
                     "Count": len(payments),
-                    "Total Amount": sum([float(p.amount) for p in payments]),
+                    "Total Amount": sum([(p.amount) for p in payments]),
                     "Payments": [
                         {
                             "id": p.id,
