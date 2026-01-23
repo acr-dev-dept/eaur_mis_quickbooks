@@ -512,13 +512,10 @@ def import_wallet_history_from_json():
     """
     Imports cloud payment JSON into tbl_student_wallet_history.
 
-    Idempotency:
-        external_transaction_id is UNIQUE.
-
-    Prevents:
-        - duplicate credits
-        - callback replay
-        - double imports
+    BALANCE RULE:
+    - balance_before starts at 0 per payer_code
+    - balances are computed ONLY from cloud data
+    - existing wallet data is NOT read
     """
 
     try:
@@ -538,9 +535,9 @@ def import_wallet_history_from_json():
                 "message": f"File not found: {file_path}"
             }), 404
 
-        # -----------------------------------------------------------
-        # LOAD JSON
-        # -----------------------------------------------------------
+        # ------------------------------------------------------------
+        # LOAD CLOUD JSON
+        # ------------------------------------------------------------
 
         with open(file_path, "r") as f:
             cloud_json = json.load(f)
@@ -551,13 +548,22 @@ def import_wallet_history_from_json():
         skipped_duplicates = []
         failed = []
 
-        # -----------------------------------------------------------
-        # PROCESS PAYMENTS
-        # -----------------------------------------------------------
+        # ------------------------------------------------------------
+        # PROCESS PER PAYER (ISOLATED BALANCES)
+        # ------------------------------------------------------------
 
         for payer_code, block in payer_blocks.items():
 
-            for trx in block.get("transactions", []):
+            running_balance = 0.0
+
+            transactions = block.get("transactions", [])
+
+            # Optional but recommended ordering
+            transactions.sort(
+                key=lambda x: str(x.get("transaction_reference"))
+            )
+
+            for trx in transactions:
 
                 try:
                     trx_ref = str(trx.get("transaction_reference"))
@@ -567,9 +573,9 @@ def import_wallet_history_from_json():
                     if not trx_ref:
                         continue
 
-                    # ---------------------------------------------------
-                    # IDEMPOTENCY CHECK
-                    # ---------------------------------------------------
+                    # ------------------------------------------------
+                    # IDEMPOTENCY
+                    # ------------------------------------------------
 
                     exists = (
                         db.session.query(TblStudentWalletHistory.id)
@@ -582,32 +588,15 @@ def import_wallet_history_from_json():
                     if exists:
                         skipped_duplicates.append({
                             "transaction_reference": trx_ref,
-                            "reason": "already exists"
+                            "payer_code": payer_code
                         })
                         continue
 
-                    # ---------------------------------------------------
-                    # FETCH CURRENT WALLET BALANCE
-                    # ---------------------------------------------------
-
-                    last_entry = (
-                        db.session.query(TblStudentWalletHistory)
-                        .filter(
-                            TblStudentWalletHistory.reg_no == payer_code
-                        )
-                        .order_by(TblStudentWalletHistory.created_at.desc())
-                        .first()
-                    )
-
-                    balance_before = last_entry.balance_after if last_entry else 0.0
-                    balance_after = balance_before + amount
-
-                    # ---------------------------------------------------
-                    # INSERT WALLET HISTORY
-                    # ---------------------------------------------------
+                    balance_before = running_balance
+                    balance_after = running_balance + amount
 
                     wallet_entry = TblStudentWalletHistory(
-                        wallet_id=None,  # optional if not available
+                        wallet_id=None,
                         reg_no=payer_code,
                         reference_number=slip_no,
                         transaction_type="TOPUP",
@@ -616,32 +605,35 @@ def import_wallet_history_from_json():
                         balance_after=balance_after,
                         trans_code=slip_no,
                         external_transaction_id=trx_ref,
-                        payment_chanel="CLOUD_IMPORT",
+                        payment_chanel="CLOUD_JSON_IMPORT",
                         slip_no=slip_no,
-                        comment="Imported from cloud payment JSON",
+                        comment="Imported from cloud JSON (cloud-based balance)",
                         created_by="system_reconciliation"
                     )
 
                     db.session.add(wallet_entry)
-                    db.session.flush()
+
+                    running_balance = balance_after
 
                     inserted.append({
                         "transaction_reference": trx_ref,
+                        "payer_code": payer_code,
                         "amount": amount,
-                        "payer_code": payer_code
+                        "balance_after": balance_after
                     })
 
                 except Exception as row_error:
                     failed.append({
                         "transaction_reference": trx.get("transaction_reference"),
+                        "payer_code": payer_code,
                         "error": str(row_error)
                     })
 
         db.session.commit()
 
-        # -----------------------------------------------------------
+        # ------------------------------------------------------------
         # RESPONSE
-        # -----------------------------------------------------------
+        # ------------------------------------------------------------
 
         return jsonify({
             "status": "success",
@@ -657,7 +649,7 @@ def import_wallet_history_from_json():
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.exception("Wallet JSON import failed")
+        current_app.logger.exception("Cloud-based wallet import failed")
 
         return jsonify({
             "status": "error",
