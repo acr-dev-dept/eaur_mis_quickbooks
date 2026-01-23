@@ -303,47 +303,51 @@ def analyze_transactions_file():
 @reconciliation_bp.route("/wallet_hist_vs_cloud_pyts", methods=["POST"])
 def wallet_hist_vs_cloud_pyts():
     """
-    Full bidirectional reconciliation between:
+    Wallet ↔ Cloud reconciliation with date-range filtering.
 
-    - Cloud payments JSON (source of truth)
-    - Wallet ledger history (internal accounting)
-
-    Detects:
-    - missing credits
-    - ghost credits
-    - partial credits
-    - duplicates
+    Payload:
+    {
+        "file_path": ".../payments.json",
+        "date_from": "YYYY-MM-DD",
+        "date_to": "YYYY-MM-DD"
+    }
     """
 
     try:
         payload = request.get_json()
 
-        if not payload or "file_path" not in payload:
+        required = ["file_path", "date_from", "date_to"]
+        if not payload or not all(k in payload for k in required):
             return jsonify({
                 "status": "error",
-                "message": "file_path is required"
+                "message": "file_path, date_from and date_to are required"
             }), 400
+
+        # ---------------------------------------------------------------
+        # Date handling
+        # ---------------------------------------------------------------
+
+        date_from = datetime.strptime(payload["date_from"], "%Y-%m-%d")
+        date_to = datetime.strptime(payload["date_to"], "%Y-%m-%d") + timedelta(days=1)
 
         file_path = payload["file_path"]
 
         if not os.path.exists(file_path):
             return jsonify({
                 "status": "error",
-                "message": f"File not found: {file_path}"
+                "message": f"JSON file not found: {file_path}"
             }), 404
 
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
         # STEP 1 — LOAD CLOUD PAYMENTS JSON
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
 
         with open(file_path, "r") as f:
             cloud_json = json.load(f)
 
-        payer_blocks = cloud_json.get("per_payer_code", {})
-
         cloud_map = {}
 
-        for payer_code, block in payer_blocks.items():
+        for payer_code, block in cloud_json.get("per_payer_code", {}).items():
             for trx in block.get("transactions", []):
 
                 trx_ref = str(trx.get("transaction_reference"))
@@ -362,17 +366,23 @@ def wallet_hist_vs_cloud_pyts():
                     "slip_no": trx.get("slip_no")
                 })
 
-        # ------------------------------------------------------------------
-        # STEP 2 — WALLET LEDGER TOTALS
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
+        # STEP 2 — WALLET HISTORY FILTERED BY DATE
+        # ---------------------------------------------------------------
 
         wallet_rows = (
             db.session.query(
                 TblStudentWalletHistory.external_transaction_id.label("trx_id"),
                 func.count(TblStudentWalletHistory.id).label("entries"),
-                func.sum(TblStudentWalletHistory.amount).label("wallet_total")
+                func.sum(TblStudentWalletHistory.amount).label("wallet_total"),
+                func.min(TblStudentWalletHistory.created_at).label("first_posted"),
+                func.max(TblStudentWalletHistory.created_at).label("last_posted")
             )
-            .filter(TblStudentWalletHistory.external_transaction_id.isnot(None))
+            .filter(
+                TblStudentWalletHistory.external_transaction_id.isnot(None),
+                TblStudentWalletHistory.created_at >= date_from,
+                TblStudentWalletHistory.created_at < date_to
+            )
             .group_by(TblStudentWalletHistory.external_transaction_id)
             .all()
         )
@@ -380,22 +390,27 @@ def wallet_hist_vs_cloud_pyts():
         wallet_map = {
             str(row.trx_id): {
                 "wallet_total": float(row.wallet_total or 0),
-                "wallet_entries": int(row.entries)
+                "wallet_entries": int(row.entries),
+                "first_posted": row.first_posted,
+                "last_posted": row.last_posted
             }
             for row in wallet_rows
         }
 
-        # ------------------------------------------------------------------
-        # STEP 3 — FULL BIDIRECTIONAL RECONCILIATION
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
+        # STEP 3 — BIDIRECTIONAL RECONCILIATION
+        # ---------------------------------------------------------------
 
         matched = []
+
+        absent = {
+            "absent_in_wallet": [],
+            "absent_in_cloud": []
+        }
+
         mismatches = {
-            "missing_in_wallet": [],
-            "missing_in_cloud": [],
             "amount_mismatch": [],
-            "duplicate_wallet_entries": [],
-            "orphan_wallet_transactions": []
+            "duplicate_wallet_entries": []
         }
 
         all_refs = set(wallet_map.keys()) | set(cloud_map.keys())
@@ -405,85 +420,84 @@ def wallet_hist_vs_cloud_pyts():
             wallet = wallet_map.get(trx_ref)
             cloud = cloud_map.get(trx_ref)
 
-            # --------------------------------------------------------------
-            # Cloud exists but wallet missing
-            # --------------------------------------------------------------
+            # -----------------------------------------------------------
+            # Absent in wallet
+            # -----------------------------------------------------------
             if cloud and not wallet:
-                mismatches["missing_in_wallet"].append({
+                absent["absent_in_wallet"].append({
                     "transaction_reference": trx_ref,
                     "cloud_total": cloud["cloud_total"],
                     "cloud_transactions": cloud["transactions"]
                 })
                 continue
 
-            # --------------------------------------------------------------
-            # Wallet exists but cloud missing
-            # --------------------------------------------------------------
+            # -----------------------------------------------------------
+            # Absent in cloud
+            # -----------------------------------------------------------
             if wallet and not cloud:
-                mismatches["missing_in_cloud"].append({
+                absent["absent_in_cloud"].append({
                     "transaction_reference": trx_ref,
                     "wallet_total": wallet["wallet_total"],
-                    "wallet_entries": wallet["wallet_entries"]
-                })
-
-                mismatches["orphan_wallet_transactions"].append({
-                    "transaction_reference": trx_ref,
-                    "wallet_total": wallet["wallet_total"],
-                    "wallet_entries": wallet["wallet_entries"]
+                    "wallet_entries": wallet["wallet_entries"],
+                    "first_posted": wallet["first_posted"],
+                    "last_posted": wallet["last_posted"]
                 })
                 continue
 
-            wallet_total = wallet["wallet_total"]
-            cloud_total = cloud["cloud_total"]
-
-            # --------------------------------------------------------------
-            # Duplicate wallet entries
-            # --------------------------------------------------------------
+            # -----------------------------------------------------------
+            # Duplicate wallet posting
+            # -----------------------------------------------------------
             if wallet["wallet_entries"] > 1:
                 mismatches["duplicate_wallet_entries"].append({
                     "transaction_reference": trx_ref,
                     "wallet_entries": wallet["wallet_entries"],
-                    "wallet_total": wallet_total
+                    "wallet_total": wallet["wallet_total"]
                 })
 
-            # --------------------------------------------------------------
+            # -----------------------------------------------------------
             # Amount mismatch
-            # --------------------------------------------------------------
-            if round(wallet_total, 2) != round(cloud_total, 2):
+            # -----------------------------------------------------------
+            if round(wallet["wallet_total"], 2) != round(cloud["cloud_total"], 2):
                 mismatches["amount_mismatch"].append({
                     "transaction_reference": trx_ref,
-                    "wallet_total": wallet_total,
-                    "cloud_total": cloud_total,
-                    "difference": round(wallet_total - cloud_total, 2)
+                    "wallet_total": wallet["wallet_total"],
+                    "cloud_total": cloud["cloud_total"],
+                    "difference": round(
+                        wallet["wallet_total"] - cloud["cloud_total"], 2
+                    )
                 })
             else:
                 matched.append({
                     "transaction_reference": trx_ref,
-                    "amount": wallet_total
+                    "amount": wallet["wallet_total"]
                 })
 
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
         # RESPONSE
-        # ------------------------------------------------------------------
+        # ---------------------------------------------------------------
 
         return jsonify({
             "status": "success",
+            "date_range": {
+                "from": payload["date_from"],
+                "to": payload["date_to"]
+            },
             "summary": {
-                "wallet_transaction_refs": len(wallet_map),
-                "cloud_transaction_refs": len(cloud_map),
+                "wallet_refs": len(wallet_map),
+                "cloud_refs": len(cloud_map),
                 "matched": len(matched),
-                "missing_in_wallet": len(mismatches["missing_in_wallet"]),
-                "missing_in_cloud": len(mismatches["missing_in_cloud"]),
-                "orphan_wallet_transactions": len(mismatches["orphan_wallet_transactions"]),
+                "absent_in_wallet": len(absent["absent_in_wallet"]),
+                "absent_in_cloud": len(absent["absent_in_cloud"]),
                 "amount_mismatch": len(mismatches["amount_mismatch"]),
                 "duplicate_wallet_entries": len(mismatches["duplicate_wallet_entries"])
             },
+            "absent": absent,
             "mismatches": mismatches,
             "matched": matched
         }), 200
 
     except Exception as e:
-        current_app.logger.exception("Wallet–Cloud reconciliation failed")
+        current_app.logger.exception("Date-range reconciliation failed")
         return jsonify({
             "status": "error",
             "message": str(e)
