@@ -3,7 +3,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
-from application.models.mis_models import TblStudentWallet
+from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 import pandas as pd
@@ -294,6 +294,189 @@ def analyze_transactions_file():
         }), 200
 
     except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@reconciliation_bp.route("/wallet_hist_vs_cloud_pyts", methods=["POST"])
+def wallet_hist_vs_cloud_pyts():
+    """
+    Reconciles wallet history vs cloud payments JSON.
+
+    Matching key:
+        wallet.external_transaction_id
+        ==
+        cloud.transaction_reference
+
+    Highlights:
+    - missing postings
+    - amount mismatches
+    - duplicate wallet entries
+    """
+
+    try:
+        payload = request.get_json()
+
+        if not payload or "file_path" not in payload:
+            return jsonify({
+                "status": "error",
+                "message": "file_path is required"
+            }), 400
+
+        file_path = payload["file_path"]
+
+        if not os.path.exists(file_path):
+            return jsonify({
+                "status": "error",
+                "message": f"JSON file not found: {file_path}"
+            }), 404
+
+        # ------------------------------------------------------------------
+        # STEP 1 — LOAD CLOUD JSON
+        # ------------------------------------------------------------------
+
+        with open(file_path, "r") as f:
+            cloud_json = json.load(f)
+
+        payer_blocks = cloud_json.get("per_payer_code", {})
+
+        cloud_transactions = {}
+
+        for payer_code, block in payer_blocks.items():
+            for trx in block.get("transactions", []):
+
+                trx_ref = str(trx.get("transaction_reference"))
+                paid_amount = float(trx.get("paid_amount", 0))
+
+                if trx_ref not in cloud_transactions:
+                    cloud_transactions[trx_ref] = {
+                        "cloud_total": 0.0,
+                        "transactions": []
+                    }
+
+                cloud_transactions[trx_ref]["cloud_total"] += paid_amount
+                cloud_transactions[trx_ref]["transactions"].append({
+                    "payer_code": payer_code,
+                    "paid_amount": paid_amount,
+                    "slip_no": trx.get("slip_no")
+                })
+
+        # ------------------------------------------------------------------
+        # STEP 2 — WALLET HISTORY TOTALS
+        # ------------------------------------------------------------------
+
+        wallet_rows = (
+            db.session.query(
+                TblStudentWalletHistory.external_transaction_id.label("trx_id"),
+                func.count(TblStudentWalletHistory.id).label("entries"),
+                func.sum(TblStudentWalletHistory.amount).label("wallet_total")
+            )
+            .filter(TblStudentWalletHistory.external_transaction_id.isnot(None))
+            .group_by(TblStudentWalletHistory.external_transaction_id)
+            .all()
+        )
+
+        wallet_transactions = {
+            str(row.trx_id): {
+                "wallet_total": float(row.wallet_total or 0),
+                "wallet_entries": int(row.entries)
+            }
+            for row in wallet_rows
+        }
+
+        # ------------------------------------------------------------------
+        # STEP 3 — RECONCILIATION
+        # ------------------------------------------------------------------
+
+        mismatches = {
+            "missing_in_wallet": [],
+            "missing_in_cloud": [],
+            "amount_mismatch": [],
+            "duplicate_wallet_entries": []
+        }
+
+        matched = []
+
+        all_refs = set(wallet_transactions.keys()) | set(cloud_transactions.keys())
+
+        for trx_ref in all_refs:
+
+            wallet = wallet_transactions.get(trx_ref)
+            cloud = cloud_transactions.get(trx_ref)
+
+            # --------------------------------------------------------------
+            # Missing cases
+            # --------------------------------------------------------------
+
+            if not wallet:
+                mismatches["missing_in_wallet"].append({
+                    "transaction_reference": trx_ref,
+                    "cloud_total": cloud["cloud_total"],
+                    "cloud_transactions": cloud["transactions"]
+                })
+                continue
+
+            if not cloud:
+                mismatches["missing_in_cloud"].append({
+                    "transaction_reference": trx_ref,
+                    "wallet_total": wallet["wallet_total"]
+                })
+                continue
+
+            wallet_total = wallet["wallet_total"]
+            cloud_total = cloud["cloud_total"]
+
+            # --------------------------------------------------------------
+            # Duplicate wallet postings
+            # --------------------------------------------------------------
+
+            if wallet["wallet_entries"] > 1:
+                mismatches["duplicate_wallet_entries"].append({
+                    "transaction_reference": trx_ref,
+                    "wallet_entries": wallet["wallet_entries"],
+                    "wallet_total": wallet_total
+                })
+
+            # --------------------------------------------------------------
+            # Amount mismatch
+            # --------------------------------------------------------------
+
+            if round(wallet_total, 2) != round(cloud_total, 2):
+                mismatches["amount_mismatch"].append({
+                    "transaction_reference": trx_ref,
+                    "wallet_total": wallet_total,
+                    "cloud_total": cloud_total,
+                    "difference": round(wallet_total - cloud_total, 2)
+                })
+            else:
+                matched.append({
+                    "transaction_reference": trx_ref,
+                    "amount": wallet_total
+                })
+
+        # ------------------------------------------------------------------
+        # RESPONSE
+        # ------------------------------------------------------------------
+
+        return jsonify({
+            "status": "success",
+            "summary": {
+                "wallet_transaction_refs": len(wallet_transactions),
+                "cloud_transaction_refs": len(cloud_transactions),
+                "matched": len(matched),
+                "missing_in_wallet": len(mismatches["missing_in_wallet"]),
+                "missing_in_cloud": len(mismatches["missing_in_cloud"]),
+                "amount_mismatch": len(mismatches["amount_mismatch"]),
+                "duplicate_wallet_entries": len(mismatches["duplicate_wallet_entries"])
+            },
+            "mismatches": mismatches,
+            "matched": matched
+        }), 200
+
+    except Exception as e:
+        current_app.logger.exception("Wallet vs cloud reconciliation failed")
         return jsonify({
             "status": "error",
             "message": str(e)
