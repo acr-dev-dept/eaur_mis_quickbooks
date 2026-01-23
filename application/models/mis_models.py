@@ -512,7 +512,7 @@ class Payment(MISBaseModel):
                         {
                             "id": p.id,
                             "student_wallet_ref": p.student_wallet_ref,
-                            "amount": float(p.amount),
+                            "amount": p.amount,
                             "reg_no": p.reg_no
                         }
                         for p in payments
