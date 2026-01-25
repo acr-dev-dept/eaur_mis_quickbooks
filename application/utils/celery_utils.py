@@ -70,12 +70,16 @@ def make_celery(app):
         },
             "sync_invoices_every_midnight": {
             "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-            "schedule": crontab(hour="16,17,18,19,20,1,22,23,0,1,2,3,4,5", minute='24,54'),
+            "schedule": crontab(minute='24,54',
+                                hour="0-23",
+                                day_of_week='mon,tue,wed,thu,fri'),
         },
             "update_invoices": {
             "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
             "schedule": crontab(hour="16,17,18,19,20,1,22,23,0,1,2,3,4,5", minute='30,57'),
         },
+
+
 
         # WEEKEND SCHEDULES
         "sync_applicants_every_weekend": {
@@ -97,7 +101,7 @@ def make_celery(app):
         "sync_invoices_every_weekend": {
         "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
         "schedule": crontab(
-            minute='12,48',
+            minute='12,48,24,54',
             hour='0-23',
             day_of_week='sat,sun'
             ),
