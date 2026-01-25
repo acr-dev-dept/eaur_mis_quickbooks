@@ -82,7 +82,7 @@ def make_celery(app):
         "task": "application.config_files.tasks.bulk_sync_applicants_task",
         "schedule": crontab(
             minute='6,42',
-            hour='6-16',
+            hour='0-23',
             day_of_week='sat,sun'
             ),
         },
@@ -90,7 +90,7 @@ def make_celery(app):
         "task": "application.config_files.sync_students_task.bulk_sync_students_task",
         "schedule": crontab(
             minute='6,42',
-            hour='6-16',
+            hour='0-23',
             day_of_week='sat,sun'
             ),
         },
@@ -98,7 +98,7 @@ def make_celery(app):
         "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
         "schedule": crontab(
             minute='12,48',
-            hour='6-16',
+            hour='0-23',
             day_of_week='sat,sun'
             ),
         },
@@ -106,15 +106,15 @@ def make_celery(app):
         "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
         "schedule": crontab(
             minute='18,54',
-            hour='6-16',
+            hour='0-23',
             day_of_week='sat,sun'
             ),
         },
         "sync_update_invoices_every_weekend": {
         "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
         "schedule": crontab(
-            minute='24,57',
-            hour='6-16',
+            minute='6,30,54,24,57',
+            hour='0-23',
             day_of_week='sat,sun'
             ),
         },
@@ -122,7 +122,7 @@ def make_celery(app):
         "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
         "schedule": crontab(
             minute='30,54',
-            hour='6-16', 
+            hour='0-23', 
             day_of_week='sat,sun'
             ),
         },
