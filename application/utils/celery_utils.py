@@ -58,7 +58,11 @@ def make_celery(app):
         beat_schedule={
             "sync_students": {
             "task": "application.config_files.sync_students_task.bulk_sync_students_task",
-            "schedule": crontab(hour='16,17,18,19,20,1,22,23,0,1,2,3,4,5', minute='6,42'),
+            "schedule": crontab(
+                minute='6,42',
+                hour='0-23',
+                day_of_week='mon,tue,wed,thu,fri'
+                )
             },
             "sync_payments_every_midnight": {
             "task": "application.config_files.sync_payments_task.bulk_sync_payments_task",
@@ -68,19 +72,19 @@ def make_celery(app):
             "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
             "schedule": crontab(hour="18,19,20,21,22,23,0,1,2,3,4,5", minute='12,48'),
             },
-                "sync_invoices_every_midnight": {
-                "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-                "schedule": crontab(minute='18,48',
-                                    hour="0-23",
-                                    day_of_week='mon,tue,wed,thu,fri'),
+            "sync_invoices_every_midnight": {
+            "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+            "schedule": crontab(minute='12,24,36,48,54',
+                                hour="0,2,4,6,8,10,12,14,16,18,20,22",
+                                day_of_week='mon,tue,wed,thu,fri')
             },
-                "update_invoices": {
-                "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
-                "schedule": crontab(
-                    minute='24,54',
-                    hour='0-23',
-                    day_of_week='mon,tue,wed,thu,fri'
-                )
+            "update_invoices": {
+            "task": "application.config_files.update_invoices_task.scheduled_invoice_update_task",
+            "schedule": crontab(
+                minute='6,30,54,24,57',
+                hour='1,3,5,7,9,11,13,15,17,19,21,23',
+                day_of_week='mon,tue,wed,thu,fri'
+            )
             },
 
 
