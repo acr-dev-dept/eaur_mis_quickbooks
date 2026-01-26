@@ -216,7 +216,7 @@ def get_sales_receipt(wallet_id):
 
         return jsonify({
             "success": True,
-            "data": result.get("SalesReceipt"),
+            "data": result.get("details"),
             "message": "Sales receipt retrieved successfully",
             "timestamp": datetime.now().isoformat()
         }), 200
