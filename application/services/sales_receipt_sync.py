@@ -686,9 +686,9 @@ class SalesReceiptSyncService:
                     "status": "RETRIEVED_SUCCESSFULLY",
                     "success": True,
                     "error_message": None,
-                    "details": response['SalesReceipt']
+                    "details": response
                 }
-            
+
         except Exception as e:
             # ---- System-level failure ----
             error_msg = str(e)
