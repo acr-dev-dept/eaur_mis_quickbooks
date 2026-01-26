@@ -558,6 +558,9 @@ class SalesReceiptSyncService:
                 sales_receipt.quickbooks_id
             )
             data = existing_sr_response.get('data', {})
+            current_app.logger.debug(
+                f"Existing SalesReceipt data from QuickBooks for {sales_receipt.id}: {data}, with type: {type(data)}"
+            )
             if "Fault" in data:
                 error_msg = (
                     data.get('Fault', {})
