@@ -558,17 +558,16 @@ class SalesReceiptSyncService:
                 sales_receipt.quickbooks_id
             )
 
-            data = existing_sr_response.get('data', {})
             current_app.logger.debug(
-                f"Existing SalesReceipt data from QuickBooks for {sales_receipt.id}: {data}, with type: {type(data)}"
+                f"Existing SalesReceipt data from QuickBooks for {sales_receipt.id}: {existing_sr_response}, with type: {type(existing_sr_response)}"
             )
             current_app.logger.info(
                 f"Existing sr response: {existing_sr_response}, type: {type(existing_sr_response)}"
             )
 
-            if "Fault" in data:
+            if "Fault" in existing_sr_response:
                 error_msg = (
-                    data.get('Fault', {})
+                    existing_sr_response.get('Fault', {})
                     .get('Error', [{}])[0]
                     .get('Detail', 'Unknown QuickBooks error')
                 )
@@ -579,12 +578,12 @@ class SalesReceiptSyncService:
                     "status": "FAILED",
                     "success": False,
                     "error_message": f"Sales receipt not found in QuickBooks: {error_msg}",
-                    "details": data
+                    "details": existing_sr_response
                 }
             
-            qb_amount = data['SalesReceipt'].get('TotalAmt')
+            qb_amount = existing_sr_response['SalesReceipt'].get('TotalAmt')
             payment_exists = False
-            qb_sync_token = data['SalesReceipt'].get('SyncToken')
+            qb_sync_token = existing_sr_response['SalesReceipt'].get('SyncToken')
             if float(sales_receipt.dept) != float(qb_amount):
                 # Amounts differ; check in payments table if payment exists
                 from application.models.mis_models import Payment
