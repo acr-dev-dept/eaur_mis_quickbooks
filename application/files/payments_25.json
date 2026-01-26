@@ -1,0 +1,4563 @@
+{
+    "file_path": "/home/eaur/eaur_mis_quickbooks/application/files/payments_25.csv",
+    "per_payer_code": {
+        "05461698": {
+            "total_paid_amount": 74000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 74000.0,
+                    "slip_no": "FT26025CHD1D",
+                    "transaction_reference": 11202601251122387331
+                }
+            ]
+        },
+        "23100117": {
+            "total_paid_amount": 3000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 3000.0,
+                    "slip_no": "FT260252PLFG",
+                    "transaction_reference": 11202601251155382006
+                }
+            ]
+        },
+        "23100391": {
+            "total_paid_amount": 170000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 170000.0,
+                    "slip_no": "FT26025F2T7B",
+                    "transaction_reference": 11202601251433072866
+                }
+            ]
+        },
+        "23100434": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT2602540R2B",
+                    "transaction_reference": 11202601251246097956
+                }
+            ]
+        },
+        "23500536": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025MXSVB",
+                    "transaction_reference": 11202601251245153663
+                }
+            ]
+        },
+        "23500779": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26026PB2KJ",
+                    "transaction_reference": 11202601252159316474
+                }
+            ]
+        },
+        "23500816": {
+            "total_paid_amount": 160000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 160000.0,
+                    "slip_no": "FT26025Q9JW0",
+                    "transaction_reference": 11202601251725307579
+                }
+            ]
+        },
+        "23500869": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025Z18B7",
+                    "transaction_reference": 11202601250823388464
+                }
+            ]
+        },
+        "23500878": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT26025T1XH8",
+                    "transaction_reference": 11202601251114139176
+                }
+            ]
+        },
+        "23500884": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT26025PQVFJ",
+                    "transaction_reference": 11202601251404575202
+                }
+            ]
+        },
+        "23501009": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT260254LKS7",
+                    "transaction_reference": 11202601251316330854
+                }
+            ]
+        },
+        "24100017": {
+            "total_paid_amount": 150000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 150000.0,
+                    "slip_no": "FT26025H7FXQ",
+                    "transaction_reference": 11202601251547236639
+                }
+            ]
+        },
+        "24100025": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025XFBG7",
+                    "transaction_reference": 11202601251851330556
+                }
+            ]
+        },
+        "24100043": {
+            "total_paid_amount": 165000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 165000.0,
+                    "slip_no": "FT26025KN4L5",
+                    "transaction_reference": 11202601251131058764
+                }
+            ]
+        },
+        "24100051": {
+            "total_paid_amount": 135000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 135000.0,
+                    "slip_no": "FT26025KTVJH",
+                    "transaction_reference": 11202601251800335366
+                }
+            ]
+        },
+        "24100055": {
+            "total_paid_amount": 210000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 210000.0,
+                    "slip_no": "FT26025ZCS53",
+                    "transaction_reference": 11202601251024512171
+                }
+            ]
+        },
+        "24100073": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26026SNSNB",
+                    "transaction_reference": 11202601252125351293
+                }
+            ]
+        },
+        "24100092": {
+            "total_paid_amount": 150000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 150000.0,
+                    "slip_no": "FT26025ZVDC6",
+                    "transaction_reference": 11202601251250295106
+                }
+            ]
+        },
+        "24100119": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT260254WFM4",
+                    "transaction_reference": 11202601251737115229
+                }
+            ]
+        },
+        "24100137": {
+            "total_paid_amount": 198000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 198000.0,
+                    "slip_no": "FT26025KCGQC",
+                    "transaction_reference": 11202601251113251282
+                }
+            ]
+        },
+        "24100141": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025RRHHD",
+                    "transaction_reference": 11202601251009176655
+                }
+            ]
+        },
+        "24100158": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26026QWQ1F",
+                    "transaction_reference": 11202601252052234516
+                }
+            ]
+        },
+        "24100169": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025QDSPD",
+                    "transaction_reference": 11202601251313403995
+                }
+            ]
+        },
+        "24100192": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025SY9CQ",
+                    "transaction_reference": 11202601251521377269
+                }
+            ]
+        },
+        "24100207": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT260254VQR9",
+                    "transaction_reference": 11202601251935304838
+                }
+            ]
+        },
+        "24100219": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT260257QFPL",
+                    "transaction_reference": 11202601251342011449
+                }
+            ]
+        },
+        "24100231": {
+            "total_paid_amount": 53000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 53000.0,
+                    "slip_no": "FT26025BTMK1",
+                    "transaction_reference": 11202601251516071121
+                }
+            ]
+        },
+        "24100248": {
+            "total_paid_amount": 130000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 130000.0,
+                    "slip_no": "FT26026YLQ6B",
+                    "transaction_reference": 11202601252158303902
+                }
+            ]
+        },
+        "24100249": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025RQRL6",
+                    "transaction_reference": 11202601251214158270
+                }
+            ]
+        },
+        "24100255": {
+            "total_paid_amount": 14000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 14000.0,
+                    "slip_no": "FT26025GDYNR",
+                    "transaction_reference": 11202601251547319876
+                }
+            ]
+        },
+        "24100267": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025QVTBL",
+                    "transaction_reference": 11202601251649516086
+                }
+            ]
+        },
+        "24100274": {
+            "total_paid_amount": 85000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT26025MCYHT",
+                    "transaction_reference": 11202601251015371309
+                }
+            ]
+        },
+        "24100279": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT2602546KZ4",
+                    "transaction_reference": 11202601251726496274
+                }
+            ]
+        },
+        "24100280": {
+            "total_paid_amount": 10000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT26026ZLR4D",
+                    "transaction_reference": 11202601252243260094
+                }
+            ]
+        },
+        "24100292": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT260265BJC2",
+                    "transaction_reference": 11202601252030372000
+                }
+            ]
+        },
+        "24100304": {
+            "total_paid_amount": 130000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 130000.0,
+                    "slip_no": "FT2602595CMH",
+                    "transaction_reference": 11202601251427342672
+                }
+            ]
+        },
+        "24100311": {
+            "total_paid_amount": 136000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 51000.0,
+                    "slip_no": "FT26025C10HV",
+                    "transaction_reference": 11202601251923019205
+                },
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT26025PV6MJ",
+                    "transaction_reference": 11202601251832082861
+                }
+            ]
+        },
+        "24100348": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025Z5YWC",
+                    "transaction_reference": 11202601250906470534
+                }
+            ]
+        },
+        "24100367": {
+            "total_paid_amount": 124000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 124000.0,
+                    "slip_no": "FT26025WBFWB",
+                    "transaction_reference": 11202601251550250486
+                }
+            ]
+        },
+        "24100402": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT26026TCPJD",
+                    "transaction_reference": 11202601252245331669
+                }
+            ]
+        },
+        "24100408": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025FT9HF",
+                    "transaction_reference": 11202601251525598103
+                }
+            ]
+        },
+        "24100414": {
+            "total_paid_amount": 36000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 36000.0,
+                    "slip_no": "FT26025JG7Y1",
+                    "transaction_reference": 11202601251807271150
+                }
+            ]
+        },
+        "24100420": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025T2YYC",
+                    "transaction_reference": 11202601251451253409
+                }
+            ]
+        },
+        "24100444": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025PYLD3",
+                    "transaction_reference": 11202601251706185758
+                }
+            ]
+        },
+        "24100471": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT260261Q4QY",
+                    "transaction_reference": 11202601252033026885
+                }
+            ]
+        },
+        "24100488": {
+            "total_paid_amount": 26000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 26000.0,
+                    "slip_no": "FT26025LNNK4",
+                    "transaction_reference": 11202601251713060793
+                }
+            ]
+        },
+        "24100506": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT2602558KK0",
+                    "transaction_reference": 11202601251943520839
+                }
+            ]
+        },
+        "24100531": {
+            "total_paid_amount": 35000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 35000.0,
+                    "slip_no": "FT260256HKBY",
+                    "transaction_reference": 11202601251046048111
+                }
+            ]
+        },
+        "24100553": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025SQPQ4",
+                    "transaction_reference": 11202601252001113872
+                }
+            ]
+        },
+        "24100554": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260254XDCP",
+                    "transaction_reference": 11202601251630452053
+                }
+            ]
+        },
+        "24100593": {
+            "total_paid_amount": 13000.0,
+            "transaction_count": 3,
+            "transactions": [
+                {
+                    "paid_amount": 1000.0,
+                    "slip_no": "FT26026GF74M",
+                    "transaction_reference": 11202601252046272459
+                },
+                {
+                    "paid_amount": 4000.0,
+                    "slip_no": "FT26025YXY2N",
+                    "transaction_reference": 11202601252022325249
+                },
+                {
+                    "paid_amount": 8000.0,
+                    "slip_no": "FT26025LSMMC",
+                    "transaction_reference": 11202601250920504629
+                }
+            ]
+        },
+        "24100594": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT26026JZV2F",
+                    "transaction_reference": 11202601252235157987
+                }
+            ]
+        },
+        "24500024": {
+            "total_paid_amount": 39000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 4000.0,
+                    "slip_no": "FT2602579Q0Y",
+                    "transaction_reference": 11202601251828362885
+                },
+                {
+                    "paid_amount": 35000.0,
+                    "slip_no": "FT2602505KPJ",
+                    "transaction_reference": 11202601251719132951
+                }
+            ]
+        },
+        "24500082": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025XFMZC",
+                    "transaction_reference": 11202601251144568670
+                }
+            ]
+        },
+        "24500105": {
+            "total_paid_amount": 16000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 16000.0,
+                    "slip_no": "FT26025689ND",
+                    "transaction_reference": 11202601251524094969
+                }
+            ]
+        },
+        "24500110": {
+            "total_paid_amount": 22000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 22000.0,
+                    "slip_no": "FT26025FZ5BY",
+                    "transaction_reference": 11202601251632562696
+                }
+            ]
+        },
+        "24500120": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025SNZQR",
+                    "transaction_reference": 11202601251719285166
+                }
+            ]
+        },
+        "24500135": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 60000.0,
+                    "slip_no": "FT2602563GR1",
+                    "transaction_reference": 11202601251335243038
+                }
+            ]
+        },
+        "24500155": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025LBQF0",
+                    "transaction_reference": 11202601251929369333
+                }
+            ]
+        },
+        "24500162": {
+            "total_paid_amount": 17000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 17000.0,
+                    "slip_no": "FT26025WFZPQ",
+                    "transaction_reference": 11202601251650481979
+                }
+            ]
+        },
+        "24500167": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT260253FMB0",
+                    "transaction_reference": 11202601251400407865
+                }
+            ]
+        },
+        "24500169": {
+            "total_paid_amount": 85000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT26025R1JH3",
+                    "transaction_reference": 11202601251450475375
+                }
+            ]
+        },
+        "24500175": {
+            "total_paid_amount": 185000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 185000.0,
+                    "slip_no": "FT260250WF5G",
+                    "transaction_reference": 11202601250852494095
+                }
+            ]
+        },
+        "24500184": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025NTDXD",
+                    "transaction_reference": 11202601251737225835
+                }
+            ]
+        },
+        "24500186": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26026QCZ04",
+                    "transaction_reference": 11202601252235076279
+                }
+            ]
+        },
+        "24500220": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT260255CXDR",
+                    "transaction_reference": 11202601251436089655
+                }
+            ]
+        },
+        "24500238": {
+            "total_paid_amount": 190000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 190000.0,
+                    "slip_no": "FT26026PRSPX",
+                    "transaction_reference": 11202601252026310892
+                }
+            ]
+        },
+        "24500260": {
+            "total_paid_amount": 7000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 7000.0,
+                    "slip_no": "FT26025PMRHR",
+                    "transaction_reference": 11202601251944553579
+                }
+            ]
+        },
+        "24500308": {
+            "total_paid_amount": 78600.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 78600.0,
+                    "slip_no": "FT2602518YW4",
+                    "transaction_reference": 11202601251252272005
+                }
+            ]
+        },
+        "24500341": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT2602586KHD",
+                    "transaction_reference": 11202601250950016250
+                }
+            ]
+        },
+        "24500359": {
+            "total_paid_amount": 235000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 235000.0,
+                    "slip_no": "FT260257W9XR",
+                    "transaction_reference": 11202601251449318968
+                }
+            ]
+        },
+        "24500374": {
+            "total_paid_amount": 22000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 22000.0,
+                    "slip_no": "FT260252WSH1",
+                    "transaction_reference": 11202601251703058369
+                }
+            ]
+        },
+        "24500376": {
+            "total_paid_amount": 10000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT26025KGV19",
+                    "transaction_reference": 11202601251459460440
+                }
+            ]
+        },
+        "24500472": {
+            "total_paid_amount": 96000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 96000.0,
+                    "slip_no": "FT26025BD0KM",
+                    "transaction_reference": 11202601250828221742
+                }
+            ]
+        },
+        "24500502": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025FFRBF",
+                    "transaction_reference": 11202601251619236428
+                }
+            ]
+        },
+        "24900063": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT2602550NJF",
+                    "transaction_reference": 11202601251921216758
+                }
+            ]
+        },
+        "24900072": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025GZ0FX",
+                    "transaction_reference": 11202601251545111074
+                }
+            ]
+        },
+        "24900088": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT26026X0Y51",
+                    "transaction_reference": 11202601252024483343
+                },
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025HC5BW",
+                    "transaction_reference": 11202601251843419365
+                }
+            ]
+        },
+        "24900098": {
+            "total_paid_amount": 51000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 51000.0,
+                    "slip_no": "FT260250ZC02",
+                    "transaction_reference": 11202601252009134936
+                }
+            ]
+        },
+        "24900125": {
+            "total_paid_amount": 117000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 117000.0,
+                    "slip_no": "FT260251CHH3",
+                    "transaction_reference": 11202601251448494065
+                }
+            ]
+        },
+        "24900143": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260256YHYQ",
+                    "transaction_reference": 11202601251902230917
+                }
+            ]
+        },
+        "24900150": {
+            "total_paid_amount": 130000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 130000.0,
+                    "slip_no": "FT26025XVQ3Y",
+                    "transaction_reference": 11202601251037480533
+                }
+            ]
+        },
+        "24900161": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025WPSRF",
+                    "transaction_reference": 11202601251348411023
+                }
+            ]
+        },
+        "24900175": {
+            "total_paid_amount": 29997.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 29997.0,
+                    "slip_no": "FT26025BHDCG",
+                    "transaction_reference": 11202601251107337237
+                }
+            ]
+        },
+        "24900205": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025N9DSF",
+                    "transaction_reference": 11202601251104387225
+                }
+            ]
+        },
+        "24900246": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT26025R3TLG",
+                    "transaction_reference": 11202601251343434231
+                }
+            ]
+        },
+        "24900290": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT2602593X9R",
+                    "transaction_reference": 11202601251045198665
+                }
+            ]
+        },
+        "24900298": {
+            "total_paid_amount": 85000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT26025N5MT6",
+                    "transaction_reference": 11202601251535210964
+                }
+            ]
+        },
+        "24900307": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025H9S85",
+                    "transaction_reference": 11202601251158327145
+                }
+            ]
+        },
+        "24900319": {
+            "total_paid_amount": 12500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 12500.0,
+                    "slip_no": "FT260256LPNS",
+                    "transaction_reference": 11202601251847130309
+                }
+            ]
+        },
+        "24900379": {
+            "total_paid_amount": 55000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 55000.0,
+                    "slip_no": "FT26025BBHSD",
+                    "transaction_reference": 11202601250833341908
+                }
+            ]
+        },
+        "25100016": {
+            "total_paid_amount": 330000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 330000.0,
+                    "slip_no": "FT26025PR7YB",
+                    "transaction_reference": 11202601251825441507
+                }
+            ]
+        },
+        "25100025": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT260257JHM0",
+                    "transaction_reference": 11202601251505314293
+                }
+            ]
+        },
+        "25100049": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26026RYRYP",
+                    "transaction_reference": 11202601252202090469
+                }
+            ]
+        },
+        "25100060": {
+            "total_paid_amount": 160000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 160000.0,
+                    "slip_no": "FT26025XVS7L",
+                    "transaction_reference": 11202601251143117029
+                }
+            ]
+        },
+        "25100092": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260251H32B",
+                    "transaction_reference": 11202601250840083570
+                }
+            ]
+        },
+        "25100093": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26026P8J7H",
+                    "transaction_reference": 11202601252216148157
+                }
+            ]
+        },
+        "25100103": {
+            "total_paid_amount": 82000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 82000.0,
+                    "slip_no": "FT26025CHG4H",
+                    "transaction_reference": 11202601252008408133
+                }
+            ]
+        },
+        "25100117": {
+            "total_paid_amount": 130000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 130000.0,
+                    "slip_no": "FT26025B1952",
+                    "transaction_reference": 11202601251053598858
+                }
+            ]
+        },
+        "25100120": {
+            "total_paid_amount": 132000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 52000.0,
+                    "slip_no": "FT26026GT6PQ",
+                    "transaction_reference": 11202601252231550147
+                },
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025Q47GH",
+                    "transaction_reference": 11202601250059383088
+                }
+            ]
+        },
+        "25100121": {
+            "total_paid_amount": 125000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 125000.0,
+                    "slip_no": "FT26025X7N7X",
+                    "transaction_reference": 11202601251822560209
+                }
+            ]
+        },
+        "25100126": {
+            "total_paid_amount": 132000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 132000.0,
+                    "slip_no": "FT26026V5DP4",
+                    "transaction_reference": 11202601252141122448
+                }
+            ]
+        },
+        "25100127": {
+            "total_paid_amount": 124000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 124000.0,
+                    "slip_no": "FT26025W3XZT",
+                    "transaction_reference": 11202601250640417417
+                }
+            ]
+        },
+        "25100128": {
+            "total_paid_amount": 74000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 74000.0,
+                    "slip_no": "FT26025VTL4T",
+                    "transaction_reference": 11202601252016418810
+                }
+            ]
+        },
+        "25100142": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025JQY23",
+                    "transaction_reference": 11202601251547041017
+                },
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025MHZDJ",
+                    "transaction_reference": 11202601251538471821
+                }
+            ]
+        },
+        "25100148": {
+            "total_paid_amount": 53000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 53000.0,
+                    "slip_no": "FT26025WFDTC",
+                    "transaction_reference": 11202601251905299683
+                }
+            ]
+        },
+        "25100151": {
+            "total_paid_amount": 32000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 32000.0,
+                    "slip_no": "FT260253KPY1",
+                    "transaction_reference": 11202601250953339778
+                }
+            ]
+        },
+        "25100162": {
+            "total_paid_amount": 35000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 35000.0,
+                    "slip_no": "FT26025JQM77",
+                    "transaction_reference": 11202601250040024032
+                }
+            ]
+        },
+        "25100166": {
+            "total_paid_amount": 59000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 59000.0,
+                    "slip_no": "FT260250NS3H",
+                    "transaction_reference": 11202601251840170206
+                }
+            ]
+        },
+        "25100174": {
+            "total_paid_amount": 186000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 186000.0,
+                    "slip_no": "FT260269WLT8",
+                    "transaction_reference": 11202601252144381013
+                }
+            ]
+        },
+        "25100185": {
+            "total_paid_amount": 69000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025BQJJ2",
+                    "transaction_reference": 11202601251856010506
+                },
+                {
+                    "paid_amount": 49000.0,
+                    "slip_no": "FT26025X7CY8",
+                    "transaction_reference": 11202601250923356603
+                }
+            ]
+        },
+        "25100186": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT260252HJ6T",
+                    "transaction_reference": 11202601251815061939
+                }
+            ]
+        },
+        "25100193": {
+            "total_paid_amount": 132000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 132000.0,
+                    "slip_no": "FT26026L7DZV",
+                    "transaction_reference": 11202601252152598740
+                }
+            ]
+        },
+        "25100211": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025CQ5TN",
+                    "transaction_reference": 11202601251919090520
+                }
+            ]
+        },
+        "25100216": {
+            "total_paid_amount": 130000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 130000.0,
+                    "slip_no": "FT26025XPSWK",
+                    "transaction_reference": 11202601251807496109
+                }
+            ]
+        },
+        "25100220": {
+            "total_paid_amount": 12000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 2000.0,
+                    "slip_no": "FT26025YCBNM",
+                    "transaction_reference": 11202601251010194895
+                },
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT2602503YZD",
+                    "transaction_reference": 11202601250947081047
+                }
+            ]
+        },
+        "25100230": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT260257TD56",
+                    "transaction_reference": 11202601251759027620
+                }
+            ]
+        },
+        "25100252": {
+            "total_paid_amount": 89000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 4000.0,
+                    "slip_no": "FT260262125J",
+                    "transaction_reference": 11202601252127377705
+                },
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT260256SNDD",
+                    "transaction_reference": 11202601252018598930
+                }
+            ]
+        },
+        "25100270": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT26025QDHXL",
+                    "transaction_reference": 11202601251211063423
+                }
+            ]
+        },
+        "25100278": {
+            "total_paid_amount": 104000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 104000.0,
+                    "slip_no": "FT26025179MN",
+                    "transaction_reference": 11202601251303572924
+                }
+            ]
+        },
+        "25100291": {
+            "total_paid_amount": 198000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 198000.0,
+                    "slip_no": "FT2602642X4N",
+                    "transaction_reference": 11202601252139445524
+                }
+            ]
+        },
+        "25100293": {
+            "total_paid_amount": 35000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 35000.0,
+                    "slip_no": "FT260259X8S0",
+                    "transaction_reference": 11202601251647460112
+                }
+            ]
+        },
+        "25100300": {
+            "total_paid_amount": 330000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 330000.0,
+                    "slip_no": "FT260255F9NM",
+                    "transaction_reference": 11202601251322563339
+                }
+            ]
+        },
+        "25100324": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26025MGNSG",
+                    "transaction_reference": 11202601251912543240
+                }
+            ]
+        },
+        "25100335": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025FDBHX",
+                    "transaction_reference": 11202601251130199477
+                }
+            ]
+        },
+        "25100353": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025FYC8G",
+                    "transaction_reference": 11202601251537541978
+                }
+            ]
+        },
+        "25100354": {
+            "total_paid_amount": 240000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 240000.0,
+                    "slip_no": "FT26025K8WK6",
+                    "transaction_reference": 11202601251310014105
+                }
+            ]
+        },
+        "25100359": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025LP2QQ",
+                    "transaction_reference": 11202601251438351608
+                }
+            ]
+        },
+        "25100367": {
+            "total_paid_amount": 125000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 125000.0,
+                    "slip_no": "FT26025M4RMQ",
+                    "transaction_reference": 11202601251734102325
+                }
+            ]
+        },
+        "25100368": {
+            "total_paid_amount": 310000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 310000.0,
+                    "slip_no": "FT2602639BDB",
+                    "transaction_reference": 11202601252230342126
+                }
+            ]
+        },
+        "25100376": {
+            "total_paid_amount": 27000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 27000.0,
+                    "slip_no": "FT26025PGFNL",
+                    "transaction_reference": 11202601251436244482
+                }
+            ]
+        },
+        "25100381": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025009X1",
+                    "transaction_reference": 11202601251452092409
+                }
+            ]
+        },
+        "25100384": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025216MX",
+                    "transaction_reference": 11202601251221312985
+                }
+            ]
+        },
+        "25100388": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT2602573T09",
+                    "transaction_reference": 11202601251924014760
+                }
+            ]
+        },
+        "25100406": {
+            "total_paid_amount": 96000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 96000.0,
+                    "slip_no": "FT260255KX6F",
+                    "transaction_reference": 11202601251830479122
+                }
+            ]
+        },
+        "25100412": {
+            "total_paid_amount": 150000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 150000.0,
+                    "slip_no": "FT26025YW3FH",
+                    "transaction_reference": 11202601251657080267
+                }
+            ]
+        },
+        "25100436": {
+            "total_paid_amount": 27000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 27000.0,
+                    "slip_no": "FT260254MMTW",
+                    "transaction_reference": 11202601251255542999
+                }
+            ]
+        },
+        "25100450": {
+            "total_paid_amount": 136000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 136000.0,
+                    "slip_no": "FT26025R1454",
+                    "transaction_reference": 11202601251558409031
+                }
+            ]
+        },
+        "25100453": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT26025HDV6Q",
+                    "transaction_reference": 11202601251336593081
+                }
+            ]
+        },
+        "25100489": {
+            "total_paid_amount": 135000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 135000.0,
+                    "slip_no": "FT260253CD4R",
+                    "transaction_reference": 11202601251448558635
+                }
+            ]
+        },
+        "25100522": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025R6KFX",
+                    "transaction_reference": 11202601251951367073
+                }
+            ]
+        },
+        "25100532": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260262G2XM",
+                    "transaction_reference": 11202601252030252007
+                }
+            ]
+        },
+        "25100539": {
+            "total_paid_amount": 255000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 255000.0,
+                    "slip_no": "FT26025FBSB0",
+                    "transaction_reference": 11202601251247222108
+                }
+            ]
+        },
+        "25100543": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025PXM8J",
+                    "transaction_reference": 11202601251545455213
+                },
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025S100P",
+                    "transaction_reference": 11202601251449108376
+                }
+            ]
+        },
+        "25100578": {
+            "total_paid_amount": 47000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 47000.0,
+                    "slip_no": "FT26025Q093G",
+                    "transaction_reference": 11202601251446566600
+                }
+            ]
+        },
+        "25100579": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT260257FKQN",
+                    "transaction_reference": 11202601251838282995
+                },
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025XL7H7",
+                    "transaction_reference": 11202601251056126524
+                }
+            ]
+        },
+        "25100580": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT26025SCWF9",
+                    "transaction_reference": 11202601251125295364
+                }
+            ]
+        },
+        "25100586": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT26025SZKJG",
+                    "transaction_reference": 11202601251111105667
+                }
+            ]
+        },
+        "25100596": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT260250LZVC",
+                    "transaction_reference": 11202601251318013579
+                }
+            ]
+        },
+        "25100605": {
+            "total_paid_amount": 297000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 297000.0,
+                    "slip_no": "FT26025HZMXB",
+                    "transaction_reference": 11202601251123161558
+                }
+            ]
+        },
+        "25100634": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025PBML3",
+                    "transaction_reference": 11202601251306371914
+                }
+            ]
+        },
+        "25100658": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025N1QGX",
+                    "transaction_reference": 11202601251306246270
+                }
+            ]
+        },
+        "25100667": {
+            "total_paid_amount": 105000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025T5RKZ",
+                    "transaction_reference": 11202601251736314027
+                },
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025Y4WV7",
+                    "transaction_reference": 11202601251306395245
+                }
+            ]
+        },
+        "25100671": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT2602549DGD",
+                    "transaction_reference": 11202601251306489074
+                }
+            ]
+        },
+        "25100683": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26026KKTMK",
+                    "transaction_reference": 11202601252123066871
+                },
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025VMMWY",
+                    "transaction_reference": 11202601251336175252
+                }
+            ]
+        },
+        "25500002": {
+            "total_paid_amount": 84000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 84000.0,
+                    "slip_no": "FT26025FFY08",
+                    "transaction_reference": 11202601251642144089
+                }
+            ]
+        },
+        "25500030": {
+            "total_paid_amount": 38000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 38000.0,
+                    "slip_no": "FT26025L3XXF",
+                    "transaction_reference": 11202601251757526978
+                }
+            ]
+        },
+        "25500033": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT26025HNS5L",
+                    "transaction_reference": 11202601250951206841
+                }
+            ]
+        },
+        "25500042": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT2602513RPG",
+                    "transaction_reference": 11202601251756374107
+                }
+            ]
+        },
+        "25500067": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025M0WM1",
+                    "transaction_reference": 11202601251512582656
+                }
+            ]
+        },
+        "25500112": {
+            "total_paid_amount": 27000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 27000.0,
+                    "slip_no": "FT26025NK7WF",
+                    "transaction_reference": 11202601251020269809
+                }
+            ]
+        },
+        "25500118": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT2602560LF2",
+                    "transaction_reference": 11202601250926488613
+                }
+            ]
+        },
+        "25500119": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025QFSKW",
+                    "transaction_reference": 11202601250748236796
+                }
+            ]
+        },
+        "25500127": {
+            "total_paid_amount": 55000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 55000.0,
+                    "slip_no": "FT26026J63V1",
+                    "transaction_reference": 11202601252247468807
+                }
+            ]
+        },
+        "25500163": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025WS8N9",
+                    "transaction_reference": 11202601251212206624
+                }
+            ]
+        },
+        "25500197": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT260265866Q",
+                    "transaction_reference": 11202601252246071322
+                }
+            ]
+        },
+        "25500218": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025285L3",
+                    "transaction_reference": 11202601251126289680
+                }
+            ]
+        },
+        "25500220": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT260255R8QC",
+                    "transaction_reference": 11202601251202217486
+                }
+            ]
+        },
+        "25500235": {
+            "total_paid_amount": 35000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 35000.0,
+                    "slip_no": "FT26026TH2QN",
+                    "transaction_reference": 11202601252108112613
+                }
+            ]
+        },
+        "25500243": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260251RSLT",
+                    "transaction_reference": 11202601251027389085
+                }
+            ]
+        },
+        "25500245": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025J9HC8",
+                    "transaction_reference": 11202601251738158129
+                },
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025HVQYD",
+                    "transaction_reference": 11202601251733227169
+                }
+            ]
+        },
+        "25500253": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025KQ06Q",
+                    "transaction_reference": 11202601251220580729
+                },
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT260254CLQ0",
+                    "transaction_reference": 11202601251126368055
+                }
+            ]
+        },
+        "25500276": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025V091P",
+                    "transaction_reference": 11202601251436576391
+                }
+            ]
+        },
+        "25500293": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT260251P540",
+                    "transaction_reference": 11202601250547158826
+                }
+            ]
+        },
+        "25500305": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT260255L0M4",
+                    "transaction_reference": 11202601251121553413
+                }
+            ]
+        },
+        "25500331": {
+            "total_paid_amount": 6000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 6000.0,
+                    "slip_no": "FT26025B3HN5",
+                    "transaction_reference": 11202601251705519460
+                }
+            ]
+        },
+        "25500347": {
+            "total_paid_amount": 19000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 19000.0,
+                    "slip_no": "FT26025DPTHF",
+                    "transaction_reference": 11202601251912037138
+                }
+            ]
+        },
+        "25500364": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025JBRBX",
+                    "transaction_reference": 11202601251214227096
+                }
+            ]
+        },
+        "25500371": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025PHGVH",
+                    "transaction_reference": 11202601251034333081
+                }
+            ]
+        },
+        "25500375": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025X56P8",
+                    "transaction_reference": 11202601251228482630
+                }
+            ]
+        },
+        "25500380": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 55000.0,
+                    "slip_no": "FT26025XVJ8C",
+                    "transaction_reference": 11202601251133483950
+                },
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025D25MX",
+                    "transaction_reference": 11202601250954172043
+                }
+            ]
+        },
+        "25500418": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT260252FTRX",
+                    "transaction_reference": 11202601251316198795
+                }
+            ]
+        },
+        "25500424": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025NF9L1",
+                    "transaction_reference": 11202601251923157432
+                }
+            ]
+        },
+        "25500426": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025SVBWB",
+                    "transaction_reference": 11202601251554416450
+                }
+            ]
+        },
+        "25500433": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025JPSYS",
+                    "transaction_reference": 11202601251734548181
+                }
+            ]
+        },
+        "25500436": {
+            "total_paid_amount": 29500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 29500.0,
+                    "slip_no": "FT26025MGF59",
+                    "transaction_reference": 11202601251609112917
+                }
+            ]
+        },
+        "25500439": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT260256C0RR",
+                    "transaction_reference": 11202601251836321481
+                }
+            ]
+        },
+        "25500450": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT2602559RV9",
+                    "transaction_reference": 11202601251209581412
+                }
+            ]
+        },
+        "25500457": {
+            "total_paid_amount": 59000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 59000.0,
+                    "slip_no": "FT26025FTRFV",
+                    "transaction_reference": 11202601251824505408
+                }
+            ]
+        },
+        "25500494": {
+            "total_paid_amount": 13000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 13000.0,
+                    "slip_no": "FT26025Q9VTP",
+                    "transaction_reference": 11202601251839229201
+                }
+            ]
+        },
+        "25500495": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025LYP3L",
+                    "transaction_reference": 11202601250042180334
+                }
+            ]
+        },
+        "25500497": {
+            "total_paid_amount": 85000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT260264CKXB",
+                    "transaction_reference": 11202601252214350419
+                }
+            ]
+        },
+        "25500574": {
+            "total_paid_amount": 118000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 118000.0,
+                    "slip_no": "FT26025MH4T5",
+                    "transaction_reference": 11202601251823115329
+                }
+            ]
+        },
+        "25500586": {
+            "total_paid_amount": 18000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 18000.0,
+                    "slip_no": "FT26025MVLLJ",
+                    "transaction_reference": 11202601250107060586
+                }
+            ]
+        },
+        "25500601": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT2602629QW3",
+                    "transaction_reference": 11202601252145413162
+                }
+            ]
+        },
+        "25500606": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025G02JM",
+                    "transaction_reference": 11202601251102567663
+                }
+            ]
+        },
+        "25500610": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025PW46V",
+                    "transaction_reference": 11202601251304414217
+                }
+            ]
+        },
+        "25900003": {
+            "total_paid_amount": 192000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 192000.0,
+                    "slip_no": "FT26025PVW77",
+                    "transaction_reference": 11202601250810414903
+                }
+            ]
+        },
+        "25900034": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025K3ZSY",
+                    "transaction_reference": 11202601251312176058
+                }
+            ]
+        },
+        "25900036": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260255N7B4",
+                    "transaction_reference": 11202601251425160348
+                }
+            ]
+        },
+        "25900054": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025SVSFZ",
+                    "transaction_reference": 11202601252019090798
+                }
+            ]
+        },
+        "25900079": {
+            "total_paid_amount": 39000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 39000.0,
+                    "slip_no": "FT260262MZ07",
+                    "transaction_reference": 11202601252230350526
+                }
+            ]
+        },
+        "25900081": {
+            "total_paid_amount": 88000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 88000.0,
+                    "slip_no": "FT26026YLSFX",
+                    "transaction_reference": 11202601252113230014
+                }
+            ]
+        },
+        "25900084": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT260256ZY6M",
+                    "transaction_reference": 11202601250125289813
+                }
+            ]
+        },
+        "25900095": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT26025NB8CK",
+                    "transaction_reference": 11202601251713087666
+                },
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025DDQQT",
+                    "transaction_reference": 11202601251156456893
+                }
+            ]
+        },
+        "25900109": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT260253MXNZ",
+                    "transaction_reference": 11202601251151248788
+                }
+            ]
+        },
+        "25900116": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025LD9X5",
+                    "transaction_reference": 11202601251947096542
+                }
+            ]
+        },
+        "25900128": {
+            "total_paid_amount": 150000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 150000.0,
+                    "slip_no": "FT26025QJ0TD",
+                    "transaction_reference": 11202601251723061087
+                }
+            ]
+        },
+        "25900133": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025J2XVK",
+                    "transaction_reference": 11202601251932097267
+                }
+            ]
+        },
+        "25900144": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT260252GNWD",
+                    "transaction_reference": 11202601251847055209
+                }
+            ]
+        },
+        "25900149": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT26025M99WF",
+                    "transaction_reference": 11202601251932555714
+                }
+            ]
+        },
+        "25900150": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025SG4CR",
+                    "transaction_reference": 11202601250804581982
+                }
+            ]
+        },
+        "25900152": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025MYV23",
+                    "transaction_reference": 11202601251838088084
+                }
+            ]
+        },
+        "25900155": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26026GBQBW",
+                    "transaction_reference": 11202601252155420126
+                }
+            ]
+        },
+        "25900171": {
+            "total_paid_amount": 95000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 95000.0,
+                    "slip_no": "FT26025525RS",
+                    "transaction_reference": 11202601251002591710
+                }
+            ]
+        },
+        "25900198": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025V90PJ",
+                    "transaction_reference": 11202601251951254868
+                }
+            ]
+        },
+        "25900203": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025H1NG0",
+                    "transaction_reference": 11202601251306536027
+                }
+            ]
+        },
+        "25900209": {
+            "total_paid_amount": 17000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 17000.0,
+                    "slip_no": "FT260251C5JD",
+                    "transaction_reference": 11202601251606346127
+                }
+            ]
+        },
+        "25900236": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025LV6LH",
+                    "transaction_reference": 11202601251719270639
+                }
+            ]
+        },
+        "25900240": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26026TRWXR",
+                    "transaction_reference": 11202601252105441983
+                }
+            ]
+        },
+        "25900262": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025H153L",
+                    "transaction_reference": 11202601250914518041
+                }
+            ]
+        },
+        "25900267": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025M5991",
+                    "transaction_reference": 11202601251447594235
+                }
+            ]
+        },
+        "25900271": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT260250Q084",
+                    "transaction_reference": 11202601251432088684
+                }
+            ]
+        },
+        "25900277": {
+            "total_paid_amount": 110000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 110000.0,
+                    "slip_no": "FT26025PN3Q8",
+                    "transaction_reference": 11202601251100485949
+                }
+            ]
+        },
+        "25900284": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT26025GPZ95",
+                    "transaction_reference": 11202601251127222075
+                }
+            ]
+        },
+        "25900305": {
+            "total_paid_amount": 85000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 85000.0,
+                    "slip_no": "FT260250PZ87",
+                    "transaction_reference": 11202601250937242591
+                }
+            ]
+        },
+        "25900313": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT2602505K57",
+                    "transaction_reference": 11202601251417182850
+                }
+            ]
+        },
+        "25900343": {
+            "total_paid_amount": 19500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 19500.0,
+                    "slip_no": "FT26026LHT1N",
+                    "transaction_reference": 11202601252037122460
+                }
+            ]
+        },
+        "25900349": {
+            "total_paid_amount": 200000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT26025MNSCZ",
+                    "transaction_reference": 11202601251940423492
+                }
+            ]
+        },
+        "25900351": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025X5LVH",
+                    "transaction_reference": 11202601251156525750
+                }
+            ]
+        },
+        "25900361": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025Y0Q7D",
+                    "transaction_reference": 11202601251708466631
+                }
+            ]
+        },
+        "25900368": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025RL73Y",
+                    "transaction_reference": 11202601250836390419
+                }
+            ]
+        },
+        "25900376": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT2602501CBJ",
+                    "transaction_reference": 11202601251247262861
+                }
+            ]
+        },
+        "25900396": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT260254G3D7",
+                    "transaction_reference": 11202601250803042584
+                }
+            ]
+        },
+        "25900397": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT260251TS4R",
+                    "transaction_reference": 11202601251430455023
+                }
+            ]
+        },
+        "25900438": {
+            "total_paid_amount": 18100.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 18100.0,
+                    "slip_no": "FT26025TH370",
+                    "transaction_reference": 11202601251848398853
+                }
+            ]
+        },
+        "25900439": {
+            "total_paid_amount": 108000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 108000.0,
+                    "slip_no": "FT26025CY664",
+                    "transaction_reference": 11202601251845350210
+                }
+            ]
+        },
+        "25900445": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT2602575RFW",
+                    "transaction_reference": 11202601251737372716
+                }
+            ]
+        },
+        "25900464": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26026ZK85S",
+                    "transaction_reference": 11202601252123584263
+                }
+            ]
+        },
+        "25900473": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT260252RC3D",
+                    "transaction_reference": 11202601250203021149
+                }
+            ]
+        },
+        "25900474": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 60000.0,
+                    "slip_no": "FT26025G0FCJ",
+                    "transaction_reference": 11202601251602459725
+                }
+            ]
+        },
+        "25900476": {
+            "total_paid_amount": 200000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT26025Y9NHH",
+                    "transaction_reference": 11202601251917380624
+                }
+            ]
+        },
+        "25900501": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT2602510FSV",
+                    "transaction_reference": 11202601251208159313
+                }
+            ]
+        },
+        "25900510": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26025Q0WW8",
+                    "transaction_reference": 11202601251008149694
+                }
+            ]
+        },
+        "25900542": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025XBNGK",
+                    "transaction_reference": 11202601251102311828
+                }
+            ]
+        },
+        "25900543": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025CB6H7",
+                    "transaction_reference": 11202601251702269671
+                },
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260252WVR0",
+                    "transaction_reference": 11202601251242178735
+                }
+            ]
+        },
+        "25900561": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025M33V7",
+                    "transaction_reference": 11202601251427396010
+                }
+            ]
+        },
+        "25900585": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT26025VM34L",
+                    "transaction_reference": 11202601251910096370
+                },
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025KCZ6V",
+                    "transaction_reference": 11202601251747490016
+                }
+            ]
+        },
+        "25900588": {
+            "total_paid_amount": 12000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 12000.0,
+                    "slip_no": "FT260257WY1Q",
+                    "transaction_reference": 11202601251116256161
+                }
+            ]
+        },
+        "25900655": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025MLJN9",
+                    "transaction_reference": 11202601251142300061
+                }
+            ]
+        },
+        "25900698": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025QVSZZ",
+                    "transaction_reference": 11202601251229435352
+                }
+            ]
+        },
+        "26100020": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025WLLY3",
+                    "transaction_reference": 11202601251140330307
+                }
+            ]
+        },
+        "26100038": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025B22NY",
+                    "transaction_reference": 11202601251847031048
+                }
+            ]
+        },
+        "26100048": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT2602648FPH",
+                    "transaction_reference": 11202601252108433013
+                }
+            ]
+        },
+        "26100091": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025CCHBD",
+                    "transaction_reference": 11202601251637514487
+                }
+            ]
+        },
+        "26100099": {
+            "total_paid_amount": 380000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 380000.0,
+                    "slip_no": "FT26025B2JXF",
+                    "transaction_reference": 11202601251104488624
+                }
+            ]
+        },
+        "26100119": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT2602562FBT",
+                    "transaction_reference": 11202601251652396605
+                }
+            ]
+        },
+        "26100125": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025B1Z33",
+                    "transaction_reference": 11202601251858127808
+                }
+            ]
+        },
+        "26100171": {
+            "total_paid_amount": 15000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 15000.0,
+                    "slip_no": "FT2602556R48",
+                    "transaction_reference": 11202601251937252550
+                }
+            ]
+        },
+        "26100191": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26026LBK7P",
+                    "transaction_reference": 11202601252236234395
+                }
+            ]
+        },
+        "26100193": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26026RGYWZ",
+                    "transaction_reference": 11202601252111053773
+                }
+            ]
+        },
+        "26100222": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26026P5T45",
+                    "transaction_reference": 11202601252111130247
+                }
+            ]
+        },
+        "26100257": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260266SLHN",
+                    "transaction_reference": 11202601252149212231
+                }
+            ]
+        },
+        "26100271": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 65000.0,
+                    "slip_no": "FT260252GKNT",
+                    "transaction_reference": 11202601251831355048
+                }
+            ]
+        },
+        "26100280": {
+            "total_paid_amount": 28500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 28500.0,
+                    "slip_no": "FT260254QLQ7",
+                    "transaction_reference": 11202601251749153947
+                }
+            ]
+        },
+        "26100293": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT26025QKB5D",
+                    "transaction_reference": 11202601251850573484
+                }
+            ]
+        },
+        "26100309": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025R2TS7",
+                    "transaction_reference": 11202601251811503072
+                }
+            ]
+        },
+        "26100316": {
+            "total_paid_amount": 122000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 122000.0,
+                    "slip_no": "FT26026GPG2G",
+                    "transaction_reference": 11202601252146290746
+                }
+            ]
+        },
+        "26100320": {
+            "total_paid_amount": 22000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 22000.0,
+                    "slip_no": "FT260254PFC0",
+                    "transaction_reference": 11202601251818410829
+                }
+            ]
+        },
+        "26100332": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260263CCDG",
+                    "transaction_reference": 11202601252137432079
+                }
+            ]
+        },
+        "26100340": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025CCC3Q",
+                    "transaction_reference": 11202601251401226176
+                }
+            ]
+        },
+        "26100348": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT260251GWM2",
+                    "transaction_reference": 11202601251942250195
+                }
+            ]
+        },
+        "26100362": {
+            "total_paid_amount": 76000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 76000.0,
+                    "slip_no": "FT26025RJ2W5",
+                    "transaction_reference": 11202601251538379568
+                }
+            ]
+        },
+        "26100378": {
+            "total_paid_amount": 51000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 51000.0,
+                    "slip_no": "FT26025VV5CR",
+                    "transaction_reference": 11202601251958084193
+                }
+            ]
+        },
+        "26100401": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025J632W",
+                    "transaction_reference": 11202601251219026603
+                }
+            ]
+        },
+        "26100405": {
+            "total_paid_amount": 87000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 87000.0,
+                    "slip_no": "FT26025ST259",
+                    "transaction_reference": 11202601251515582214
+                }
+            ]
+        },
+        "26100406": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 60000.0,
+                    "slip_no": "FT260254QCT5",
+                    "transaction_reference": 11202601251615156697
+                }
+            ]
+        },
+        "26100408": {
+            "total_paid_amount": 24000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 24000.0,
+                    "slip_no": "FT26025MQ77W",
+                    "transaction_reference": 11202601251840492978
+                }
+            ]
+        },
+        "26100418": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025X65ZL",
+                    "transaction_reference": 11202601251641074612
+                }
+            ]
+        },
+        "26100441": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT260259V241",
+                    "transaction_reference": 11202601251442205169
+                }
+            ]
+        },
+        "26100455": {
+            "total_paid_amount": 24000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 24000.0,
+                    "slip_no": "FT260250MPL3",
+                    "transaction_reference": 11202601251123063336
+                }
+            ]
+        },
+        "26100472": {
+            "total_paid_amount": 150000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 150000.0,
+                    "slip_no": "FT260256CDZ7",
+                    "transaction_reference": 11202601251022056527
+                }
+            ]
+        },
+        "26100482": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT26026XJHXQ",
+                    "transaction_reference": 11202601252048118645
+                }
+            ]
+        },
+        "26100496": {
+            "total_paid_amount": 268000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 268000.0,
+                    "slip_no": "FT260258Z9LV",
+                    "transaction_reference": 11202601251203221250
+                }
+            ]
+        },
+        "26100498": {
+            "total_paid_amount": 92000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 92000.0,
+                    "slip_no": "FT260255X5BB",
+                    "transaction_reference": 11202601251425463006
+                }
+            ]
+        },
+        "26100519": {
+            "total_paid_amount": 24000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 24000.0,
+                    "slip_no": "FT26025YK9RD",
+                    "transaction_reference": 11202601251819264141
+                }
+            ]
+        },
+        "26100536": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 65000.0,
+                    "slip_no": "FT26025PTJ4Y",
+                    "transaction_reference": 11202601250821536439
+                }
+            ]
+        },
+        "26100539": {
+            "total_paid_amount": 161000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 161000.0,
+                    "slip_no": "FT26025FMS0V",
+                    "transaction_reference": 11202601251141029502
+                }
+            ]
+        },
+        "26100555": {
+            "total_paid_amount": 70000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 70000.0,
+                    "slip_no": "FT26025H66TH",
+                    "transaction_reference": 11202601251413131180
+                }
+            ]
+        },
+        "26100572": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025K6NK7",
+                    "transaction_reference": 11202601251329554685
+                }
+            ]
+        },
+        "26100583": {
+            "total_paid_amount": 50400.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 400.0,
+                    "slip_no": "FT26025TXN36",
+                    "transaction_reference": 11202601251228152695
+                },
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025HWNMC",
+                    "transaction_reference": 11202601251217174632
+                }
+            ]
+        },
+        "26100587": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025HP2KT",
+                    "transaction_reference": 11202601251812228622
+                }
+            ]
+        },
+        "26100588": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025M8Z7Z",
+                    "transaction_reference": 11202601251132136263
+                }
+            ]
+        },
+        "26100631": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025BSQBQ",
+                    "transaction_reference": 11202601251441108762
+                }
+            ]
+        },
+        "26100635": {
+            "total_paid_amount": 59400.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 59400.0,
+                    "slip_no": "FT26025Y5R7Q",
+                    "transaction_reference": 11202601252001049437
+                }
+            ]
+        },
+        "26100638": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT260268BDY6",
+                    "transaction_reference": 11202601252222398344
+                }
+            ]
+        },
+        "26100647": {
+            "total_paid_amount": 265000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 265000.0,
+                    "slip_no": "FT260258BF0K",
+                    "transaction_reference": 11202601251444350719
+                }
+            ]
+        },
+        "26100664": {
+            "total_paid_amount": 60400.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 60400.0,
+                    "slip_no": "FT26025M4N1W",
+                    "transaction_reference": 11202601251850465914
+                }
+            ]
+        },
+        "26100684": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025LSHHD",
+                    "transaction_reference": 11202601251823503872
+                }
+            ]
+        },
+        "26100696": {
+            "total_paid_amount": 83000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 83000.0,
+                    "slip_no": "FT260250L9N2",
+                    "transaction_reference": 11202601251812357338
+                }
+            ]
+        },
+        "26100707": {
+            "total_paid_amount": 225000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 225000.0,
+                    "slip_no": "FT260254Q5HM",
+                    "transaction_reference": 11202601251435052816
+                }
+            ]
+        },
+        "26100723": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 65000.0,
+                    "slip_no": "FT26025QS7B1",
+                    "transaction_reference": 11202601251851286921
+                }
+            ]
+        },
+        "26100737": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26026YTC5M",
+                    "transaction_reference": 11202601252203174761
+                }
+            ]
+        },
+        "26100797": {
+            "total_paid_amount": 201000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 1000.0,
+                    "slip_no": "FT26025H6DXN",
+                    "transaction_reference": 11202601251837290556
+                },
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT26025MGL2W",
+                    "transaction_reference": 11202601251829537459
+                }
+            ]
+        },
+        "26100798": {
+            "total_paid_amount": 54500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 54500.0,
+                    "slip_no": "FT260259R6WZ",
+                    "transaction_reference": 11202601251543438530
+                }
+            ]
+        },
+        "26100802": {
+            "total_paid_amount": 211000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 211000.0,
+                    "slip_no": "FT26026RLYF4",
+                    "transaction_reference": 11202601252104143646
+                }
+            ]
+        },
+        "26100805": {
+            "total_paid_amount": 24000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 24000.0,
+                    "slip_no": "FT260260KQBH",
+                    "transaction_reference": 11202601252042308076
+                }
+            ]
+        },
+        "26100824": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025HMM0W",
+                    "transaction_reference": 11202601251422068763
+                }
+            ]
+        },
+        "26100851": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025QX6V8",
+                    "transaction_reference": 11202601251725079736
+                }
+            ]
+        },
+        "26100866": {
+            "total_paid_amount": 140000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 140000.0,
+                    "slip_no": "FT26026HNSLM",
+                    "transaction_reference": 11202601252358448306
+                }
+            ]
+        },
+        "26100880": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025M7DRR",
+                    "transaction_reference": 11202601251129172109
+                }
+            ]
+        },
+        "26100888": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26025BYLT9",
+                    "transaction_reference": 11202601251452187075
+                }
+            ]
+        },
+        "26100900": {
+            "total_paid_amount": 74000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 74000.0,
+                    "slip_no": "FT26025N4RNQ",
+                    "transaction_reference": 11202601252015279407
+                }
+            ]
+        },
+        "26100908": {
+            "total_paid_amount": 8000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 8000.0,
+                    "slip_no": "FT26025YQ4BP",
+                    "transaction_reference": 11202601251946462323
+                }
+            ]
+        },
+        "26100920": {
+            "total_paid_amount": 103000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 103000.0,
+                    "slip_no": "FT260259WY5L",
+                    "transaction_reference": 11202601250831069734
+                }
+            ]
+        },
+        "26100944": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26026YYPW7",
+                    "transaction_reference": 11202601252126017361
+                }
+            ]
+        },
+        "26100961": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260257ZW9N",
+                    "transaction_reference": 11202601251057148195
+                }
+            ]
+        },
+        "26100974": {
+            "total_paid_amount": 151000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 151000.0,
+                    "slip_no": "FT26025NCLB3",
+                    "transaction_reference": 11202601251545312352
+                }
+            ]
+        },
+        "26101002": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025FK9M3",
+                    "transaction_reference": 11202601251443304259
+                }
+            ]
+        },
+        "26101027": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT260250FFC5",
+                    "transaction_reference": 11202601251935229395
+                }
+            ]
+        },
+        "26101064": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025JKZJ7",
+                    "transaction_reference": 11202601251759193420
+                }
+            ]
+        },
+        "26101093": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260254CR0K",
+                    "transaction_reference": 11202601251214243202
+                }
+            ]
+        },
+        "26101135": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025HSSV2",
+                    "transaction_reference": 11202601251300342996
+                }
+            ]
+        },
+        "26101171": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025MZ7LQ",
+                    "transaction_reference": 11202601251702091041
+                }
+            ]
+        },
+        "26900015": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025THCSQ",
+                    "transaction_reference": 11202601250955123389
+                }
+            ]
+        },
+        "26900028": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 65000.0,
+                    "slip_no": "FT260265B9PK",
+                    "transaction_reference": 11202601252242383876
+                }
+            ]
+        },
+        "26900032": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 1000.0,
+                    "slip_no": "FT26025JRN7S",
+                    "transaction_reference": 11202601251141515647
+                },
+                {
+                    "paid_amount": 71000.0,
+                    "slip_no": "FT26025B9CBH",
+                    "transaction_reference": 11202601251100449755
+                }
+            ]
+        },
+        "26900041": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025WRT6N",
+                    "transaction_reference": 11202601251817351391
+                }
+            ]
+        },
+        "26900078": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT260250JQRB",
+                    "transaction_reference": 11202601251905186752
+                }
+            ]
+        },
+        "26900090": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26026ZL7JT",
+                    "transaction_reference": 11202601252202180179
+                }
+            ]
+        },
+        "26900094": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025M39S5",
+                    "transaction_reference": 11202601251835423410
+                }
+            ]
+        },
+        "26900109": {
+            "total_paid_amount": 87000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 87000.0,
+                    "slip_no": "FT26025S347N",
+                    "transaction_reference": 11202601251412254175
+                }
+            ]
+        },
+        "26900148": {
+            "total_paid_amount": 120000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 120000.0,
+                    "slip_no": "FT26025B1S4R",
+                    "transaction_reference": 11202601251626222445
+                }
+            ]
+        },
+        "26900155": {
+            "total_paid_amount": 65000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 65000.0,
+                    "slip_no": "FT2602605QCD",
+                    "transaction_reference": 11202601252154144340
+                }
+            ]
+        },
+        "26900176": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025VPC8C",
+                    "transaction_reference": 11202601252011476157
+                }
+            ]
+        },
+        "26900210": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025VQZ1F",
+                    "transaction_reference": 11202601251153582864
+                }
+            ]
+        },
+        "26900220": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT26026BJQLB",
+                    "transaction_reference": 11202601252057558804
+                }
+            ]
+        },
+        "26900228": {
+            "total_paid_amount": 5000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 5000.0,
+                    "slip_no": "FT26025YM837",
+                    "transaction_reference": 11202601251355568402
+                }
+            ]
+        },
+        "26900230": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025F289G",
+                    "transaction_reference": 11202601251839072150
+                }
+            ]
+        },
+        "26900235": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26026N78DH",
+                    "transaction_reference": 11202601252040596028
+                }
+            ]
+        },
+        "26900236": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025MQK2J",
+                    "transaction_reference": 11202601252008245073
+                }
+            ]
+        },
+        "26900242": {
+            "total_paid_amount": 28000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 28000.0,
+                    "slip_no": "FT26025D0WQL",
+                    "transaction_reference": 11202601251404166273
+                }
+            ]
+        },
+        "26900256": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260263SKY7",
+                    "transaction_reference": 11202601252059000530
+                }
+            ]
+        },
+        "26900262": {
+            "total_paid_amount": 75000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 75000.0,
+                    "slip_no": "FT26025Z0D7W",
+                    "transaction_reference": 11202601251032255314
+                }
+            ]
+        },
+        "26900276": {
+            "total_paid_amount": 42000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 42000.0,
+                    "slip_no": "FT26025JXQCM",
+                    "transaction_reference": 11202601251632167937
+                }
+            ]
+        },
+        "26900281": {
+            "total_paid_amount": 16000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 16000.0,
+                    "slip_no": "FT26025YJG05",
+                    "transaction_reference": 11202601251951220428
+                }
+            ]
+        },
+        "26900283": {
+            "total_paid_amount": 37000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 37000.0,
+                    "slip_no": "FT26026CD4BB",
+                    "transaction_reference": 11202601252100186403
+                }
+            ]
+        },
+        "26900292": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025HBHW7",
+                    "transaction_reference": 11202601251031564033
+                }
+            ]
+        },
+        "26900294": {
+            "total_paid_amount": 50500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50500.0,
+                    "slip_no": "FT260254XJ77",
+                    "transaction_reference": 11202601251816195077
+                }
+            ]
+        },
+        "26900300": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025HTCKF",
+                    "transaction_reference": 11202601251817320086
+                }
+            ]
+        },
+        "26900314": {
+            "total_paid_amount": 56000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 56000.0,
+                    "slip_no": "FT26026BV11Z",
+                    "transaction_reference": 11202601252102503904
+                }
+            ]
+        },
+        "26900319": {
+            "total_paid_amount": 193800.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 193800.0,
+                    "slip_no": "FT260255ZLPZ",
+                    "transaction_reference": 11202601251858114653
+                }
+            ]
+        },
+        "26900327": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT260256YV8K",
+                    "transaction_reference": 11202601251253419307
+                }
+            ]
+        },
+        "26900328": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26025FCQQJ",
+                    "transaction_reference": 11202601251743056041
+                }
+            ]
+        },
+        "26900330": {
+            "total_paid_amount": 60000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 60000.0,
+                    "slip_no": "FT260251K30R",
+                    "transaction_reference": 11202601251411163413
+                }
+            ]
+        },
+        "26900357": {
+            "total_paid_amount": 29000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 29000.0,
+                    "slip_no": "FT260251HWMB",
+                    "transaction_reference": 11202601250957027248
+                }
+            ]
+        },
+        "26900361": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 2,
+            "transactions": [
+                {
+                    "paid_amount": 12000.0,
+                    "slip_no": "FT2602510DHQ",
+                    "transaction_reference": 11202601251320284088
+                },
+                {
+                    "paid_amount": 60000.0,
+                    "slip_no": "FT260253GFXJ",
+                    "transaction_reference": 11202601250813135834
+                }
+            ]
+        },
+        "26900368": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26026WC30T",
+                    "transaction_reference": 11202601252054552623
+                }
+            ]
+        },
+        "26900370": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT260255CGYZ",
+                    "transaction_reference": 11202601250738254482
+                }
+            ]
+        },
+        "26900386": {
+            "total_paid_amount": 19000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 19000.0,
+                    "slip_no": "FT26025P3YTZ",
+                    "transaction_reference": 11202601251002556283
+                }
+            ]
+        },
+        "26900392": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26026V7822",
+                    "transaction_reference": 11202601252132012038
+                }
+            ]
+        },
+        "26900400": {
+            "total_paid_amount": 63000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 63000.0,
+                    "slip_no": "FT26025D6623",
+                    "transaction_reference": 11202601251557085701
+                }
+            ]
+        },
+        "26900449": {
+            "total_paid_amount": 30000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 30000.0,
+                    "slip_no": "FT26025L77NL",
+                    "transaction_reference": 11202601251928508626
+                }
+            ]
+        },
+        "26900453": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT260256710H",
+                    "transaction_reference": 11202601251046339672
+                }
+            ]
+        },
+        "26900458": {
+            "total_paid_amount": 9000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 9000.0,
+                    "slip_no": "FT260252SK57",
+                    "transaction_reference": 11202601251714334750
+                }
+            ]
+        },
+        "26900467": {
+            "total_paid_amount": 45000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 45000.0,
+                    "slip_no": "FT26025ZWTQR",
+                    "transaction_reference": 11202601251807034034
+                }
+            ]
+        },
+        "26900469": {
+            "total_paid_amount": 180000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 180000.0,
+                    "slip_no": "FT26025DYMYM",
+                    "transaction_reference": 11202601251338320410
+                }
+            ]
+        },
+        "26900474": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025GVQ5Z",
+                    "transaction_reference": 11202601252001185661
+                }
+            ]
+        },
+        "26900485": {
+            "total_paid_amount": 136000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 136000.0,
+                    "slip_no": "FT26025KZ8S2",
+                    "transaction_reference": 11202601251652311915
+                }
+            ]
+        },
+        "26900494": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025F1614",
+                    "transaction_reference": 11202601251746176047
+                }
+            ]
+        },
+        "26900514": {
+            "total_paid_amount": 20000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 20000.0,
+                    "slip_no": "FT260252WHCL",
+                    "transaction_reference": 11202601251442198712
+                }
+            ]
+        },
+        "26900515": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT26025C9NFD",
+                    "transaction_reference": 11202601251434485820
+                }
+            ]
+        },
+        "26900564": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT260254RZ2B",
+                    "transaction_reference": 11202601251822305323
+                }
+            ]
+        },
+        "26900573": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260254VW2L",
+                    "transaction_reference": 11202601251739227406
+                }
+            ]
+        },
+        "26900584": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26025L6CYS",
+                    "transaction_reference": 11202601251553169470
+                }
+            ]
+        },
+        "26900597": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT260255GQ9X",
+                    "transaction_reference": 11202601251315566125
+                }
+            ]
+        },
+        "26900599": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025XM3HW",
+                    "transaction_reference": 11202601251717484017
+                }
+            ]
+        },
+        "26900603": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025P9NQH",
+                    "transaction_reference": 11202601251545295917
+                }
+            ]
+        },
+        "26900607": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025H91DR",
+                    "transaction_reference": 11202601251516291062
+                }
+            ]
+        },
+        "26900612": {
+            "total_paid_amount": 200000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT26025CKGNH",
+                    "transaction_reference": 11202601251939070807
+                }
+            ]
+        },
+        "26900619": {
+            "total_paid_amount": 2500.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 2500.0,
+                    "slip_no": "FT26025STD0Q",
+                    "transaction_reference": 11202601251602168904
+                }
+            ]
+        },
+        "26900638": {
+            "total_paid_amount": 25000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 25000.0,
+                    "slip_no": "FT26025CNT6M",
+                    "transaction_reference": 11202601251357337644
+                }
+            ]
+        },
+        "26900640": {
+            "total_paid_amount": 18000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 18000.0,
+                    "slip_no": "FT260267S27V",
+                    "transaction_reference": 11202601252105210347
+                }
+            ]
+        },
+        "26900644": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025T6H72",
+                    "transaction_reference": 11202601251827435412
+                }
+            ]
+        },
+        "26900652": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025M61TQ",
+                    "transaction_reference": 11202601251819381212
+                }
+            ]
+        },
+        "26900668": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26026FZB8Z",
+                    "transaction_reference": 11202601252226560682
+                }
+            ]
+        },
+        "26900673": {
+            "total_paid_amount": 50400.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50400.0,
+                    "slip_no": "FT26025975WV",
+                    "transaction_reference": 11202601251036006975
+                }
+            ]
+        },
+        "26900676": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT26025JB4XF",
+                    "transaction_reference": 11202601251734287675
+                }
+            ]
+        },
+        "26900683": {
+            "total_paid_amount": 100000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 100000.0,
+                    "slip_no": "FT260250TYC6",
+                    "transaction_reference": 11202601251535408656
+                }
+            ]
+        },
+        "26900701": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025Y0TT8",
+                    "transaction_reference": 11202601251803043868
+                }
+            ]
+        },
+        "26900703": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT260255WPM8",
+                    "transaction_reference": 11202601251645445081
+                }
+            ]
+        },
+        "26900704": {
+            "total_paid_amount": 72000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 72000.0,
+                    "slip_no": "FT26026L28ZC",
+                    "transaction_reference": 11202601252159317097
+                }
+            ]
+        },
+        "26900744": {
+            "total_paid_amount": 200000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT260259W33K",
+                    "transaction_reference": 11202601251919549432
+                }
+            ]
+        },
+        "26900753": {
+            "total_paid_amount": 19000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 19000.0,
+                    "slip_no": "FT26026ZSG80",
+                    "transaction_reference": 11202601252037011665
+                }
+            ]
+        },
+        "26900802": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "FT26025KR4L0",
+                    "transaction_reference": 11202601251215102260
+                }
+            ]
+        },
+        "26900814": {
+            "total_paid_amount": 50000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 50000.0,
+                    "slip_no": "FT26025QJ2D6",
+                    "transaction_reference": 11202601251353249860
+                }
+            ]
+        },
+        "26900891": {
+            "total_paid_amount": 159400.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 159400.0,
+                    "slip_no": "FT260250SC07",
+                    "transaction_reference": 11202601251827031014
+                }
+            ]
+        },
+        "26900895": {
+            "total_paid_amount": 95000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 95000.0,
+                    "slip_no": "FT26025KNWMM",
+                    "transaction_reference": 11202601251649406054
+                }
+            ]
+        },
+        "26900909": {
+            "total_paid_amount": 90000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 90000.0,
+                    "slip_no": "FT26025LSP59",
+                    "transaction_reference": 11202601251744509262
+                }
+            ]
+        },
+        "26900920": {
+            "total_paid_amount": 126000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 126000.0,
+                    "slip_no": "FT260259QTYC",
+                    "transaction_reference": 11202601251801123057
+                }
+            ]
+        },
+        "26900933": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "FT26025Z2LNV",
+                    "transaction_reference": 11202601251945405308
+                }
+            ]
+        },
+        "26900941": {
+            "total_paid_amount": 200000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 200000.0,
+                    "slip_no": "FT26025T2W51",
+                    "transaction_reference": 11202601251115208453
+                }
+            ]
+        },
+        "Eaur/6327/m19": {
+            "total_paid_amount": 10000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "FT26025VHJFD",
+                    "transaction_reference": 11202601251039185865
+                }
+            ]
+        }
+    },
+    "status": "success",
+    "summary": {
+        "total_paid_amount": 32974997.0,
+        "total_transactions": 427
+    }
+}
