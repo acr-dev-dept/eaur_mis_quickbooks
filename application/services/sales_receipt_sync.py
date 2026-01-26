@@ -598,7 +598,7 @@ class SalesReceiptSyncService:
                         "error_message": "Cannot update sales receipt: amounts differ and no payment found",
                         "details": None
                     }
-                total_paid = Payment.get_total_paid_by_wallet_id(sales_receipt.id)
+                total_paid = Payment.get_total_paid_by_wallet_id(sales_receipt.reference_number)
                 
         except Exception as e:
             error_msg = str(e)
