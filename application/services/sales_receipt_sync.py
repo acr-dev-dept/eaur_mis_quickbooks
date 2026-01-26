@@ -620,7 +620,8 @@ class SalesReceiptSyncService:
                 if payment_exists:
                     sales_receipt.dept = float(sales_receipt.dept) + float(total_paid)
                     sales_receipt.sync_token = qb_sync_token
-                sales_receipt.dept = float(sales_receipt.dept) + float(qb_amount)
+                else:
+                    sales_receipt.dept = float(sales_receipt.dept) + float(qb_amount)
 
                 qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(
                     True,sales_receipt
