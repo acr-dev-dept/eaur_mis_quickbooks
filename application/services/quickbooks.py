@@ -1743,7 +1743,29 @@ class QuickBooks:
                     ]
                 }
             }
-
+    def get_sales_receipt(self, realm_id, quickbooks_id):
+        """
+        Fetch sales receipt from quickbooks.
+        """
+        query = "SELECT * FROM SalesReceipt"
+        try:
+            current_app.logger.info(f"Fetching a single sales receipt")
+            sales_receipt_response = self.make_request(f"{realm_id}/salesreceipt/{quickbooks_id}", method="GET")
+            current_app.logger.info(f"Sales receipt fetched successfully: {sales_receipt_response}")
+            sales_receipt = sales_receipt_response.get("QueryResponse", {}).get("SalesReceipt", [])
+            return sales_receipt
+        except Exception as e:
+            current_app.logger.error(f"Error fetching sales receipts: {str(e)}")
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error fetching sales receipts: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
 
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""
