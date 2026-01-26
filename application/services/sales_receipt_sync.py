@@ -681,7 +681,7 @@ class SalesReceiptSyncService:
             )
 
             # ---- Success path ----
-            if 'SalesReceipt' in response:
+            if isinstance(response, dict) and 'SalesReceipt' in response:
                 return {
                     "status": "RETRIEVED_SUCCESSFULLY",
                     "success": True,
@@ -690,11 +690,14 @@ class SalesReceiptSyncService:
                 }
 
             # ---- QuickBooks business error ----
-            error_msg = (
-                response.get('Fault', {})
-                .get('Error', [{}])[0]
-                .get('Detail', 'Unknown QuickBooks error')
-            )
+            if isinstance(response, list):
+                error_msg = response[0].get("Detail", "Unknown QuickBooks error")
+            else:
+                error_msg = (
+                    response.get("Fault", {})
+                    .get("Error", [{}])[0]
+                    .get("Detail", "Unknown QuickBooks error")
+                )
 
             return {
                 "status": "FAILED",
@@ -702,7 +705,6 @@ class SalesReceiptSyncService:
                 "error_message": error_msg,
                 "details": response
             }
-
         except Exception as e:
             # ---- System-level failure ----
             error_msg = str(e)
