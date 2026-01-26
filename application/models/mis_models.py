@@ -857,6 +857,151 @@ class TblStudentWallet(MISBaseModel):
                 return True
             return False
 
+from sqlalchemy import (
+    Column, Integer, BigInteger, String, DateTime,
+    Enum, Numeric, ForeignKey, text, func
+)
+from sqlalchemy.orm import relationship
+
+
+class TblStudentWalletLedger(MISBaseModel):
+    __tablename__ = "tbl_student_wallet_ledger"
+
+    # --- Columns ---
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    student_id = db.Column(db.Integer, nullable=False, index=True)
+    direction = db.Column(db.Enum("credit", "debit", name="wallet_direction"), nullable=False)
+    original_amount = db.Column(db.Numeric(12, 2), nullable=False)
+    amount = db.Column(db.Numeric(12, 2), nullable=False)
+    qb_sales_receipt_id = db.Column(db.String(255), nullable=True, index=True)
+    qb_invoice_id = db.Column(db.String(255), nullable=True, index=True)
+    source = db.Column(db.Enum("sales_receipt", "invoice", "refund", "adjustment", name="wallet_source"), nullable=False)
+    parent_credit_id = db.Column(db.BigInteger, db.ForeignKey("tbl_student_wallet_ledger.id"), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP"))
+
+    parent_credit = db.relationship(
+        "TblStudentWalletLedger",
+        remote_side=[id],
+        backref="debits"
+    )
+
+    def __repr__(self):
+        return (
+            f"<TblStudentWalletLedger "
+            f"id={self.id} "
+            f"student_id={self.student_id} "
+            f"direction={self.direction} "
+            f"amount={self.amount}>"
+        )
+    
+    def to_dict(self):
+        """Serialize wallet ledger record"""
+        return {
+            "id": self.id,
+            "student_id": self.student_id,
+            "direction": self.direction,
+            "original_amount": float(self.original_amount),
+            "amount": float(self.amount),
+            "qb_sales_receipt_id": self.qb_sales_receipt_id,
+            "qb_invoice_id": self.qb_invoice_id,
+            "source": self.source,
+            "parent_credit_id": self.parent_credit_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+    
+
+
+    # --- Methods ---
+
+    @staticmethod
+    def credit_wallet(student_id, amount, source, qb_sales_receipt_id=None):
+        """Credit wallet with specified amount (deposit / sales receipt)"""
+        if amount <= 0:
+            raise ValueError("Credit amount must be greater than zero")
+        
+        with TblStudentWalletLedger.get_session() as session:
+            ledger_entry = TblStudentWalletLedger(
+                student_id=student_id,
+                direction="credit",
+                original_amount=amount,
+                amount=amount,
+                source=source,
+                qb_sales_receipt_id=qb_sales_receipt_id
+            )
+            session.add(ledger_entry)
+            session.flush()
+            return ledger_entry
+
+    @staticmethod
+    def get_available_credits(student_id):
+        """
+        Return list of tuples (credit_row, remaining_amount)
+        Each credit_row has its remaining balance visible for allocation
+        """
+        with TblStudentWalletLedger.get_session() as session:
+            credits = session.query(TblStudentWalletLedger).filter_by(
+                student_id=student_id, direction="credit"
+            ).order_by(TblStudentWalletLedger.created_at.asc()).all()
+
+            result = []
+            for credit in credits:
+                used_sum = session.query(
+                    func.coalesce(func.sum(TblStudentWalletLedger.amount), 0)
+                ).filter_by(parent_credit_id=credit.id).scalar() or 0
+
+                remaining = float(credit.original_amount + used_sum)
+                if remaining > 0:
+                    result.append((credit, remaining))
+            return result
+
+    @staticmethod
+    def apply_wallet_to_invoice(student_id, invoice_id, invoice_amount):
+        """
+        Apply wallet credits to an invoice.
+        Supports partial allocation from multiple sales receipts.
+        """
+        if invoice_amount <= 0:
+            raise ValueError("Debit amount must be greater than zero")
+
+        remaining = invoice_amount
+
+        with TblStudentWalletLedger.get_session() as session:
+            credits = TblStudentWalletLedger.get_available_credits(student_id)
+
+            for credit, available in credits:
+                if remaining <= 0:
+                    break
+
+                consume = min(float(available), remaining)
+
+                debit_entry = TblStudentWalletLedger(
+                    student_id=student_id,
+                    direction="debit",
+                    original_amount=consume,
+                    amount=-consume,
+                    qb_invoice_id=invoice_id,
+                    source="invoice",
+                    parent_credit_id=credit.id
+                )
+                session.add(debit_entry)
+                session.flush()
+
+                remaining -= consume
+
+            if remaining > 0:
+                raise ValueError("Insufficient wallet credits to cover invoice amount")
+
+    @staticmethod
+    def get_wallet_balance(student_id):
+        """Compute total wallet balance (credits minus debits)"""
+        with TblStudentWalletLedger.get_session() as session:
+            balance = session.query(func.coalesce(func.sum(TblStudentWalletLedger.amount), 0)).filter(
+                TblStudentWalletLedger.student_id == student_id
+            ).scalar()
+            return float(balance)
+
+
+
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""
     __tablename__ = "tbl_student_wallet_history"
