@@ -243,7 +243,30 @@ class Payment(MISBaseModel):
             current_app.logger.error(f"Error getting payment details for transaction ID {external_transaction_id}: {str(e)}")
             return None
         
-
+    @staticmethod
+    def get_payment_by_wallet_id(wallet_id):
+        try:
+            with MISBaseModel.get_session() as session:
+                payment = session.query(Payment).filter(Payment.student_wallet_ref == str(wallet_id)).first()
+                if payment:
+                    return payment
+                return None
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting payment for wallet ID {wallet_id}: {str(e)}")
+            return None
+        
+    @staticmethod
+    def get_total_paid_by_wallet_id(wallet_id):
+        try:
+            with MISBaseModel.get_session() as session:
+                total_paid = session.query(func.sum(Payment.amount)).filter(Payment.student_wallet_ref == str(wallet_id)).scalar()
+                return total_paid or 0.0
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error getting total paid for wallet ID {wallet_id}: {str(e)}")
+            return None
+    
     @classmethod
     def create_payment(cls, **kwargs):
         """

@@ -550,11 +550,71 @@ class SalesReceiptSyncService:
                 "details": None
             }
 
+        # fetch sales receipt from QuickBooks to verify existence
+        try:
+            qb_service = self._get_qb_service()
+            existing_sr_response = qb_service.get_sales_receipt(
+                qb_service.realm_id,
+                sales_receipt.quickbooks_id
+            )
+            data = existing_sr_response.get('data', {})
+            if "Fault" in data:
+                error_msg = (
+                    data.get('Fault', {})
+                    .get('Error', [{}])[0]
+                    .get('Detail', 'Unknown QuickBooks error')
+                )
+                self.logger.error(
+                    f"SalesReceipt {sales_receipt.id} not found in QuickBooks: {error_msg}"
+                )
+                return {
+                    "status": "FAILED",
+                    "success": False,
+                    "error_message": f"Sales receipt not found in QuickBooks: {error_msg}",
+                    "details": data
+                }
+            
+            qb_amount = data['SalesReceipt'].get('TotalAmt')
+            payment_exists = False
+            qb_sync_token = data['SalesReceipt'].get('SyncToken')
+            if float(sales_receipt.dept) != float(qb_amount):
+                # Amounts differ; check in payments table if payment exists
+                from application.models.mis_models import Payment
+                payment_exists = Payment.get_payment_by_wallet_id(sales_receipt.id)
+                if not payment_exists:
+                    self.logger.error(
+                        f"Cannot update SalesReceipt {sales_receipt.id}: amounts differ and no payment found"
+                    )
+                    return {
+                        "status": "FAILED",
+                        "success": False,
+                        "error_message": "Cannot update sales receipt: amounts differ and no payment found",
+                        "details": None
+                    }
+                total_paid = Payment.get_total_paid_by_wallet_id(sales_receipt.id)
+                
+        except Exception as e:
+            error_msg = str(e)
+            self.logger.exception(
+                f"Error verifying existence of SalesReceipt {sales_receipt.id} in QuickBooks"
+            )
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg
+            }
+
         try:
             qb_service = self._get_qb_service()
 
             # ---- Mapping phase ----
             try:
+                # update total amount if payment exists
+                if payment_exists:
+                    sales_receipt.dept = float(sales_receipt.dept) + float(total_paid)
+                    sales_receipt.sync_token = qb_sync_token
+                sales_receipt.dept = float(sales_receipt.dept) + float(qb_amount)
+
                 qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(
                     True,sales_receipt
                 )
