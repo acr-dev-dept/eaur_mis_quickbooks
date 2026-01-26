@@ -1752,8 +1752,7 @@ class QuickBooks:
             current_app.logger.info(f"Fetching a single sales receipt")
             sales_receipt_response = self.make_request(f"{realm_id}/salesreceipt/{quickbooks_id}", method="GET")
             current_app.logger.info(f"Sales receipt fetched successfully: {sales_receipt_response}")
-            sales_receipt = sales_receipt_response.get("QueryResponse", {}).get("SalesReceipt", [])
-            return sales_receipt
+            return sales_receipt_response
         except Exception as e:
             current_app.logger.error(f"Error fetching sales receipts: {str(e)}")
             return {
