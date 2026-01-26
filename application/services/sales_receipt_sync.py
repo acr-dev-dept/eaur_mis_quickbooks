@@ -658,3 +658,60 @@ class SalesReceiptSyncService:
                 "success": False,
                 "error_message": error_msg
             }
+
+    def get_sales_receipt_from_quickbooks(self, quickbooks_id: str) -> dict:
+        """
+        Retrieve sales receipt details from QuickBooks by QuickBooks ID.
+        """
+        try:
+            qb_service = self._get_qb_service()
+
+            self.logger.info(
+                f"Retrieving SalesReceipt from QuickBooks ID: {quickbooks_id}"
+            )
+
+            response = qb_service.get_sales_receipt(
+                qb_service.realm_id,
+                quickbooks_id
+            )
+
+            self.logger.debug(
+                f"QuickBooks retrieval response for SalesReceipt ID {quickbooks_id}: "
+                f"{json.dumps(response, cls=EnhancedJSONEncoder)}"
+            )
+
+            # ---- Success path ----
+            if 'SalesReceipt' in response:
+                return {
+                    "status": "RETRIEVED_SUCCESSFULLY",
+                    "success": True,
+                    "error_message": None,
+                    "details": response['SalesReceipt']
+                }
+
+            # ---- QuickBooks business error ----
+            error_msg = (
+                response.get('Fault', {})
+                .get('Error', [{}])[0]
+                .get('Detail', 'Unknown QuickBooks error')
+            )
+
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg,
+                "details": response
+            }
+
+        except Exception as e:
+            # ---- System-level failure ----
+            error_msg = str(e)
+            self.logger.exception(
+                f"Unexpected error retrieving SalesReceipt {quickbooks_id}"
+            )
+
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg
+            }

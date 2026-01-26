@@ -1,0 +1,576 @@
+    {
+        "absent_in_wallet": [
+            {
+                "cloud_total": 20000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 20000.0,
+                        "payer_code": "25100683",
+                        "slip_no": "FT26026KKTMK"
+                    }
+                ],
+                "transaction_reference": "11202601252123066871"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "25100532",
+                        "slip_no": "FT260262G2XM"
+                    }
+                ],
+                "transaction_reference": "11202601252030252007"
+            },
+            {
+                "cloud_total": 20000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 20000.0,
+                        "payer_code": "25900464",
+                        "slip_no": "FT26026ZK85S"
+                    }
+                ],
+                "transaction_reference": "11202601252123584263"
+            },
+            {
+                "cloud_total": 198000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 198000.0,
+                        "payer_code": "25100291",
+                        "slip_no": "FT2602642X4N"
+                    }
+                ],
+                "transaction_reference": "11202601252139445524"
+            },
+            {
+                "cloud_total": 80000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 80000.0,
+                        "payer_code": "26900235",
+                        "slip_no": "FT26026N78DH"
+                    }
+                ],
+                "transaction_reference": "11202601252040596028"
+            },
+            {
+                "cloud_total": 50000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 50000.0,
+                        "payer_code": "26100193",
+                        "slip_no": "FT26026RGYWZ"
+                    }
+                ],
+                "transaction_reference": "11202601252111053773"
+            },
+            {
+                "cloud_total": 18000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 18000.0,
+                        "payer_code": "26900640",
+                        "slip_no": "FT260267S27V"
+                    }
+                ],
+                "transaction_reference": "11202601252105210347"
+            },
+            {
+                "cloud_total": 80000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 80000.0,
+                        "payer_code": "26100048",
+                        "slip_no": "FT2602648FPH"
+                    }
+                ],
+                "transaction_reference": "11202601252108433013"
+            },
+            {
+                "cloud_total": 90000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 90000.0,
+                        "payer_code": "24100471",
+                        "slip_no": "FT260261Q4QY"
+                    }
+                ],
+                "transaction_reference": "11202601252033026885"
+            },
+            {
+                "cloud_total": 132000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 132000.0,
+                        "payer_code": "25100193",
+                        "slip_no": "FT26026L7DZV"
+                    }
+                ],
+                "transaction_reference": "11202601252152598740"
+            },
+            {
+                "cloud_total": 4000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 4000.0,
+                        "payer_code": "25100252",
+                        "slip_no": "FT260262125J"
+                    }
+                ],
+                "transaction_reference": "11202601252127377705"
+            },
+            {
+                "cloud_total": 130000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 130000.0,
+                        "payer_code": "24100248",
+                        "slip_no": "FT26026YLQ6B"
+                    }
+                ],
+                "transaction_reference": "11202601252158303902"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "25500495",
+                        "slip_no": "FT26025LYP3L"
+                    }
+                ],
+                "transaction_reference": "11202601250042180334"
+            },
+            {
+                "cloud_total": 132000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 132000.0,
+                        "payer_code": "25100126",
+                        "slip_no": "FT26026V5DP4"
+                    }
+                ],
+                "transaction_reference": "11202601252141122448"
+            },
+            {
+                "cloud_total": 72000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 72000.0,
+                        "payer_code": "26900704",
+                        "slip_no": "FT26026L28ZC"
+                    }
+                ],
+                "transaction_reference": "11202601252159317097"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "25900155",
+                        "slip_no": "FT26026GBQBW"
+                    }
+                ],
+                "transaction_reference": "11202601252155420126"
+            },
+            {
+                "cloud_total": 88000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 88000.0,
+                        "payer_code": "25900081",
+                        "slip_no": "FT26026YLSFX"
+                    }
+                ],
+                "transaction_reference": "11202601252113230014"
+            },
+            {
+                "cloud_total": 37000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 37000.0,
+                        "payer_code": "26900283",
+                        "slip_no": "FT26026CD4BB"
+                    }
+                ],
+                "transaction_reference": "11202601252100186403"
+            },
+            {
+                "cloud_total": 65000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 65000.0,
+                        "payer_code": "26900155",
+                        "slip_no": "FT2602605QCD"
+                    }
+                ],
+                "transaction_reference": "11202601252154144340"
+            },
+            {
+                "cloud_total": 80000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 80000.0,
+                        "payer_code": "25100120",
+                        "slip_no": "FT26025Q47GH"
+                    }
+                ],
+                "transaction_reference": "11202601250059383088"
+            },
+            {
+                "cloud_total": 19500.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 19500.0,
+                        "payer_code": "25900343",
+                        "slip_no": "FT26026LHT1N"
+                    }
+                ],
+                "transaction_reference": "11202601252037122460"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "26100257",
+                        "slip_no": "FT260266SLHN"
+                    }
+                ],
+                "transaction_reference": "11202601252149212231"
+            },
+            {
+                "cloud_total": 126000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 126000.0,
+                        "payer_code": "26900368",
+                        "slip_no": "FT26026WC30T"
+                    }
+                ],
+                "transaction_reference": "11202601252054552623"
+            },
+            {
+                "cloud_total": 56000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 56000.0,
+                        "payer_code": "26900314",
+                        "slip_no": "FT26026BV11Z"
+                    }
+                ],
+                "transaction_reference": "11202601252102503904"
+            },
+            {
+                "cloud_total": 18000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 18000.0,
+                        "payer_code": "25500586",
+                        "slip_no": "FT26025MVLLJ"
+                    }
+                ],
+                "transaction_reference": "11202601250107060586"
+            },
+            {
+                "cloud_total": 80000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 80000.0,
+                        "payer_code": "23500779",
+                        "slip_no": "FT26026PB2KJ"
+                    }
+                ],
+                "transaction_reference": "11202601252159316474"
+            },
+            {
+                "cloud_total": 190000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 190000.0,
+                        "payer_code": "24500238",
+                        "slip_no": "FT26026PRSPX"
+                    }
+                ],
+                "transaction_reference": "11202601252026310892"
+            },
+            {
+                "cloud_total": 186000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 186000.0,
+                        "payer_code": "25100174",
+                        "slip_no": "FT260269WLT8"
+                    }
+                ],
+                "transaction_reference": "11202601252144381013"
+            },
+            {
+                "cloud_total": 40000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 40000.0,
+                        "payer_code": "24100158",
+                        "slip_no": "FT26026QWQ1F"
+                    }
+                ],
+                "transaction_reference": "11202601252052234516"
+            },
+            {
+                "cloud_total": 120000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 120000.0,
+                        "payer_code": "25900084",
+                        "slip_no": "FT260256ZY6M"
+                    }
+                ],
+                "transaction_reference": "11202601250125289813"
+            },
+            {
+                "cloud_total": 24000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 24000.0,
+                        "payer_code": "26100805",
+                        "slip_no": "FT260260KQBH"
+                    }
+                ],
+                "transaction_reference": "11202601252042308076"
+            },
+            {
+                "cloud_total": 25000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 25000.0,
+                        "payer_code": "26100482",
+                        "slip_no": "FT26026XJHXQ"
+                    }
+                ],
+                "transaction_reference": "11202601252048118645"
+            },
+            {
+                "cloud_total": 45000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 45000.0,
+                        "payer_code": "26100737",
+                        "slip_no": "FT26026YTC5M"
+                    }
+                ],
+                "transaction_reference": "11202601252203174761"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "26900256",
+                        "slip_no": "FT260263SKY7"
+                    }
+                ],
+                "transaction_reference": "11202601252059000530"
+            },
+            {
+                "cloud_total": 100000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 100000.0,
+                        "payer_code": "26100332",
+                        "slip_no": "FT260263CCDG"
+                    }
+                ],
+                "transaction_reference": "11202601252137432079"
+            },
+            {
+                "cloud_total": 20000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 20000.0,
+                        "payer_code": "25100049",
+                        "slip_no": "FT26026RYRYP"
+                    }
+                ],
+                "transaction_reference": "11202601252202090469"
+            },
+            {
+                "cloud_total": 30000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 30000.0,
+                        "payer_code": "26100222",
+                        "slip_no": "FT26026P5T45"
+                    }
+                ],
+                "transaction_reference": "11202601252111130247"
+            },
+            {
+                "cloud_total": 211000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 211000.0,
+                        "payer_code": "26100802",
+                        "slip_no": "FT26026RLYF4"
+                    }
+                ],
+                "transaction_reference": "11202601252104143646"
+            },
+            {
+                "cloud_total": 180000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 180000.0,
+                        "payer_code": "26100944",
+                        "slip_no": "FT26026YYPW7"
+                    }
+                ],
+                "transaction_reference": "11202601252126017361"
+            },
+            {
+                "cloud_total": 122000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 122000.0,
+                        "payer_code": "26100316",
+                        "slip_no": "FT26026GPG2G"
+                    }
+                ],
+                "transaction_reference": "11202601252146290746"
+            },
+            {
+                "cloud_total": 30000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 30000.0,
+                        "payer_code": "24100073",
+                        "slip_no": "FT26026SNSNB"
+                    }
+                ],
+                "transaction_reference": "11202601252125351293"
+            },
+            {
+                "cloud_total": 45000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 45000.0,
+                        "payer_code": "24100292",
+                        "slip_no": "FT260265BJC2"
+                    }
+                ],
+                "transaction_reference": "11202601252030372000"
+            },
+            {
+                "cloud_total": 35000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 35000.0,
+                        "payer_code": "25100162",
+                        "slip_no": "FT26025JQM77"
+                    }
+                ],
+                "transaction_reference": "11202601250040024032"
+            },
+            {
+                "cloud_total": 30000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 30000.0,
+                        "payer_code": "25500601",
+                        "slip_no": "FT2602629QW3"
+                    }
+                ],
+                "transaction_reference": "11202601252145413162"
+            },
+            {
+                "cloud_total": 50000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 50000.0,
+                        "payer_code": "26900392",
+                        "slip_no": "FT26026V7822"
+                    }
+                ],
+                "transaction_reference": "11202601252132012038"
+            },
+            {
+                "cloud_total": 19000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 19000.0,
+                        "payer_code": "26900753",
+                        "slip_no": "FT26026ZSG80"
+                    }
+                ],
+                "transaction_reference": "11202601252037011665"
+            },
+            {
+                "cloud_total": 25000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 25000.0,
+                        "payer_code": "24900088",
+                        "slip_no": "FT26026X0Y51"
+                    }
+                ],
+                "transaction_reference": "11202601252024483343"
+            },
+            {
+                "cloud_total": 20000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 20000.0,
+                        "payer_code": "26900220",
+                        "slip_no": "FT26026BJQLB"
+                    }
+                ],
+                "transaction_reference": "11202601252057558804"
+            },
+            {
+                "cloud_total": 72000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 72000.0,
+                        "payer_code": "26900090",
+                        "slip_no": "FT26026ZL7JT"
+                    }
+                ],
+                "transaction_reference": "11202601252202180179"
+            },
+            {
+                "cloud_total": 35000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 35000.0,
+                        "payer_code": "25500235",
+                        "slip_no": "FT26026TH2QN"
+                    }
+                ],
+                "transaction_reference": "11202601252108112613"
+            },
+            {
+                "cloud_total": 1000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 1000.0,
+                        "payer_code": "24100593",
+                        "slip_no": "FT26026GF74M"
+                    }
+                ],
+                "transaction_reference": "11202601252046272459"
+            },
+            {
+                "cloud_total": 72000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 72000.0,
+                        "payer_code": "25900240",
+                        "slip_no": "FT26026TRWXR"
+                    }
+                ],
+                "transaction_reference": "11202601252105441983"
+            }
+        ]
+    }

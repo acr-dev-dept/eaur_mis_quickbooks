@@ -181,3 +181,52 @@ def update_sales_receipt():
             "details": str(e),
             "timestamp": datetime.now().isoformat()
         }), 500
+    
+@sales_receipt_api.route('/get_sales_receipt/<int:wallet_id>', methods=['GET'])
+def get_sales_receipt(wallet_id):
+    """
+    API endpoint to retrieve sales receipt details from QuickBooks by wallet ID.
+    """
+
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sales_data = TblStudentWallet.get_sales_data(wallet_id)
+
+        if not sales_data or not sales_data.quickbooks_id:
+            return jsonify({
+                "success": False,
+                "message": "Sales receipt not found or not synced",
+                "timestamp": datetime.now().isoformat()
+            }), 404
+
+        sync_service = SalesReceiptSyncService()
+        result = sync_service.get_sales_receipt_from_quickbooks(sales_data.quickbooks_id)
+
+        if not result.get("success"):
+            return jsonify({
+                "success": False,
+                "error": "Failed to retrieve sales receipt",
+                "details": result.get("error_message"),
+                "timestamp": datetime.now().isoformat()
+            }), 500
+
+        return jsonify({
+            "success": True,
+            "data": result.get("data"),
+            "message": "Sales receipt retrieved successfully",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        current_app.logger.exception("Error retrieving sales receipt")
+
+        return jsonify({
+            "success": False,
+            "error": "Failed to retrieve sales receipt",
+            "details": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
