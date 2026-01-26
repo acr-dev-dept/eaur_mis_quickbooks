@@ -205,7 +205,7 @@ def get_sales_receipt(wallet_id):
 
         sync_service = SalesReceiptSyncService()
         result = sync_service.get_sales_receipt_from_quickbooks(sales_data.quickbooks_id)
-
+        current_app.logger.info(f"Retrieved sales receipt result: {result}")
         if not result.get("success"):
             return jsonify({
                 "success": False,
