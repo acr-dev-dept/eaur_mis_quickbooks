@@ -587,7 +587,7 @@ class SalesReceiptSyncService:
             if float(sales_receipt.dept) != float(qb_amount):
                 # Amounts differ; check in payments table if payment exists
                 from application.models.mis_models import Payment
-                payment_exists = Payment.get_payment_by_wallet_id(sales_receipt.id)
+                payment_exists = Payment.get_payment_by_wallet_id(sales_receipt.reference_number) is not None
                 if not payment_exists:
                     self.logger.error(
                         f"Cannot update SalesReceipt {sales_receipt.id}: amounts differ and no payment found"
