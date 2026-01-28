@@ -3,12 +3,15 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
-from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory
+from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+from application.models.central_models import IntegrationLog
+from sqlalchemy.exc import IntegrityError
+from datetime import date
 
 
 @reconciliation_bp.route("/valid-payments/total", methods=["GET"])
@@ -655,3 +658,172 @@ def import_wallet_history_from_json():
             "status": "error",
             "message": str(e)
         }), 500
+
+@reconciliation_bp.route("/sync-absent-wallet-payments", methods=["POST"])
+def sync_absent_wallet_payments():
+    payload = request.get_json()
+
+    if not payload or "absent_in_wallet" not in payload:
+        return jsonify({
+            "status": 400,
+            "message": "Invalid payload structure"
+        }), 400
+
+    results = []
+
+    for record in payload["absent_in_wallet"]:
+
+        transaction_reference = record.get("transaction_reference")
+        cloud_total = float(record.get("cloud_total", 0))
+        transactions = record.get("cloud_transactions", [])
+
+        if not transactions:
+            continue
+
+        for tx in transactions:
+
+            payer_code = tx.get("payer_code")
+            slip_no = tx.get("slip_no")
+            amount = float(tx.get("paid_amount", 0))
+            payment_channel = "URUBUTOPAY"
+            transaction_status = "SUCCESS"
+            started_at = datetime.now()
+
+            # ────────────────────────────────────────────────
+            # Resolve payer
+            # ────────────────────────────────────────────────
+            student = TblPersonalUg.get_student_data(payer_code)
+            applicant = None
+
+            if not student:
+                applicant = TblOnlineApplication.get_applicant_data(payer_code)
+
+            if not student and not applicant:
+                current_app.logger.error(f"Payer not found: {payer_code}")
+                results.append({
+                    "payer_code": payer_code,
+                    "status": "FAILED",
+                    "reason": "Payer not found"
+                })
+                continue
+
+            reg_no = student.reg_no if student else applicant.tracking_id
+
+            # ────────────────────────────────────────────────
+            # Wallet lookup
+            # ────────────────────────────────────────────────
+            wallet = TblStudentWallet.get_by_reg_no(reg_no)
+
+            with TblStudentWalletHistory.get_session() as session:
+
+                try:
+                    balance_before = wallet.dept if wallet else 0.0
+                    balance_after = balance_before + amount
+
+                    # ────────────────────────────────────────────────
+                    # Wallet history (IDEMPOTENT)
+                    # UNIQUE(external_transaction_id)
+                    # ────────────────────────────────────────────────
+                    history = TblStudentWalletHistory(
+                        wallet_id=wallet.id if wallet else None,
+                        reg_no=reg_no,
+                        reference_number=wallet.reference_number or None
+                        if wallet else f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}",
+                        transaction_type="TOPUP",
+                        slip_no=slip_no,
+                        amount=amount,
+                        balance_before=balance_before,
+                        balance_after=balance_after,
+                        trans_code=transaction_reference,
+                        external_transaction_id=transaction_reference,
+                        payment_chanel=payment_channel,
+                        bank_id=wallet.bank_id if wallet else 2,
+                        created_at=datetime(2026, 1, 25, 22, 0, 0),
+                        comment="Wallet top-up",
+                        created_by="SYSTEM"
+                    )
+
+                    session.add(history)
+                    session.flush()   # 🔒 idempotency enforced here
+
+                except IntegrityError:
+                    session.rollback()
+                    current_app.logger.info(
+                        f"Duplicate wallet transaction ignored: {transaction_reference}"
+                    )
+
+                    results.append({
+                        "payer_code": payer_code,
+                        "transaction_reference": transaction_reference,
+                        "status": "DUPLICATE"
+                    })
+                    continue
+
+                # ────────────────────────────────────────────────
+                # Update or create wallet
+                # ────────────────────────────────────────────────
+                if wallet:
+                    wallet.dept = balance_after
+                    wallet.external_transaction_id = transaction_reference
+                    wallet.trans_code = transaction_reference
+                    wallet.payment_date = datetime.now()
+                    session.add(wallet)
+                    session.flush()
+
+                    from application.config_files.wallet_sync import (
+                        update_wallet_to_quickbooks_task
+                    )
+                    update_wallet_to_quickbooks_task.delay(wallet.id)
+
+                else:
+                    created_wallet = TblStudentWallet.create_wallet_entry(
+                        reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
+                        reg_no=reg_no,
+                        reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}",
+                        trans_code=transaction_reference,
+                        external_transaction_id=transaction_reference,
+                        payment_chanel=payment_channel,
+                        payment_date=date.today(),
+                        is_paid="Yes",
+                        dept=amount,
+                        fee_category=128,
+                        bank_id=2,
+                        slip_no=slip_no or "N/A"
+                    )
+
+                    if created_wallet and "id" in created_wallet:
+                        from application.config_files.wallet_sync import (
+                            sync_wallet_to_quickbooks_task
+                        )
+                        sync_wallet_to_quickbooks_task.delay(
+                            created_wallet["id"]
+                        )
+
+                # ────────────────────────────────────────────────
+                # Integration log
+                # ────────────────────────────────────────────────
+                IntegrationLog.log_integration_operation(
+                    system_name="UrubutoPay",
+                    operation="Wallet Payment",
+                    status=transaction_status,
+                    external_transaction_id=transaction_reference,
+                    payer_code=payer_code,
+                    response_data=tx,
+                    started_at=started_at,
+                    completed_at=datetime.now()
+                )
+
+                results.append({
+                    "payer_code": payer_code,
+                    "reg_no": reg_no,
+                    "amount": amount,
+                    "transaction_reference": transaction_reference,
+                    "status": "SUCCESS"
+                })
+
+    return jsonify({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "status": 200,
+        "processed": len(results),
+        "results": results
+    }), 200

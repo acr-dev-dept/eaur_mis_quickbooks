@@ -873,6 +873,10 @@ class TblStudentWalletLedger(MISBaseModel):
     direction = db.Column(db.Enum("credit", "debit", name="wallet_direction"), nullable=False)
     original_amount = db.Column(db.Numeric(12, 2), nullable=False)
     amount = db.Column(db.Numeric(12, 2), nullable=False)
+    trans_code = db.Column(db.String(255), nullable=True)
+    payment_chanel = db.Column(db.String(100), nullable=True)
+    fee_category = db.Column(db.Integer, nullable=True)
+    bank_id = db.Column(db.Integer, nullable=True)
     qb_sales_receipt_id = db.Column(db.String(255), nullable=True, index=True)
     qb_invoice_id = db.Column(db.String(255), nullable=True, index=True)
     source = db.Column(db.Enum("sales_receipt", "invoice", "refund", "adjustment", name="wallet_source"), nullable=False)
@@ -906,6 +910,10 @@ class TblStudentWalletLedger(MISBaseModel):
             "qb_invoice_id": self.qb_invoice_id,
             "source": self.source,
             "parent_credit_id": self.parent_credit_id,
+            "trans_code": self.trans_code,
+            "payment_chanel": self.payment_chanel,
+            "fee_category": self.fee_category,
+            "bank_id": self.bank_id,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
     
@@ -914,7 +922,7 @@ class TblStudentWalletLedger(MISBaseModel):
     # --- Methods ---
 
     @staticmethod
-    def credit_wallet(student_id, amount, source, qb_sales_receipt_id=None):
+    def credit_wallet(student_id, amount, source, qb_sales_receipt_id=None, transaction_id=None, payment_chanel=None, fee_category=None, bank_id=None):
         """Credit wallet with specified amount (deposit / sales receipt)"""
         if amount <= 0:
             raise ValueError("Credit amount must be greater than zero")
@@ -926,6 +934,10 @@ class TblStudentWalletLedger(MISBaseModel):
                 original_amount=amount,
                 amount=amount,
                 source=source,
+                trans_code=transaction_id,
+                payment_chanel=payment_chanel,
+                fee_category=fee_category,
+                bank_id=bank_id,
                 qb_sales_receipt_id=qb_sales_receipt_id
             )
             session.add(ledger_entry)
