@@ -357,7 +357,7 @@ def payment_callback():
             # ────────────────────────────────────────────────
             # Non-VALID transaction: just log and acknowledge
             # ────────────────────────────────────────────────
-            if transaction_status != "VALID":
+            if transaction_status != "VALID" and transaction_status != "PENDING_SETTLEMENT":
                 current_app.logger.info(
                     f"Non-VALID status '{transaction_status}' received for {transaction_id} – no processing"
                 )
@@ -423,6 +423,8 @@ def payment_callback():
 
                 session.add(history)
                 session.flush()  # ← triggers UNIQUE constraint immediately
+
+                
 
             except IntegrityError:
                 session.rollback()
