@@ -424,7 +424,7 @@ def payment_callback():
                 session.add(history)
                 session.flush()  # ← triggers UNIQUE constraint immediately
 
-                
+
 
             except IntegrityError:
                 session.rollback()
@@ -450,10 +450,10 @@ def payment_callback():
                 current_app.logger.info(f"Wallet topped up for {reg_no}: {amount}")
 
                 # Async QuickBooks update
-                """
+                
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
                 update_wallet_to_quickbooks_task.delay(wallet.id)
-                """
+                
             else:
                 # Create wallet entry
                 created_wallet = TblStudentWallet.create_wallet_entry(
@@ -472,11 +472,11 @@ def payment_callback():
                 )
                 current_app.logger.info(f"New wallet entry created for payer {reg_no}")
                 
-                """
+                
                 if created_wallet and 'id' in created_wallet:
                     from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
                     sync_wallet_to_quickbooks_task.delay(created_wallet['id'])
-                """
+            
             # ────────────────────────────────────────────────
             # Integration log
             # ────────────────────────────────────────────────

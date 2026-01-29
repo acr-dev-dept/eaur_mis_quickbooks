@@ -195,7 +195,7 @@ def analyze_transactions_file():
 
     Assumes:
     - First row is header
-    - Only Txn Status = SUCCESSFUL is included
+    - Only Txn Status = SUCCESSFUL or PENDING_SETTLEMENT is included
     """
 
     data = request.get_json(silent=True)
@@ -243,10 +243,10 @@ def analyze_transactions_file():
             }), 400
 
         # ------------------------------------
-        # Filter SUCCESSFUL transactions only
+        # Filter SUCCESSFUL transactions and PENDING_SETTLEMENT transactions
         # ------------------------------------
         df["Txn Status"] = df["Txn Status"].astype(str).str.strip().str.upper()
-        df = df[df["Txn Status"] == "SUCCESSFUL"]
+        df = df[df["Txn Status"] == "SUCCESSFUL" | df["Txn Status"] == "PENDING_SETTLEMENT"]
 
         # ------------------------------------
         # Convert paid amount safely
