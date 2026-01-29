@@ -15,6 +15,6 @@ if __name__ == '__main__':
     debug_mode = os.getenv('FLASK_ENV') == 'development'
     app.run(
         host=os.getenv('FLASK_HOST', '0.0.0.0'),
-        port=8000,
+        port=9000,
         debug=debug_mode
     )
