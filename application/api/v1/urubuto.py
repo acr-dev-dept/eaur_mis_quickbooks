@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication, TblStudentWalletHistory, TblStudentWalletLedger
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication, TblStudentWalletHistory
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
@@ -452,20 +452,6 @@ def payment_callback():
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
                 update_wallet_to_quickbooks_task.delay(wallet.id)
                 """
-                try:
-                    TblStudentWalletLedger.credit_wallet(
-                        student_id=reg_no,   # or student_id if separate
-                        amount=amount,
-                        source="sales_receipt",
-                        qb_sales_receipt_id=None,  # set after QBO creation
-                        transaction_id=transaction_id,
-                        payment_chanel="UrubutoPay",
-                        fee_category=128,
-                        bank_id=2
-                    )
-                except Exception as e:
-                    current_app.logger.error(f"Error updating wallet ledger for {reg_no}: {str(e)}")
-                    current_app.logger.error(traceback.format_exc())
             else:
                 # Create wallet entry
                 created_wallet = TblStudentWallet.create_wallet_entry(
@@ -489,16 +475,6 @@ def payment_callback():
                     from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
                     sync_wallet_to_quickbooks_task.delay(created_wallet['id'])
                 """
-                TblStudentWalletLedger.credit_wallet(
-                    student_id=reg_no,   # or student_id if separate
-                    amount=amount,
-                    source="sales_receipt",
-                    qb_sales_receipt_id=None,  # set after QBO creation
-                    transaction_id=transaction_id,
-                    payment_chanel="UrubutoPay",
-                    fee_category=128,
-                    bank_id=2
-                )
             # ────────────────────────────────────────────────
             # Integration log
             # ────────────────────────────────────────────────
