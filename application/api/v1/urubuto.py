@@ -401,7 +401,7 @@ def payment_callback():
             # Insert wallet history first (DB enforces idempotency)
             # ────────────────────────────────────────────────
             try:
-                balance_before = wallet.amount if wallet else 0.0
+                balance_before = wallet.dept if wallet else 0.0
                 balance_after = balance_before + amount
 
                 history = TblStudentWalletHistory(
@@ -439,7 +439,7 @@ def payment_callback():
             # ────────────────────────────────────────────────
             if wallet:
                 # Update balance
-                wallet.amount = balance_after
+                wallet.dept = balance_after
                 wallet.external_transaction_id = transaction_id
                 wallet.trans_code = transaction_id
                 wallet.payment_date = datetime.now()
@@ -452,16 +452,20 @@ def payment_callback():
                 from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
                 update_wallet_to_quickbooks_task.delay(wallet.id)
                 """
-                TblStudentWalletLedger.credit_wallet(
-                    student_id=wallet.reg_no,   # or student_id if separate
-                    amount=amount,
-                    source="sales_receipt",
-                    qb_sales_receipt_id=None,  # set after QBO creation
-                    transaction_id=transaction_id,
-                    payment_chanel="UrubutoPay",
-                    fee_category=128,
-                    bank_id=2
-                )
+                try:
+                    TblStudentWalletLedger.credit_wallet(
+                        student_id=reg_no,   # or student_id if separate
+                        amount=amount,
+                        source="sales_receipt",
+                        qb_sales_receipt_id=None,  # set after QBO creation
+                        transaction_id=transaction_id,
+                        payment_chanel="UrubutoPay",
+                        fee_category=128,
+                        bank_id=2
+                    )
+                except Exception as e:
+                    current_app.logger.error(f"Error updating wallet ledger for {reg_no}: {str(e)}")
+                    current_app.logger.error(traceback.format_exc())
             else:
                 # Create wallet entry
                 created_wallet = TblStudentWallet.create_wallet_entry(
@@ -486,7 +490,7 @@ def payment_callback():
                     sync_wallet_to_quickbooks_task.delay(created_wallet['id'])
                 """
                 TblStudentWalletLedger.credit_wallet(
-                    student_id=wallet.reg_no,   # or student_id if separate
+                    student_id=reg_no,   # or student_id if separate
                     amount=amount,
                     source="sales_receipt",
                     qb_sales_receipt_id=None,  # set after QBO creation
