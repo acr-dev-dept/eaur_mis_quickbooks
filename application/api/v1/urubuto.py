@@ -615,7 +615,7 @@ def payment_notification():
 
             response_data = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Payment status noted",
+                "message": "Successful",
                 "status": 200,
                 "data": {
                     "external_transaction_id": transaction_id,
