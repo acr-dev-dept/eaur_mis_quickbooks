@@ -641,6 +641,14 @@ def payment_notification():
                 "status": 500
             }), 500
 
+    else:
+        return jsonify({
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message": "Invalid transaction data",
+        "status": 400
+    }), 400
+
+
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
 @log_api_access('payment_initiation')
 def initiate_payment():
