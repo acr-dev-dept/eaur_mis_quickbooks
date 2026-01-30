@@ -545,82 +545,75 @@ def payment_notification():
     current_app.logger.info(f"Request content type: {request.content_type}")
     current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
     current_app.logger.info(f"data received: {request.get_json()}")
-    try:
-        # Validate request data
-        if not request.is_json:
-            return jsonify({
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "Content-Type must be application/json",
-                "status": 400
-            }), 400
+    
+    # Validate request data
+    if not request.is_json:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Content-Type must be application/json",
+            "status": 400
+        }), 400
 
-        data = request.get_json()
-        if not data:
-            return jsonify({
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": "No data provided",
-                "status": 400
-            }), 400
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "No data provided",
+            "status": 400
+        }), 400
 
-        # Extract required fields
-        transaction_status = data.get('transaction_status')
-        transaction_id = data.get('transaction_id')
-        merchant_code = data.get('merchant_code')
-        payer_code = data.get('payer_code')
-        payment_chanel = data.get('payment_chanel')
-        payment_chanel_name = data.get('payment_chanel_name')
-        amount = data.get('amount')
-        currency = data.get('currency')
-        payment_date_time = data.get('payment_date_time')
-        slip_no = (
-            data.get('slip_number')
-            or data.get('initial_slip_number')
-            or "N/A"
-        )
-        # Validate required fields
-        required_fields = ['transaction_id', 'merchant_code',
-                          'payer_code', 'payment_channel', 'amount', 'currency', 'payment_date_time', 'payment_channel_name']
+    # Extract required fields
+    transaction_status = data.get('transaction_status')
+    transaction_id = data.get('transaction_id')
+    merchant_code = data.get('merchant_code')
+    payer_code = data.get('payer_code')
+    payment_chanel = data.get('payment_chanel')
+    payment_chanel_name = data.get('payment_chanel_name')
+    amount = data.get('amount')
+    currency = data.get('currency')
+    payment_date_time = data.get('payment_date_time')
+    slip_no = (
+        data.get('slip_number')
+        or data.get('initial_slip_number')
+        or "N/A"
+    )
+    # Validate required fields
+    required_fields = ['transaction_id', 'merchant_code',
+                        'payer_code', 'payment_channel', 'amount', 'currency', 'payment_date_time', 'payment_channel_name']
 
-        missing_fields = [field for field in required_fields if not data.get(field)]
-        if missing_fields:
-            return jsonify({
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "message": f"Missing required parameters: {', '.join(missing_fields)}",
-                "status": 400
-            }), 400
+    missing_fields = [field for field in required_fields if not data.get(field)]
+    if missing_fields:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": f"Missing required parameters: {', '.join(missing_fields)}",
+            "status": 400
+        }), 400
 
-        current_app.logger.info(f"Payment notification received - Transaction: {transaction_id}, "
-                               f"Payer: {payer_code}, Amount: {amount}")
+    current_app.logger.info(f"Payment notification received - Transaction: {transaction_id}, "
+                            f"Payer: {payer_code}, Amount: {amount}")
 
-        # Only process successful payments
-        if transaction_id:
-            # check the status of the transaction
-            try:
-                status = TblStudentWallet.get_by_external_transaction_id(transaction_id)
-                current_app.logger.info(f"Transaction status check result: {status}")
-                if status:
-                    # update slip number if any
-                    insert_slip = TblStudentWallet.update_slip_no(transaction_id, slip_no)
-                    if insert_slip:
-                        update_history = TblStudentWalletHistory.update_slip_no(transaction_id, slip_no)
-                        current_app.logger.info(f"Slip number updated in history: {update_history}")
-                        return jsonify({
-                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "message": "Payment status noted",
-                            "status": 200,
-                            "data": {
-                                "external_transaction_id": transaction_id,
-                                "internal_transaction_id": f"INT_{transaction_id}",
-                                "payer_phone_number": "",
-                                "payer_email": ""
-                            }
-                        }), 200
-            except Exception as e:
-                current_app.logger.error(f"Error checking transaction status: {e}")
-                
+    # Only process successful payments
+    if transaction_id:
+        # check the status of the transaction
+        try:
+            status = TblStudentWalletHistory.get_by_transaction_id(transaction_id)
+            current_app.logger.info(f"Transaction status check result: {status}")
 
-            current_app.logger.info(f"Checking that the transaction_id is not empty: {transaction_id}")
-            return jsonify({
+            if not status:
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": "Transaction not found",
+                    "status": 404,
+                    "data": {
+                        "external_transaction_id": transaction_id
+                    }
+                }), 404
+
+            # update slip number
+            TblStudentWallet.update_slip_no(transaction_id, slip_no)
+            TblStudentWalletHistory.update_slip_no(transaction_id, slip_no)
+
+            response_data = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "message": "Payment status noted",
                 "status": 200,
@@ -630,15 +623,23 @@ def payment_notification():
                     "payer_phone_number": "",
                     "payer_email": ""
                 }
-            }), 200
-    except Exception as e:
-        current_app.logger.error(f"Error processing payment notification: {str(e)}")
-        current_app.logger.error(traceback.format_exc())
-        return jsonify({
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "message": "Internal server error",
-            "status": 500
-        }), 500
+            }
+
+            current_app.logger.info(f"Payment notification response: {response_data}")
+
+            return jsonify(response_data), 200
+
+        except Exception as e:
+            current_app.logger.error(
+                f"Error checking transaction status for {transaction_id}: {str(e)}",
+                exc_info=True
+            )
+
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Internal server error",
+                "status": 500
+            }), 500
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
 @log_api_access('payment_initiation')
