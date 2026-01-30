@@ -204,14 +204,14 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
                 if not sales_receipt:
                     raise ValueError("sales_receipt not found")
 
-                    """
-                    if sales_receipt.quickbooks_id:
-                        result = sync_service.update_single_sales_receipt(sales_receipt.id)
-                        if result.get('success'):
-                            results["synced"] += 1
-                        else:
-                            raise RuntimeError(result.error_message)
-                    """
+                
+                elif sales_receipt.sync_token and sales_receipt.sync_token == 0:
+                    result = sync_service.update_single_sales_receipt(sales_receipt.id)
+                    if result.get('success'):
+                        results["synced"] += 1
+                    else:
+                        raise RuntimeError(result.error_message)
+                
                 else:
                     result = sync_service.sync_single_sales_receipt(sales_receipt)
 

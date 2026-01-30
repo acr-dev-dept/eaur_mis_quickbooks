@@ -680,6 +680,28 @@ def import_wallet_history_from_json():
 
 @reconciliation_bp.route("/sync-absent-wallet-payments", methods=["POST"])
 def sync_absent_wallet_payments():
+    """
+    Syncs wallet payments that are absent in the wallet system
+    based on the provided JSON payload.
+
+    Payload:
+     {
+        "absent_in_wallet": [
+            {
+                "cloud_total": 20000.0,
+                "cloud_transactions": [
+                    {
+                        "paid_amount": 20000.0,
+                        "payer_code": "25100683",
+                        "slip_no": "FT26026KKTMK"
+                    }
+                ],
+                "transaction_reference": "11202601252123066871"
+            },
+            ...
+        ]
+    }
+    """
     payload = request.get_json()
 
     if not payload or "absent_in_wallet" not in payload:

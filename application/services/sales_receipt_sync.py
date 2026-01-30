@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from enum import Enum
 from flask import current_app, jsonify
-from application.models.mis_models import TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus, TblOnlineApplication
+from application.models.mis_models import Payment, TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus, TblOnlineApplication
 from application.services.quickbooks import QuickBooks
 import traceback
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
@@ -90,6 +90,7 @@ class SalesReceiptSyncService:
         
         # Build the base line item structure
         amount = float(sales_receipt.dept)
+        paid_amount = Payment.get_total_paid_by_wallet_id(sales_receipt.reference_number)
         line_item = {
             "DetailType": "SalesItemLineDetail",
             "Amount": amount,
@@ -549,7 +550,7 @@ class SalesReceiptSyncService:
                 "error_message": "Sales receipt has not been synced before",
                 "details": None
             }
-
+        
         # fetch sales receipt from QuickBooks to verify existence
         try:
             qb_service = self._get_qb_service()
