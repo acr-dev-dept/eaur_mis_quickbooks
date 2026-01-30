@@ -245,8 +245,11 @@ def analyze_transactions_file():
         # ------------------------------------
         # Filter SUCCESSFUL transactions and PENDING_SETTLEMENT transactions
         # ------------------------------------
-        df["Txn Status"] = df["Txn Status"].astype(str).str.strip().str.upper()
-        df = df[df["Txn Status"] == "SUCCESSFUL" | df["Txn Status"] == "PENDING_SETTLEMENT"]
+        df = df[
+            (df["Txn Status"] == "SUCCESSFUL") |
+            (df["Txn Status"] == "PENDING_SETTLEMENT")
+        ]
+
 
         # ------------------------------------
         # Convert paid amount safely
