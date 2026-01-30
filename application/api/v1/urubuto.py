@@ -605,8 +605,15 @@ def payment_notification():
                         update_history = TblStudentWalletHistory.update_slip_no(transaction_id, slip_no)
                         current_app.logger.info(f"Slip number updated in history: {update_history}")
                         return jsonify({
-                            "message": "Payment Successful",
-                            "status": 200
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "message": "Payment status noted",
+                            "status": 200,
+                            "data": {
+                                "external_transaction_id": transaction_id,
+                                "internal_transaction_id": f"INT_{transaction_id}",
+                                "payer_phone_number": "",
+                                "payer_email": ""
+                            }
                         }), 200
             except Exception as e:
                 current_app.logger.error(f"Error checking transaction status: {e}")
