@@ -320,6 +320,22 @@ def wallet_hist_vs_cloud_pyts():
         "date_from": "YYYY-MM-DD",
         "date_to": "YYYY-MM-DD"
     }
+
+    payments.json structure:
+    {
+        "per_payer_code": {
+            "PAYER001": {
+                "transactions": [
+                    {
+                        "transaction_reference": "TRX123",
+                        "paid_amount": 1000.00,
+                        "slip_no": "SLIP001"
+                    },
+                    ...
+                ]
+            },
+            ...
+        }
     """
 
     try:

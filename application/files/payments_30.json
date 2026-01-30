@@ -1,0 +1,62 @@
+{
+    "file_path": "/home/eaur/eaur_mis_quickbooks/application/files/payments_25.csv",
+            "23500032": {
+            "total_paid_amount": 28.0,
+            "transaction_count": 4,
+            "transactions": [
+                {
+                    "paid_amount": 7.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300147450866
+                },
+                {
+                    "paid_amount": 6.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300126305155
+                },
+                {
+                    "paid_amount": 5.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300109256162
+                },
+                {
+                    "paid_amount": 10.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300056249399
+                }
+            ]
+        },
+        "25100468": {
+            "total_paid_amount": 80000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 80000.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300110586412
+                }
+            ]
+        },
+        "26100066": {
+            "total_paid_amount": 10000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 10000.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300033264280
+                }
+            ]
+        },
+        "26100490": {
+            "total_paid_amount": 40000.0,
+            "transaction_count": 1,
+            "transactions": [
+                {
+                    "paid_amount": 40000.0,
+                    "slip_no": "NaN",
+                    "transaction_reference": 11202601300009247925
+                }
+            ]
+        }
+}
