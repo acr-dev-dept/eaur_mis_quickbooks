@@ -1,92 +1,82 @@
 #!/usr/bin/env python3
-"""
-One-time migration script:
-tbl_student_wallet_history -> tbl_student_wallet_ledger
-"""
 
-from decimal import Decimal
-from sqlalchemy.orm import Session
-from sqlalchemy import exists
+import sys
+import os
 
-from application.models.mis_models import TblStudentWalletLedger, TblStudentWalletHistory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
-def migrate_wallet_history_to_ledger(db_session: Session):
-    """
-    One-time migration:
-    tbl_student_wallet_history -> tbl_student_wallet_ledger
-    """
+from application import create_app, db
+from application.models.mis_models import (
+    TblStudentWalletLedger,
+    TblStudentWalletHistory,
+)
 
-    history_rows = db_session.query(TblStudentWalletHistory).order_by(
-        TblStudentWalletHistory.created_at.asc()
-    ).all()
+def migrate_wallet_history_to_ledger():
+    app = create_app()
+    with app.app_context():
+        from sqlalchemy.orm import Session
+        session: Session = db.session
 
-    migrated = 0
-    skipped = 0
+        history_rows = (
+            session.query(TblStudentWalletHistory)
+            .order_by(TblStudentWalletHistory.created_at.asc())
+            .all()
+        )
 
-    for h in history_rows:
-        # -------------------------------------------------
-        # Deduplication safeguard
-        # -------------------------------------------------
-        if h.external_transaction_id:
-            already_exists = db_session.query(
-                exists().where(
-                    TblStudentWalletLedger.trans_code == h.external_transaction_id
-                )
-            ).scalar()
+        migrated = skipped = 0
 
-            if already_exists:
+        for h in history_rows:
+            exists_q = session.query(TblStudentWalletLedger).filter(
+                TblStudentWalletLedger.trans_code == h.external_transaction_id
+            ).first()
+
+            if exists_q:
                 skipped += 1
                 continue
 
-        # -------------------------------------------------
-        # Direction & accounting sign
-        # -------------------------------------------------
-        if h.transaction_type in ("TOPUP", "REFUND"):
-            direction = "credit"
-            signed_amount = Decimal(h.amount)
-            source = "sales_receipt" if h.transaction_type == "TOPUP" else "refund"
-
-        elif h.transaction_type == "DEBIT":
-            direction = "debit"
-            signed_amount = Decimal(h.amount) * Decimal("-1")
-            source = "invoice"
-
-        elif h.transaction_type == "ADJUSTMENT":
-            if h.amount >= 0:
+            # direction & source
+            if h.transaction_type == "TOPUP":
                 direction = "credit"
-                signed_amount = Decimal(h.amount)
-            else:
+                amount = h.amount
+                source = "sales_receipt"
+
+            elif h.transaction_type == "REFUND":
+                direction = "credit"
+                amount = h.amount
+                source = "refund"
+
+            elif h.transaction_type == "DEBIT":
                 direction = "debit"
-                signed_amount = Decimal(h.amount)
-            source = "adjustment"
+                amount = -h.amount
+                source = "invoice"
 
-        else:
-            # Unknown transaction type → skip safely
-            skipped += 1
-            continue
+            elif h.transaction_type == "ADJUSTMENT":
+                direction = "credit" if h.amount >= 0 else "debit"
+                amount = h.amount
+                source = "adjustment"
 
-        # -------------------------------------------------
-        # Build ledger entry
-        # -------------------------------------------------
-        ledger_row = TblStudentWalletLedger(
-            student_id=h.reg_no,
-            direction=direction,
-            original_amount=Decimal(abs(h.amount)),
-            amount=signed_amount,
-            trans_code=h.external_transaction_id or h.trans_code,
-            payment_chanel=h.payment_chanel,
-            bank_id=h.bank_id,
-            source=source,
-            created_at=h.created_at,
-        )
+            else:
+                skipped += 1
+                continue
 
-        db_session.add(ledger_row)
-        migrated += 1
+            ledger = TblStudentWalletLedger(
+                student_id=h.reg_no,  
+                direction=direction,
+                original_amount=abs(h.amount),
+                amount=amount,
+                trans_code=h.external_transaction_id or h.trans_code,
+                payment_chanel=h.payment_chanel,
+                bank_id=h.bank_id,
+                source=source,
+                created_at=h.created_at,
+            )
 
-    db_session.commit()
+            session.add(ledger)
+            migrated += 1
 
-    return {
-        "migrated": migrated,
-        "skipped": skipped,
-        "total_history": len(history_rows),
-    }
+        session.commit()
+        print({"migrated": migrated, "skipped": skipped})
+
+if __name__ == "__main__":
+    migrate_wallet_history_to_ledger()
