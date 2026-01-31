@@ -874,7 +874,7 @@ class TblStudentWalletLedger(MISBaseModel):
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
 
-    student_id = db.Column(db.Integer, nullable=False, index=True)
+    student_id = db.Column(db.String(20), nullable=False, index=True)
 
     direction = db.Column(
         db.Enum("credit", "debit", name="wallet_direction"),
@@ -924,7 +924,10 @@ class TblStudentWalletLedger(MISBaseModel):
         remote_side=[id],
         backref="debits"
     )
-
+    qb_pushed_date = db.Column(
+        db.DateTime,
+        nullable=True
+    )
     # -------------------------------------------------
     # Helpers
     # -------------------------------------------------
@@ -952,7 +955,8 @@ class TblStudentWalletLedger(MISBaseModel):
             "payment_chanel": self.payment_chanel,
             "fee_category": self.fee_category,
             "bank_id": self.bank_id,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "qb_pushed_date": self.qb_pushed_date.isoformat() if self.qb_pushed_date else None,
         }
 
     # -------------------------------------------------
