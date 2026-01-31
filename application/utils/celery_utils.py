@@ -56,7 +56,38 @@ def make_celery(app):
             },
         },
         beat_schedule={
-            "sync_students": {
+        }
+    )
+
+    log.info("Celery fully configured and ready")
+    return celery
+
+"""
+"sync_applicants_every_midnight": {
+    "task": "application.config_files.tasks.bulk_sync_applicants_task",
+    "schedule": crontab(minute='*/6'),
+},
+"sync_invoices_every_midnight": {
+    "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
+    "schedule": crontab(hour=0, minute=20)
+},
+
+"sync_payments_every_midnight": {
+"task": "application.config_files.sync_payments_task.scheduled_payment_sync_task",
+"schedule": crontab(minute='*/6')
+},
+"sync_sales_receipt_every_midnight": {
+"task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
+"schedule": crontab(minute='*/2')
+}
+"sync_students": {
+"task": "application.config_files.sync_students_task.bulk_sync_students_task",
+"schedule": crontab(hour='18,19,20,1,22,23,0,1,2,3,4,5', minute='6,42'),
+},
+"""
+
+"""
+"sync_students": {
             "task": "application.config_files.sync_students_task.bulk_sync_students_task",
             "schedule": crontab(
                 minute='6,42',
@@ -136,31 +167,5 @@ def make_celery(app):
         },
 
         },
-    )
 
-    log.info("Celery fully configured and ready")
-    return celery
-
-"""
-"sync_applicants_every_midnight": {
-    "task": "application.config_files.tasks.bulk_sync_applicants_task",
-    "schedule": crontab(minute='*/6'),
-},
-"sync_invoices_every_midnight": {
-    "task": "application.config_files.sync_invoices_task.scheduled_invoice_sync_task",
-    "schedule": crontab(hour=0, minute=20)
-},
-
-"sync_payments_every_midnight": {
-"task": "application.config_files.sync_payments_task.scheduled_payment_sync_task",
-"schedule": crontab(minute='*/6')
-},
-"sync_sales_receipt_every_midnight": {
-"task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
-"schedule": crontab(minute='*/2')
-}
-"sync_students": {
-"task": "application.config_files.sync_students_task.bulk_sync_students_task",
-"schedule": crontab(hour='18,19,20,1,22,23,0,1,2,3,4,5', minute='6,42'),
-},
 """
