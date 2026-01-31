@@ -451,8 +451,8 @@ def payment_callback():
 
                 # Async QuickBooks update
                 
-                from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
-                update_wallet_to_quickbooks_task.delay(wallet.id)
+                #from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
+                #update_wallet_to_quickbooks_task.delay(wallet.id)
                 
             else:
                 # Create wallet entry
@@ -475,7 +475,7 @@ def payment_callback():
                 
                 if created_wallet and 'id' in created_wallet:
                     from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
-                    sync_wallet_to_quickbooks_task.delay(created_wallet['id'])
+                    #sync_wallet_to_quickbooks_task.delay(created_wallet['id'])
             
             # ────────────────────────────────────────────────
             # Integration log
