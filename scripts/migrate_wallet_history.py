@@ -6,13 +6,14 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
-from application import create_app, db
 from application.models.mis_models import (
     TblStudentWalletLedger,
     TblStudentWalletHistory,
 )
 
 def migrate_wallet_history_to_ledger():
+    from application import create_app, db
+
     app = create_app()
     with app.app_context():
         from sqlalchemy.orm import Session
