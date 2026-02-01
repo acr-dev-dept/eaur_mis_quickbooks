@@ -152,6 +152,7 @@ def register_blueprints(app):
     from application.api.v1.income_sync_api import income_sync_api
     from application.api.v1.sales_receipt_api import sales_receipt_api
     from application.api.v1.api_clients import admin_api_clients_bp
+    from application.api.v1.legacy_delete import qb_admin_bp
 
     # Register blueprints
     app.register_blueprint(api_v1_bp, url_prefix='/api/v1')   
@@ -175,6 +176,8 @@ def register_blueprints(app):
     app.register_blueprint(web_route)  # No prefix, routes define their own
     app.register_blueprint(income_sync_api, url_prefix='/api/v1/sync/income')
     app.register_blueprint(sales_receipt_api, url_prefix='/api/v1/sync/sales_receipt')
+
+    app.register_blueprint(qb_admin_bp, url_prefix='/api/admin/qb')
 
     app.register_blueprint(admin_api_clients_bp)
 
