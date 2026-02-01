@@ -230,3 +230,51 @@ def get_sales_receipt(wallet_id):
             "details": str(e),
             "timestamp": datetime.now().isoformat()
         }), 500
+    
+def delete_sales_receipt(wallet_id):
+    """
+    API endpoint to delete a sales receipt from QuickBooks by wallet ID.
+    """
+
+    try:
+        # Validate QuickBooks connection
+        is_connected, error_response = validate_quickbooks_connection()
+        if not is_connected:
+            return error_response
+
+        sales_data = TblStudentWallet.get_sales_data(wallet_id)
+
+        if not sales_data or not sales_data.quickbooks_id:
+            return jsonify({
+                "success": False,
+                "message": "Sales receipt not found or not synced",
+                "timestamp": datetime.now().isoformat()
+            }), 404
+
+        sync_service = SalesReceiptSyncService()
+        result = sync_service.delete_sales_receipt_in_quickbooks(sales_data.quickbooks_id, sales_data.sync_token)
+        current_app.logger.info(f"Deleted sales receipt result: {result}")
+
+        if not result['success']:
+            return jsonify({
+                "success": False,
+                "error": "Failed to delete sales receipt",
+                "details": result.get("error_message"),
+                "timestamp": datetime.now().isoformat()
+            }), 500
+
+        return jsonify({
+            "success": True,
+            "message": "Sales receipt deleted successfully",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        current_app.logger.exception("Error deleting sales receipt")
+
+        return jsonify({
+            "success": False,
+            "error": "Failed to delete sales receipt",
+            "details": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
