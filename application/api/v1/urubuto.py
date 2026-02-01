@@ -424,20 +424,20 @@ def payment_callback():
 
                 session.add(history)
                 session.flush()  # ← triggers UNIQUE constraint immediately
-
-                ledger_entry = TblStudentWalletLedger(
-                    student_id=reg_no,
-                    direction="credit",
-                    original_amount=abs(Decimal(amount)),
-                    amount=amount,
-                    trans_code=transaction_id,
-                    payment_chanel="UrubutoPay",
-                    bank_id=2,
-                    source="sales_receipt",
-                    created_at=datetime.now(),
-                )
-                session.add(ledger_entry)
-                session.flush()
+                if amount > 0:
+                    ledger_entry = TblStudentWalletLedger(
+                        student_id=reg_no,
+                        direction="credit",
+                        original_amount=abs(Decimal(amount)),
+                        amount=amount,
+                        trans_code=transaction_id,
+                        payment_chanel="UrubutoPay",
+                        bank_id=2,
+                        source="sales_receipt",
+                        created_at=datetime.now(),
+                    )
+                    session.add(ledger_entry)
+                    session.flush()
 
 
             except IntegrityError:
