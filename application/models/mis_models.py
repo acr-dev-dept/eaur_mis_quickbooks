@@ -860,12 +860,12 @@ class TblStudentWallet(MISBaseModel):
             return False
 
     @classmethod
-    def delete_quickbooks_id(cls, reg_no):
+    def delete_quickbooks_id(cls, quickbooks_id):
         """
         Delete quickbooks_id for a wallet entry
         """
         with cls.get_session() as session:
-            student_wallet = session.query(cls).filter(cls.reg_no == reg_no).first()
+            student_wallet = session.query(cls).filter(cls.quickbooks_id == quickbooks_id).first()
             if student_wallet:
                 student_wallet.quickbooks_id = None
                 student_wallet.sync_token = None

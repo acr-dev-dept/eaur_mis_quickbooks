@@ -805,9 +805,8 @@ class SalesReceiptSyncService:
             # ---- Success path ----
             if 'SalesReceipt' in response:
                 # update local DB to reflect deletion if necessary
-                self._update_sales_receipt_sync_status(
-                    sales_receipt_id
-                )
+                if sales_receipt_id:
+                    TblStudentWallet.delete_quickbooks_id(sales_receipt_id)
 
                 return {
                     "status": "DELETED_SUCCESSFULLY",
