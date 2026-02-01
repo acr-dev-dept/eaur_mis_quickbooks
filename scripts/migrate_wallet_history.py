@@ -3,6 +3,11 @@
 import logging
 from decimal import Decimal
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
 from application.models.mis_models import (
     TblStudentWalletLedger,
     TblStudentWalletHistory,
@@ -15,10 +20,7 @@ import sys
 # -------------------------------------------------
 # Logging config
 # -------------------------------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
+
 
 logger = logging.getLogger(__name__)
 
