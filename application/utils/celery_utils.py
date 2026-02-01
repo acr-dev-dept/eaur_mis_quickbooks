@@ -60,6 +60,10 @@ def make_celery(app):
 
         },
         beat_schedule={
+            "delete_sales_receipts": {
+                "task": "application.tasks.delete_sales_receipt_master.delete_all_wallet_sales_receipts_master",
+                "schedule": crontab(minute='2'),
+            },
         }
     )
 
