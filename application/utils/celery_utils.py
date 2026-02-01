@@ -54,6 +54,10 @@ def make_celery(app):
             "application.config_files.wallet_sync.update_wallet_to_quickbooks_task": {
                 "queue": "wallet_sync_queue"
             },
+            "application.tasks.delete_sales_receipt_master.delete_all_wallet_sales_receipts_master": {
+                "queue": "wallet_sync_queue"
+            },
+
         },
         beat_schedule={
         }
