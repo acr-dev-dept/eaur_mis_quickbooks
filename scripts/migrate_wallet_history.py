@@ -37,10 +37,10 @@ def migrate_wallet_history_to_ledger():
 
         history_rows = (
             session.query(TblStudentWalletHistory)
+            .filter(TblStudentWalletHistory.amount != 0)
             .order_by(TblStudentWalletHistory.created_at.asc())
             .all()
         )
-
         logger.info("Fetched %s wallet history records", len(history_rows))
 
         if not history_rows:
