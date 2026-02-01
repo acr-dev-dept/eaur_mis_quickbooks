@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # -------------------------------------------------
 # Config
 # -------------------------------------------------
-PUSHED_FROM_DATE = datetime(2026, 1, 12)
+PUSHED_FROM_DATE = datetime(2026, 1, 1)
 
 
 def delete_qb_invoices():
@@ -45,7 +45,7 @@ def delete_qb_invoices():
 
         invoice_ids = [
             i for (i,) in session.query(TblImvoice.id)
-            .filter(TblImvoice.quickbooks_id.isnot(None), TblImvoice.reference_number.isnot(None))
+            .filter(TblImvoice.pushed_date >= PUSHED_FROM_DATE, TblImvoice.quickbooks_id.isnot(None), TblImvoice.reference_number.isnot(None))
             .order_by(TblImvoice.pushed_date.asc())
 
             .all()
