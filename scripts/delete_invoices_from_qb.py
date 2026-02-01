@@ -50,7 +50,7 @@ def delete_qb_invoices():
             .all()
         ]
 
-        invoice_ids = invoice_ids[:2] # Limit for testing purposes
+        invoice_ids = invoice_ids # Limit for testing purposes
         logger.info("Fetched %s invoices for deletion", len(invoice_ids))
 
         if not invoice_ids:
