@@ -4,7 +4,7 @@ from application.tasks.delete_sales_receipt_master import (
 )
 
 
-qb_admin_bp = Blueprint("qb_admin", __name__)
+qb_admin_bp = Blueprint("qb_admin", __name__, url_prefix="/api/admin/qb")
 
 
 @qb_admin_bp.route("/delete-sales-receipts", methods=["POST"])

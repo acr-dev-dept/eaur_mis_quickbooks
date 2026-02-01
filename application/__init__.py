@@ -177,7 +177,7 @@ def register_blueprints(app):
     app.register_blueprint(income_sync_api, url_prefix='/api/v1/sync/income')
     app.register_blueprint(sales_receipt_api, url_prefix='/api/v1/sync/sales_receipt')
 
-    app.register_blueprint(qb_admin_bp, url_prefix='/api/admin/qb')
+    app.register_blueprint(qb_admin_bp)
 
     app.register_blueprint(admin_api_clients_bp)
 
