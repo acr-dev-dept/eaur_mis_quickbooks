@@ -13,6 +13,10 @@ from application.models.mis_models import (
     TblStudentWalletHistory,
 )
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 
 
