@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # -------------------------------------------------
 # Config
 # -------------------------------------------------
-PUSHED_FROM_DATE = datetime(2026, 1, 31)
+PUSHED_FROM_DATE = datetime(2026, 1, 12)
 
 
 def delete_qb_invoices():
