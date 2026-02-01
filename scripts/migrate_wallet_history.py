@@ -1,23 +1,33 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+import logging
+from decimal import Decimal
 
 from application.models.mis_models import (
     TblStudentWalletLedger,
     TblStudentWalletHistory,
 )
 
+# -------------------------------------------------
+# Logging config
+# -------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
+
 def migrate_wallet_history_to_ledger():
+    logger.info("Starting wallet history → ledger migration")
+
     from application import create_app, db
 
     app = create_app()
+
     with app.app_context():
-        from sqlalchemy.orm import Session
-        session: Session = db.session
+        session = db.session
 
         history_rows = (
             session.query(TblStudentWalletHistory)
@@ -25,59 +35,110 @@ def migrate_wallet_history_to_ledger():
             .all()
         )
 
-        migrated = skipped = 0
+        logger.info("Fetched %s wallet history records", len(history_rows))
 
-        for h in history_rows:
-            exists_q = session.query(TblStudentWalletLedger).filter(
-                TblStudentWalletLedger.trans_code == h.external_transaction_id
-            ).first()
+        if not history_rows:
+            logger.warning("No history records found — exiting")
+            return
 
-            if exists_q:
-                skipped += 1
-                continue
+        migrated = skipped = errors = 0
 
-            # direction & source
-            if h.transaction_type == "TOPUP":
-                direction = "credit"
-                amount = h.amount
-                source = "sales_receipt"
+        for idx, h in enumerate(history_rows, start=1):
+            try:
+                if idx % 100 == 0:
+                    logger.info("Processing record %s / %s", idx, len(history_rows))
 
-            elif h.transaction_type == "REFUND":
-                direction = "credit"
-                amount = h.amount
-                source = "refund"
+                # Deduplication
+                if h.external_transaction_id:
+                    exists_q = (
+                        session.query(TblStudentWalletLedger.id)
+                        .filter(
+                            TblStudentWalletLedger.trans_code
+                            == h.external_transaction_id
+                        )
+                        .first()
+                    )
+                    if exists_q:
+                        skipped += 1
+                        continue
 
-            elif h.transaction_type == "DEBIT":
-                direction = "debit"
-                amount = -h.amount
-                source = "invoice"
+                # Direction & source
+                if h.transaction_type == "TOPUP":
+                    direction = "credit"
+                    amount = Decimal(h.amount)
+                    source = "sales_receipt"
 
-            elif h.transaction_type == "ADJUSTMENT":
-                direction = "credit" if h.amount >= 0 else "debit"
-                amount = h.amount
-                source = "adjustment"
+                elif h.transaction_type == "REFUND":
+                    direction = "credit"
+                    amount = Decimal(h.amount)
+                    source = "refund"
 
-            else:
-                skipped += 1
-                continue
+                elif h.transaction_type == "DEBIT":
+                    direction = "debit"
+                    amount = Decimal(h.amount) * Decimal("-1")
+                    source = "invoice"
 
-            ledger = TblStudentWalletLedger(
-                student_id=h.reg_no,  
-                direction=direction,
-                original_amount=abs(h.amount),
-                amount=amount,
-                trans_code=h.external_transaction_id or h.trans_code,
-                payment_chanel=h.payment_chanel,
-                bank_id=h.bank_id,
-                source=source,
-                created_at=h.created_at,
-            )
+                elif h.transaction_type == "ADJUSTMENT":
+                    direction = "credit" if h.amount >= 0 else "debit"
+                    amount = Decimal(h.amount)
+                    source = "adjustment"
 
-            session.add(ledger)
-            migrated += 1
+                else:
+                    logger.warning(
+                        "Skipping unknown transaction type: %s (id=%s)",
+                        h.transaction_type,
+                        h.id,
+                    )
+                    skipped += 1
+                    continue
 
-        session.commit()
-        print({"migrated": migrated, "skipped": skipped})
+                # HARD SAFETY CHECK
+                if not str(h.reg_no).isdigit():
+                    raise ValueError(
+                        f"Invalid student_id (reg_no): {h.reg_no} for history_id={h.id}"
+                    )
+
+                ledger = TblStudentWalletLedger(
+                    student_id=int(h.reg_no),
+                    direction=direction,
+                    original_amount=abs(Decimal(h.amount)),
+                    amount=amount,
+                    trans_code=h.external_transaction_id or h.trans_code,
+                    payment_chanel=h.payment_chanel,
+                    bank_id=h.bank_id,
+                    source=source,
+                    created_at=h.created_at,
+                )
+
+                session.add(ledger)
+                session.flush()  # <-- forces DB validation early
+                migrated += 1
+
+            except Exception as e:
+                session.rollback()
+                errors += 1
+                logger.exception(
+                    "Failed processing history_id=%s reg_no=%s",
+                    h.id,
+                    h.reg_no,
+                )
+
+        try:
+            session.commit()
+        except Exception:
+            session.rollback()
+            logger.exception("Final commit failed")
+            raise
+
+        logger.info(
+            "Migration complete | migrated=%s skipped=%s errors=%s total=%s",
+            migrated,
+            skipped,
+            errors,
+            len(history_rows),
+        )
+
 
 if __name__ == "__main__":
     migrate_wallet_history_to_ledger()
+    logger.info("Wallet history migration script finished execution")
