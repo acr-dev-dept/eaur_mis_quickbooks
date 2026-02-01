@@ -278,7 +278,31 @@ class SalesReceiptSyncService:
                 sales_receipt.sync_token = sync_token
 
             session.commit()
-            
+
+    def _update_deleted_sales_receipt(self, sales_receipt_id: int):
+
+        """
+        Update the sync status of a deleted sales_receipt
+        """
+        current_app.logger.info(
+            f"Updating sync status for deleted sales_receipt {sales_receipt_id}"
+        )
+        with db_manager.get_mis_session() as session:
+            sales_receipt = session.get(TblStudentWallet, sales_receipt_id)
+
+            if not sales_receipt:
+                self.logger.warning(
+                    f"Sales receipt {sales_receipt_id} not found while updating sync status"
+                )
+                return
+
+            sales_receipt.sync_status = 0
+            sales_receipt.quickbooks_id = None
+            sales_receipt.sync_token = None
+
+            session.commit()
+        
+
 
     def _log_sync_audit(self, sales_receipt_id: int, status: str, error_message: str):
         try:
@@ -796,6 +820,13 @@ class SalesReceiptSyncService:
 
             # ---- Success path ----
             if 'SalesReceipt' in response:
+                # update local DB to reflect deletion if necessary
+                self._update_sales_receipt_sync_status(
+                    sales_receipt_id=None,
+                    status=0,
+                    quickbooks_id=quickbooks_id
+                )
+
                 return {
                     "status": "DELETED_SUCCESSFULLY",
                     "success": True,
