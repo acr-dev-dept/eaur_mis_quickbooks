@@ -1,7 +1,5 @@
 from flask import Blueprint, jsonify, current_app
-from application.tasks.delete_sales_receipt_master import (
-    delete_all_wallet_sales_receipts_master,
-)
+
 
 
 qb_admin_bp = Blueprint("qb_admin", __name__, url_prefix="/api/admin/qb")
@@ -18,7 +16,9 @@ def trigger_sales_receipt_deletion():
         current_app.logger.warning(
             "ADMIN ACTION: Triggering QuickBooks Sales Receipt deletion task"
         )
-
+        from application.tasks.delete_sales_receipt_master import (
+            delete_all_wallet_sales_receipts_master,
+        )
         task = delete_all_wallet_sales_receipts_master.delay()
 
 
