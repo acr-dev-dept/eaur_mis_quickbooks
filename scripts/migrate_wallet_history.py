@@ -8,6 +8,10 @@ from application.models.mis_models import (
     TblStudentWalletHistory,
 )
 
+import os
+import sys
+
+
 # -------------------------------------------------
 # Logging config
 # -------------------------------------------------
@@ -18,6 +22,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
 def migrate_wallet_history_to_ledger():
     logger.info("Starting wallet history → ledger migration")
