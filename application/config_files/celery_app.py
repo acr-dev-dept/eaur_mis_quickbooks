@@ -15,8 +15,7 @@ celery.autodiscover_tasks([
     'application.config_files.sync_invoices_task',
     'application.config_files.update_invoices_task',
     'application.config_files.sync_sales_receipt_task',
-    'application.config_files.sync_payments_task',
-    'application.tasks.delete_sales_receipt_master.delete_all_wallet_sales_receipts_master'
+    'application.config_files.sync_payments_task'
 
 ])
 
