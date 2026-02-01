@@ -431,7 +431,7 @@ def payment_callback():
                         original_amount=abs(Decimal(amount)),
                         amount=amount,
                         trans_code=transaction_id,
-                        payment_chanel="UrubutoPay",
+                        payment_chanel=payment_channel,
                         bank_id=2,
                         source="sales_receipt",
                         created_at=datetime.now(),
