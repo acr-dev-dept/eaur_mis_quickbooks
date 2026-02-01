@@ -277,7 +277,7 @@ def delete_invoice_qb(invoice_id):
                 message='Invoice not found',
                 status_code=404
             )
-        
+        """
         if invoice_data.is_prepayment:
             current_app.logger.info("Skip wallet based invoice deletion")
             return create_response(
@@ -295,6 +295,7 @@ def delete_invoice_qb(invoice_id):
                 message='Balance based invoice deletion is not supported',
                 status_code=400
             )
+        """
         current_app.logger.info(f'Deleting invoice in QuickBooks with ID: {invoice_id}')
         invoice_sync_service = InvoiceSyncService()
         result = invoice_sync_service.delete_invoice_from_quickbooks(invoice_data)
