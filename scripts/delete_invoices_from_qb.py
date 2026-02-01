@@ -43,16 +43,17 @@ def delete_qb_invoices():
             logger.error("QuickBooks not connected. Exiting.")
             return
 
-        invoices = (
-            session.query(TblImvoice)
+        invoice_ids = [
+            i for (i,) in session.query(TblImvoice.id)
             .filter(TblImvoice.pushed_by >= PUSHED_FROM_DATE)
             .order_by(TblImvoice.pushed_by.asc())
             .all()
-        )
+        ]
 
-        logger.info("Fetched %s invoices for deletion", len(invoices))
 
-        if not invoices:
+        logger.info("Fetched %s invoices for deletion", len(invoice_ids))
+
+        if not invoice_ids:
             logger.warning("No invoices found — exiting")
             return
 
@@ -60,67 +61,40 @@ def delete_qb_invoices():
 
         deleted = skipped = failed = 0
 
-        for idx, invoice in enumerate(invoices, start=1):
+        for idx, invoice_id in enumerate(invoice_ids, start=1):
             try:
-                logger.info("Processing %s / %s | invoice_id=%s", idx, len(invoices), invoice.id)
+                logger.info("Processing %s / %s | invoice_id=%s", idx, len(invoice_ids), invoice_id)
 
-                # Skip rules
-                if invoice.is_prepayment:
-                    skipped += 1
-                    logger.info("Skipped prepayment invoice %s", invoice.id)
+                # Fetch invoice object only when needed
+                invoice = TblImvoice.get_invoice_by_id(invoice_id)
+
+                if not invoice:
+                    logger.warning("Invoice ID %s not found, skipping", invoice_id)
                     continue
 
-                if invoice.balance is not None:
-                    skipped += 1
-                    logger.info("Skipped balance-linked invoice %s", invoice.id)
-                    continue
-
+                # Delete in QuickBooks
                 result = service.delete_invoice_from_quickbooks(invoice)
 
-                if not result.success:
-                    failed += 1
+                if result.success:
+                    TblImvoice.update_invoice_quickbooks_row(invoice_id)
+                    logger.info("Deleted invoice %s successfully", invoice_id)
+                else:
                     logger.error(
-                        "QB delete failed for invoice %s: %s",
-                        invoice.id,
-                        result.error_message,
+                        "Failed to delete invoice %s: %s", invoice_id, result.error_message
                     )
-                    QuickbooksAuditLog.add_audit_log(
-                        action_type="Batch delete invoice",
-                        operation_status=400,
-                        error_message=result.error_message,
-                    )
-                    continue
 
-                # Update MIS record
-                TblImvoice.update_invoice_quickbooks_row(invoice.id)
-
-                QuickbooksAuditLog.add_audit_log(
-                    action_type=f"Batch delete invoice {invoice.id}",
-                    operation_status=200,
-                    error_message=None,
-                )
-
-                deleted += 1
-
-                # Commit every 50 records
+                # Commit every 50 invoices to make progress visible
                 if idx % 50 == 0:
                     session.commit()
-                    logger.info("Committed batch at record %s", idx)
+                    logger.info("Committed batch at invoice %s", idx)
 
             except Exception:
                 session.rollback()
-                failed += 1
-                logger.exception("Error deleting invoice_id=%s", invoice.id)
+                logger.exception("Error processing invoice_id=%s", invoice_id)
 
+        # Final commit
         session.commit()
-
-        logger.info(
-            "Deletion complete | deleted=%s skipped=%s failed=%s total=%s",
-            deleted,
-            skipped,
-            failed,
-            len(invoices),
-        )
+        logger.info("QuickBooks invoice deletion job completed")
 
 
 if __name__ == "__main__":
