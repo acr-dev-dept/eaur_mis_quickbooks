@@ -45,8 +45,8 @@ def delete_qb_invoices():
 
         invoice_ids = [
             i for (i,) in session.query(TblImvoice.id)
-            .filter(TblImvoice.pushed_by >= PUSHED_FROM_DATE)
-            .order_by(TblImvoice.pushed_by.asc())
+            .filter(TblImvoice.pushed_date >= PUSHED_FROM_DATE)
+            .order_by(TblImvoice.pushed_date.asc())
             .all()
         ]
 
