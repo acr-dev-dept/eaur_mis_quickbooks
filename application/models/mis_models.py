@@ -926,7 +926,7 @@ class TblStudentWalletLedger(MISBaseModel):
         nullable=True,
         index=True
     )
-
+    slip_no = db.Column(db.String(255), nullable=True)
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -1119,6 +1119,20 @@ class TblStudentWalletLedger(MISBaseModel):
             )
 
             return float(balance)
+
+    @classmethod
+    def update_slip_no(cls, trans_code, slip_no):
+        """
+        Update slip number for a wallet ledger entry
+        """
+        with cls.get_session() as session:
+            wallet_ledger = session.query(cls).filter(cls.trans_code == trans_code).first()
+            if wallet_ledger:
+                wallet_ledger.slip_no = slip_no
+                session.commit()
+                current_app.logger.info(f"Updated slip_no for wallet ledger with trans_code {trans_code}")
+                return True
+            return False
 
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""

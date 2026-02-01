@@ -575,7 +575,7 @@ def payment_notification():
             "message": "No data provided",
             "status": 400
         }), 400
-
+    current_app.logger.info(f"Notification data: {data}")
     # Extract required fields
     transaction_status = data.get('transaction_status')
     transaction_id = data.get('transaction_id')
@@ -624,9 +624,8 @@ def payment_notification():
                 }), 404
 
             # update slip number
-            TblStudentWallet.update_slip_no(transaction_id, slip_no)
             TblStudentWalletHistory.update_slip_no(transaction_id, slip_no)
-
+            TblStudentWalletLedger.update_slip_no(transaction_id, slip_no)
             response_data = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "message": "Successful",
