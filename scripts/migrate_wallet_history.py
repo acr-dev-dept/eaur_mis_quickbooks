@@ -98,12 +98,6 @@ def migrate_wallet_history_to_ledger():
                     skipped += 1
                     continue
 
-                # HARD SAFETY CHECK
-                if not str(h.reg_no).isdigit():
-                    raise ValueError(
-                        f"Invalid student_id (reg_no): {h.reg_no} for history_id={h.id}"
-                    )
-
                 ledger = TblStudentWalletLedger(
                     student_id=int(h.reg_no),
                     direction=direction,
