@@ -56,7 +56,7 @@ def delete_qb_invoices():
         if not invoice_ids:
             logger.warning("No invoices found — exiting")
             return
-
+        logger.info("Proceeding to delete invoices from QuickBooks, ids: %s", invoice_ids)
         service = InvoiceSyncService()
 
         deleted = skipped = failed = 0
