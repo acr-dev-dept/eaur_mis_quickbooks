@@ -99,7 +99,7 @@ def migrate_wallet_history_to_ledger():
                     continue
 
                 ledger = TblStudentWalletLedger(
-                    student_id=int(h.reg_no),
+                    student_id=h.reg_no,
                     direction=direction,
                     original_amount=abs(Decimal(h.amount)),
                     amount=amount,
