@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication, TblStudentWalletHistory
+from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication, TblStudentWalletHistory, TblStudentWalletLedger
 from application.utils.database import db_manager
 from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 from sqlalchemy.orm import joinedload
@@ -15,6 +15,7 @@ from application.utils.database import db_manager  # ← adjust to wherever db_m
 from datetime import datetime, date
 from application.models.central_models import IntegrationLog
 from sqlalchemy.exc import IntegrityError
+from decimal import Decimal
 
 
 
@@ -424,6 +425,19 @@ def payment_callback():
                 session.add(history)
                 session.flush()  # ← triggers UNIQUE constraint immediately
 
+                ledger_entry = TblStudentWalletLedger(
+                    student_id=h.reg_no,
+                    direction="credit",
+                    original_amount=abs(Decimal(amount)),
+                    amount=amount,
+                    trans_code=transaction_id,
+                    payment_chanel=h.payment_chanel,
+                    bank_id=2,
+                    source="sales_receipt",
+                    created_at=datetime.now(),
+                )
+                session.add(ledger_entry)
+                session.flush()
 
 
             except IntegrityError:
