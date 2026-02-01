@@ -31,7 +31,7 @@ PUSHED_FROM_DATE = datetime(2026, 1, 12)
 
 def delete_qb_invoices():
     logger.info("Starting QuickBooks invoice deletion job")
-    logger.info("Filter: pushed_by >= %s", PUSHED_FROM_DATE.date())
+    logger.info("Filter: date >= %s", PUSHED_FROM_DATE.date())
 
     app = create_app()
 
@@ -45,8 +45,9 @@ def delete_qb_invoices():
 
         invoice_ids = [
             i for (i,) in session.query(TblImvoice.id)
-            .filter(TblImvoice.pushed_date >= PUSHED_FROM_DATE, TblImvoice.quickbooks_id.isnot(None))
+            .filter(TblImvoice.quickbooks_id.isnot(None), TblImvoice.reference_number.isnot(None))
             .order_by(TblImvoice.pushed_date.asc())
+
             .all()
         ]
 
