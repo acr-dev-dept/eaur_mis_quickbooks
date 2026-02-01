@@ -426,12 +426,12 @@ def payment_callback():
                 session.flush()  # ← triggers UNIQUE constraint immediately
 
                 ledger_entry = TblStudentWalletLedger(
-                    student_id=h.reg_no,
+                    student_id=reg_no,
                     direction="credit",
                     original_amount=abs(Decimal(amount)),
                     amount=amount,
                     trans_code=transaction_id,
-                    payment_chanel=h.payment_chanel,
+                    payment_chanel="UrubutoPay",
                     bank_id=2,
                     source="sales_receipt",
                     created_at=datetime.now(),
