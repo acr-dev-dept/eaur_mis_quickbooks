@@ -253,31 +253,15 @@ class SalesReceiptSyncService:
             self.qb_service = QuickBooks()
         return self.qb_service
     
-    def _update_sales_receipt_sync_status(self, sales_receipt_id: int, status: int, quickbooks_id: Optional[str] = None, sync_token: Optional[str] = None):
+    def _update_sales_receipt_sync_status(self, sales_receipt_id: int):
         """
         Update the sync status of a sales_receipt
         """
         current_app.logger.info(
-            f"Updating sync status for sales_receipt {sales_receipt_id} to {status}, quickbooks_id: {quickbooks_id}, sync_token: {sync_token}"
+            f"Updating sync status for sales_receipt {sales_receipt_id}"
         )
-        with db_manager.get_mis_session() as session:
-            sales_receipt = session.get(TblStudentWallet, sales_receipt_id)
+        TblStudentWallet.delete_quickbooks_id(sales_receipt_id)
 
-            if not sales_receipt:
-                self.logger.warning(
-                    f"Sales receipt {sales_receipt_id} not found while updating sync status"
-                )
-                return
-
-            sales_receipt.sync_status = status
-
-            if quickbooks_id is not None:
-                sales_receipt.quickbooks_id = quickbooks_id
-
-            if sync_token is not None:
-                sales_receipt.sync_token = sync_token
-
-            session.commit()
 
     def _update_deleted_sales_receipt(self, sales_receipt_id: int):
 
@@ -795,7 +779,7 @@ class SalesReceiptSyncService:
                 "error_message": error_msg
             }
         
-    def delete_sales_receipt_in_quickbooks(self, quickbooks_id: str, sync_token: str = None) -> dict:
+    def delete_sales_receipt_in_quickbooks(self, quickbooks_id: str, sync_token: str = None, sales_receipt_id: int = None) -> dict:
         """
         Delete a sales receipt in QuickBooks by QuickBooks ID.
         """
@@ -822,9 +806,7 @@ class SalesReceiptSyncService:
             if 'SalesReceipt' in response:
                 # update local DB to reflect deletion if necessary
                 self._update_sales_receipt_sync_status(
-                    sales_receipt_id=None,
-                    status=0,
-                    quickbooks_id=quickbooks_id
+                    sales_receipt_id
                 )
 
                 return {

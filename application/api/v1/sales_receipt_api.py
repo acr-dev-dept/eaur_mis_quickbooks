@@ -253,7 +253,7 @@ def delete_sales_receipt(wallet_id):
             }), 404
 
         sync_service = SalesReceiptSyncService()
-        result = sync_service.delete_sales_receipt_in_quickbooks(sales_data.quickbooks_id, sales_data.sync_token)
+        result = sync_service.delete_sales_receipt_in_quickbooks(sales_data.quickbooks_id, sales_data.sync_token, sales_data.id)
         current_app.logger.info(f"Deleted sales receipt result: {result}")
 
         if not result['success']:

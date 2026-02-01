@@ -859,6 +859,20 @@ class TblStudentWallet(MISBaseModel):
                 return True
             return False
 
+    @classmethod
+    def delete_quickbooks_id(cls, reg_no):
+        """
+        Delete quickbooks_id for a wallet entry
+        """
+        with cls.get_session() as session:
+            student_wallet = session.query(cls).filter(cls.reg_no == reg_no).first()
+            if student_wallet:
+                student_wallet.quickbooks_id = None
+                student_wallet.sync_token = None
+                student_wallet.sync_status = 0
+                session.commit()
+                return True
+            return False
 
 from decimal import Decimal
 from sqlalchemy import func
@@ -1620,7 +1634,7 @@ class TblImvoice(MISBaseModel):
             return False
 
 
-
+    
         
 
 
