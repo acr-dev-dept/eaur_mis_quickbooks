@@ -230,7 +230,8 @@ def get_sales_receipt(wallet_id):
             "details": str(e),
             "timestamp": datetime.now().isoformat()
         }), 500
-    
+
+@sales_receipt_api.route('/delete/<int:wallet_id>', methods=['DELETE'])   
 def delete_sales_receipt(wallet_id):
     """
     API endpoint to delete a sales receipt from QuickBooks by wallet ID.
