@@ -1765,6 +1765,33 @@ class QuickBooks:
                     ]
                 }
             }
+    def delete_sales_receipt(self, realm_id, quickbooks_id, sync_token):
+        """
+        Delete sales receipt from quickbooks.
+        """
+        endpoint = f"{realm_id}/salesreceipt?operation=delete"
+        payload = {
+            "Id": quickbooks_id,
+            "SyncToken": sync_token
+        }
+        try:
+            current_app.logger.info(f"Deleting sales receipt with ID: {quickbooks_id}")
+            response = self.make_request(endpoint, method="POST", data=payload)
+            current_app.logger.info(f"Sales receipt deleted successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error deleting sales receipt: {str(e)}")
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error deleting sales receipt: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+        
 
 def setup_quickbooks_from_env():
     """Read QuickBooks env variables, store in DB, initialize client, and test API."""

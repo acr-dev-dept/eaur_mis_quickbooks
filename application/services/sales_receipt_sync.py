@@ -771,4 +771,47 @@ class SalesReceiptSyncService:
                 "error_message": error_msg
             }
         
-        
+    def delete_sales_receipt_in_quickbooks(self, quickbooks_id: str, sync_token: str = None) -> dict:
+        """
+        Delete a sales receipt in QuickBooks by QuickBooks ID.
+        """
+        try:
+            qb_service = self._get_qb_service()
+
+            self.logger.info(
+                f"Deleting SalesReceipt in QuickBooks ID: {quickbooks_id}"
+            )
+
+            response = qb_service.delete_sales_receipt(
+                qb_service.realm_id,
+                quickbooks_id,
+                sync_token
+
+            )
+
+            self.logger.debug(
+                f"QuickBooks deletion response for SalesReceipt ID {quickbooks_id}: "
+                f"{json.dumps(response, cls=EnhancedJSONEncoder)}"
+            )
+
+            # ---- Success path ----
+            if 'SalesReceipt' in response:
+                return {
+                    "status": "DELETED_SUCCESSFULLY",
+                    "success": True,
+                    "error_message": None,
+                    "details": response
+                }
+
+        except Exception as e:
+            # ---- System-level failure ----
+            error_msg = str(e)
+            self.logger.exception(
+                f"Unexpected error deleting SalesReceipt {quickbooks_id}"
+            )
+
+            return {
+                "status": "FAILED",
+                "success": False,
+                "error_message": error_msg
+            }
