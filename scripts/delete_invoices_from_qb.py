@@ -71,7 +71,7 @@ def delete_qb_invoices():
                 if not invoice:
                     logger.warning("Invoice ID %s not found, skipping", invoice_id)
                     continue
-
+                logger.info("Deleting invoice : %s", invoice)
                 # Delete in QuickBooks
                 result = service.delete_invoice_from_quickbooks(invoice)
 
