@@ -872,7 +872,7 @@ class TblStudentWalletLedger(MISBaseModel):
     # Columns
     # -------------------------------------------------
 
-    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(255), primary_key=True, autoincrement=True)
 
     student_id = db.Column(db.String(20), nullable=False, index=True)
 
