@@ -61,7 +61,7 @@ def make_celery(app):
         },
         beat_schedule={
             "delete sales receipts from logs every 3 minutes": {
-                "task": "application.config_files.sales_receipt_deletion_task.scheduled_sales_receipt_deletion_task",
+                "task": "application.config_files.sales_receipt_deletion_tasks.scheduled_sales_receipt_deletion_task",
                 "schedule": crontab(minute='*/3'),
             },
         }
