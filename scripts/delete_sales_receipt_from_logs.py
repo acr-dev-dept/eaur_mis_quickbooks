@@ -116,7 +116,7 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                 # SyncToken logic
                 # -----------------------------------------
                 sync_token = "0"
-
+                logger.info("Processing audit_log_id=%s for qb_id=%s", log.id, qb_id)
                 if log.error_message.startswith("Updated"):
                     
                     logger.info(
