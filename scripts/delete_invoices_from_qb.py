@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # -------------------------------------------------
 # Config
 # -------------------------------------------------
-PUSHED_FROM_DATE = datetime(2026, 1, 5)
-PUSHED_TO_DATE = datetime(2026, 1, 10)
+PUSHED_FROM_DATE = datetime(2026, 1, 5) #  2026, Jan 5
+PUSHED_TO_DATE = datetime(2026, 1, 10) # 2026, Jan 10
 
 def delete_qb_invoices():
     logger.info("Starting QuickBooks invoice deletion job")
@@ -44,7 +44,7 @@ def delete_qb_invoices():
 
         invoice_ids = [
             i for (i,) in session.query(TblImvoice.id)
-            .filter(TblImvoice.invoice_date >= PUSHED_FROM_DATE, TblImvoice.invoice_date <= PUSHED_TO_DATE, TblImvoice.quickbooks_id.isnot(None), TblImvoice.reference_number.isnot(None))
+            .filter(TblImvoice.invoice_date >= PUSHED_FROM_DATE, TblImvoice.invoice_date <= PUSHED_TO_DATE, TblImvoice.quickbooks_id.isnot(None), TblImvoice.reference_number.isnot(None), TblImvoice.balance == 0)
             .order_by(TblImvoice.invoice_date.desc())
 
             .all()
