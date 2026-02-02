@@ -53,7 +53,7 @@ def get_current_sync_token_from_qb(qb_id: str) -> str:
     try:
         sales_receipt = service.get_sales_receipt_from_quickbooks(qb_id)
         logger.info("Fetched SalesReceipt: %s", sales_receipt)
-        return sales_receipt['details']['SyncToken']
+        return sales_receipt['details']['SalesReceipt']['SyncToken']
     except Exception as e:
         logger.error("Error fetching SalesReceipt qb_id=%s: %s", qb_id, str(e))
         raise e
@@ -121,7 +121,15 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                         qb_id,
                     )
                     sync_token = get_current_sync_token_from_qb(qb_id)
-
+                    if sync_token is None:
+                        logger.info("SalesReceipt deleted already, skipping qb_id=%s", qb_id)
+                        skipped += 1
+                        QuickbooksAuditLog.update_log_status(
+                            log.id,
+                            "SKIPPED",
+                            f"SalesReceipt ID: {qb_id} deleted already.",
+                        )
+                        continue
                 logger.info(
                     "Deleting SalesReceipt qb_id=%s sync_token=%s",
                     qb_id,
