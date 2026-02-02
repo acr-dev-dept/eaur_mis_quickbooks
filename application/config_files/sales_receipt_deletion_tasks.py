@@ -505,7 +505,7 @@ def scheduled_sales_receipt_deletion_task():
 
         async_result = bulk_delete_sales_receipts_task.delay(
             audit_log_ids=None,
-            batch_size=50,
+            batch_size=100,
             reset_offset=False,
         )
 
