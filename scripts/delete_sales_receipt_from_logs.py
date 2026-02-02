@@ -48,9 +48,14 @@ def get_current_sync_token_from_qb(qb_id: str) -> str:
     Placeholder: fetch SalesReceipt from QuickBooks
     and return its current SyncToken.
     """
-    # TODO: implement:
-    # service.get_sales_receipt(qb_id)["SyncToken"]
-    raise NotImplementedError("Fetch SyncToken from QuickBooks")
+    
+    service = SalesReceiptSyncService()
+    try:
+        sales_receipt = service.get_sales_receipt_from_quickbooks(qb_id)
+        return sales_receipt['details']['SyncToken']
+    except Exception as e:
+        logger.error("Error fetching SalesReceipt qb_id=%s: %s", qb_id, str(e))
+        raise e
 
 
 # -------------------------------------------------
