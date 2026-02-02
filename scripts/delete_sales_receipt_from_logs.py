@@ -128,8 +128,7 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
 
                 result = service.delete_sales_receipt_in_quickbooks(
                     qb_id,
-                    sync_token,
-                    wallet_id=None,  # no longer wallet-driven
+                    sync_token
                 )
 
                 if not result.get("success"):
