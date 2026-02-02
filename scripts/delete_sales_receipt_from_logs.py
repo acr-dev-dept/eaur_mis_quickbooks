@@ -138,10 +138,15 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                         qb_id,
                         result.get("error_message"),
                     )
+                    
                     continue
 
                 deleted += 1
-
+                QuickbooksAuditLog.update_log_status(
+                    log.id,
+                    "DELETED",
+                    f"SalesReceipt ID: {qb_id} deleted successfully.",
+                )
                 if idx % batch_size == 0:
                     session.commit()
                     logger.info("Committed batch at %s records", idx)

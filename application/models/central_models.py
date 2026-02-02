@@ -109,7 +109,7 @@ class QuickbooksAuditLog(BaseModel):
 
     # User tracking
     user_id = Column(Integer, nullable=True)  # From session or system user
-
+    id = Column(Integer, primary_key=True, autoincrement=True)
     def __repr__(self):
         return f'<QuickbooksAuditLog {self.action_type} - {self.operation_status}>'
 
@@ -141,6 +141,23 @@ class QuickbooksAuditLog(BaseModel):
         logs = query.order_by(cls.id.desc()).offset(start).limit(length).all()
 
         return logs, total_records
+
+    @staticmethod
+    def update_log_status(id: int, status: str, error_message: str = None):
+        """Update the status of an audit log entry"""
+        try:
+            log_entry = db.session.query(QuickbooksAuditLog).filter(QuickbooksAuditLog.id == id).first()
+            if log_entry:
+                log_entry.operation_status = status
+                if error_message:
+                    log_entry.error_message = error_message
+                db.session.commit()
+                return log_entry
+            return None
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
 
 class SystemConfiguration(BaseModel):
     """System-wide configuration settings"""
