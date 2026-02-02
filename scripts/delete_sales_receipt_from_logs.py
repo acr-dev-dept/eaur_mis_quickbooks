@@ -52,6 +52,9 @@ def get_current_sync_token_from_qb(qb_id: str) -> str:
     service = SalesReceiptSyncService()
     try:
         sales_receipt = service.get_sales_receipt_from_quickbooks(qb_id)
+        if not sales_receipt:
+            logger.info("SalesReceipt qb_id=%s not found in QuickBooks", qb_id)
+            return None
         logger.info("Fetched SalesReceipt: %s", sales_receipt)
         return sales_receipt['details']['SalesReceipt']['SyncToken']
     except Exception as e:
