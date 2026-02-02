@@ -86,7 +86,7 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                 QuickbooksAuditLog.action_type == "sales_receipt",
                 QuickbooksAuditLog.operation_status == "SUCCESS",
             )
-            .order_by(QuickbooksAuditLog.created_at.asc())
+            .order_by(QuickbooksAuditLog.created_at.desc())
             .all()
         )
 
