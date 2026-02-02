@@ -115,14 +115,13 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                 sync_token = "0"
 
                 if log.error_message.startswith("Updated"):
-                    """
+                    
                     logger.info(
                         "Fetching SyncToken for updated SalesReceipt qb_id=%s",
                         qb_id,
                     )
                     sync_token = get_current_sync_token_from_qb(qb_id)
-                    """
-                    pass
+
                 logger.info(
                     "Deleting SalesReceipt qb_id=%s sync_token=%s",
                     qb_id,
