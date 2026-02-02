@@ -143,7 +143,15 @@ def delete_all_wallet_sales_receipts(batch_size: int = 50):
                     qb_id,
                     sync_token
                 )
-
+                if not result:
+                    failed += 1
+                    logger.error("Failed deleting qb_id=%s", qb_id)
+                    QuickbooksAuditLog.update_log_status(
+                        log.id,
+                        "SKIPPED",
+                        f"SalesReceipt ID: {qb_id} deleted already.",
+                    )
+                    continue
                 if not result.get("success"):
                     failed += 1
                     logger.error(
