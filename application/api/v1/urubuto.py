@@ -812,7 +812,7 @@ def payment_notification():
         with db_manager.get_mis_session() as session:        
             try:
                 # Get or prepare wallet data
-                wallet = TblStudentWallet.get_by_reg_no(reg_no)
+                wallet = TblStudentWallet.get_by_reg_no(session, reg_no)
                 
                 # Calculate balances
                 balance_before = wallet.dept if wallet else 0.0

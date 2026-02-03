@@ -611,10 +611,9 @@ class TblStudentWallet(MISBaseModel):
         }
 
     @classmethod
-    def get_by_reg_no(cls, reg_no):
+    def get_by_reg_no(cls,session, reg_no):
         try:
-            with cls.get_session() as session:
-                return session.query(cls).filter(cls.reg_no == reg_no).first()
+            return session.query(cls).filter(cls.reg_no == reg_no).first()
         except Exception as e:
             current_app.logger.error(f"Error getting wallet for reg_no {reg_no}: {str(e)}")
             return None
