@@ -455,7 +455,7 @@ class InvoiceSyncService:
             amount_paid = meta.get('amount_paid') if meta.get('amount_paid') else None
 
             # check for funds in the wallet ledger
-            available_credits = TblStudentWalletLedger._get_available_credits(invoice.reg_no)
+            available_credits = TblStudentWalletLedger._get_available_credits(invoice.reg_no, db.session)
             if not available_credits:
                 raise ValueError(f"Invoice {invoice.id} has no available credits in the wallet.")
 

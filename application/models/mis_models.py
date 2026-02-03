@@ -1021,19 +1021,12 @@ class TblStudentWalletLedger(MISBaseModel):
 
     # -------------------------------------------------
 
-    @staticmethod
-    def _get_available_credits(student_id, session):
-        """
-        Internal method.
-        Locks rows and returns per-receipt remaining balances.
-
-        returns: List of (TblStudentWalletLedger credit_entry, Decimal remaining_amount)
-        """
-
+    @classmethod
+    def _get_available_credits(cls, student_id, session):
         credits = (
-            session.query(TblStudentWalletLedger)
+            session.query(cls)
             .filter_by(student_id=student_id, direction="credit")
-            .order_by(TblStudentWalletLedger.created_at.asc())
+            .order_by(cls.created_at.asc())
             .with_for_update()
             .all()
         )
@@ -1042,8 +1035,8 @@ class TblStudentWalletLedger(MISBaseModel):
 
         for credit in credits:
             used = (
-                session.query(func.coalesce(func.sum(TblStudentWalletLedger.amount), 0))
-                .filter(TblStudentWalletLedger.parent_credit_id == credit.id)
+                session.query(func.coalesce(func.sum(cls.amount), 0))
+                .filter(cls.parent_credit_id == credit.id)
                 .scalar()
             ) or Decimal("0.00")
 
@@ -1052,10 +1045,8 @@ class TblStudentWalletLedger(MISBaseModel):
             if remaining > 0:
                 result.append((credit, remaining))
 
-        if not result:
-            return None
+        return result or None
 
-        return result
 
 
     # -------------------------------------------------
