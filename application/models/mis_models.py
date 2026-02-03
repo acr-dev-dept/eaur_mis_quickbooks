@@ -1066,7 +1066,7 @@ class TblStudentWalletLedger(MISBaseModel):
         """
 
         remaining = Decimal(invoice_amount)
-
+        current_app.logger.info(f"Applying wallet for student {student_id} to invoice {invoice_id} amount {invoice_amount}")
         if remaining <= 0:
             raise ValueError("Invoice amount must be greater than zero")
 
