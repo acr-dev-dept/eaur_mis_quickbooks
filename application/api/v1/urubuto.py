@@ -683,9 +683,9 @@ def payment_notification():
     """
     started_at = datetime.now()
     
-    # ══════════════════════════════════════════════════════════════════════
+    
     # REQUEST VALIDATION
-    # ══════════════════════════════════════════════════════════════════════
+    
     current_app.logger.info("PAYMENT NOTIFICATION ENDPOINT CALLED ===")
     current_app.logger.info(f"Request method: {request.method}")
     current_app.logger.info(f"Request endpoint: {request.endpoint}")
@@ -711,11 +711,11 @@ def payment_notification():
     
     current_app.logger.info(f"Notification data received: {data}")
     
-    # ══════════════════════════════════════════════════════════════════════
+    
     # EXTRACT AND VALIDATE REQUIRED FIELDS
-    # ══════════════════════════════════════════════════════════════════════
+    
     # Extract all fields BEFORE validation
-    transaction_status = data.get('transaction_status', 'SUCCESS')  # FIX: Added default value
+    transaction_status = data.get('transaction_status', 'VALID')  # FIX: Added default value
     transaction_id = data.get('transaction_id')
     merchant_code = data.get('merchant_code')
     payer_code = data.get('payer_code')  # This is the reg_no
@@ -773,9 +773,9 @@ def payment_notification():
         f"Payer: {reg_no}, Amount: {amount} {currency}"
     )
     
-    # ══════════════════════════════════════════════════════════════════════
+    
     # TRANSACTION PROCESSING
-    # ══════════════════════════════════════════════════════════════════════
+    
     if not transaction_id:
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -809,9 +809,9 @@ def payment_notification():
                 }
             }), 200
         
-        # ══════════════════════════════════════════════════════════════════
+        
         # WALLET CREATION/UPDATE LOGIC
-        # ══════════════════════════════════════════════════════════════════
+        
         with db_manager.get_mis_session() as session:        
             try:
                 # Get or prepare wallet data
@@ -826,10 +826,7 @@ def payment_notification():
                     wallet.reference_number if wallet 
                     else f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}"
                 )
-                
-                # ──────────────────────────────────────────────────────────────
                 # INSERT WALLET HISTORY (with idempotency via DB constraint)
-                # ──────────────────────────────────────────────────────────────
                 history = TblStudentWalletHistory(
                     wallet_id=wallet.id if wallet else None,
                     reg_no=reg_no,
@@ -848,15 +845,15 @@ def payment_notification():
                     created_at=datetime.now()
                 )
                 session.add(history)
-                session.flush()  # Triggers UNIQUE constraint immediately
+                session.flush()
                 
                 current_app.logger.info(
                     f"Wallet history created for transaction {transaction_id}"
                 )
                 
-                # ──────────────────────────────────────────────────────────────
+                
                 # INSERT WALLET LEDGER ENTRY
-                # ──────────────────────────────────────────────────────────────
+                
                 if amount > 0:
                     ledger_entry = TblStudentWalletLedger(
                         student_id=reg_no,
@@ -877,10 +874,9 @@ def payment_notification():
                         f"Wallet ledger entry created for transaction {transaction_id}"
                     )
                 
-                # ──────────────────────────────────────────────────────────────
+                
                 # UPDATE OR CREATE WALLET
-                # ──────────────────────────────────────────────────────────────
-                wallet_id = None  # FIX: Track wallet_id for response
+                
                 
                 if wallet:
                     # Update existing wallet
@@ -894,7 +890,6 @@ def payment_notification():
                     session.add(wallet)
                     session.flush()
                     
-                    wallet_id = wallet.id  # FIX: Store wallet_id
                     
                     current_app.logger.info(
                         f"Wallet updated for {reg_no}: New balance = {balance_after}"
@@ -972,10 +967,6 @@ def payment_notification():
                         "internal_transaction_id": f"INT_{transaction_id}",
                         "payer_phone_number": "",
                         "payer_email": "",
-                        "amount": amount,
-                        "currency": currency,
-                        "balance_after": balance_after,
-                        "wallet_created": wallet is None  # FIX: Clearer logic
                     }
                 }
                 
