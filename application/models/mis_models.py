@@ -906,7 +906,7 @@ class TblStudentWalletLedger(MISBaseModel):
     fee_category = db.Column(db.Integer, nullable=True)
     bank_id = db.Column(db.Integer, nullable=True)
 
-    qb_sales_receipt_id = db.Column(db.String(255), nullable=True, index=True)
+    quickbooks_id = db.Column(db.String(255), nullable=True, index=True)
     invoice_id = db.Column(db.String(255), nullable=True, index=True)
 
     source = db.Column(
@@ -961,7 +961,7 @@ class TblStudentWalletLedger(MISBaseModel):
             "direction": self.direction,
             "original_amount": float(self.original_amount),
             "amount": float(self.amount),
-            "qb_sales_receipt_id": self.qb_sales_receipt_id,
+            "quickbooks_id": self.quickbooks_id,
             "invoice_id": self.invoice_id,
             "source": self.source,
             "parent_credit_id": self.parent_credit_id,
@@ -1133,6 +1133,18 @@ class TblStudentWalletLedger(MISBaseModel):
                 current_app.logger.info(f"Updated slip_no for wallet ledger with trans_code {trans_code}")
                 return True
             return False
+
+    @classmethod
+    def get_by_record_id(cls, record_id):
+        """
+        Get wallet ledger record by ID
+        """
+        with cls.get_session() as session:
+            wallet_ledger = session.query(cls).filter(cls.id == record_id).first()
+            if wallet_ledger:
+                return wallet_ledger.to_dict()
+            return None
+
 
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""

@@ -1,8 +1,9 @@
 import logging
+import os
 from typing import Optional
 from enum import Enum
 from flask import current_app, jsonify
-from application.models.mis_models import Payment, TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus, TblOnlineApplication
+from application.models.mis_models import Payment, TblIncomeCategory, TblPersonalUg, TblStudentWallet, TblBank, TblRegisterProgramUg, TblCampus, TblOnlineApplication, TblStudentWalletLedger
 from application.services.quickbooks import QuickBooks
 import traceback
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
@@ -63,7 +64,7 @@ class SalesReceiptSyncService:
         self.success = None
         
 
-    def map_sales_receipt_to_quickbooks(self, is_update: bool, sales_receipt: TblStudentWallet) -> dict:
+    def map_sales_receipt_to_quickbooks(self, sales_receipt: TblStudentWalletLedger) -> dict:
         """
         Map MIS sales receipt data to QuickBooks format.
         
@@ -83,45 +84,31 @@ class SalesReceiptSyncService:
         current_app.logger.info("Mapping sales receipt to QuickBooks format...")
         
         # Fetch and validate required data
-        item_id = self._get_item_id(sales_receipt.fee_category)
-        customer_id = self._get_customer_id(sales_receipt.reg_no)
+        item_id = self._get_item_id(os.getenv("PREPAYMENT_ID"))
+        customer_id = self._get_customer_id(sales_receipt.student_id)
         bank_qb_id = self._get_bank_id(sales_receipt.bank_id)
-        location_id = self._get_location_id(sales_receipt.reg_no)
+        location_id = self._get_location_id(sales_receipt.student_id)
         
         # Build the base line item structure
-        amount = float(sales_receipt.dept)
-        paid_amount = Payment.get_total_paid_by_wallet_id(sales_receipt.reference_number)
+        amount = float(sales_receipt.original_amount)
         line_item = {
             "DetailType": "SalesItemLineDetail",
             "Amount": amount,
             "SalesItemLineDetail": {
                 "ItemRef": {"value": item_id}
-            }
+            },
+            "Description": "Wallet payment for student " + sales_receipt.student_id
+
         }
-        
-        # Add description for updates
-        if is_update:
-            line_item["Description"] = "Updated wallet amount"
-            line_item["SalesItemLineDetail"]["Qty"] = 1
-            line_item["SalesItemLineDetail"]["UnitPrice"] = amount
         
         # Build base QuickBooks data structure
         quickbooks_data = {"Line": [line_item]}
-        
-        # Add update-specific or create-specific fields
-        if is_update:
-            quickbooks_data.update({
-                "SyncToken": sales_receipt.sync_token,
-                "Id": sales_receipt.quickbooks_id,
-                "sparse": True
-            })
-        else:
-            quickbooks_data.update({
-                "CustomerRef": {"value": customer_id},
-                "TotalAmt": amount,
-                "DepositToAccountRef": {"value": bank_qb_id},
-                "DepartmentRef": {"value": location_id}
-            })
+        quickbooks_data.update({
+            "CustomerRef": {"value": customer_id},
+            "TotalAmt": amount,
+            "DepositToAccountRef": {"value": bank_qb_id},
+            "DepartmentRef": {"value": location_id}
+        })
         
         current_app.logger.info("Sales receipt mapped to QuickBooks format successfully.")
         return quickbooks_data
@@ -309,7 +296,7 @@ class SalesReceiptSyncService:
         
 
 
-    def sync_single_sales_receipt(self, sales_receipt: TblStudentWallet) -> SalesReceiptSyncResult:
+    def sync_single_sales_receipt(self, sales_receipt: TblStudentWalletLedger) -> SalesReceiptSyncResult:
         """
         Synchronize a single sales_receipt to QuickBooks
         """
@@ -320,7 +307,7 @@ class SalesReceiptSyncService:
 
             # ---- Mapping phase ----
             try:
-                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(is_update=False,sales_receipt=sales_receipt)
+                qb_sales_receipt_data = self.map_sales_receipt_to_quickbooks(sales_receipt=sales_receipt)
             except Exception as e:
                 map_error = str(e)
                 qb_sales_receipt_data = None

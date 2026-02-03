@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from application.models.central_models import QuickBooksConfig
 import traceback
 from datetime import datetime
-from application.models.mis_models import TblStudentWallet
+from application.models.mis_models import TblStudentWallet, TblStudentWalletLedger
 from application.services.sales_receipt_sync import SalesReceiptSyncService
 
 
@@ -53,7 +53,7 @@ def create_sales_receipt():
             return error_response
         
         sales_data_id = request.json
-        sales_data = TblStudentWallet.get_sales_data(sales_data_id['id'])
+        sales_data = TblStudentWalletLedger.get_by_record_id(sales_data_id.get("id"))
         sync_service = SalesReceiptSyncService()
 
         if not sales_data or not sales_data.id:
@@ -63,13 +63,7 @@ def create_sales_receipt():
                 'message': 'id is required',
                 'timestamp': datetime.now().isoformat()
             }), 400
-        if sales_data.is_paid.lower() != "yes":
-            current_app.logger.info(f"Wallet data is not paid:")
-            return jsonify({
-                'success': False,
-                'message': 'Wallet data is not paid',
-                'timestamp': datetime.now().isoformat()
-            }), 400
+
         if sales_data.quickbooks_id:
             current_app.logger.info(f"Wallet data is already synced:")
             return jsonify({
@@ -77,6 +71,7 @@ def create_sales_receipt():
                 'message': 'Wallet data is already synced',
                 'timestamp': datetime.now().isoformat()
             }), 400
+        
         result = sync_service.sync_single_sales_receipt(sales_data)
         if not result.success:
             return jsonify({
