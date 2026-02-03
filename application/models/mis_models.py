@@ -656,34 +656,6 @@ class TblStudentWallet(MISBaseModel):
                 wallet = cls(**kwargs)
                 session.add(wallet)
                 session.flush()  # Ensures wallet.id is available before history insert
-
-                # Compute balances (adjust based on your business logic)
-                balance_before = kwargs.get("balance_before", 0)
-                amount = kwargs.get("amount", 0)
-                balance_after = balance_before + amount
-
-                # Create wallet history (ledger)
-                history = TblStudentWalletHistory(
-                    wallet_id=wallet.id,
-                    reg_no=wallet.reg_no,
-                    reference_number=wallet.reference_number,
-                    transaction_type=kwargs.get("transaction_type", "TOPUP"),
-                    amount=amount,
-                    balance_before=balance_before,
-                    balance_after=balance_after,
-                    trans_code=kwargs.get("transaction_id"),
-                    external_transaction_id=kwargs.get("transaction_id"),
-                    payment_chanel=wallet.payment_chanel,
-                    bank_id=wallet.bank_id,
-                    comment=kwargs.get("comment", "Wallet transaction"),
-                    created_by=kwargs.get("created_by", "SYSTEM"),
-                )
-
-                session.add(history)
-
-                # Single commit for BOTH wallet and history
-                session.commit()
-
                 return wallet.to_dict()
 
         except Exception as e:

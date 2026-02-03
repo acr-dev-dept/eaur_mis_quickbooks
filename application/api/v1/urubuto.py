@@ -716,13 +716,11 @@ def payment_notification():
     
     # Extract all fields BEFORE validation
     transaction_id = data.get('transaction_id')
-    merchant_code = data.get('merchant_code')
     payer_code = data.get('payer_code')  # This is the reg_no
-    payment_channel = data.get('payment_channel')  # Note: typo in API
-    payment_channel_name = data.get('payment_channel_name')  # Note: typo in API
+    payment_channel = data.get('payment_channel')
+    payment_channel_name = data.get('payment_channel_name')
     amount = data.get('amount')
     currency = data.get('currency')
-    payment_date_time = data.get('payment_date_time')
     slip_no = (
         data.get('slip_number') or 
         data.get('initial_slip_number') or 
