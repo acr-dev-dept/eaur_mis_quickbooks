@@ -540,7 +540,6 @@ def payment_notification():
     Expected request format from Urubuto Pay:
     {
         "status": 200,
-        "transaction_status": "VALID",
         "transaction_id": "11202202011152166608",
         "merchant_code": "TH35409959",
         "payer_code": "2022011019",
@@ -660,6 +659,387 @@ def payment_notification():
         "message": "Invalid transaction data",
         "status": 400
     }), 400
+
+def payment_notification():
+    """
+    Payment notification callback endpoint for Urubuto Pay integration.
+    
+    This endpoint receives payment confirmations from Urubuto Pay and creates 
+    payment records in the MIS payments table.
+    
+    Expected request format from Urubuto Pay:
+    {
+        "status": 200,
+        "transaction_id": "11202202011152166608",
+        "merchant_code": "TH35409959",
+        "payer_code": "2022011019",
+        "payment_chanel": "WALLET",
+        "payment_chanel_name": "MOMO",
+        "amount": 100,
+        "currency": "RWF",
+        "payment_date_time": "2022-01-23 09:22:34",
+        "slip_number": ""
+    }
+    """
+    started_at = datetime.now()
+    
+    # ══════════════════════════════════════════════════════════════════════
+    # REQUEST VALIDATION
+    # ══════════════════════════════════════════════════════════════════════
+    current_app.logger.info("PAYMENT NOTIFICATION ENDPOINT CALLED ===")
+    current_app.logger.info(f"Request method: {request.method}")
+    current_app.logger.info(f"Request endpoint: {request.endpoint}")
+    current_app.logger.info(f"Request remote addr: {request.remote_addr}")
+    current_app.logger.info(f"Request content type: {request.content_type}")
+    current_app.logger.info(f"Token payload available: {hasattr(request, 'token_payload')}")
+    
+    # Validate JSON content
+    if not request.is_json:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Content-Type must be application/json",
+            "status": 400
+        }), 400
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "No data provided",
+            "status": 400
+        }), 400
+    
+    current_app.logger.info(f"Notification data received: {data}")
+    
+    # ══════════════════════════════════════════════════════════════════════
+    # EXTRACT AND VALIDATE REQUIRED FIELDS
+    # ══════════════════════════════════════════════════════════════════════
+    # Extract all fields BEFORE validation
+    transaction_status = data.get('transaction_status', 'SUCCESS')  # FIX: Added default value
+    transaction_id = data.get('transaction_id')
+    merchant_code = data.get('merchant_code')
+    payer_code = data.get('payer_code')  # This is the reg_no
+    payment_channel = data.get('payment_chanel')  # Note: typo in API
+    payment_channel_name = data.get('payment_chanel_name')  # Note: typo in API
+    amount = data.get('amount')
+    currency = data.get('currency')
+    payment_date_time = data.get('payment_date_time')
+    slip_no = (
+        data.get('slip_number') or 
+        data.get('initial_slip_number') or 
+        "N/A"
+    )
+    
+    # Validate required fields
+    required_fields = [
+        'transaction_id', 
+        'merchant_code', 
+        'payer_code', 
+        'payment_chanel',  # Note: using the typo as it comes from API
+        'amount', 
+        'currency', 
+        'payment_date_time', 
+        'payment_chanel_name'  # Note: using the typo as it comes from API
+    ]
+    
+    missing_fields = [field for field in required_fields if not data.get(field)]
+    if missing_fields:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": f"Missing required parameters: {', '.join(missing_fields)}",
+            "status": 400
+        }), 400
+    
+    # Validate amount
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Amount must be greater than zero",
+                "status": 400
+            }), 400
+    except (ValueError, TypeError):
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Invalid amount format",
+            "status": 400
+        }), 400
+    
+    reg_no = payer_code  # Use payer_code as registration number
+    
+    current_app.logger.info(
+        f"Processing payment - Transaction: {transaction_id}, "
+        f"Payer: {reg_no}, Amount: {amount} {currency}"
+    )
+    
+    # ══════════════════════════════════════════════════════════════════════
+    # TRANSACTION PROCESSING
+    # ══════════════════════════════════════════════════════════════════════
+    if not transaction_id:
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Invalid transaction data - missing transaction_id",
+            "status": 400
+        }), 400
+    
+    try:
+        # Check if transaction already exists
+        existing_transaction = TblStudentWalletHistory.get_by_transaction_id(transaction_id)
+        
+        if existing_transaction:
+            current_app.logger.info(
+                f"Transaction {transaction_id} already processed - updating slip number"
+            )
+            
+            # Update slip number if provided
+            if slip_no and slip_no != "N/A":
+                TblStudentWalletHistory.update_slip_no(transaction_id, slip_no)
+                TblStudentWalletLedger.update_slip_no(transaction_id, slip_no)
+            
+            return jsonify({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "message": "Transaction already processed",
+                "status": 200,
+                "data": {
+                    "external_transaction_id": transaction_id,
+                    "internal_transaction_id": f"INT_{transaction_id}",
+                    "payer_phone_number": "",
+                    "payer_email": ""
+                }
+            }), 200
+        
+        # ══════════════════════════════════════════════════════════════════
+        # WALLET CREATION/UPDATE LOGIC
+        # ══════════════════════════════════════════════════════════════════
+        with db_manager.get_mis_session() as session:        
+            try:
+                # Get or prepare wallet data
+                wallet = TblStudentWallet.get_by_reg_no(reg_no)
+                
+                # Calculate balances
+                balance_before = wallet.dept if wallet else 0.0
+                balance_after = balance_before + amount
+                
+                # Generate reference number
+                reference_number = (
+                    wallet.reference_number if wallet 
+                    else f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}"
+                )
+                
+                # ──────────────────────────────────────────────────────────────
+                # INSERT WALLET HISTORY (with idempotency via DB constraint)
+                # ──────────────────────────────────────────────────────────────
+                history = TblStudentWalletHistory(
+                    wallet_id=wallet.id if wallet else None,
+                    reg_no=reg_no,
+                    reference_number=reference_number,
+                    transaction_type="TOPUP",
+                    slip_no=slip_no,
+                    amount=amount,
+                    balance_before=balance_before,
+                    balance_after=balance_after,
+                    trans_code=transaction_id,
+                    external_transaction_id=transaction_id,
+                    payment_chanel=payment_channel,
+                    bank_id=wallet.bank_id if wallet else 2,
+                    comment=f"Wallet top-up via {payment_channel_name}",
+                    created_by="SYSTEM",
+                    created_at=datetime.now()
+                )
+                session.add(history)
+                session.flush()  # Triggers UNIQUE constraint immediately
+                
+                current_app.logger.info(
+                    f"Wallet history created for transaction {transaction_id}"
+                )
+                
+                # ──────────────────────────────────────────────────────────────
+                # INSERT WALLET LEDGER ENTRY
+                # ──────────────────────────────────────────────────────────────
+                if amount > 0:
+                    ledger_entry = TblStudentWalletLedger(
+                        student_id=reg_no,
+                        direction="credit",
+                        original_amount=abs(Decimal(amount)),
+                        amount=amount,
+                        trans_code=transaction_id,
+                        payment_chanel=payment_channel,
+                        bank_id=2,
+                        source="sales_receipt",
+                        slip_no=slip_no,
+                        created_at=datetime.now()
+                    )
+                    session.add(ledger_entry)
+                    session.flush()
+                    
+                    current_app.logger.info(
+                        f"Wallet ledger entry created for transaction {transaction_id}"
+                    )
+                
+                # ──────────────────────────────────────────────────────────────
+                # UPDATE OR CREATE WALLET
+                # ──────────────────────────────────────────────────────────────
+                wallet_id = None  # FIX: Track wallet_id for response
+                
+                if wallet:
+                    # Update existing wallet
+                    wallet.dept = balance_after
+                    wallet.external_transaction_id = transaction_id
+                    wallet.trans_code = transaction_id
+                    wallet.payment_date = datetime.now()
+                    wallet.slip_no = slip_no
+                    wallet.payment_chanel = payment_channel
+                    
+                    session.add(wallet)
+                    session.flush()
+                    
+                    wallet_id = wallet.id  # FIX: Store wallet_id
+                    
+                    current_app.logger.info(
+                        f"Wallet updated for {reg_no}: New balance = {balance_after}"
+                    )
+                    
+                    # Async QuickBooks update (optional)
+                    # from application.config_files.wallet_sync import update_wallet_to_quickbooks_task
+                    # update_wallet_to_quickbooks_task.delay(wallet.id)
+                    
+                else:
+                    # Create new wallet entry
+                    current_app.logger.info(
+                        f"Creating new wallet for registration number: {reg_no}"
+                    )
+                    
+                    created_wallet = TblStudentWallet.create_wallet_entry(
+                        reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
+                        reg_no=reg_no,
+                        reference_number=reference_number,
+                        trans_code=transaction_id,
+                        external_transaction_id=transaction_id,
+                        payment_chanel=payment_channel,
+                        payment_date=date.today(),
+                        is_paid="Yes",
+                        dept=amount,
+                        fee_category=128,
+                        bank_id=2,
+                        slip_no=slip_no if slip_no else "N/A",
+                        created_by="SYSTEM",
+                        created_at=datetime.now()
+                    )
+                    
+                    current_app.logger.info(
+                        f"New wallet entry created for payer {reg_no} with initial balance {amount}"
+                    )
+                    
+                    # Update wallet history with new wallet_id
+                    if created_wallet and 'id' in created_wallet:
+                        current_app.logger.info(
+                            f"Linking wallet history to new wallet ID {created_wallet['id']}"
+                        )
+                        # Async QuickBooks sync (optional)
+                        # from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
+                        # sync_wallet_to_quickbooks_task.delay(wallet_id)
+                
+                
+                # LOG INTEGRATION
+                
+                IntegrationLog.log_integration_operation(
+                    system_name="UrubutoPay",
+                    operation="Wallet Payment",
+                    status=transaction_status,  # FIX: Now properly defined above
+                    external_transaction_id=transaction_id,
+                    payer_code=payer_code,
+                    response_data=data,
+                    started_at=started_at,
+                    completed_at=datetime.now()
+                )
+                
+                # Commit all changes
+                session.commit()
+                
+                current_app.logger.info(
+                    f"Payment notification processed successfully for transaction {transaction_id}"
+                )
+                
+                # SUCCESS RESPONSE
+                
+                response_data = {
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": "Payment processed successfully",
+                    "status": 200,
+                    "data": {
+                        "external_transaction_id": transaction_id,
+                        "internal_transaction_id": f"INT_{transaction_id}",
+                        "payer_phone_number": "",
+                        "payer_email": "",
+                        "amount": amount,
+                        "currency": currency,
+                        "balance_after": balance_after,
+                        "wallet_created": wallet is None  # FIX: Clearer logic
+                    }
+                }
+                
+                current_app.logger.info(f"Payment notification response: {response_data}")
+                return jsonify(response_data), 200
+                
+            except IntegrityError as ie:
+                session.rollback()
+                current_app.logger.warning(
+                    f"Duplicate transaction detected: {transaction_id} - {str(ie)}"
+                )
+                
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": "Transaction already processed",
+                    "status": 200,
+                    "data": {
+                        "external_transaction_id": transaction_id,
+                        "internal_transaction_id": f"INT_{transaction_id}"
+                    }
+                }), 200
+                
+            except Exception as e:
+                session.rollback()
+                current_app.logger.error(
+                    f"Error processing wallet transaction {transaction_id}: {str(e)}",
+                    exc_info=True
+                )
+                
+                # Log failed integration
+                try:  # FIX: Wrap in try-catch to prevent secondary errors
+                    IntegrationLog.log_integration_operation(
+                        system_name="UrubutoPay",
+                        operation="Wallet Payment",
+                        status="FAILED",
+                        external_transaction_id=transaction_id,
+                        payer_code=payer_code,
+                        response_data=data,
+                        error_message=str(e),
+                        started_at=started_at,
+                        completed_at=datetime.now()
+                    )
+                except Exception as log_error:
+                    current_app.logger.error(
+                        f"Failed to log integration error: {str(log_error)}"
+                    )
+                
+                return jsonify({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "message": "Error processing payment",
+                    "status": 500
+                }), 500
+    
+    except Exception as e:
+        current_app.logger.error(
+            f"Error in payment notification endpoint: {str(e)}",
+            exc_info=True
+        )
+        
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Internal server error",
+            "status": 500
+        }), 500
 
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])

@@ -1047,9 +1047,20 @@ class TblStudentWalletLedger(MISBaseModel):
 
         return result or None
 
+    @classmethod
+    def update_credit_amount(cls, credit_id, amount):
+        """
+        Update credit amount
+        """
+        with cls.get_session() as session:
+            credit = session.query(cls).filter_by(id=credit_id).first()
+            if credit:
+                credit.amount += Decimal(amount)
+                session.commit()
+                return True
+            return False
 
 
-    # -------------------------------------------------
 
     @staticmethod
     def apply_wallet_to_invoice(
@@ -1089,13 +1100,19 @@ class TblStudentWalletLedger(MISBaseModel):
                         direction="debit",
                         amount=-consume,
                         original_amount=-consume,
-                        quickbooks_id=invoice_id,
+                        invoice_id=invoice_id,
                         source="invoice",
                         parent_credit_id=credit.id
                     )
                 )
 
                 remaining -= consume
+                # deduct from available credit
+                update_credit = TblStudentWalletLedger.update_credit_amount(credit.id, -consume)
+                if not update_credit:
+                    current_app.logger.error(f"Failed to update credit amount for credit ID {credit.id}")
+                    continue
+
                 current_app.logger.info(
                     f"Debited {consume} from credit {credit.id} "
                     f"for student {student_id}. "
@@ -1165,6 +1182,23 @@ class TblStudentWalletLedger(MISBaseModel):
                 return wallet_ledger
             return None
 
+    @classmethod
+    def get_sales_receipts(cls, limit=50, offset=0):
+        """
+        Get sales receipts that have not been synced to QuickBooks
+        (quickbooks_id IS NULL)
+        """
+        with cls.get_session() as session:
+            sales_receipts = (
+                session.query(cls)
+                .filter(cls.quickbooks_id.is_(None), cls.source == "sales_receipt")
+                .order_by(cls.created_at.asc())
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
+
+            return [sales_receipt.to_dict() for sales_receipt in sales_receipts]
 
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""
@@ -1375,6 +1409,8 @@ class TblBank(MISBaseModel):
             from flask import current_app
             current_app.logger.error(f"Error getting bank details for ID {bank_id}: {str(e)}")
             return []
+    
+
 
 class TblCampus(MISBaseModel):
     """Model for tbl_campus table"""

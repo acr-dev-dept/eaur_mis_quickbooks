@@ -456,7 +456,6 @@ class InvoiceSyncService:
 
             # check for funds in the wallet ledger
             available_credits = TblStudentWalletLedger._get_available_credits(invoice.reg_no, db.session)
-            current_app.logger.info(f"Available credits for student {invoice.reg_no}: {available_credits}")
             if not available_credits:
                 raise ValueError(f"Invoice {invoice.id} has no available credits in the wallet.")
 

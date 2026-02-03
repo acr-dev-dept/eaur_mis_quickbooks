@@ -1,3 +1,4 @@
+from application.models.mis_models import TblStudentWalletLedger
 from celery import shared_task, group, chord
 from datetime import datetime
 from flask import current_app
@@ -74,7 +75,7 @@ def bulk_sync_sales_recepts_task(
                 if not filter_unsynced:
                     raise ValueError("Bulk sales_receipt sync must filter unsynced sales_receipts")
 
-                sales_receipts = TblStudentWallet.get_sales_receipts(
+                sales_receipts = TblStudentWalletLedger.get_sales_receipts(
                     limit=batch_size,
                     offset=current_offset
                 )
@@ -199,19 +200,10 @@ def process_sales_receipts_batch(sales_receipt_ids, batch_num, total_batches, jo
                 if not QuickBooksConfig.is_connected():
                     raise RuntimeError("QuickBooks not connected")
 
-                sales_receipt = TblStudentWallet.get_sales_data(sales_receipt_id)
+                sales_receipt = TblStudentWalletLedger.get_by_record_id(sales_receipt_id)
 
                 if not sales_receipt:
                     raise ValueError("sales_receipt not found")
-
-                
-                elif sales_receipt.sync_token and sales_receipt.sync_token == 0:
-                    result = sync_service.update_single_sales_receipt(sales_receipt.id)
-                    if result.get('success'):
-                        results["synced"] += 1
-                    else:
-                        raise RuntimeError(result.error_message)
-                
                 else:
                     result = sync_service.sync_single_sales_receipt(sales_receipt)
 
