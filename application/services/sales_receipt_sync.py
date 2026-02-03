@@ -369,8 +369,7 @@ class SalesReceiptSyncService:
 
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
-                    SalesReceiptSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_id,
+                    qb_id=qb_id,
                     sync_token=sync_token
                 )
 
