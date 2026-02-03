@@ -1142,7 +1142,7 @@ class TblStudentWalletLedger(MISBaseModel):
         with cls.get_session() as session:
             wallet_ledger = session.query(cls).filter(cls.id == record_id).first()
             if wallet_ledger:
-                return wallet_ledger.to_dict()
+                return wallet_ledger
             return None
 
 
