@@ -1088,6 +1088,7 @@ class TblStudentWalletLedger(MISBaseModel):
                         student_id=student_id,
                         direction="debit",
                         amount=-consume,
+                        original_amount=-consume,
                         quickbooks_id=invoice_id,
                         source="invoice",
                         parent_credit_id=credit.id
