@@ -718,8 +718,8 @@ def payment_notification():
     transaction_id = data.get('transaction_id')
     merchant_code = data.get('merchant_code')
     payer_code = data.get('payer_code')  # This is the reg_no
-    payment_channel = data.get('payment_chanel')  # Note: typo in API
-    payment_channel_name = data.get('payment_chanel_name')  # Note: typo in API
+    payment_channel = data.get('payment_channel')  # Note: typo in API
+    payment_channel_name = data.get('payment_channel_name')  # Note: typo in API
     amount = data.get('amount')
     currency = data.get('currency')
     payment_date_time = data.get('payment_date_time')
@@ -734,11 +734,11 @@ def payment_notification():
         'transaction_id', 
         'merchant_code', 
         'payer_code', 
-        'payment_chanel',  # Note: using the typo as it comes from API
+        'payment_channel',  # Note: using the typo as it comes from API
         'amount', 
         'currency', 
         'payment_date_time', 
-        'payment_chanel_name'  # Note: using the typo as it comes from API
+        'payment_channel_name'  # Note: using the typo as it comes from API
     ]
     
     missing_fields = [field for field in required_fields if not data.get(field)]
