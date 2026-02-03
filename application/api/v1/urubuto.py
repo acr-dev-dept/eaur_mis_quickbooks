@@ -526,10 +526,7 @@ def payment_callback():
             "internal_transaction_id": str(wallet.id if wallet else created_wallet['id'])
         }
     }), 200
-@urubuto_bp.route('/payments/notification', methods=['POST'])
-@require_auth('notifications')
-@require_gateway('urubuto_pay')
-@log_api_access('payment_notification')
+
 def payment_notification():
     """
     Payment notification callback endpoint for Urubuto Pay integration.
@@ -659,7 +656,10 @@ def payment_notification():
         "message": "Invalid transaction data",
         "status": 400
     }), 400
-
+@urubuto_bp.route('/payments/notification', methods=['POST'])
+@require_auth('notifications')
+@require_gateway('urubuto_pay')
+@log_api_access('payment_notification')
 def payment_notification():
     """
     Payment notification callback endpoint for Urubuto Pay integration.
