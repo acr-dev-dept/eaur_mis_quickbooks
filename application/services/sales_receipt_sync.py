@@ -105,10 +105,9 @@ class SalesReceiptSyncService:
         quickbooks_data = {"Line": [line_item]}
         quickbooks_data.update({
             "CustomerRef": {"value": customer_id},
-            "TotalAmt": amount,
             "DepositToAccountRef": {"value": bank_qb_id},
             "DepartmentRef": {"value": location_id},
-            "TxnDate": sales_receipt.created_at
+            "TxnDate": sales_receipt.created_at.strftime("%Y-%m-%d"),
         })
         
         current_app.logger.info("Sales receipt mapped to QuickBooks format successfully.")
