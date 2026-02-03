@@ -939,9 +939,9 @@ def payment_notification():
                     # Update wallet history with new wallet_id
                     if created_wallet and hasattr(created_wallet, 'id'):
                         current_app.logger.info(
-                            f"Linking wallet history to new wallet ID {created_wallet['id']}"
+                            f"Linking wallet history to new wallet ID {created_wallet.id} for transaction {transaction_id}"
                         )
-                        history.wallet_id = created_wallet['id']
+                        history.wallet_id = created_wallet.id
                         session.add(history)
                         session.flush()
                     
