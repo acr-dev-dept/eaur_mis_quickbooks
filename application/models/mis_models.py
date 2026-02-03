@@ -1095,9 +1095,14 @@ class TblStudentWalletLedger(MISBaseModel):
                 )
 
                 remaining -= consume
+                current_app.logger.info(
+                    f"Debited {consume} from credit {credit.id} "
+                    f"for student {student_id}. "
+                    f"Remaining invoice amount: {remaining}"
+                )
 
-            if remaining > 0:
-                raise ValueError("Insufficient wallet balance")
+            session.commit()
+
 
     # -------------------------------------------------
 
