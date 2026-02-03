@@ -914,10 +914,10 @@ def payment_notification():
                         f"Creating new wallet for registration number: {reg_no}"
                     )
                     
-                    created_wallet = TblStudentWallet.create_wallet_entry(
+                    created_wallet = TblStudentWallet(
                         reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
                         reg_no=reg_no,
-                        reference_number=reference_number,
+                        reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}",
                         trans_code=transaction_id,
                         external_transaction_id=transaction_id,
                         payment_chanel=payment_channel,
@@ -926,20 +926,25 @@ def payment_notification():
                         dept=amount,
                         fee_category=128,
                         bank_id=2,
-                        slip_no=slip_no if slip_no else "N/A",
-                        created_by="SYSTEM",
-                        created_at=datetime.now()
+                        slip_no=slip_no if slip_no else "N/A"
                     )
+                    
+                    session.add(created_wallet)
+                    session.flush()
                     
                     current_app.logger.info(
                         f"New wallet entry created for payer {reg_no} with initial balance {amount}"
                     )
                     
                     # Update wallet history with new wallet_id
-                    if created_wallet and 'id' in created_wallet:
+                    if created_wallet and hasattr(created_wallet, 'id'):
                         current_app.logger.info(
                             f"Linking wallet history to new wallet ID {created_wallet['id']}"
                         )
+                        history.wallet_id = created_wallet['id']
+                        session.add(history)
+                        session.flush()
+                    
                         # Async QuickBooks sync (optional)
                         # from application.config_files.wallet_sync import sync_wallet_to_quickbooks_task
                         # sync_wallet_to_quickbooks_task.delay(wallet_id)
