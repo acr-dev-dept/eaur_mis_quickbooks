@@ -108,7 +108,8 @@ class SalesReceiptSyncService:
             "DepositToAccountRef": {"value": bank_qb_id},
             "DepartmentRef": {"value": location_id},
             "TxnDate": sales_receipt.created_at.strftime("%Y-%m-%d"),
-        })
+            "DocNumber": f"SR-{sales_receipt.id}"        
+            })
         
         current_app.logger.info("Sales receipt mapped to QuickBooks format successfully.")
         return quickbooks_data
@@ -489,8 +490,7 @@ class SalesReceiptSyncService:
 
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
-                    SalesReceiptSyncStatus.SYNCED.value,
-                    quickbooks_id=qb_id,
+                    qb_id=qb_id,
                     sync_token=sync_token
                 )
 

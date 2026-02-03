@@ -1026,6 +1026,8 @@ class TblStudentWalletLedger(MISBaseModel):
         """
         Internal method.
         Locks rows and returns per-receipt remaining balances.
+
+        returns: List of (TblStudentWalletLedger credit_entry, Decimal remaining_amount)
         """
 
         credits = (
@@ -1050,7 +1052,11 @@ class TblStudentWalletLedger(MISBaseModel):
             if remaining > 0:
                 result.append((credit, remaining))
 
+        if not result:
+            return None
+
         return result
+
 
     # -------------------------------------------------
 
@@ -1090,7 +1096,6 @@ class TblStudentWalletLedger(MISBaseModel):
                     TblStudentWalletLedger(
                         student_id=student_id,
                         direction="debit",
-                        original_amount=consume,
                         amount=-consume,
                         qb_invoice_id=invoice_id,
                         source="invoice",

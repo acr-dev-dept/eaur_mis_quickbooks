@@ -18,7 +18,7 @@ from flask import current_app
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import joinedload
 
-from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblStudentWallet, TblIncomeCategory, Payment, TblOnlineApplication, TblRegisterProgramUg
+from application.models.mis_models import TblCampus, TblImvoice, TblPersonalUg, TblStudentWallet, TblIncomeCategory, Payment, TblOnlineApplication, TblRegisterProgramUg, TblStudentWalletLedger
 from application.models.central_models import QuickBooksConfig, QuickbooksAuditLog
 from application.services.quickbooks import QuickBooks
 from application.utils.database import db_manager
@@ -454,6 +454,10 @@ class InvoiceSyncService:
             qb_customer_id = meta.get('customer_id')
             amount_paid = meta.get('amount_paid') if meta.get('amount_paid') else None
 
+            # check for funds in the wallet ledger
+            available_credits = TblStudentWalletLedger._get_available_credits(invoice.reg_no)
+            if not available_credits:
+                raise ValueError(f"Invoice {invoice.id} has no available credits in the wallet.")
 
             if not qb_item_id:
                 raise ValueError(f"Invoice {invoice.id} has no valid QuickBooks ItemRef mapped.")
@@ -487,6 +491,20 @@ class InvoiceSyncService:
                         invoice.id,
                         amount_paid
                     )
+
+                    # Apply wallet ledger entry
+                    try:
+                        TblStudentWalletLedger.apply_wallet_to_invoice(
+                            invoice.reg_no,
+                            invoice.id,
+                            amount_paid
+                        )
+                    except Exception as e:
+                        current_app.logger.error(
+                            f"Failed to apply wallet ledger for invoice {invoice.id}: {e}"
+                        )
+                        raise
+
 
                     if new_balance is not None:
                         current_app.logger.info(
