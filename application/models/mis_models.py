@@ -1133,6 +1133,7 @@ class TblStudentWalletLedger(MISBaseModel):
                 wallet_ledger.sync_status = status
                 wallet_ledger.quickbooks_id = qb_id
                 wallet_ledger.sync_token = sync_token
+                wallet_ledger.qb_pushed_date = datetime.now()
                 session.commit()
                 return True
             return False
