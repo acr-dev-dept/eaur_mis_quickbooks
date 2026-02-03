@@ -932,7 +932,7 @@ class TblStudentWalletLedger(MISBaseModel):
         nullable=False,
         server_default=db.text("CURRENT_TIMESTAMP")
     )
-
+    sync_token = db.Column(db.String(255), nullable=True)
     parent_credit = relationship(
         "TblStudentWalletLedger",
         remote_side=[id],
@@ -969,6 +969,8 @@ class TblStudentWalletLedger(MISBaseModel):
             "payment_chanel": self.payment_chanel,
             "fee_category": self.fee_category,
             "bank_id": self.bank_id,
+            "slip_no": self.slip_no,
+            "sync_token": self.sync_token,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "qb_pushed_date": self.qb_pushed_date.isoformat() if self.qb_pushed_date else None,
         }
@@ -1119,6 +1121,21 @@ class TblStudentWalletLedger(MISBaseModel):
             )
 
             return float(balance)
+
+    @staticmethod
+    def update_sync_status(id, status, qb_id, sync_token):
+        """
+        Update QuickBooks sync status for a wallet ledger entry
+        """
+        with TblStudentWalletLedger.get_session() as session:
+            wallet_ledger = session.query(TblStudentWalletLedger).filter(TblStudentWalletLedger.id == id).first()
+            if wallet_ledger:
+                wallet_ledger.sync_status = status
+                wallet_ledger.quickbooks_id = qb_id
+                wallet_ledger.sync_token = sync_token
+                session.commit()
+                return True
+            return False
 
     @classmethod
     def update_slip_no(cls, trans_code, slip_no):

@@ -240,14 +240,35 @@ class SalesReceiptSyncService:
             self.qb_service = QuickBooks()
         return self.qb_service
     
-    def _update_sales_receipt_sync_status(self, sales_receipt_id: int):
+    def _update_sales_receipt_sync_status(
+        self,
+        sales_receipt_id: int,
+        qb_id: str = None,
+        sync_token: str = None
+    ):
         """
         Update the sync status of a sales_receipt
         """
         current_app.logger.info(
             f"Updating sync status for sales_receipt {sales_receipt_id}"
         )
-        TblStudentWallet.delete_quickbooks_id(sales_receipt_id)
+
+        update_ledger = TblStudentWalletLedger.update_sync_status(
+            sales_receipt_id=sales_receipt_id,
+            status=SalesReceiptSyncStatus.SYNCED.value,
+            qb_id=qb_id,
+            sync_token=sync_token
+        )
+
+        if not update_ledger:
+            current_app.logger.error(
+                f"Failed to update sync status for sales_receipt {sales_receipt_id}"
+            )
+
+        return update_ledger
+
+        
+
 
 
     def _update_deleted_sales_receipt(self, sales_receipt_id: int):
@@ -315,7 +336,9 @@ class SalesReceiptSyncService:
             if map_error:
                 self._update_sales_receipt_sync_status(
                     sales_receipt.id,
-                    SalesReceiptSyncStatus.FAILED.value
+                    SalesReceiptSyncStatus.FAILED.value,
+                    qb_id=None,
+                    sync_token=None
                 )
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
                 return SalesReceiptSyncResult(
