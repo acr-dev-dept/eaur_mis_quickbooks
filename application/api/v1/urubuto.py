@@ -715,7 +715,6 @@ def payment_notification():
     # EXTRACT AND VALIDATE REQUIRED FIELDS
     
     # Extract all fields BEFORE validation
-    transaction_status = data.get('transaction_status', 'VALID')  # FIX: Added default value
     transaction_id = data.get('transaction_id')
     merchant_code = data.get('merchant_code')
     payer_code = data.get('payer_code')  # This is the reg_no
@@ -941,7 +940,7 @@ def payment_notification():
                 IntegrationLog.log_integration_operation(
                     system_name="UrubutoPay",
                     operation="Wallet Payment",
-                    status=transaction_status,  # FIX: Now properly defined above
+                    status="VALID",  # FIX: Now properly defined above
                     external_transaction_id=transaction_id,
                     payer_code=payer_code,
                     response_data=data,
