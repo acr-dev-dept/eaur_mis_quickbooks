@@ -848,28 +848,40 @@ def payment_notification():
                     f"Wallet history created for transaction {transaction_id}"
                 )
                 
+                # Check if the ledger entry already exists (idempotency)
+                existing_ledger = session.query(TblStudentWalletLedger).filter_by(
+                    trans_code=transaction_id
+                ).first()
                 
-                # INSERT WALLET LEDGER ENTRY
-                
-                if amount > 0:
-                    ledger_entry = TblStudentWalletLedger(
-                        student_id=reg_no,
-                        direction="credit",
-                        original_amount=abs(Decimal(amount)),
-                        amount=amount,
-                        trans_code=transaction_id,
-                        payment_chanel=payment_channel,
-                        bank_id=2,
-                        source="sales_receipt",
-                        slip_no=slip_no,
-                        created_at=datetime.now()
-                    )
-                    session.add(ledger_entry)
-                    session.flush()
-                    
+                if existing_ledger:
                     current_app.logger.info(
-                        f"Wallet ledger entry created for transaction {transaction_id}"
+                        f"Ledger entry for transaction {transaction_id} already exists"
                     )
+                else:
+                    current_app.logger.info(
+                        f"No ledger entry found for transaction {transaction_id}"
+                    )
+                    # INSERT WALLET LEDGER ENTRY
+                    
+                    if amount > 0:
+                        ledger_entry = TblStudentWalletLedger(
+                            student_id=reg_no,
+                            direction="credit",
+                            original_amount=abs(Decimal(amount)),
+                            amount=amount,
+                            trans_code=transaction_id,
+                            payment_chanel=payment_channel,
+                            bank_id=2,
+                            source="sales_receipt",
+                            slip_no=slip_no,
+                            created_at=datetime.now()
+                        )
+                        session.add(ledger_entry)
+                        session.flush()
+                        
+                        current_app.logger.info(
+                            f"Wallet ledger entry created for transaction {transaction_id}"
+                        )
                 
                 
                 # UPDATE OR CREATE WALLET

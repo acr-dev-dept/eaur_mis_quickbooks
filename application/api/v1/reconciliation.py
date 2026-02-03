@@ -3,7 +3,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
-from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication
+from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication, TblStudentWalletLedger
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 import pandas as pd
@@ -730,6 +730,19 @@ def sync_absent_wallet_payments():
             transaction_status = "SUCCESS"
             started_at = datetime.now()
 
+            # check if transaction already exists
+            existing_tx = TblStudentWalletHistory.get_by_transaction_id(transaction_reference)
+
+            if existing_tx:
+                current_app.logger.info(
+                    f"Duplicate transaction ignored: {transaction_reference}"
+                )
+                results.append({
+                    "payer_code": payer_code,
+                    "transaction_reference": transaction_reference,
+                    "status": "DUPLICATE"
+                })
+                continue
             # ────────────────────────────────────────────────
             # Resolve payer
             # ────────────────────────────────────────────────
@@ -750,6 +763,8 @@ def sync_absent_wallet_payments():
 
             reg_no = student.reg_no if student else applicant.tracking_id
 
+
+
             # ────────────────────────────────────────────────
             # Wallet lookup
             # ────────────────────────────────────────────────
@@ -761,10 +776,11 @@ def sync_absent_wallet_payments():
                     balance_before = wallet.dept if wallet else 0.0
                     balance_after = balance_before + amount
 
-                    # ────────────────────────────────────────────────
+                    
+                    
                     # Wallet history (IDEMPOTENT)
                     # UNIQUE(external_transaction_id)
-                    # ────────────────────────────────────────────────
+                    
                     history = TblStudentWalletHistory(
                         wallet_id=wallet.id if wallet else None,
                         reg_no=reg_no,
@@ -785,7 +801,29 @@ def sync_absent_wallet_payments():
                     )
 
                     session.add(history)
-                    session.flush()   # 🔒 idempotency enforced here
+                    session.flush()
+                    # check if transaction existed in ledger
+                    existing_ledger_tx = TblStudentWalletLedger.get_by_transaction_id(transaction_reference)
+                    if existing_ledger_tx:
+                        continue
+
+                    # Create ledger entry
+
+                    if amount >= 0:
+                        ledger_entry = TblStudentWalletLedger(
+                            student_id=reg_no,
+                            direction="credit",
+                            original_amount=abs(Decimal(amount)),
+                            amount=amount,
+                            trans_code=transaction_reference,
+                            payment_chanel=payment_channel,
+                            bank_id=2,
+                            source="sales_receipt",
+                            slip_no=slip_no,
+                            created_at=datetime.now()
+                    )
+                        session.add(ledger_entry)
+                        session.flush()
 
                 except IntegrityError:
                     session.rollback()
@@ -810,12 +848,6 @@ def sync_absent_wallet_payments():
                     wallet.payment_date = datetime.now()
                     session.add(wallet)
                     session.flush()
-
-                    from application.config_files.wallet_sync import (
-                        update_wallet_to_quickbooks_task
-                    )
-                    update_wallet_to_quickbooks_task.delay(wallet.id)
-
                 else:
                     created_wallet = TblStudentWallet.create_wallet_entry(
                         reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),

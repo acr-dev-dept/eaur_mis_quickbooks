@@ -873,7 +873,7 @@ class TblStudentWalletLedger(MISBaseModel):
     # signed accounting movement
     amount = db.Column(db.Numeric(12, 2), nullable=False)
 
-    trans_code = db.Column(db.String(255), nullable=True, index=True)
+    trans_code = db.Column(db.String(255), nullable=True, index=True, unique=True)
     payment_chanel = db.Column(db.String(100), nullable=True)
     fee_category = db.Column(db.Integer, nullable=True)
     bank_id = db.Column(db.Integer, nullable=True)
@@ -1171,6 +1171,17 @@ class TblStudentWalletLedger(MISBaseModel):
             )
 
             return [sales_receipt.to_dict() for sales_receipt in sales_receipts]
+
+    @classmethod
+    def get_by_transaction_id(cls, transaction_id):
+        """
+        Get wallet ledger record by transaction ID
+        """
+        with cls.get_session() as session:
+            wallet_ledger = session.query(cls).filter(cls.trans_code == transaction_id).first()
+            if wallet_ledger:
+                return wallet_ledger
+            return None
 
 class TblStudentWalletHistory(MISBaseModel):
     """Ledger / history for wallet transactions"""
