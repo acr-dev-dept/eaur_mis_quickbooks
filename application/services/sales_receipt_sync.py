@@ -107,7 +107,8 @@ class SalesReceiptSyncService:
             "CustomerRef": {"value": customer_id},
             "TotalAmt": amount,
             "DepositToAccountRef": {"value": bank_qb_id},
-            "DepartmentRef": {"value": location_id}
+            "DepartmentRef": {"value": location_id},
+            "TxnDate": sales_receipt.created_at
         })
         
         current_app.logger.info("Sales receipt mapped to QuickBooks format successfully.")
