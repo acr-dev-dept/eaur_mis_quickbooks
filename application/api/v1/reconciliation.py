@@ -933,9 +933,8 @@ def translate_to_json():
 from datetime import datetime
 from flask import jsonify
 from sqlalchemy import func
-from sqlalchemy.dialects.mysql import JSON_EXTRACT  # works for MariaDB too
 
-# Assuming these are already available in your file:
+# Assuming these are already imported:
 # from your_app import reconciliation_bp, db_manager
 # from your_models import IntegrationLog
 
@@ -945,17 +944,17 @@ def payments_before_cutoff_report():
     CUTOFF_DATETIME = datetime(2026, 1, 13, 0, 0, 0)
 
     # Adjust these JSON paths to match your actual response_data structure!
-    JSON_PATH_AMOUNT         = "$.amount"
-    JSON_PATH_PAYER_CODE     = "$.payer_code"
+    JSON_PATH_AMOUNT           = "$.amount"
+    JSON_PATH_PAYER_CODE       = "$.payer_code"
     JSON_PATH_PAYMENT_DATETIME = "$.payment_date_time"   # ← confirm / change this!
 
-    # Very important: adjust this format string to match EXACTLY how the date appears in JSON
-    # Common examples:
-    #   '%Y-%m-%d %H:%i:%s'        → 2025-12-24 14:30:00
-    #   '%Y-%m-%dT%H:%i:%s'        → 2025-12-24T14:30:00 (ISO)
-    #   '%d/%m/%Y %H:%i:%s'        → 24/12/2025 14:30:00
-    #   '%Y-%m-%d %H:%i:%s.%f'     → with microseconds
-    DATETIME_FORMAT = '%Y-%m-%d %H:%i:%s'   # ← CHANGE THIS ACCORDING TO YOUR DATA
+    # Critical: match this EXACTLY to the format in your JSON string
+    # Examples:
+    #   '%Y-%m-%d %H:%i:%s'     → 2025-12-24 14:30:00
+    #   '%Y-%m-%dT%H:%i:%s'     → 2025-12-24T14:30:00
+    #   '%d/%m/%Y %H:%i'       → 24/12/2025 14:30
+    #   '%Y-%m-%d %H:%i:%s.%f' → with microseconds
+    DATETIME_FORMAT = '%Y-%m-%d %H:%i:%s'   # ← CHANGE THIS BASED ON YOUR DATA
 
     with db_manager.get_mis_session() as session:
         try:
@@ -970,7 +969,7 @@ def payments_before_cutoff_report():
                 func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
             )
 
-            # Parse string → DATETIME using STR_TO_DATE (MariaDB / MySQL)
+            # Parse the extracted string → DATETIME
             payment_datetime = func.STR_TO_DATE(json_datetime_raw, DATETIME_FORMAT)
 
             # ---- Aggregates ----
@@ -987,19 +986,19 @@ def payments_before_cutoff_report():
                 )
                 .filter(
                     payment_datetime < CUTOFF_DATETIME,
-                    json_datetime_raw.isnot(None),           # skip rows missing the field
-                    payment_datetime.isnot(None)             # skip rows where parsing failed
+                    json_datetime_raw.isnot(None),
+                    payment_datetime.isnot(None)  # skip parse failures
                 )
                 .one()
             )
 
-            # ---- Detailed records ----
+            # ---- Records ----
             records = (
                 session.query(
                     IntegrationLog.id,
                     json_payer_raw.label("payer_code"),
                     func.cast(json_amount_raw, "DECIMAL(18,2)").label("amount"),
-                    payment_datetime.label("payment_datetime")     # useful for debugging
+                    payment_datetime.label("payment_datetime")
                 )
                 .filter(
                     payment_datetime < CUTOFF_DATETIME,
