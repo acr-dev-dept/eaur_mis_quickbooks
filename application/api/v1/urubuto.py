@@ -726,7 +726,7 @@ def payment_notification():
         data.get('initial_slip_number') or 
         "N/A"
     )
-    
+    payment_date_time = data.get('payment_date_time')
     # Validate required fields
     required_fields = [
         'transaction_id', 
@@ -738,7 +738,7 @@ def payment_notification():
         'payment_date_time', 
         'payment_channel_name'  # Note: using the typo as it comes from API
     ]
-    
+    CUTOFF_DATE = datetime(2026, 1, 13, 0, 0, 0)
     missing_fields = [field for field in required_fields if not data.get(field)]
     if missing_fields:
         return jsonify({
@@ -773,6 +773,20 @@ def payment_notification():
     
     # TRANSACTION PROCESSING
     
+    if payment_date_time < datetime(2026, 1, 13, 0, 0, 0):
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Payment date is before the allowed cutoff date",
+            "status": 200,
+            "data": {
+                "external_transaction_id": transaction_id,
+                "internal_transaction_id": f"INT_{transaction_id}",
+                "payer_phone_number": "",
+                "payer_email": ""
+            }
+        }), 200
+    
+
     if not transaction_id:
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1046,6 +1060,7 @@ def payment_notification():
             "status": 500
         }), 500
 
+    
 
 @urubuto_bp.route('/payments/initiate', methods=['POST'])
 @log_api_access('payment_initiation')
