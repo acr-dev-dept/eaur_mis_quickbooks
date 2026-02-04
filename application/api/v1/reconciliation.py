@@ -1082,11 +1082,16 @@ def payments_before_cutoff_report():
 
 from sqlalchemy import and_
 
+import json
+from flask import jsonify
+from datetime import datetime, timedelta
+from sqlalchemy import and_
+
 @reconciliation_bp.route("/integration-logs/feb-04", methods=["GET"])
 def get_feb_04_integration_logs():
     """
     Fetch integration logs created on 4th February.
-    Returns response_data, payer_code, external_transaction_id only.
+    Returns response_data as JSON, payer_code, external_transaction_id.
     """
 
     # Define date range for Feb 4 (00:00:00 → 23:59:59)
@@ -1109,14 +1114,18 @@ def get_feb_04_integration_logs():
         .all()
     )
 
-    result = [
-        {
-            "response_data": log.response_data,
+    result = []
+    for log in logs:
+        # Convert string to JSON/dict
+        try:
+            response_json = json.loads(log.response_data)
+        except json.JSONDecodeError:
+            response_json = log.response_data  # fallback if it's not valid JSON
+        result.append({
+            "response_data": response_json,
             "payer_code": log.payer_code,
             "external_transaction_id": log.external_transaction_id,
-        }
-        for log in logs
-    ]
+        })
 
     return jsonify({
         "date": "2026-02-04",
