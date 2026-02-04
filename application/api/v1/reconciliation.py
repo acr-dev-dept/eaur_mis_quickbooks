@@ -974,7 +974,9 @@ def payments_before_cutoff_report():
                     func.max(payment_dt).label("to_payment_time")
                 )
                 .filter(
-                    payment_dt != None,  # Changed from .isnot(None)
+                    IntegrationLog.response_data.isnot(None),  # Check JSON column exists
+                    payment_dt.isnot(None),  # This should work now
+                    payment_dt != '',  # Also check for empty strings
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .one()
@@ -985,10 +987,13 @@ def payments_before_cutoff_report():
                 session.query(
                     IntegrationLog.id,
                     payer_code_field.label("payer_code"),
-                    amount_field.cast(func.DECIMAL(18, 2)).label("amount")
+                    amount_field.cast(func.DECIMAL(18, 2)).label("amount"),
+                    payment_dt.label("payment_date_time")  # Added for verification
                 )
                 .filter(
-                    payment_dt != None,  # Changed from .isnot(None)
+                    IntegrationLog.response_data.isnot(None),
+                    payment_dt.isnot(None),
+                    payment_dt != '',
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .all()
@@ -998,7 +1003,7 @@ def payments_before_cutoff_report():
                 {
                     "id": r.id,
                     "payer_code": r.payer_code,
-                    "amount": float(r.amount)
+                    "amount": float(r.amount) if r.amount else 0.0
                 }
                 for r in records
             ]
