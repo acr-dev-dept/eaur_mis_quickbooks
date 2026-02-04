@@ -179,8 +179,8 @@ class IntegrationLog(BaseModel):
     operation = Column(String(100), nullable=False)
     status = Column(String(20), nullable=False)  # 'Success', 'Failure', 'Pending'
     external_transaction_id = Column(String(255), nullable=True)
-    request_data = Column(JSON, nullable=True)
-    response_data = Column(JSON, nullable=True)
+    request_data = Column(Text, nullable=True)
+    response_data = Column(Text, nullable=True)
     error_details = Column(Text, nullable=True)
     payer_code = Column(String(255), nullable=True)
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
