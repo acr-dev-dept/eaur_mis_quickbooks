@@ -930,39 +930,57 @@ def translate_to_json():
 
     return jsonify(result), 200
 
-from flask import Blueprint, jsonify
 from datetime import datetime
-from sqlalchemy import func
-from sqlalchemy import text, cast, String
+from flask import jsonify
+from sqlalchemy import func, cast, DECIMAL
+from sqlalchemy.types import DateTime
+from sqlalchemy.dialects.mysql import JSON_EXTRACT  # adjust if you're not using MySQL
+
+# Assuming these are already imported in your file:
+# from your_app import reconciliation_bp, db_manager
+# from your_models import IntegrationLog
 
 
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
 def payments_before_cutoff_report():
-
     CUTOFF_DATETIME = datetime(2026, 1, 13, 0, 0, 0)
+
+    # Define JSON paths (adjust these if your actual keys are different!)
+    JSON_PATH_AMOUNT = "$.amount"
+    JSON_PATH_PAYER_CODE = "$.payer_code"
+    JSON_PATH_PAYMENT_DATETIME = "$.payment_date_time"   # ← most important: confirm this key!
 
     with db_manager.get_mis_session() as session:
         try:
+            # Helper expressions
+            json_amount = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_AMOUNT)
+            )
+            json_payer_code = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYER_CODE)
+            )
+            json_payment_str = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+            )
+            # Cast to DATETIME — assumes the value is in a parseable format (ISO, etc.)
+            payment_datetime = cast(json_payment_str, DateTime)
+
             # ---- Aggregates ----
             aggregates = (
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
                     func.coalesce(
                         func.sum(
-                            func.JSON_UNQUOTE(
-                                func.JSON_EXTRACT(
-                                    IntegrationLog.response_data, "$.amount"
-                                )
-                            ).cast(func.DECIMAL(18, 2))
+                            cast(json_amount, DECIMAL(18, 2))
                         ), 0
                     ).label("total_amount"),
-                    func.min(IntegrationLog.payment_date_time_dt)
-                        .label("from_payment_time"),
-                    func.max(IntegrationLog.payment_date_time_dt)
-                        .label("to_payment_time")
+                    func.min(payment_datetime).label("from_payment_time"),
+                    func.max(payment_datetime).label("to_payment_time")
                 )
                 .filter(
-                    IntegrationLog.payment_date_time_dt < CUTOFF_DATETIME
+                    payment_datetime < CUTOFF_DATETIME,
+                    # Optional: only consider rows where the datetime actually exists
+                    json_payment_str.isnot(None)
                 )
                 .one()
             )
@@ -971,20 +989,16 @@ def payments_before_cutoff_report():
             records = (
                 session.query(
                     IntegrationLog.id,
-                    func.JSON_UNQUOTE(
-                        func.JSON_EXTRACT(
-                            IntegrationLog.response_data, "$.payer_code"
-                        )
-                    ).label("payer_code"),
-                    func.JSON_UNQUOTE(
-                        func.JSON_EXTRACT(
-                            IntegrationLog.response_data, "$.amount"
-                        )
-                    ).cast(func.DECIMAL(18, 2)).label("amount")
+                    json_payer_code.label("payer_code"),
+                    cast(json_amount, DECIMAL(18, 2)).label("amount"),
+                    # Including the parsed datetime can be helpful for debugging / verification
+                    payment_datetime.label("payment_datetime")
                 )
                 .filter(
-                    IntegrationLog.payment_date_time_dt < CUTOFF_DATETIME
+                    payment_datetime < CUTOFF_DATETIME,
+                    json_payment_str.isnot(None)
                 )
+                .order_by(payment_datetime.asc())  # chronological order
                 .all()
             )
 
@@ -992,7 +1006,11 @@ def payments_before_cutoff_report():
                 {
                     "id": r.id,
                     "payer_code": r.payer_code,
-                    "amount": float(r.amount)
+                    "amount": float(r.amount),
+                    "payment_datetime": (
+                        r.payment_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                        if r.payment_datetime else None
+                    )
                 }
                 for r in records
             ]
