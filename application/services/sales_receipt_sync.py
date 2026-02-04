@@ -256,7 +256,6 @@ class SalesReceiptSyncService:
 
         update_ledger = TblStudentWalletLedger.update_sync_status(
             id=sales_receipt_id,
-            status=SalesReceiptSyncStatus.SYNCED.value if qb_id else SalesReceiptSyncStatus.FAILED.value,
             qb_id=qb_id,
             sync_token=sync_token
         )

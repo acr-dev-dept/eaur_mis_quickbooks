@@ -1113,14 +1113,13 @@ class TblStudentWalletLedger(MISBaseModel):
             return float(balance)
 
     @staticmethod
-    def update_sync_status(id, status, qb_id, sync_token):
+    def update_sync_status(id, qb_id, sync_token):
         """
         Update QuickBooks sync status for a wallet ledger entry
         """
         with TblStudentWalletLedger.get_session() as session:
             wallet_ledger = session.query(TblStudentWalletLedger).filter(TblStudentWalletLedger.id == id).first()
             if wallet_ledger:
-                wallet_ledger.sync_status = status
                 wallet_ledger.quickbooks_id = qb_id
                 wallet_ledger.sync_token = sync_token
                 wallet_ledger.qb_pushed_date = datetime.now()
