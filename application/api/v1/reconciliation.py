@@ -1132,3 +1132,44 @@ def get_feb_04_integration_logs():
         "record_count": len(result),
         "records": result,
     }), 200
+
+
+from flask import request, jsonify
+from datetime import datetime
+
+@reconciliation_bp.route("/filter-before-jan-13", methods=["POST"])
+def filter_before_jan_13():
+    """
+    Accepts JSON payload in the same structure as /integration-logs/feb-04,
+    returns only response_data where payment_date_time < 2026-01-13.
+    """
+
+    payload = request.get_json()
+    if not payload or "records" not in payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    cutoff_date = datetime(2026, 1, 13, 0, 0, 0)
+
+    filtered_response_data = []
+    for record in payload["records"]:
+        response_data = record.get("response_data")
+        if not response_data:
+            continue
+
+        payment_date_str = response_data.get("payment_date_time")
+        if not payment_date_str:
+            continue
+
+        try:
+            payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue  # skip invalid date formats
+
+        if payment_date < cutoff_date:
+            filtered_response_data.append(response_data)
+
+    return jsonify({
+        "cutoff_date": "2026-01-13",
+        "filtered_count": len(filtered_response_data),
+        "records": filtered_response_data
+    }), 200
