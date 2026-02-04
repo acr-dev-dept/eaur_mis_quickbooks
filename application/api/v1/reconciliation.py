@@ -726,7 +726,7 @@ def sync_absent_wallet_payments():
             payer_code = tx.get("payer_code")
             slip_no = tx.get("slip_no")
             amount = float(tx.get("paid_amount", 0))
-            payment_channel = "URUBUTOPAY"
+            payment_channel = "MOMO"
             transaction_status = "SUCCESS"
             started_at = datetime.now()
 
@@ -867,13 +867,6 @@ def sync_absent_wallet_payments():
                     session.add(created_wallet)
                     session.flush()
 
-                    if created_wallet and "id" in created_wallet:
-                        from application.config_files.wallet_sync import (
-                            sync_wallet_to_quickbooks_task
-                        )
-                        sync_wallet_to_quickbooks_task.delay(
-                            created_wallet["id"]
-                        )
 
                 # ────────────────────────────────────────────────
                 # Integration log
