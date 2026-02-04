@@ -768,9 +768,9 @@ def sync_absent_wallet_payments():
             # ────────────────────────────────────────────────
             # Wallet lookup
             # ────────────────────────────────────────────────
-            wallet = TblStudentWallet.get_by_reg_no(reg_no)
 
             with TblStudentWalletHistory.get_session() as session:
+                wallet = TblStudentWallet.get_by_reg_no(session, reg_no)
 
                 try:
                     balance_before = wallet.dept if wallet else 0.0
@@ -849,7 +849,7 @@ def sync_absent_wallet_payments():
                     session.add(wallet)
                     session.flush()
                 else:
-                    created_wallet = TblStudentWallet.create_wallet_entry(
+                    created_wallet = TblStudentWallet(
                         reg_prg_id=int(datetime.now().strftime("%Y%m%d%H%M%S")),
                         reg_no=reg_no,
                         reference_number=f"{int(datetime.now().strftime('%Y%m%d%H%M%S'))}_{reg_no}",
@@ -861,8 +861,11 @@ def sync_absent_wallet_payments():
                         dept=amount,
                         fee_category=128,
                         bank_id=2,
-                        slip_no=slip_no or "N/A"
+                        slip_no=slip_no if slip_no else "N/A"
                     )
+                    
+                    session.add(created_wallet)
+                    session.flush()
 
                     if created_wallet and "id" in created_wallet:
                         from application.config_files.wallet_sync import (
