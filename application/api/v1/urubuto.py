@@ -349,9 +349,22 @@ def payment_callback():
     amount = data['amount']
     payment_channel = data.get('payment_channel_name')
     slip_no = data.get('slip_number') or data.get('initial_slip_number') or "N/A"
-
+    payment_date_time = data.get('payment_date_time')
     started_at = datetime.now()
-
+    CUTOFF_DATE = datetime(2026, 1, 13, 0, 0, 0)
+    if payment_date_time < datetime(2026, 1, 13, 0, 0, 0):
+        return jsonify({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "message": "Payment date is before the allowed cutoff date",
+            "status": 200,
+            "data": {
+                "external_transaction_id": transaction_id,
+                "internal_transaction_id": f"INT_{transaction_id}",
+                "payer_phone_number": "",
+                "payer_email": ""
+            }
+        }), 200
+    
     try:
         with db_manager.get_mis_session() as session:
 
