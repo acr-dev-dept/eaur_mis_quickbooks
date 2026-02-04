@@ -1182,3 +1182,127 @@ def filter_before_jan_13():
         "total_amount": total_amount,
         "records": filtered_response_data
     }), 200
+
+
+from flask import request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
+
+@reconciliation_bp.route("/delete-and-update-wallet-bulk", methods=["POST"])
+def delete_and_update_wallet_bulk():
+    """
+    Optimized bulk deletion and wallet update.
+    Accepts JSON payload like /filter-before-jan-13 output.
+    Reports success, failures, and total amount handled.
+    """
+    payload = request.get_json()
+    if not payload or "records" not in payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    transaction_ids = [r.get("transaction_id") or r.get("external_transaction_id") for r in payload["records"]]
+    payer_codes = [r.get("payer_code") for r in payload["records"]]
+
+    success = {
+        "ledger_deleted": [],
+        "history_deleted": [],
+        "wallet_updated": []
+    }
+    failed = {
+        "ledger_skipped": [],
+        "history_skipped": [],
+        "wallet_skipped": []
+    }
+
+    total_amount_handled = 0.0
+
+    try:
+        # ---------------------------
+        # Bulk fetch Ledger entries
+        # ---------------------------
+        ledgers = db.session.query(TblStudentWalletLedger)\
+            .filter(TblStudentWalletLedger.trans_code.in_(transaction_ids)).all()
+        ledger_map = {l.trans_code: l for l in ledgers}
+
+        # Bulk fetch History entries
+        histories = db.session.query(TblStudentWalletHistory)\
+            .filter(TblStudentWalletHistory.external_transaction_id.in_(transaction_ids)).all()
+        history_map = {h.external_transaction_id: h for h in histories}
+
+        # Bulk fetch Wallet entries
+        wallets = db.session.query(TblStudentWallet)\
+            .filter(TblStudentWallet.reg_no.in_(payer_codes)).all()
+        wallet_map = {w.reg_no: w for w in wallets}
+
+        # ---------------------------
+        # Process each record
+        # ---------------------------
+        for record in payload["records"]:
+            transaction_id = record.get("transaction_id") or record.get("external_transaction_id")
+            payer_code = record.get("payer_code")
+            amount = float(record.get("amount", 0))
+
+            # Ledger deletion
+            ledger_entry = ledger_map.get(transaction_id)
+            if ledger_entry:
+                if not ledger_entry.quickbooks_id:
+                    db.session.delete(ledger_entry)
+                    success["ledger_deleted"].append(transaction_id)
+                    total_amount_handled += amount
+                else:
+                    failed["ledger_skipped"].append({
+                        "transaction_id": transaction_id,
+                        "reason": "Ledger has quickbooks_id"
+                    })
+
+            # History deletion
+            history_entry = history_map.get(transaction_id)
+            if history_entry:
+                db.session.delete(history_entry)
+                success["history_deleted"].append(transaction_id)
+                total_amount_handled += amount
+            else:
+                failed["history_skipped"].append({
+                    "transaction_id": transaction_id,
+                    "reason": "Not found in history"
+                })
+
+            # Wallet update
+            wallet_entry = wallet_map.get(payer_code)
+            if wallet_entry:
+                current_dept = float(wallet_entry.dept or 0)
+                new_dept = current_dept - amount
+                if new_dept >= 0:
+                    wallet_entry.dept = new_dept
+                    db.session.add(wallet_entry)
+                    success["wallet_updated"].append({
+                        "reg_no": payer_code,
+                        "old_dept": current_dept,
+                        "new_dept": new_dept
+                    })
+                    total_amount_handled += amount
+                else:
+                    failed["wallet_skipped"].append({
+                        "reg_no": payer_code,
+                        "reason": f"Dept would become negative ({current_dept} - {amount})"
+                    })
+            else:
+                failed["wallet_skipped"].append({
+                    "reg_no": payer_code,
+                    "reason": "Wallet entry not found"
+                })
+
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Database error",
+            "message": str(e)
+        }), 500
+
+    return jsonify({
+        "status": "completed",
+        "total_amount_handled": total_amount_handled,
+        "success": success,
+        "failed": failed
+    }), 200
+
+
