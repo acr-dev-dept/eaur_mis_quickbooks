@@ -59,8 +59,12 @@ def make_celery(app):
             },
 
         },
-
-        
+        beat_schedule={
+            "sync_sales_receipt_every_3_minutes": {
+            "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
+            "schedule": crontab(minute='*/3')
+            }
+        }
     )
 
     log.info("Celery fully configured and ready")
