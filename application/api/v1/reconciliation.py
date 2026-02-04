@@ -939,47 +939,30 @@ from sqlalchemy import text, cast, String
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
 def payments_before_cutoff_report():
 
-    CUTOFF_DATETIME_STR = "2026-01-13 00:00:00"
+    CUTOFF_DATETIME = datetime(2026, 1, 13, 0, 0, 0)
 
     with db_manager.get_mis_session() as session:
         try:
-            # ---- Extract fields from TEXT using string functions ----
-            payment_dt = func.SUBSTRING_INDEX(
-                func.SUBSTRING_INDEX(
-                    IntegrationLog.response_data,
-                    '"payment_date_time":"', -1
-                ),
-                '"', 1
-            )
-
-            payer_code = func.SUBSTRING_INDEX(
-                func.SUBSTRING_INDEX(
-                    IntegrationLog.response_data,
-                    '"payer_code":"', -1
-                ),
-                '"', 1
-            )
-
-            amount = func.SUBSTRING_INDEX(
-                func.SUBSTRING_INDEX(
-                    IntegrationLog.response_data,
-                    '"amount":', -1
-                ),
-                ',', 1
-            )
-
             # ---- Aggregates ----
             aggregates = (
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
-                    func.coalesce(func.sum(amount.cast(func.DECIMAL(18, 2))), 0)
-                        .label("total_amount"),
-                    func.min(payment_dt).label("from_payment_time"),
-                    func.max(payment_dt).label("to_payment_time")
+                    func.coalesce(
+                        func.sum(
+                            func.JSON_UNQUOTE(
+                                func.JSON_EXTRACT(
+                                    IntegrationLog.response_data, "$.amount"
+                                )
+                            ).cast(func.DECIMAL(18, 2))
+                        ), 0
+                    ).label("total_amount"),
+                    func.min(IntegrationLog.payment_date_time_dt)
+                        .label("from_payment_time"),
+                    func.max(IntegrationLog.payment_date_time_dt)
+                        .label("to_payment_time")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
-                    payment_dt < CUTOFF_DATETIME_STR
+                    IntegrationLog.payment_date_time_dt < CUTOFF_DATETIME
                 )
                 .one()
             )
@@ -988,12 +971,19 @@ def payments_before_cutoff_report():
             records = (
                 session.query(
                     IntegrationLog.id,
-                    payer_code.label("payer_code"),
-                    amount.cast(func.DECIMAL(18, 2)).label("amount")
+                    func.JSON_UNQUOTE(
+                        func.JSON_EXTRACT(
+                            IntegrationLog.response_data, "$.payer_code"
+                        )
+                    ).label("payer_code"),
+                    func.JSON_UNQUOTE(
+                        func.JSON_EXTRACT(
+                            IntegrationLog.response_data, "$.amount"
+                        )
+                    ).cast(func.DECIMAL(18, 2)).label("amount")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
-                    payment_dt < CUTOFF_DATETIME_STR
+                    IntegrationLog.payment_date_time_dt < CUTOFF_DATETIME
                 )
                 .all()
             )
@@ -1010,12 +1000,18 @@ def payments_before_cutoff_report():
             return jsonify({
                 "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 "status": 200,
-                "cutoff_date": CUTOFF_DATETIME_STR,
+                "cutoff_date": CUTOFF_DATETIME.strftime("%Y-%m-%d %H:%M:%S"),
                 "summary": {
                     "count": aggregates.count,
                     "total_amount": float(aggregates.total_amount),
-                    "from_payment_time": aggregates.from_payment_time,
-                    "to_payment_time": aggregates.to_payment_time
+                    "from_payment_time": (
+                        aggregates.from_payment_time.strftime("%Y-%m-%d %H:%M:%S")
+                        if aggregates.from_payment_time else None
+                    ),
+                    "to_payment_time": (
+                        aggregates.to_payment_time.strftime("%Y-%m-%d %H:%M:%S")
+                        if aggregates.to_payment_time else None
+                    )
                 },
                 "data": data
             }), 200
