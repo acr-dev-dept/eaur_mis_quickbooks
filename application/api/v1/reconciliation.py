@@ -942,28 +942,6 @@ def payments_before_cutoff_report():
     
     with db_manager.get_mis_session() as session:
         try:
-            # Since response_data is LONGTEXT, we need to cast it or use text()
-            payment_dt = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(
-                    cast(IntegrationLog.response_data, String),
-                    "$.payment_date_time"
-                )
-            )
-            
-            amount_field = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(
-                    cast(IntegrationLog.response_data, String),
-                    "$.amount"
-                )
-            )
-            
-            payer_code_field = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(
-                    cast(IntegrationLog.response_data, String),
-                    "$.payer_code"
-                )
-            )
-            
             # ---- Aggregates ----
             aggregates = (
                 session.query(
@@ -1000,8 +978,8 @@ def payments_before_cutoff_report():
                     ).label("to_payment_time")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
-                    IntegrationLog.response_data != '',
+                    text("response_data IS NOT NULL"),
+                    text("response_data != ''"),
                     text("JSON_EXTRACT(response_data, '$.payment_date_time') IS NOT NULL"),
                     text(f"JSON_UNQUOTE(JSON_EXTRACT(response_data, '$.payment_date_time')) < '{CUTOFF_DATETIME_STR}'")
                 )
@@ -1029,8 +1007,8 @@ def payments_before_cutoff_report():
                     ).label("amount")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
-                    IntegrationLog.response_data != '',
+                    text("response_data IS NOT NULL"),
+                    text("response_data != ''"),
                     text("JSON_EXTRACT(response_data, '$.payment_date_time') IS NOT NULL"),
                     text(f"JSON_UNQUOTE(JSON_EXTRACT(response_data, '$.payment_date_time')) < '{CUTOFF_DATETIME_STR}'")
                 )
