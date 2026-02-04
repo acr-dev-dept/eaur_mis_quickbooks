@@ -896,3 +896,34 @@ def sync_absent_wallet_payments():
         "processed": len(results),
         "results": results
     }), 200
+
+
+@reconciliation_bp.route("/translate_to_json", methods=["POST"])
+def translate_to_json():
+
+    data = request.get_json()
+    absent_in_wallet = []
+
+    for payer_code, info in data.get("per_payer_code", {}).items():
+        total_paid = info.get("total_paid_amount", 0)
+        transactions = info.get("transactions", [])
+
+        cloud_transactions = []
+        for tx in transactions:
+            cloud_transactions.append({
+                "paid_amount": tx.get("paid_amount"),
+                "payer_code": payer_code,
+                "slip_no": tx.get("slip_no")  # can be None
+            })
+
+        absent_in_wallet.append({
+            "cloud_total": total_paid,
+            "transaction_reference": str(transactions[0]["transaction_reference"]) if transactions else None,
+            "cloud_transactions": cloud_transactions
+        })
+
+    result = {
+        "absent_in_wallet": absent_in_wallet
+    }
+
+    return jsonify(result), 200
