@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from application.models.central_models import IntegrationLog
 from sqlalchemy.exc import IntegrityError
 from datetime import date
+from application.utils.database import db_manager
+
 
 
 @reconciliation_bp.route("/valid-payments/total", methods=["GET"])
@@ -927,3 +929,103 @@ def translate_to_json():
     }
 
     return jsonify(result), 200
+
+from flask import Blueprint, jsonify
+from datetime import datetime
+from sqlalchemy import func
+
+
+@reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
+def payments_before_cutoff_report():
+    """
+    MariaDB-safe report:
+    - Filters integration_logs.response_data.payment_date_time < 13 Jan 2026
+    - Returns IDs, payer_codes, amounts
+    - Includes totals + min/max payment times
+    """
+
+    CUTOFF_DATETIME_STR = "2026-01-13 00:00:00"
+
+    with db_manager.get_mis_session() as session:
+        try:
+            payment_dt = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(
+                    IntegrationLog.response_data,
+                    "$.payment_date_time"
+                )
+            )
+
+            amount_field = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(
+                    IntegrationLog.response_data,
+                    "$.amount"
+                )
+            )
+
+            payer_code_field = func.JSON_UNQUOTE(
+                func.JSON_EXTRACT(
+                    IntegrationLog.response_data,
+                    "$.payer_code"
+                )
+            )
+
+            # ---- Aggregates ----
+            aggregates = (
+                session.query(
+                    func.count(IntegrationLog.id).label("count"),
+                    func.coalesce(func.sum(amount_field.cast(func.DECIMAL(18, 2))), 0)
+                        .label("total_amount"),
+                    func.min(payment_dt).label("from_payment_time"),
+                    func.max(payment_dt).label("to_payment_time")
+                )
+                .filter(
+                    IntegrationLog.response_data.isnot(None),
+                    payment_dt < CUTOFF_DATETIME_STR
+                )
+                .one()
+            )
+
+            # ---- Records ----
+            records = (
+                session.query(
+                    IntegrationLog.id,
+                    payer_code_field.label("payer_code"),
+                    amount_field.cast(func.DECIMAL(18, 2)).label("amount")
+                )
+                .filter(
+                    IntegrationLog.response_data.isnot(None),
+                    payment_dt < CUTOFF_DATETIME_STR
+                )
+                .all()
+            )
+
+            data = [
+                {
+                    "id": r.id,
+                    "payer_code": r.payer_code,
+                    "amount": float(r.amount)
+                }
+                for r in records
+            ]
+
+            return jsonify({
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "status": 200,
+                "cutoff_date": CUTOFF_DATETIME_STR,
+                "summary": {
+                    "count": aggregates.count,
+                    "total_amount": float(aggregates.total_amount),
+                    "from_payment_time": aggregates.from_payment_time,
+                    "to_payment_time": aggregates.to_payment_time
+                },
+                "data": data
+            }), 200
+
+        except Exception as e:
+            session.rollback()
+            return jsonify({
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "status": 500,
+                "message": "Failed to generate MariaDB payments report",
+                "error": str(e)
+            }), 500

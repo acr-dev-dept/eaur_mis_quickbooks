@@ -352,7 +352,8 @@ def payment_callback():
     payment_date_time = data.get('payment_date_time')
     started_at = datetime.now()
     CUTOFF_DATE = datetime(2026, 1, 13, 0, 0, 0)
-    if payment_date_time < datetime(2026, 1, 13, 0, 0, 0):
+    payment_date_d = datetime.strptime(payment_date_time, "%Y-%m-%d %H:%M:%S") if payment_date_time else datetime.now()
+    if payment_date_d < CUTOFF_DATE:
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "message": "Payment date is before the allowed cutoff date",
