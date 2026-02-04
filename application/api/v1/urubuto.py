@@ -785,8 +785,8 @@ def payment_notification():
     
     
     # TRANSACTION PROCESSING
-    
-    if payment_date_time < datetime(2026, 1, 13, 0, 0, 0):
+    datetime_dt = datetime.strptime(payment_date_time, "%Y-%m-%d %H:%M:%S")
+    if datetime_dt < datetime(2026, 1, 13, 0, 0, 0):
         return jsonify({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "message": "Payment date is before the allowed cutoff date",
