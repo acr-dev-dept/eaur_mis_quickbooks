@@ -933,6 +933,7 @@ def translate_to_json():
 from flask import Blueprint, jsonify
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy import text, cast, String
 
 
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
@@ -941,23 +942,24 @@ def payments_before_cutoff_report():
     
     with db_manager.get_mis_session() as session:
         try:
+            # Since response_data is LONGTEXT, we need to cast it or use text()
             payment_dt = func.JSON_UNQUOTE(
                 func.JSON_EXTRACT(
-                    IntegrationLog.response_data,
+                    cast(IntegrationLog.response_data, String),
                     "$.payment_date_time"
                 )
             )
             
             amount_field = func.JSON_UNQUOTE(
                 func.JSON_EXTRACT(
-                    IntegrationLog.response_data,
+                    cast(IntegrationLog.response_data, String),
                     "$.amount"
                 )
             )
             
             payer_code_field = func.JSON_UNQUOTE(
                 func.JSON_EXTRACT(
-                    IntegrationLog.response_data,
+                    cast(IntegrationLog.response_data, String),
                     "$.payer_code"
                 )
             )
@@ -967,17 +969,41 @@ def payments_before_cutoff_report():
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
                     func.coalesce(
-                        func.sum(amount_field.cast(func.DECIMAL(18, 2))),
+                        func.sum(
+                            func.CAST(
+                                func.JSON_UNQUOTE(
+                                    func.JSON_EXTRACT(
+                                        IntegrationLog.response_data,
+                                        "$.amount"
+                                    )
+                                ),
+                                func.DECIMAL(18, 2)
+                            )
+                        ),
                         0
                     ).label("total_amount"),
-                    func.min(payment_dt).label("from_payment_time"),
-                    func.max(payment_dt).label("to_payment_time")
+                    func.min(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(
+                                IntegrationLog.response_data,
+                                "$.payment_date_time"
+                            )
+                        )
+                    ).label("from_payment_time"),
+                    func.max(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(
+                                IntegrationLog.response_data,
+                                "$.payment_date_time"
+                            )
+                        )
+                    ).label("to_payment_time")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),  # Check JSON column exists
-                    payment_dt.isnot(None),  # This should work now
-                    payment_dt != '',  # Also check for empty strings
-                    payment_dt < CUTOFF_DATETIME_STR
+                    IntegrationLog.response_data.isnot(None),
+                    IntegrationLog.response_data != '',
+                    text("JSON_EXTRACT(response_data, '$.payment_date_time') IS NOT NULL"),
+                    text(f"JSON_UNQUOTE(JSON_EXTRACT(response_data, '$.payment_date_time')) < '{CUTOFF_DATETIME_STR}'")
                 )
                 .one()
             )
@@ -986,15 +1012,27 @@ def payments_before_cutoff_report():
             records = (
                 session.query(
                     IntegrationLog.id,
-                    payer_code_field.label("payer_code"),
-                    amount_field.cast(func.DECIMAL(18, 2)).label("amount"),
-                    payment_dt.label("payment_date_time")  # Added for verification
+                    func.JSON_UNQUOTE(
+                        func.JSON_EXTRACT(
+                            IntegrationLog.response_data,
+                            "$.payer_code"
+                        )
+                    ).label("payer_code"),
+                    func.CAST(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(
+                                IntegrationLog.response_data,
+                                "$.amount"
+                            )
+                        ),
+                        func.DECIMAL(18, 2)
+                    ).label("amount")
                 )
                 .filter(
                     IntegrationLog.response_data.isnot(None),
-                    payment_dt.isnot(None),
-                    payment_dt != '',
-                    payment_dt < CUTOFF_DATETIME_STR
+                    IntegrationLog.response_data != '',
+                    text("JSON_EXTRACT(response_data, '$.payment_date_time') IS NOT NULL"),
+                    text(f"JSON_UNQUOTE(JSON_EXTRACT(response_data, '$.payment_date_time')) < '{CUTOFF_DATETIME_STR}'")
                 )
                 .all()
             )
