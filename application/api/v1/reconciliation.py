@@ -1080,6 +1080,7 @@ def payments_before_cutoff_report():
                 "error": str(e)
             }), 500
 
+from sqlalchemy import and_
 
 @reconciliation_bp.route("/integration-logs/feb-04", methods=["GET"])
 def get_feb_04_integration_logs():
