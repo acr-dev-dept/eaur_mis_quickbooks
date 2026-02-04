@@ -934,7 +934,7 @@ from datetime import datetime
 from flask import jsonify
 from sqlalchemy import func
 
-# Assuming these are already imported:
+# Assuming these are already imported in your file:
 # from your_app import reconciliation_bp, db_manager
 # from your_models import IntegrationLog
 
@@ -943,51 +943,62 @@ from sqlalchemy import func
 def payments_before_cutoff_report():
     CUTOFF_DATETIME = datetime(2026, 1, 13, 0, 0, 0)
 
-    # Adjust these JSON paths to match your actual response_data structure!
-    JSON_PATH_AMOUNT           = "$.amount"
-    JSON_PATH_PAYER_CODE       = "$.payer_code"
-    JSON_PATH_PAYMENT_DATETIME = "$.payment_date_time"   # ← confirm / change this!
+    # Define JSON paths (adjust these if your actual keys are different!)
+    JSON_PATH_AMOUNT = "$.amount"
+    JSON_PATH_PAYER_CODE = "$.payer_code"
+    JSON_PATH_PAYMENT_DATETIME = "$.payment_date_time"   # ← confirm this key!
 
     # Critical: match this EXACTLY to the format in your JSON string
-    # Examples:
-    #   '%Y-%m-%d %H:%i:%s'     → 2025-12-24 14:30:00
-    #   '%Y-%m-%dT%H:%i:%s'     → 2025-12-24T14:30:00
-    #   '%d/%m/%Y %H:%i'       → 24/12/2025 14:30
-    #   '%Y-%m-%d %H:%i:%s.%f' → with microseconds
+    # Run the SQL query I suggested to check examples and adjust
     DATETIME_FORMAT = '%Y-%m-%d %H:%i:%s'   # ← CHANGE THIS BASED ON YOUR DATA
 
     with db_manager.get_mis_session() as session:
         try:
-            # JSON extraction helpers
-            json_amount_raw = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_AMOUNT)
-            )
-            json_payer_raw = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYER_CODE)
-            )
-            json_datetime_raw = func.JSON_UNQUOTE(
-                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
-            )
-
-            # Parse the extracted string → DATETIME
-            payment_datetime = func.STR_TO_DATE(json_datetime_raw, DATETIME_FORMAT)
-
             # ---- Aggregates ----
             aggregates = (
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
                     func.coalesce(
                         func.sum(
-                            func.cast(json_amount_raw, "DECIMAL(18,2)")
+                            func.cast(
+                                func.JSON_UNQUOTE(
+                                    func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_AMOUNT)
+                                ),
+                                "DECIMAL(18,2)"
+                            )
                         ), 0
                     ).label("total_amount"),
-                    func.min(payment_datetime).label("from_payment_time"),
-                    func.max(payment_datetime).label("to_payment_time")
+                    func.min(
+                        func.STR_TO_DATE(
+                            func.JSON_UNQUOTE(
+                                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                            ),
+                            DATETIME_FORMAT
+                        )
+                    ).label("from_payment_time"),
+                    func.max(
+                        func.STR_TO_DATE(
+                            func.JSON_UNQUOTE(
+                                func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                            ),
+                            DATETIME_FORMAT
+                        )
+                    ).label("to_payment_time")
                 )
                 .filter(
-                    payment_datetime < CUTOFF_DATETIME,
-                    json_datetime_raw.isnot(None),
-                    payment_datetime.isnot(None)  # skip parse failures
+                    func.STR_TO_DATE(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                        ),
+                        DATETIME_FORMAT
+                    ) < CUTOFF_DATETIME,
+                    func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME).isnot(None),
+                    func.STR_TO_DATE(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                        ),
+                        DATETIME_FORMAT
+                    ).isnot(None)
                 )
                 .one()
             )
@@ -996,16 +1007,39 @@ def payments_before_cutoff_report():
             records = (
                 session.query(
                     IntegrationLog.id,
-                    json_payer_raw.label("payer_code"),
-                    func.cast(json_amount_raw, "DECIMAL(18,2)").label("amount"),
-                    payment_datetime.label("payment_datetime")
+                    func.JSON_UNQUOTE(
+                        func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYER_CODE)
+                    ).label("payer_code"),
+                    func.cast(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_AMOUNT)
+                        ),
+                        "DECIMAL(18,2)"
+                    ).label("amount")
                 )
                 .filter(
-                    payment_datetime < CUTOFF_DATETIME,
-                    json_datetime_raw.isnot(None),
-                    payment_datetime.isnot(None)
+                    func.STR_TO_DATE(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                        ),
+                        DATETIME_FORMAT
+                    ) < CUTOFF_DATETIME,
+                    func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME).isnot(None),
+                    func.STR_TO_DATE(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                        ),
+                        DATETIME_FORMAT
+                    ).isnot(None)
                 )
-                .order_by(payment_datetime.asc())
+                .order_by(
+                    func.STR_TO_DATE(
+                        func.JSON_UNQUOTE(
+                            func.JSON_EXTRACT(IntegrationLog.response_data, JSON_PATH_PAYMENT_DATETIME)
+                        ),
+                        DATETIME_FORMAT
+                    ).asc()
+                )
                 .all()
             )
 
@@ -1013,11 +1047,7 @@ def payments_before_cutoff_report():
                 {
                     "id": r.id,
                     "payer_code": r.payer_code,
-                    "amount": float(r.amount),
-                    "payment_datetime": (
-                        r.payment_datetime.strftime("%Y-%m-%d %H:%M:%S")
-                        if r.payment_datetime else None
-                    )
+                    "amount": float(r.amount)
                 }
                 for r in records
             ]
