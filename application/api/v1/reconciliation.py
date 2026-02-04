@@ -1079,3 +1079,46 @@ def payments_before_cutoff_report():
                 "message": "Failed to generate payments report",
                 "error": str(e)
             }), 500
+
+
+@reconciliation_bp.route("/integration-logs/feb-04", methods=["GET"])
+def get_feb_04_integration_logs():
+    """
+    Fetch integration logs created on 4th February.
+    Returns response_data, payer_code, external_transaction_id only.
+    """
+
+    # Define date range for Feb 4 (00:00:00 → 23:59:59)
+    start_date = datetime(2026, 2, 4, 0, 0, 0)
+    end_date = start_date + timedelta(days=1)
+
+    logs = (
+        db.session.query(
+            IntegrationLog.response_data,
+            IntegrationLog.payer_code,
+            IntegrationLog.external_transaction_id,
+        )
+        .filter(
+            and_(
+                IntegrationLog.created_at >= start_date,
+                IntegrationLog.created_at < end_date,
+            )
+        )
+        .order_by(IntegrationLog.created_at.asc())
+        .all()
+    )
+
+    result = [
+        {
+            "response_data": log.response_data,
+            "payer_code": log.payer_code,
+            "external_transaction_id": log.external_transaction_id,
+        }
+        for log in logs
+    ]
+
+    return jsonify({
+        "date": "2026-02-04",
+        "record_count": len(result),
+        "records": result,
+    }), 200
