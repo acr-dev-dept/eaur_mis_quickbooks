@@ -937,12 +937,6 @@ from sqlalchemy import func
 
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
 def payments_before_cutoff_report():
-    """
-    MariaDB-safe report:
-    - Filters integration_logs.response_data.payment_date_time < 13 Jan 2026
-    - Returns IDs, payer_codes, amounts
-    - Includes totals + min/max payment times
-    """
 
     CUTOFF_DATETIME_STR = "2026-01-13 00:00:00"
 
@@ -973,13 +967,14 @@ def payments_before_cutoff_report():
             aggregates = (
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
-                    func.coalesce(func.sum(amount_field.cast(func.DECIMAL(18, 2))), 0)
-                        .label("total_amount"),
+                    func.coalesce(
+                        func.sum(amount_field.cast(func.DECIMAL(18, 2))), 0
+                    ).label("total_amount"),
                     func.min(payment_dt).label("from_payment_time"),
                     func.max(payment_dt).label("to_payment_time")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
+                    payment_dt.isnot(None),
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .one()
@@ -993,7 +988,7 @@ def payments_before_cutoff_report():
                     amount_field.cast(func.DECIMAL(18, 2)).label("amount")
                 )
                 .filter(
-                    IntegrationLog.response_data.isnot(None),
+                    payment_dt.isnot(None),
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .all()
