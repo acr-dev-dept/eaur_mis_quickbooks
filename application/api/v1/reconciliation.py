@@ -937,9 +937,8 @@ from sqlalchemy import func
 
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
 def payments_before_cutoff_report():
-
     CUTOFF_DATETIME_STR = "2026-01-13 00:00:00"
-
+    
     with db_manager.get_mis_session() as session:
         try:
             payment_dt = func.JSON_UNQUOTE(
@@ -948,38 +947,39 @@ def payments_before_cutoff_report():
                     "$.payment_date_time"
                 )
             )
-
+            
             amount_field = func.JSON_UNQUOTE(
                 func.JSON_EXTRACT(
                     IntegrationLog.response_data,
                     "$.amount"
                 )
             )
-
+            
             payer_code_field = func.JSON_UNQUOTE(
                 func.JSON_EXTRACT(
                     IntegrationLog.response_data,
                     "$.payer_code"
                 )
             )
-
+            
             # ---- Aggregates ----
             aggregates = (
                 session.query(
                     func.count(IntegrationLog.id).label("count"),
                     func.coalesce(
-                        func.sum(amount_field.cast(func.DECIMAL(18, 2))), 0
+                        func.sum(amount_field.cast(func.DECIMAL(18, 2))),
+                        0
                     ).label("total_amount"),
                     func.min(payment_dt).label("from_payment_time"),
                     func.max(payment_dt).label("to_payment_time")
                 )
                 .filter(
-                    payment_dt.isnot(None),
+                    payment_dt != None,  # Changed from .isnot(None)
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .one()
             )
-
+            
             # ---- Records ----
             records = (
                 session.query(
@@ -988,12 +988,12 @@ def payments_before_cutoff_report():
                     amount_field.cast(func.DECIMAL(18, 2)).label("amount")
                 )
                 .filter(
-                    payment_dt.isnot(None),
+                    payment_dt != None,  # Changed from .isnot(None)
                     payment_dt < CUTOFF_DATETIME_STR
                 )
                 .all()
             )
-
+            
             data = [
                 {
                     "id": r.id,
@@ -1002,7 +1002,7 @@ def payments_before_cutoff_report():
                 }
                 for r in records
             ]
-
+            
             return jsonify({
                 "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 "status": 200,
@@ -1015,7 +1015,7 @@ def payments_before_cutoff_report():
                 },
                 "data": data
             }), 200
-
+            
         except Exception as e:
             session.rollback()
             return jsonify({
