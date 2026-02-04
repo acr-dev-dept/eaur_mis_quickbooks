@@ -1141,7 +1141,8 @@ from datetime import datetime
 def filter_before_jan_13():
     """
     Accepts JSON payload in the same structure as /integration-logs/feb-04,
-    returns only response_data where payment_date_time < 2026-01-13.
+    returns only response_data where payment_date_time < 2026-01-13,
+    and includes the total amount.
     """
 
     payload = request.get_json()
@@ -1151,6 +1152,8 @@ def filter_before_jan_13():
     cutoff_date = datetime(2026, 1, 13, 0, 0, 0)
 
     filtered_response_data = []
+    total_amount = 0.0
+
     for record in payload["records"]:
         response_data = record.get("response_data")
         if not response_data:
@@ -1167,9 +1170,15 @@ def filter_before_jan_13():
 
         if payment_date < cutoff_date:
             filtered_response_data.append(response_data)
+            amount = response_data.get("amount", 0)
+            try:
+                total_amount += float(amount)
+            except (TypeError, ValueError):
+                continue  # skip if amount is invalid
 
     return jsonify({
         "cutoff_date": "2026-01-13",
         "filtered_count": len(filtered_response_data),
+        "total_amount": total_amount,
         "records": filtered_response_data
     }), 200
