@@ -1488,57 +1488,76 @@ from sqlalchemy.exc import SQLAlchemyError
 @reconciliation_bp.route("/revert-wallet-deductions", methods=["POST"])
 def revert_wallet_deductions():
     """
-    Revert deductions by REPLACING payment.amount with deducted amount.
-    No addition logic is used.
+    Revert payment deductions using the full reconciliation report payload.
+    payment.amount is REPLACED with deducted value.
     """
 
     payload = request.get_json()
-    if not payload or "deductions" not in payload:
+    if not payload or "records" not in payload:
         return jsonify({"error": "Invalid payload"}), 400
 
     reverted = []
     failed = []
+
     total_reverted = 0.0
+    total_payments = 0
 
     try:
-        for item in payload["deductions"]:
-            payment_id = item.get("payment_id")
-            deducted = item.get("deducted")
+        for record in payload["records"]:
+            reg_no = record.get("reg_no")
+            wallet_ref = record.get("reference_number")
 
-            if not payment_id or deducted is None:
-                failed.append({
-                    "payment_id": payment_id,
-                    "reason": "Missing payment_id or deducted amount"
-                })
+            deductions = record.get("deductions", [])
+            if not deductions:
                 continue
 
-            payment = (
-                db.session.query(Payment)
-                .filter(Payment.id == payment_id)
-                .with_for_update()
-                .first()
-            )
+            for d in deductions:
+                payment_id = d.get("payment_id")
+                deducted = d.get("deducted")
 
-            if not payment:
-                failed.append({
-                    "payment_id": payment_id,
-                    "reason": "Payment not found"
+                total_payments += 1
+
+                if payment_id is None or deducted is None:
+                    failed.append({
+                        "reg_no": reg_no,
+                        "reference_number": wallet_ref,
+                        "payment_id": payment_id,
+                        "reason": "Missing payment_id or deducted amount"
+                    })
+                    continue
+
+                payment = (
+                    db.session.query(Payment)
+                    .filter(Payment.id == payment_id)
+                    .with_for_update()
+                    .first()
+                )
+
+                if not payment:
+                    failed.append({
+                        "reg_no": reg_no,
+                        "reference_number": wallet_ref,
+                        "payment_id": payment_id,
+                        "reason": "Payment not found"
+                    })
+                    continue
+
+                old_amount = float(payment.amount or 0)
+                new_amount = float(deducted)
+
+                payment.amount = new_amount
+                total_reverted += new_amount
+
+                db.session.add(payment)
+
+                reverted.append({
+                    "payment_id": payment.id,
+                    "reg_no": reg_no,
+                    "reference_number": wallet_ref,
+                    "before": old_amount,
+                    "after": new_amount,
+                    "reverted_to": new_amount
                 })
-                continue
-
-            old_amount = payment.amount
-            payment.amount = float(deducted)
-            total_reverted += float(deducted)
-
-            db.session.add(payment)
-
-            reverted.append({
-                "payment_id": payment.id,
-                "trans_code": payment.trans_code,
-                "before": old_amount,
-                "after": payment.amount,
-                "reverted_to": deducted
-            })
 
         db.session.commit()
 
@@ -1552,8 +1571,9 @@ def revert_wallet_deductions():
     return jsonify({
         "status": "completed",
         "summary": {
+            "total_records": len(payload["records"]),
+            "total_payments_processed": total_payments,
             "total_reverted_amount": total_reverted,
-            "total_records": len(payload["deductions"]),
             "reverted_count": len(reverted),
             "failed_count": len(failed)
         },
