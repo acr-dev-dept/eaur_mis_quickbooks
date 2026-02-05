@@ -1488,8 +1488,8 @@ from sqlalchemy.exc import SQLAlchemyError
 @reconciliation_bp.route("/revert-wallet-deductions", methods=["POST"])
 def revert_wallet_deductions():
     """
-    Revert payment deductions using the full reconciliation report payload.
-    payment.amount is REPLACED with deducted value.
+    Revert wallet deductions by restoring payment.amount
+    to its ORIGINAL 'before' value.
     """
 
     payload = request.get_json()
@@ -1507,22 +1507,18 @@ def revert_wallet_deductions():
             reg_no = record.get("reg_no")
             wallet_ref = record.get("reference_number")
 
-            deductions = record.get("deductions", [])
-            if not deductions:
-                continue
-
-            for d in deductions:
+            for d in record.get("deductions", []):
                 payment_id = d.get("payment_id")
-                deducted = d.get("deducted")
+                before_amount = d.get("before")
 
                 total_payments += 1
 
-                if payment_id is None or deducted is None:
+                if payment_id is None or before_amount is None:
                     failed.append({
                         "reg_no": reg_no,
                         "reference_number": wallet_ref,
                         "payment_id": payment_id,
-                        "reason": "Missing payment_id or deducted amount"
+                        "reason": "Missing payment_id or before amount"
                     })
                     continue
 
@@ -1543,20 +1539,21 @@ def revert_wallet_deductions():
                     continue
 
                 old_amount = float(payment.amount or 0)
-                new_amount = float(deducted)
+                restored_amount = float(before_amount)
 
-                payment.amount = new_amount
-                total_reverted += new_amount
+                payment.amount = restored_amount
+                total_reverted += restored_amount
 
                 db.session.add(payment)
 
                 reverted.append({
                     "payment_id": payment.id,
+                    "trans_code": payment.trans_code,
                     "reg_no": reg_no,
                     "reference_number": wallet_ref,
-                    "before": old_amount,
-                    "after": new_amount,
-                    "reverted_to": new_amount
+                    "before_deduction": restored_amount,
+                    "previous_db_value": old_amount,
+                    "restored_to": restored_amount
                 })
 
         db.session.commit()
@@ -1573,7 +1570,7 @@ def revert_wallet_deductions():
         "summary": {
             "total_records": len(payload["records"]),
             "total_payments_processed": total_payments,
-            "total_reverted_amount": total_reverted,
+            "total_restored_amount": total_reverted,
             "reverted_count": len(reverted),
             "failed_count": len(failed)
         },
