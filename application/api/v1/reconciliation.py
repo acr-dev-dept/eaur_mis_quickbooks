@@ -1306,3 +1306,55 @@ def delete_and_update_wallet_bulk():
     }), 200
 
 
+import re
+from flask import request, jsonify
+
+@reconciliation_bp.route("/wallet-reference-lookup", methods=["POST"])
+def wallet_reference_lookup():
+    """
+    For each skipped wallet entry:
+    - Lookup TblStudentWallet by reg_no
+    - Return reference_number
+    - Extract amount from reason
+    """
+
+    payload = request.get_json()
+    if not payload or "wallet_skipped" not in payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    reg_nos = [w.get("reg_no") for w in payload["wallet_skipped"] if w.get("reg_no")]
+
+    # Bulk fetch wallets
+    wallets = (
+        db.session.query(TblStudentWallet)
+        .filter(TblStudentWallet.reg_no.in_(reg_nos))
+        .all()
+    )
+    wallet_map = {w.reg_no: w for w in wallets}
+
+    results = []
+
+    for item in payload["wallet_skipped"]:
+        reg_no = item.get("reg_no")
+        reason = item.get("reason", "")
+
+        # Extract amount from reason: (X - AMOUNT)
+        amount = None
+        match = re.search(r"-\s*([\d\.]+)\)", reason)
+        if match:
+            amount = float(match.group(1))
+
+        wallet = wallet_map.get(reg_no)
+
+        results.append({
+            "reg_no": reg_no,
+            "reference_number": wallet.reference_number if wallet else None,
+            "amount": amount,
+            "reason": reason,
+            "wallet_found": bool(wallet)
+        })
+
+    return jsonify({
+        "record_count": len(results),
+        "records": results
+    }), 200
