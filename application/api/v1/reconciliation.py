@@ -1361,14 +1361,16 @@ def wallet_reference_lookup():
 
 
 
+from datetime import date
 from flask import request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 
 @reconciliation_bp.route("/apply-wallet-deductions", methods=["POST"])
 def apply_wallet_deductions():
     """
-    Deduct amounts from Payment.amount using payment.trans_code
-    until the requested amount is exhausted.
+    Deduct amounts from Payment.amount
+    ONLY for payments recorded on 2026-02-04
     """
 
     payload = request.get_json()
@@ -1381,24 +1383,30 @@ def apply_wallet_deductions():
     total_requested = 0.0
     total_deducted = 0.0
 
+    TARGET_DATE = date(2026, 2, 4)
+
     try:
         for item in payload["records"]:
             reg_no = item.get("reg_no")
+            wallet_ref = item.get("reference_number")
             remaining = float(item.get("amount", 0))
-            trans_codes = item.get("transactions", [])
 
             total_requested += remaining
 
-            if remaining <= 0 or not trans_codes:
+            if not wallet_ref or remaining <= 0:
                 failed.append({
                     "reg_no": reg_no,
-                    "reason": "Invalid amount or empty transaction list"
+                    "reference_number": wallet_ref,
+                    "reason": "Invalid reference number or amount"
                 })
                 continue
 
             payments = (
                 db.session.query(Payment)
-                .filter(Payment.trans_code.in_(trans_codes))
+                .filter(
+                    Payment.student_wallet_ref == wallet_ref,
+                    func.date(Payment.recorded_date) == TARGET_DATE
+                )
                 .order_by(Payment.recorded_date.asc())
                 .with_for_update()
                 .all()
@@ -1407,8 +1415,9 @@ def apply_wallet_deductions():
             if not payments:
                 failed.append({
                     "reg_no": reg_no,
+                    "reference_number": wallet_ref,
                     "amount_requested": remaining,
-                    "reason": "No payments found for given trans_code(s)"
+                    "reason": "No payments found on 2026-02-04"
                 })
                 continue
 
@@ -1421,19 +1430,19 @@ def apply_wallet_deductions():
                 if payment.amount is None or payment.amount <= 0:
                     continue
 
-                deduct = min(payment.amount, remaining)
-
                 before = float(payment.amount)
+                deduct = min(before, remaining)
+
                 payment.amount -= deduct
                 remaining -= deduct
                 total_deducted += deduct
 
                 deductions.append({
                     "payment_id": payment.id,
-                    "trans_code": payment.trans_code,
-                    "deducted": deduct,
                     "before": before,
-                    "after": payment.amount
+                    "deducted": deduct,
+                    "after": payment.amount,
+                    "recorded_date": payment.recorded_date.isoformat()
                 })
 
                 db.session.add(payment)
@@ -1441,6 +1450,7 @@ def apply_wallet_deductions():
             if remaining == 0:
                 success.append({
                     "reg_no": reg_no,
+                    "reference_number": wallet_ref,
                     "amount_requested": item["amount"],
                     "amount_deducted": item["amount"],
                     "deductions": deductions,
@@ -1449,11 +1459,12 @@ def apply_wallet_deductions():
             else:
                 failed.append({
                     "reg_no": reg_no,
+                    "reference_number": wallet_ref,
                     "amount_requested": item["amount"],
                     "amount_deducted": item["amount"] - remaining,
                     "amount_remaining": remaining,
                     "deductions": deductions,
-                    "reason": "Insufficient balance across provided transactions"
+                    "reason": "Insufficient balance on 2026-02-04"
                 })
 
         db.session.commit()
@@ -1477,6 +1488,7 @@ def apply_wallet_deductions():
         "success": success,
         "failed": failed
     }), 200
+
 
 
 from flask import request, jsonify
