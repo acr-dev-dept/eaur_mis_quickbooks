@@ -1360,13 +1360,14 @@ def wallet_reference_lookup():
     }), 200
 
 
+
 from flask import request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 
 @reconciliation_bp.route("/apply-wallet-deductions", methods=["POST"])
 def apply_wallet_deductions():
     """
-    Deduct amounts from Payment.amount using student_wallet_ref
+    Deduct amounts from Payment.amount using payment.trans_code
     until the requested amount is exhausted.
     """
 
@@ -1383,22 +1384,21 @@ def apply_wallet_deductions():
     try:
         for item in payload["records"]:
             reg_no = item.get("reg_no")
-            wallet_ref = item.get("reference_number")
             remaining = float(item.get("amount", 0))
+            trans_codes = item.get("transactions", [])
 
             total_requested += remaining
 
-            if not wallet_ref or remaining <= 0:
+            if remaining <= 0 or not trans_codes:
                 failed.append({
                     "reg_no": reg_no,
-                    "reference_number": wallet_ref,
-                    "reason": "Invalid reference number or amount"
+                    "reason": "Invalid amount or empty transaction list"
                 })
                 continue
 
             payments = (
                 db.session.query(Payment)
-                .filter(Payment.student_wallet_ref == wallet_ref)
+                .filter(Payment.trans_code.in_(trans_codes))
                 .order_by(Payment.recorded_date.asc())
                 .with_for_update()
                 .all()
@@ -1407,9 +1407,8 @@ def apply_wallet_deductions():
             if not payments:
                 failed.append({
                     "reg_no": reg_no,
-                    "reference_number": wallet_ref,
                     "amount_requested": remaining,
-                    "reason": "No payments found for wallet reference"
+                    "reason": "No payments found for given trans_code(s)"
                 })
                 continue
 
@@ -1419,12 +1418,12 @@ def apply_wallet_deductions():
                 if remaining <= 0:
                     break
 
-                if payment.amount <= 0:
+                if payment.amount is None or payment.amount <= 0:
                     continue
 
                 deduct = min(payment.amount, remaining)
 
-                old_amount = payment.amount
+                before = float(payment.amount)
                 payment.amount -= deduct
                 remaining -= deduct
                 total_deducted += deduct
@@ -1433,7 +1432,7 @@ def apply_wallet_deductions():
                     "payment_id": payment.id,
                     "trans_code": payment.trans_code,
                     "deducted": deduct,
-                    "before": old_amount,
+                    "before": before,
                     "after": payment.amount
                 })
 
@@ -1442,7 +1441,6 @@ def apply_wallet_deductions():
             if remaining == 0:
                 success.append({
                     "reg_no": reg_no,
-                    "reference_number": wallet_ref,
                     "amount_requested": item["amount"],
                     "amount_deducted": item["amount"],
                     "deductions": deductions,
@@ -1451,12 +1449,11 @@ def apply_wallet_deductions():
             else:
                 failed.append({
                     "reg_no": reg_no,
-                    "reference_number": wallet_ref,
                     "amount_requested": item["amount"],
                     "amount_deducted": item["amount"] - remaining,
                     "amount_remaining": remaining,
                     "deductions": deductions,
-                    "reason": "Insufficient payment balance"
+                    "reason": "Insufficient balance across provided transactions"
                 })
 
         db.session.commit()
