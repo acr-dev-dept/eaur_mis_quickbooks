@@ -1480,3 +1480,83 @@ def apply_wallet_deductions():
         "success": success,
         "failed": failed
     }), 200
+
+
+from flask import request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
+
+@reconciliation_bp.route("/revert-wallet-deductions", methods=["POST"])
+def revert_wallet_deductions():
+    """
+    Revert deductions by REPLACING payment.amount with deducted amount.
+    No addition logic is used.
+    """
+
+    payload = request.get_json()
+    if not payload or "deductions" not in payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    reverted = []
+    failed = []
+    total_reverted = 0.0
+
+    try:
+        for item in payload["deductions"]:
+            payment_id = item.get("payment_id")
+            deducted = item.get("deducted")
+
+            if not payment_id or deducted is None:
+                failed.append({
+                    "payment_id": payment_id,
+                    "reason": "Missing payment_id or deducted amount"
+                })
+                continue
+
+            payment = (
+                db.session.query(Payment)
+                .filter(Payment.id == payment_id)
+                .with_for_update()
+                .first()
+            )
+
+            if not payment:
+                failed.append({
+                    "payment_id": payment_id,
+                    "reason": "Payment not found"
+                })
+                continue
+
+            old_amount = payment.amount
+            payment.amount = float(deducted)
+            total_reverted += float(deducted)
+
+            db.session.add(payment)
+
+            reverted.append({
+                "payment_id": payment.id,
+                "trans_code": payment.trans_code,
+                "before": old_amount,
+                "after": payment.amount,
+                "reverted_to": deducted
+            })
+
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Database error",
+            "message": str(e)
+        }), 500
+
+    return jsonify({
+        "status": "completed",
+        "summary": {
+            "total_reverted_amount": total_reverted,
+            "total_records": len(payload["deductions"]),
+            "reverted_count": len(reverted),
+            "failed_count": len(failed)
+        },
+        "reverted": reverted,
+        "failed": failed
+    }), 200
