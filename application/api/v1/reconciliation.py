@@ -3,7 +3,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
-from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication, TblStudentWalletLedger
+from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication, TblStudentWalletLedger, Payment
 reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 import pandas as pd
@@ -1357,4 +1357,126 @@ def wallet_reference_lookup():
     return jsonify({
         "record_count": len(results),
         "records": results
+    }), 200
+
+
+from flask import request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
+
+@reconciliation_bp.route("/apply-wallet-deductions", methods=["POST"])
+def apply_wallet_deductions():
+    """
+    Deduct amounts from Payment.amount using student_wallet_ref
+    until the requested amount is exhausted.
+    """
+
+    payload = request.get_json()
+    if not payload or "records" not in payload:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    success = []
+    failed = []
+
+    total_requested = 0.0
+    total_deducted = 0.0
+
+    try:
+        for item in payload["records"]:
+            reg_no = item.get("reg_no")
+            wallet_ref = item.get("reference_number")
+            remaining = float(item.get("amount", 0))
+
+            total_requested += remaining
+
+            if not wallet_ref or remaining <= 0:
+                failed.append({
+                    "reg_no": reg_no,
+                    "reference_number": wallet_ref,
+                    "reason": "Invalid reference number or amount"
+                })
+                continue
+
+            payments = (
+                db.session.query(Payment)
+                .filter(Payment.student_wallet_ref == wallet_ref)
+                .order_by(Payment.recorded_date.asc())
+                .with_for_update()
+                .all()
+            )
+
+            if not payments:
+                failed.append({
+                    "reg_no": reg_no,
+                    "reference_number": wallet_ref,
+                    "amount_requested": remaining,
+                    "reason": "No payments found for wallet reference"
+                })
+                continue
+
+            deductions = []
+
+            for payment in payments:
+                if remaining <= 0:
+                    break
+
+                if payment.amount <= 0:
+                    continue
+
+                deduct = min(payment.amount, remaining)
+
+                old_amount = payment.amount
+                payment.amount -= deduct
+                remaining -= deduct
+                total_deducted += deduct
+
+                deductions.append({
+                    "payment_id": payment.id,
+                    "trans_code": payment.trans_code,
+                    "deducted": deduct,
+                    "before": old_amount,
+                    "after": payment.amount
+                })
+
+                db.session.add(payment)
+
+            if remaining == 0:
+                success.append({
+                    "reg_no": reg_no,
+                    "reference_number": wallet_ref,
+                    "amount_requested": item["amount"],
+                    "amount_deducted": item["amount"],
+                    "deductions": deductions,
+                    "status": "fully_applied"
+                })
+            else:
+                failed.append({
+                    "reg_no": reg_no,
+                    "reference_number": wallet_ref,
+                    "amount_requested": item["amount"],
+                    "amount_deducted": item["amount"] - remaining,
+                    "amount_remaining": remaining,
+                    "deductions": deductions,
+                    "reason": "Insufficient payment balance"
+                })
+
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Database error",
+            "message": str(e)
+        }), 500
+
+    return jsonify({
+        "status": "completed",
+        "summary": {
+            "total_records": len(payload["records"]),
+            "total_amount_requested": total_requested,
+            "total_amount_deducted": total_deducted
+        },
+        "success_count": len(success),
+        "failed_count": len(failed),
+        "success": success,
+        "failed": failed
     }), 200
