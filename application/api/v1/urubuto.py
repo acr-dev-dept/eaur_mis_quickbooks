@@ -1047,7 +1047,6 @@ def payment_notification():
                         external_transaction_id=transaction_id,
                         payer_code=payer_code,
                         response_data=data,
-                        error_message=str(e),
                         started_at=started_at,
                         completed_at=datetime.now()
                     )

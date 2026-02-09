@@ -92,35 +92,7 @@ def create_sales_receipt():
         result = sync_service.sync_single_sales_receipt(sales_data)
 
         if not result.success:
-            error_message = result.error_message or ""
-
-            # ---- Handle QuickBooks duplicate document error (6140) ----
-            if "Duplicate Document Number Error" in error_message:
-                qb_id = extract_qb_txn_id(error_message)
-
-                if qb_id:
-                    sync_service._update_sales_receipt_sync_status(
-                        sales_receipt_id=sales_data.id,
-                        qb_id=qb_id,
-                        sync_token="0"
-                    )
-
-                    current_app.logger.warning(
-                        f"Sales receipt already exists in QB. "
-                        f"Local ID={sales_data.id}, QB ID={qb_id}"
-                    )
-
-                    return jsonify({
-                        'success': True,
-                        'message': 'Sales receipt already exists in QuickBooks',
-                        'data': {
-                            'qb_id': qb_id,
-                            'sync_token': "0",
-                            'status': 'reconciled'
-                        },
-                        'timestamp': datetime.now().isoformat()
-                    }), 200
-
+            error_message = result.error_message or "Unknown error"
             # ---- real failure ----
             return jsonify({
                 'success': False,
