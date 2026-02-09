@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, json, request, jsonify, current_app
 from datetime import datetime, timedelta
 from application.models.mis_models import TblImvoice, TblPersonalUg, TblStudentWallet, Payment, TblOnlineApplication, TblStudentWalletHistory, TblStudentWalletLedger
 from application.utils.database import db_manager
@@ -986,7 +986,7 @@ def payment_notification():
                     status="VALID",  # FIX: Now properly defined above
                     external_transaction_id=transaction_id,
                     payer_code=payer_code,
-                    response_data=data,
+                    response_data=json.dumps(data),
                     started_at=started_at,
                     completed_at=datetime.now()
                 )
@@ -1046,7 +1046,7 @@ def payment_notification():
                         status="FAILED",
                         external_transaction_id=transaction_id,
                         payer_code=payer_code,
-                        response_data=data,
+                        response_data=json.dumps(data),
                         started_at=started_at,
                         completed_at=datetime.now()
                     )
