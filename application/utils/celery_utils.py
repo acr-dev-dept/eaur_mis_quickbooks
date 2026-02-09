@@ -73,7 +73,12 @@ def make_celery(app):
             "sync_applicants_every_hour": {
             "task": "application.config_files.tasks.bulk_sync_applicants_task",
             "schedule": crontab(minute='6,42', hour='0-23', day_of_week='mon,tue,wed,thu,fri'),
-        },
+            },
+            "update_opening_balances_every_3_minutes": {
+            "task": "application.config_files.update_opening_balances_task.scheduled_opening_balance_update_task",
+            "schedule": crontab(minute='*/3'),
+            },
+
         }
     )
 

@@ -62,7 +62,7 @@ class OpeningBalanceSyncService:
 
                 if student and student.opening_balance != outstanding_balance:
                     student.opening_balance = outstanding_balance
-                    session.commit()  # now this will persist
+                    session.commit() 
                     
             result = {
                 "reg_no": reg_no,
