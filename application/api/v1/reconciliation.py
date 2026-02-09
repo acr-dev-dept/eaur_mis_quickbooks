@@ -1661,9 +1661,11 @@ def get_outstanding_balance():
     """
     API Endpoint to fetch the 2024 invoice total, payment total,
     and outstanding balance for a given student reg_no.
-    Example request: GET /api/opening_balance/outstanding?reg_no=24900413
+    Example request: 
+    payload : {
+        "reg_no": "REG12345"}
     """
-    reg_no = request.args.get('reg_no')
+    reg_no = request.json.get("reg_no")
     if not reg_no:
         return {"error": "Missing 'reg_no' query parameter"}, 400
 
