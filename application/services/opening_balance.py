@@ -14,15 +14,16 @@ from application.utils.database import db_manager
 import re
 from sqlalchemy import extract
 
+from sqlalchemy import extract, func
+from flask import jsonify
+import traceback
+
 class OpeningBalanceSyncService:
     """
     Service to handle syncing of opening balance to QuickBooks
     """
 
     def __init__(self, logger=None):
-        """
-        Optional: pass a custom logger, defaults to Flask's current_app.logger
-        """
         self.logger = logger or current_app.logger
 
     def get_outstanding_balance(self, reg_no: str):
@@ -34,27 +35,23 @@ class OpeningBalanceSyncService:
             with db_manager.get_mis_session() as session:
                 # Total invoices for 2024
                 invoice_total = (
-                    session.query(
-                        db_manager.func.coalesce(db_manager.func.sum(TblImvoice.dept), 0)
+                    session.query(func.coalesce(func.sum(TblImvoice.dept), 0))
+                    .filter(
+                        TblImvoice.reg_no == reg_no,
+                        extract('year', TblImvoice.invoice_date) == 2024
                     )
-                .filter(
-                    TblImvoice.reg_no == reg_no,
-                    extract('year', TblImvoice.invoice_date) == 2024
+                    .scalar()
                 )
-                .scalar()
-            )
 
                 # Total payments for 2024
                 payment_total = (
-                    session.query(
-                    db_manager.func.coalesce(db_manager.func.sum(Payment.amount), 0)
+                    session.query(func.coalesce(func.sum(Payment.amount), 0))
+                    .filter(
+                        Payment.reg_no == reg_no,
+                        extract('year', Payment.recorded_date) == 2024
+                    )
+                    .scalar()
                 )
-                .filter(
-                    Payment.reg_no == reg_no,
-                    extract('year', Payment.recorded_date) == 2024
-                )
-                .scalar()
-            )
 
             outstanding_balance = invoice_total - payment_total
 
@@ -78,4 +75,3 @@ class OpeningBalanceSyncService:
                 "reg_no": reg_no,
                 "error": "Failed to fetch outstanding balance"
             }), 500
-
