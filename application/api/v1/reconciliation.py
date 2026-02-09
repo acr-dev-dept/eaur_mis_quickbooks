@@ -1616,7 +1616,7 @@ def trace_unexpected_zero_payments():
 
     query = (
         db.session.query(
-            Payment.reference_number,
+            Payment.student_wallet_ref,
             Payment.amount,
             Payment.recorded_date,
         )
@@ -1632,14 +1632,14 @@ def trace_unexpected_zero_payments():
     # Exclude known reference numbers
     if provided_refs:
         query = query.filter(
-            not_(Payment.reference_number.in_(provided_refs))
+            not_(Payment.student_wallet_ref.in_(provided_refs))
         )
 
     results = query.order_by(Payment.recorded_date.asc()).all()
 
     response = [
         {
-            "reference_number": r.reference_number,
+            "reference_number": r.student_wallet_ref,
             "amount": float(r.amount),
             "recorded_date": r.recorded_date.strftime("%Y-%m-%d %H:%M:%S"),
             "issue": "ZERO_AMOUNT_NOT_IN_INPUT_JSON",
