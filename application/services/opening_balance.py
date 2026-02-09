@@ -31,11 +31,12 @@ class OpeningBalanceSyncService:
         and return a JSON with totals and outstanding balance
         """
         try:
-            # Total invoices for 2024
-            invoice_total = (
-                db_manager.session.query(
-                    db_manager.func.coalesce(db_manager.func.sum(TblImvoice.dept), 0)
-                )
+            with db_manager.get_mis_session() as session:
+                # Total invoices for 2024
+                invoice_total = (
+                    session.query(
+                        db_manager.func.coalesce(db_manager.func.sum(TblImvoice.dept), 0)
+                    )
                 .filter(
                     TblImvoice.reg_no == reg_no,
                     extract('year', TblImvoice.invoice_date) == 2024
@@ -43,9 +44,9 @@ class OpeningBalanceSyncService:
                 .scalar()
             )
 
-            # Total payments for 2024
-            payment_total = (
-                db_manager.session.query(
+                # Total payments for 2024
+                payment_total = (
+                    session.query(
                     db_manager.func.coalesce(db_manager.func.sum(Payment.amount), 0)
                 )
                 .filter(
