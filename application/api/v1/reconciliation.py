@@ -1586,3 +1586,71 @@ def revert_wallet_deductions():
         "reverted": reverted,
         "failed": failed
     }), 200
+
+
+from flask import Blueprint, request, jsonify
+from datetime import datetime, timedelta
+from sqlalchemy import and_, not_
+
+payments_bp = Blueprint("payments_trace", __name__)
+
+@payments_bp.route("/payments/trace-unexpected-zero", methods=["POST"])
+def trace_unexpected_zero_payments():
+    """
+    Traces payments with amount = 0 between Feb 4–6, 2026
+    that are NOT present in the provided JSON reference list.
+    """
+
+    payload = request.get_json(silent=True) or {}
+    records = payload.get("records", [])
+
+    # Extract reference numbers from provided JSON
+    provided_refs = {
+        r.get("reference_number")
+        for r in records
+        if r.get("reference_number")
+    }
+
+    # Date window: Feb 4 → Feb 7 (exclusive)
+    start_date = datetime(2026, 2, 4, 0, 0, 0)
+    end_date = datetime(2026, 2, 7, 0, 0, 0)
+
+    query = (
+        db.session.query(
+            Payment.reference_number,
+            Payment.amount,
+            Payment.recorded_date,
+        )
+        .filter(
+            and_(
+                Payment.recorded_date >= start_date,
+                Payment.recorded_date < end_date,
+                Payment.amount == 0,
+            )
+        )
+    )
+
+    # Exclude known reference numbers
+    if provided_refs:
+        query = query.filter(
+            not_(Payment.reference_number.in_(provided_refs))
+        )
+
+    results = query.order_by(Payment.recorded_date.asc()).all()
+
+    response = [
+        {
+            "reference_number": r.reference_number,
+            "amount": float(r.amount),
+            "recorded_date": r.recorded_date.strftime("%Y-%m-%d %H:%M:%S"),
+            "issue": "ZERO_AMOUNT_NOT_IN_INPUT_JSON",
+        }
+        for r in results
+    ]
+
+    return jsonify({
+        "date_window": "2026-02-04 → 2026-02-06",
+        "provided_reference_count": len(provided_refs),
+        "unexpected_zero_payments": len(response),
+        "records": response,
+    }), 200
