@@ -36,6 +36,9 @@ def validate_quickbooks_connection():
         )
     return True, None
 
+
+
+
 @sales_receipt_api.route('/create', methods=['POST'])
 def create_sales_receipt():
     """

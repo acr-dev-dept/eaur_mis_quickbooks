@@ -11,7 +11,7 @@ from datetime import datetime
 import json
 from application.helpers.json_encoder import EnhancedJSONEncoder
 from application.utils.database import db_manager
-
+import re
 
 
 
@@ -315,6 +315,17 @@ class SalesReceiptSyncService:
 
         
 
+    
+
+    def _extract_qb_txn_id_from_error(detail: str) -> str | None:
+        """
+        Extracts TxnId from QuickBooks duplicate document error
+        """
+        if not detail:
+            return None
+
+        match = re.search(r"TxnId=(\d+)", detail)
+        return match.group(1) if match else None
 
     def sync_single_sales_receipt(self, sales_receipt: TblStudentWalletLedger) -> SalesReceiptSyncResult:
         """
@@ -386,25 +397,54 @@ class SalesReceiptSyncService:
                     quickbooks_id=qb_id
                 )
 
-            # ---- QuickBooks business error ----
-            error_msg = (
-                response.get('Fault', {})
-                .get('Error', [{}])[0]
-                .get('Detail', 'Unknown QuickBooks error')
-            )
+            elif 'Fault' in response:
+                # ---- QuickBooks business error ----
+                error_msg = (
+                    response.get('Fault', {})
+                    .get('Error', [{}])[0]
+                    .get('Detail', 'Unknown QuickBooks error')
+                )
 
-            self._update_sales_receipt_sync_status(
-                sales_receipt.id,
-                SalesReceiptSyncStatus.FAILED.value
-            )
-            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+                # Check for duplicate document error
+                if "Duplicate Document Number Error" in error_msg:
+                    txn_id = self._extract_qb_txn_id_from_error(error_msg)
+                    if txn_id:
+                        self.logger.info(
+                            f"Duplicate SalesReceipt found in QuickBooks: {txn_id}"
+                        )
+                        self._update_sales_receipt_sync_status(
+                            sales_receipt.id,
+                            qb_id=txn_id,
+                            sync_token=None
+                        )
+                        return SalesReceiptSyncResult(
+                            status=SalesReceiptSyncStatus.SYNCED,
+                            success=True,
+                            error_message=f"SalesReceipt {sales_receipt.id} already exists in QuickBooks",
+                            details=response,
+                            quickbooks_id=txn_id
+                        )
 
-            return SalesReceiptSyncResult(
-                status=SalesReceiptSyncStatus.FAILED,
-                success=False,
-                error_message=error_msg,
-                details=response
-            )
+            else:
+                # ---- QuickBooks business error ----
+                error_msg = (
+                    response.get('Fault', {})
+                    .get('Error', [{}])[0]
+                    .get('Detail', 'Unknown QuickBooks error')
+                )
+
+                self._update_sales_receipt_sync_status(
+                    sales_receipt.id,
+                    SalesReceiptSyncStatus.FAILED.value
+                )
+                self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+
+                return SalesReceiptSyncResult(
+                    status=SalesReceiptSyncStatus.FAILED,
+                    success=False,
+                    error_message=error_msg,
+                    details=response
+                )
 
         except Exception as e:
             # ---- System-level failure ----
