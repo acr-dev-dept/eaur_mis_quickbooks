@@ -1592,9 +1592,8 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 from sqlalchemy import and_, not_
 
-payments_bp = Blueprint("payments_trace", __name__)
 
-@payments_bp.route("/payments/trace-unexpected-zero", methods=["POST"])
+@reconciliation_bp.route("/payments/trace-unexpected-zero", methods=["POST"])
 def trace_unexpected_zero_payments():
     """
     Traces payments with amount = 0 between Feb 4–6, 2026
