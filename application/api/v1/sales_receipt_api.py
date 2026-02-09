@@ -25,6 +25,20 @@ def create_response(success=True, data=None, message="", error=None, details=Non
     
     return jsonify(response), status_code
 
+import json
+import re
+
+def extract_qb_txn_id(error_message: str) -> str | None:
+    """
+    Extract TxnId from QuickBooks duplicate document error
+    """
+    if not error_message:
+        return None
+
+    match = re.search(r"TxnId=(\d+)", error_message)
+    return match.group(1) if match else None
+
+
 def validate_quickbooks_connection():
     """Validate QuickBooks connection"""
     if not QuickBooksConfig.is_connected():
@@ -76,13 +90,45 @@ def create_sales_receipt():
             }), 400
         
         result = sync_service.sync_single_sales_receipt(sales_data)
+
         if not result.success:
+            error_message = result.error_message or ""
+
+            # ---- Handle QuickBooks duplicate document error (6140) ----
+            if "Duplicate Document Number Error" in error_message:
+                qb_id = extract_qb_txn_id(error_message)
+
+                if qb_id:
+                    sync_service._update_sales_receipt_sync_status(
+                        sales_receipt_id=sales_data.id,
+                        qb_id=qb_id,
+                        sync_token="0"
+                    )
+
+                    current_app.logger.warning(
+                        f"Sales receipt already exists in QB. "
+                        f"Local ID={sales_data.id}, QB ID={qb_id}"
+                    )
+
+                    return jsonify({
+                        'success': True,
+                        'message': 'Sales receipt already exists in QuickBooks',
+                        'data': {
+                            'qb_id': qb_id,
+                            'sync_token': "0",
+                            'status': 'reconciled'
+                        },
+                        'timestamp': datetime.now().isoformat()
+                    }), 200
+
+            # ---- real failure ----
             return jsonify({
                 'success': False,
                 'error': 'Failed to create sales receipt',
-                'details': result.error_message,
+                'details': error_message,
                 'timestamp': datetime.now().isoformat()
             }), 500
+
 
         return jsonify({
             'success': True,
