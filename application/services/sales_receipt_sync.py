@@ -368,7 +368,7 @@ class SalesReceiptSyncService:
                 sync_token = response['SalesReceipt'].get('SyncToken')
 
                 self._update_sales_receipt_sync_status(
-                    sales_receipt.id,
+                    sales_receipt_id=sales_receipt.id,
                     qb_id=qb_id,
                     sync_token=sync_token
                 )
