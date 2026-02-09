@@ -242,7 +242,6 @@ class SalesReceiptSyncService:
         return self.qb_service
     
     def _update_sales_receipt_sync_status(
-        self,
         sales_receipt_id: int,
         qb_id: str = None,
         sync_token: str = None
