@@ -407,23 +407,37 @@ class SalesReceiptSyncService:
 
                 # Check for duplicate document error
                 if "Duplicate Document Number Error" in error_msg:
-                    txn_id = self._extract_qb_txn_id_from_error(error_msg)
-                    if txn_id:
-                        self.logger.info(
-                            f"Duplicate SalesReceipt found in QuickBooks: {txn_id}"
+                    try:
+                        error_json = json.loads(error_msg.split("API request failed:", 1)[1].strip())
+                        qb_errors = error_json.get("Fault", {}).get("Error", [])
+
+                        if qb_errors:
+                            detail = qb_errors[0].get("Detail")
+                            qb_id = self._extract_qb_txn_id_from_error(detail)
+
+                            if qb_id:
+                                self._update_sales_receipt_sync_status(
+                                    sales_receipt_id=sales_receipt.id,
+                                    qb_id=qb_id,
+                                    sync_token=sync_token
+                                )
+
+                                current_app.logger.warning(
+                                    f"SalesReceipt {sales_receipt.id} already exists in QB as {qb_id}"
+                                )
+                                return SalesReceiptSyncResult(
+                                    status=SalesReceiptSyncStatus.SYNCED,
+                                    success=True,
+                                    error_message=f"SalesReceipt {sales_receipt.id} already exists in QuickBooks as {qb_id}",
+                                    details=response,
+                                    quickbooks_id=qb_id
+                                )
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        current_app.logger.error(
+                            f"Failed to parse QuickBooks error response for sales_receipt {sales_receipt.id}: {error_msg}"
                         )
-                        self._update_sales_receipt_sync_status(
-                            sales_receipt.id,
-                            qb_id=txn_id,
-                            sync_token=None
-                        )
-                        return SalesReceiptSyncResult(
-                            status=SalesReceiptSyncStatus.SYNCED,
-                            success=True,
-                            error_message=f"SalesReceipt {sales_receipt.id} already exists in QuickBooks",
-                            details=response,
-                            quickbooks_id=txn_id
-                        )
+
+                    
 
             else:
                 # ---- QuickBooks business error ----
