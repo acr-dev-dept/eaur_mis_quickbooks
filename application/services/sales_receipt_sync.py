@@ -242,6 +242,8 @@ class SalesReceiptSyncService:
         return self.qb_service
     
     def _update_sales_receipt_sync_status(
+        self,
+        *,
         sales_receipt_id: int,
         qb_id: str = None,
         sync_token: str = None
@@ -317,15 +319,21 @@ class SalesReceiptSyncService:
 
     
 
-    def _extract_qb_txn_id_from_error(detail: str) -> str | None:
+    def _extract_qb_txn_id_from_fault(self, fault: dict) -> str | None:
         """
-        Extracts TxnId from QuickBooks duplicate document error
+        Extract TxnId from QuickBooks duplicate document error fault
         """
-        if not detail:
+        try:
+            errors = fault.get("Error", [])
+            if not errors:
+                return None
+
+            detail = errors[0].get("Detail", "")
+            match = re.search(r"TxnId=(\d+)", detail)
+            return match.group(1) if match else None
+        except Exception:
             return None
 
-        match = re.search(r"TxnId=(\d+)", detail)
-        return match.group(1) if match else None
 
     def sync_single_sales_receipt(self, sales_receipt: TblStudentWalletLedger) -> SalesReceiptSyncResult:
         """
@@ -345,10 +353,9 @@ class SalesReceiptSyncService:
 
             if map_error:
                 self._update_sales_receipt_sync_status(
-                    sales_receipt.id,
-                    SalesReceiptSyncStatus.FAILED.value,
+                    sales_receipt_id=sales_receipt.id,
                     qb_id=None,
-                    sync_token=None
+                    sync_token=1000
                 )
                 self._log_sync_audit(sales_receipt.id, 'ERROR', map_error)
                 return SalesReceiptSyncResult(
@@ -397,29 +404,52 @@ class SalesReceiptSyncService:
                     quickbooks_id=qb_id
                 )
 
-            
+            elif 'Fault' in response:
+                fault = response['Fault']
+                qb_id = self._extract_qb_txn_id_from_fault(fault)
 
+                # ---- Duplicate Document Number (6140) ----
+                if qb_id:
+                    sync_token = "0"
 
-            # ---- QuickBooks business error ----
-            error_msg = (
-                response.get('Fault', {})
-                .get('Error', [{}])[0]
-                .get('Detail', 'Unknown QuickBooks error')
-            )
+                    self._update_sales_receipt_sync_status(
+                        sales_receipt_id=sales_receipt.id,
+                        qb_id=qb_id,
+                        sync_token=sync_token
+                    )
 
-            self._update_sales_receipt_sync_status(
-                sales_receipt.id,
-                SalesReceiptSyncStatus.FAILED.value
-            )
-            self._log_sync_audit(sales_receipt.id, 'ERROR', error_msg)
+                    self._log_sync_audit(
+                        sales_receipt.id,
+                        'RECONCILED',
+                        f"SalesReceipt already exists in QuickBooks as ID {qb_id}"
+                    )
 
-            return SalesReceiptSyncResult(
-                status=SalesReceiptSyncStatus.FAILED,
-                success=False,
-                error_message=error_msg,
-                details=response
-            )
+                    return SalesReceiptSyncResult(
+                        status=SalesReceiptSyncStatus.SYNCED,
+                        success=True,
+                        error_message=(
+                            f"SalesReceipt {sales_receipt.id} already exists "
+                            f"in QuickBooks (QB ID {qb_id})"
+                        ),
+                        details=response,
+                        quickbooks_id=qb_id
+                    )
 
+                # ---- Other QB fault (real failure) ----
+                error_msg = fault.get("Error", [{}])[0].get("Detail", "Unknown QuickBooks error")
+
+                self._log_sync_audit(
+                    sales_receipt.id,
+                    'FAILED',
+                    error_msg
+                )
+
+                return SalesReceiptSyncResult(
+                    status=SalesReceiptSyncStatus.FAILED,
+                    success=False,
+                    error_message=error_msg,
+                    details=response
+                )
         except Exception as e:
             # ---- System-level failure ----
             error_msg = str(e)
