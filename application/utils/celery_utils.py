@@ -63,8 +63,17 @@ def make_celery(app):
 
             "sync_students": {
             "task": "application.config_files.sync_students_task.bulk_sync_students_task",
+            "schedule": crontab(hour='0-23', minute='6,42', day_of_week='mon,tue,wed,thu,fri'),
+            },
+            
+            "sync_sales_receipt_every_3_minutes": {
+            "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
             "schedule": crontab(minute='*/6'),
-            }
+            },
+            "sync_applicants_every_hour": {
+            "task": "application.config_files.tasks.bulk_sync_applicants_task",
+            "schedule": crontab(minute='6,42', hour='0-23', day_of_week='mon,tue,wed,thu,fri'),
+        },
         }
     )
 
@@ -72,10 +81,7 @@ def make_celery(app):
     return celery
 
 """
-            "sync_sales_receipt_every_3_minutes": {
-            "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
-            "schedule": crontab(minute='*/6'),
-            },
+
 "sync_applicants_every_midnight": {
     "task": "application.config_files.tasks.bulk_sync_applicants_task",
     "schedule": crontab(minute='*/6'),
