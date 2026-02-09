@@ -55,9 +55,14 @@ class OpeningBalanceSyncService:
 
                 outstanding_balance = invoice_total - payment_total
                 # update the opening balance in the database for reference
-                student = TblPersonalUg.query.filter_by(reg_no=reg_no).first() or TblOnlineApplication.query.filter_by(reg_no=reg_no).first()
+                # Fetch student record using the same session
+                student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
+                if not student:
+                    student = session.query(TblOnlineApplication).filter_by(reg_no=reg_no).first()
+
                 if student:
                     student.opening_balance = outstanding_balance
+                    session.commit()  # now this will persist
                     
             result = {
                 "reg_no": reg_no,
