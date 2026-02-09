@@ -60,7 +60,7 @@ class OpeningBalanceSyncService:
                 if not student:
                     student = session.query(TblOnlineApplication).filter_by(reg_no=reg_no).first()
 
-                if student:
+                if student and student.opening_balance != outstanding_balance:
                     student.opening_balance = outstanding_balance
                     session.commit()  # now this will persist
                     
