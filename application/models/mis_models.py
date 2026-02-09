@@ -2594,6 +2594,12 @@ class TblOnlineApplication(MISBaseModel):
     # Relationships for performance optimization
     intake = relationship("TblIntake", backref="applications", lazy='select')
 
+    opening_balance = db.Column(Float, default=0.0)  # New field for opening balance in QuickBooks
+    opening_balance_synced = db.Column(db.Boolean, default=False)  # Flag to track if opening balance has been synced to QuickBooks
+    opening_balance_id = db.Column(db.String(255))  # To store QuickBooks ID for the opening balance transaction
+
+
+
     def __repr__(self):
         return f'<TblOnlineApplication {self.id if hasattr(self, "id") else "unknown"}>'
 
@@ -3189,7 +3195,9 @@ class TblPersonalUg(MISBaseModel):
     pushed_by = db.Column(db.String(200), default='System Auto Push')
     pushed_date = db.Column(DateTime)
     sync_token = db.Column(db.String(50))
-    
+    opening_balance = db.Column(Float, default=0.0)  # New field for opening balance in QuickBooks
+    opening_balance_synced = db.Column(db.Boolean, default=False)  # Flag to track if opening balance has been synced to QuickBooks
+    opening_balance_id = db.Column(db.String(255))  # To store QuickBooks ID for the opening balance transaction
 
     # QuickBooks sync tracking field (additional to existing fields)
     QuickBk_status = db.Column(db.Integer, default=0, nullable=True)  # 0=not synced, 1=synced, 2=failed, 3=in progress
