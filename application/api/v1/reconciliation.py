@@ -4,7 +4,6 @@ from flask import Blueprint, jsonify, current_app, request
 from application import db
 from application.models.central_models import IntegrationLog
 from application.models.mis_models import TblStudentWallet, TblStudentWalletHistory, TblPersonalUg, TblOnlineApplication, TblStudentWalletLedger, Payment
-reconciliation_bp = Blueprint("reconciliation", __name__)
 from sqlalchemy import func
 import pandas as pd
 import os
@@ -13,8 +12,11 @@ from application.models.central_models import IntegrationLog
 from sqlalchemy.exc import IntegrityError
 from datetime import date
 from application.utils.database import db_manager
+from application.services.opening_balance import OpeningBalanceSyncService
 
 
+
+reconciliation_bp = Blueprint("reconciliation", __name__)
 
 @reconciliation_bp.route("/valid-payments/total", methods=["GET"])
 def get_total_valid_payments():
@@ -1653,3 +1655,17 @@ def trace_unexpected_zero_payments():
         "unexpected_zero_payments": len(response),
         "records": response,
     }), 200
+
+@reconciliation_bp.route("/outstanding-balance", methods=["GET"])
+def get_outstanding_balance():
+    """
+    API Endpoint to fetch the 2024 invoice total, payment total,
+    and outstanding balance for a given student reg_no.
+    Example request: GET /api/opening_balance/outstanding?reg_no=24900413
+    """
+    reg_no = request.args.get('reg_no')
+    if not reg_no:
+        return {"error": "Missing 'reg_no' query parameter"}, 400
+
+    service = OpeningBalanceSyncService()
+    return service.get_outstanding_balance(reg_no)
