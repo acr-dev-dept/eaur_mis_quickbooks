@@ -446,6 +446,7 @@ def scheduled_opening_balance_update_task():
     """
     Celery Beat entrypoint for progressive opening balance updates
     Updates both TblPersonalUg and TblOnlineApplication tables
+    
     """
     app = get_flask_app()
 
