@@ -53,8 +53,12 @@ class OpeningBalanceSyncService:
                     .scalar()
                 )
 
-            outstanding_balance = invoice_total - payment_total
-
+                outstanding_balance = invoice_total - payment_total
+                # update the opening balance in the database for reference
+                student = TblPersonalUg.query.filter_by(reg_no=reg_no).first() or TblOnlineApplication.query.filter_by(reg_no=reg_no).first()
+                if student:
+                    student.opening_balance = outstanding_balance
+                    
             result = {
                 "reg_no": reg_no,
                 "invoice_total_2024": float(invoice_total),
