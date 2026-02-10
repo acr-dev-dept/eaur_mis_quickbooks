@@ -1906,3 +1906,117 @@ def reconcile_integration_vs_wallet_history():
         response["amount_mismatches"] = mismatched
 
     return jsonify(response), 200
+
+
+from flask import request, jsonify
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+
+@reconciliation_bp.route(
+    "/insert-missing-wallet-history",
+    methods=["POST"]
+)
+def insert_missing_wallet_history():
+    """
+    Insert missing transactions into tbl_student_wallet_history
+    from reconciliation payload.
+    """
+
+    payload = request.get_json()
+    if not payload or "missing_transactions" not in payload:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid payload"
+        }), 400
+
+    inserted = []
+    skipped = []
+    failed = []
+
+    total_amount_inserted = 0.0
+
+    try:
+        for item in payload["missing_transactions"]:
+            tx_id = item.get("external_transaction_id")
+            amount = item.get("amount")
+            reg_no = item.get("payer_code")
+            comment = item.get("observation")
+            payment_date_time = item.get("payment_date_time")
+
+            if not tx_id or amount is None or not reg_no:
+                failed.append({
+                    "external_transaction_id": tx_id,
+                    "reason": "Missing required fields"
+                })
+                continue
+
+            # Safety check: do not double insert
+            exists = (
+                db.session.query(TblStudentWalletHistory.id)
+                .filter(
+                    TblStudentWalletHistory.external_transaction_id == tx_id
+                )
+                .first()
+            )
+
+            if exists:
+                skipped.append({
+                    "external_transaction_id": tx_id,
+                    "reason": "Already exists in wallet history"
+                })
+                continue
+
+            # Parse datetime safely
+            try:
+                created_at = datetime.strptime(
+                    payment_date_time,
+                    "%Y-%m-%d %H:%M:%S"
+                ) if payment_date_time else datetime.utcnow()
+            except ValueError:
+                created_at = datetime.utcnow()
+
+            history = TblStudentWalletHistory(
+                reg_no=reg_no,
+                reference_number=tx_id,
+                transaction_type="TOPUP",
+                amount=float(amount),
+                balance_before=0.0,
+                balance_after=float(amount),
+                external_transaction_id=tx_id,
+                comment=comment,
+                created_by="reconciliation",
+                created_at=created_at
+            )
+
+            db.session.add(history)
+
+            inserted.append({
+                "external_transaction_id": tx_id,
+                "reg_no": reg_no,
+                "amount": float(amount)
+            })
+            total_amount_inserted += float(amount)
+
+        db.session.commit()
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": "Database error",
+            "details": str(e)
+        }), 500
+
+    return jsonify({
+        "status": "completed",
+        "summary": {
+            "total_missing_received": len(payload["missing_transactions"]),
+            "inserted_count": len(inserted),
+            "skipped_count": len(skipped),
+            "failed_count": len(failed),
+            "total_amount_inserted": total_amount_inserted
+        },
+        "inserted": inserted,
+        "skipped": skipped,
+        "failed": failed
+    }), 200
