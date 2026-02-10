@@ -1675,9 +1675,8 @@ def get_outstanding_balance():
 from flask import Blueprint, jsonify
 from sqlalchemy import text
 
-wallet_bp = Blueprint("wallet_bp", __name__)
 
-@wallet_bp.route("/wallet-payment-summary", methods=["GET"])
+@reconciliation_bp.route("/wallet-payment-summary", methods=["GET"])
 def wallet_payment_summary_sql():
     """
     Fetch payments and match them to wallet history using a single SQL query.
