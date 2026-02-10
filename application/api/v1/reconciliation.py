@@ -1674,7 +1674,6 @@ def get_outstanding_balance():
 
 from flask import Blueprint, jsonify
 from sqlalchemy import text
-from app.models import db
 
 wallet_bp = Blueprint("wallet_bp", __name__)
 
