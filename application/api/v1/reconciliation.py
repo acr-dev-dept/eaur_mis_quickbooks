@@ -2020,3 +2020,106 @@ def insert_missing_wallet_history():
         "skipped": skipped,
         "failed": failed
     }), 200
+
+@reconciliation_bp.route(
+    "/wallet-payment-exceeds-history",
+    methods=["GET"]
+)
+def wallet_payment_exceeds_history():
+    """
+    Return wallet records where:
+    - mismatches is True
+    - payment_total > wallet_history_total
+    """
+
+    query = text("""
+        SELECT
+            w.reg_no,
+            w.reference_number,
+            p.id AS payment_id,
+            p.amount AS payment_amount,
+            p.recorded_date AS payment_date,
+            h.id AS history_id,
+            h.amount AS history_amount,
+            h.created_at AS history_created_at
+        FROM tbl_student_wallet w
+        LEFT JOIN payment p
+            ON p.student_wallet_ref = w.reference_number
+        LEFT JOIN tbl_student_wallet_history h
+            ON h.reg_no = w.reg_no
+        ORDER BY w.reg_no, p.recorded_date
+    """)
+
+    rows = db.session.execute(query).fetchall()
+
+    wallets = {}
+
+    for row in rows:
+        key = (row.reg_no, row.reference_number)
+
+        if key not in wallets:
+            wallets[key] = {
+                "reg_no": row.reg_no,
+                "reference_number": row.reference_number,
+                "payments": [],
+                "payment_total": 0.0,
+                "payment_count": 0,
+                "matched_histories": [],
+                "wallet_history_total": 0.0,
+                "history_match_count": 0,
+                "mismatches": False
+            }
+
+        # Payments
+        if row.payment_id and row.payment_id not in {
+            p["payment_id"] for p in wallets[key]["payments"]
+        }:
+            amount = float(row.payment_amount) if row.payment_amount else 0.0
+            wallets[key]["payments"].append({
+                "payment_id": row.payment_id,
+                "amount": amount,
+                "recorded_date": (
+                    row.payment_date.isoformat()
+                    if row.payment_date else None
+                )
+            })
+            wallets[key]["payment_total"] += amount
+            wallets[key]["payment_count"] += 1
+
+        # Wallet histories
+        if row.history_id and row.history_id not in {
+            h["history_id"] for h in wallets[key]["matched_histories"]
+        }:
+            amount = float(row.history_amount) if row.history_amount else 0.0
+            wallets[key]["matched_histories"].append({
+                "history_id": row.history_id,
+                "amount": amount,
+                "created_at": (
+                    row.history_created_at.isoformat()
+                    if row.history_created_at else None
+                )
+            })
+            wallets[key]["wallet_history_total"] += amount
+            wallets[key]["history_match_count"] += 1
+
+    # Apply required filter
+    results = []
+    for record in wallets.values():
+        record["mismatches"] = (
+            record["payment_total"] != record["wallet_history_total"]
+        )
+
+        if (
+            record["mismatches"] is True
+            and record["payment_total"] > record["wallet_history_total"]
+        ):
+            record["difference"] = (
+                record["payment_total"] - record["wallet_history_total"]
+            )
+            results.append(record)
+
+    return jsonify({
+        "status": "success",
+        "count": len(results),
+        "results": results
+    }), 200
