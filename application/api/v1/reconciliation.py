@@ -1694,7 +1694,7 @@ def wallet_payment_summary_sql():
                 h.amount AS history_amount,
                 h.created_at AS history_created_at
             FROM tbl_student_wallet w
-            LEFT JOIN Payment p
+            LEFT JOIN payment p
                 ON p.student_wallet_ref = w.reference_number
             LEFT JOIN tbl_student_wallet_history h
                 ON h.reg_no = w.reg_no
