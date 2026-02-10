@@ -1746,8 +1746,13 @@ def wallet_payments_summary():
     for key, record in wallets.items():
         record["mismatches"] = record["payment_total"] != record["wallet_history_total"]
 
+    filtered_results = [
+        record for record in wallets.values()
+        if record["payment_count"] > 0
+    ]
+
     return jsonify({
         "status": "success",
-        "results": list(wallets.values())
+        "results": filtered_results
     }), 200
 
