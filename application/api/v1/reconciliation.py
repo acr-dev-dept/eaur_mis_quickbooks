@@ -1720,24 +1720,28 @@ def wallet_payments_summary():
             }
 
         # Add unique payments
+        # Add unique payments
         if row.payment_id and row.payment_id not in [p["payment_id"] for p in wallets[key]["payments"]]:
+            amount = float(row.payment_amount) if row.payment_amount is not None else 0.0
             wallets[key]["payments"].append({
                 "payment_id": row.payment_id,
-                "amount": float(row.payment_amount),
+                "amount": amount,
                 "recorded_date": row.payment_date.isoformat() if row.payment_date else None
             })
             wallets[key]["payment_count"] += 1
-            wallets[key]["payment_total"] += float(row.payment_amount)
+            wallets[key]["payment_total"] += amount
 
         # Add unique histories
         if row.history_id and row.history_id not in [h["history_id"] for h in wallets[key]["matched_histories"]]:
+            amount = float(row.history_amount) if row.history_amount is not None else 0.0
             wallets[key]["matched_histories"].append({
                 "history_id": row.history_id,
-                "amount": float(row.history_amount),
+                "amount": amount,
                 "created_at": row.history_created_at.isoformat() if row.history_created_at else None
             })
             wallets[key]["history_match_count"] += 1
-            wallets[key]["wallet_history_total"] += float(row.history_amount)
+            wallets[key]["wallet_history_total"] += amount
+                                                                                        
 
     return jsonify({
         "status": "success",
