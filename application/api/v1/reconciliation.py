@@ -1762,97 +1762,147 @@ from sqlalchemy import text
 import json
 from datetime import datetime
 
-@reconciliation_bp.route("/reconcile-integration-vs-wallet-history", methods=["GET"])
+from flask import request, jsonify
+from sqlalchemy import text
+import json
+from datetime import datetime
+
+@reconciliation_bp.route(
+    "/reconcile-integration-vs-wallet-history",
+    methods=["GET"]
+)
 def reconcile_integration_vs_wallet_history():
     """
-    Compare integration_logs (VALID only) with tbl_student_wallet_history
-    and report missing or non-matching transactions.
+    FAST reconciliation between integration_logs and tbl_student_wallet_history
+    - status = VALID
+    - payment_date_time > 2026-01-12
+    - Detect missing & amount mismatches
     """
 
-    cutoff_date = datetime(2026, 1, 12)
+    cutoff_date = "2026-01-12 00:00:00"
+    include_details = request.args.get("details", "false").lower() == "true"
 
-    logs = (
-        db.session.query(IntegrationLog)
-        .filter(
-            IntegrationLog.status == "VALID",
-            IntegrationLog.response_data.isnot(None)
-        )
-        .all()
-    )
+    # 1️⃣ Fetch integration logs ONLY ONCE (filtered in SQL)
+    integration_rows = db.session.execute(text("""
+        SELECT
+            external_transaction_id,
+            response_data
+        FROM integration_logs
+        WHERE status = 'VALID'
+          AND response_data IS NOT NULL
+          AND JSON_EXTRACT(response_data, '$.payment_date_time') > :cutoff
+    """), {"cutoff": cutoff_date}).fetchall()
 
+    if not integration_rows:
+        return jsonify({
+            "status": "success",
+            "summary": {
+                "total_checked": 0,
+                "missing_count": 0,
+                "mismatched_count": 0
+            }
+        }), 200
+
+    # 2️⃣ Parse integration data (memory-efficient)
+    integration_map = {}
+    transaction_ids = set()
+
+    for row in integration_rows:
+        try:
+            data = json.loads(row.response_data)
+        except Exception:
+            continue
+
+        tx_id = data.get("transaction_id")
+        amount = data.get("amount")
+
+        if not tx_id or amount is None:
+            continue
+
+        integration_map[tx_id] = {
+            "amount": float(amount),
+            "payer_code": data.get("payer_code"),
+            "observation": data.get("observation"),
+            "payment_date_time": data.get("payment_date_time")
+        }
+        transaction_ids.add(tx_id)
+
+    if not transaction_ids:
+        return jsonify({
+            "status": "success",
+            "summary": {
+                "total_checked": 0,
+                "missing_count": 0,
+                "mismatched_count": 0
+            }
+        }), 200
+
+    # 3️⃣ Fetch wallet history IN BULK
+    history_rows = db.session.execute(text("""
+        SELECT
+            external_transaction_id,
+            amount
+        FROM tbl_student_wallet_history
+        WHERE external_transaction_id IN :tx_ids
+    """), {"tx_ids": tuple(transaction_ids)}).fetchall()
+
+    history_map = {
+        row.external_transaction_id: float(row.amount)
+        for row in history_rows
+        if row.external_transaction_id is not None
+    }
+
+    # 4️⃣ Reconcile (O(n))
     missing = []
     mismatched = []
 
-    total_checked = 0
+    for tx_id, integ in integration_map.items():
+        hist_amount = history_map.get(tx_id)
 
-    for log in logs:
-        try:
-            response = json.loads(log.response_data)
-        except Exception:
-            continue  # skip invalid JSON safely
-
-        payment_date_time = response.get("payment_date_time")
-        if not payment_date_time:
+        # ❌ Missing
+        if hist_amount is None:
+            if include_details:
+                missing.append({
+                    "external_transaction_id": tx_id,
+                    "payer_code": integ["payer_code"],
+                    "amount": integ["amount"],
+                    "observation": integ["observation"],
+                    "payment_date_time": integ["payment_date_time"],
+                    "reason": "Not found in wallet history"
+                })
             continue
 
-        try:
-            payment_dt = datetime.strptime(payment_date_time, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            continue
+        # ⚠️ Mismatch
+        if hist_amount != integ["amount"]:
+            if include_details:
+                mismatched.append({
+                    "external_transaction_id": tx_id,
+                    "payer_code": integ["payer_code"],
+                    "integration_amount": integ["amount"],
+                    "wallet_history_amount": hist_amount,
+                    "observation": integ["observation"],
+                    "payment_date_time": integ["payment_date_time"],
+                    "reason": "Amount mismatch"
+                })
 
-        if payment_dt <= cutoff_date:
-            continue
-
-        transaction_id = response.get("transaction_id")
-        amount = response.get("amount")
-        observation = response.get("observation")
-        payer_code = response.get("payer_code")
-
-        if not transaction_id or amount is None:
-            continue
-
-        total_checked += 1
-
-        history = (
-            db.session.query(TblStudentWalletHistory)
-            .filter(
-                TblStudentWalletHistory.external_transaction_id == transaction_id
-            )
-            .first()
-        )
-
-        # ❌ Missing in wallet history
-        if not history:
-            missing.append({
-                "external_transaction_id": transaction_id,
-                "payer_code": payer_code,
-                "amount": amount,
-                "observation": observation,
-                "payment_date_time": payment_date_time,
-                "reason": "Not found in wallet history"
-            })
-            continue
-
-        # ⚠️ Amount mismatch
-        if float(history.amount) != float(amount):
-            mismatched.append({
-                "external_transaction_id": transaction_id,
-                "payer_code": payer_code,
-                "integration_amount": float(amount),
-                "wallet_history_amount": float(history.amount),
-                "observation": observation,
-                "payment_date_time": payment_date_time,
-                "reason": "Amount mismatch"
-            })
-    current_app.logger.info(f"Reconciliation completed: {total_checked} VALID logs checked, {len(missing)} missing, {len(mismatched)} mismatched.")
-    return jsonify({
+    # 5️⃣ Fast response (summary first)
+    response = {
         "status": "success",
-        "cutoff_date": cutoff_date.strftime("%Y-%m-%d"),
+        "cutoff_date": "2026-01-12",
         "summary": {
-            "total_checked": total_checked,
-            "missing_count": len(missing),
-            "mismatched_count": len(mismatched)
-        },
-        "missing_transactions": missing,
-        "amount_mismatches": mismatched
-    }), 200
+            "total_checked": len(integration_map),
+            "missing_count": sum(
+                1 for tx in integration_map if tx not in history_map
+            ),
+            "mismatched_count": sum(
+                1 for tx, integ in integration_map.items()
+                if tx in history_map and history_map[tx] != integ["amount"]
+            )
+        }
+    }
+
+    if include_details:
+        response["missing_transactions"] = missing
+        response["amount_mismatches"] = mismatched
+
+    return jsonify(response), 200
