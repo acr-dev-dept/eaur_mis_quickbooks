@@ -1680,7 +1680,7 @@ from sqlalchemy import text
 def wallet_payments_summary():
     """
     Fetch payments and wallet history for each student_wallet record.
-    Show totals and matched histories without duplicates.
+    Show totals, matched histories without duplicates, and highlight mismatches.
     """
     query = text("""
         SELECT
@@ -1716,10 +1716,10 @@ def wallet_payments_summary():
                 "payment_total": 0.0,
                 "matched_histories": [],
                 "history_match_count": 0,
-                "wallet_history_total": 0.0
+                "wallet_history_total": 0.0,
+                "mismatches": False  # new field
             }
 
-        # Add unique payments
         # Add unique payments
         if row.payment_id and row.payment_id not in [p["payment_id"] for p in wallets[key]["payments"]]:
             amount = float(row.payment_amount) if row.payment_amount is not None else 0.0
@@ -1741,9 +1741,13 @@ def wallet_payments_summary():
             })
             wallets[key]["history_match_count"] += 1
             wallets[key]["wallet_history_total"] += amount
-                                                                                        
+
+    # Update mismatches after processing all rows
+    for key, record in wallets.items():
+        record["mismatches"] = record["payment_total"] != record["wallet_history_total"]
 
     return jsonify({
         "status": "success",
         "results": list(wallets.values())
     }), 200
+
