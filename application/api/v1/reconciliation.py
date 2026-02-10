@@ -1700,7 +1700,6 @@ def wallet_payment_summary_sql():
                 ON p.student_wallet_ref = w.reference_number
             LEFT JOIN tbl_student_wallet_history h
                 ON h.reg_no = w.reg_no
-                AND h.amount = p.amount
             ORDER BY w.reg_no, p.recorded_date
         """)
 
