@@ -1676,6 +1676,8 @@ from flask import Blueprint, jsonify
 from sqlalchemy import text
 
 
+
+
 @reconciliation_bp.route("/wallet-payment-summary", methods=["GET"])
 def wallet_payment_summary_sql():
     """
@@ -1720,21 +1722,21 @@ def wallet_payment_summary_sql():
                     "history_match_count": 0
                 }
 
-            if row.payment_id:
+            if row.payment_id and row.payment_amount is not None:
                 wallets[key]["payments"].append({
                     "payment_id": row.payment_id,
-                    "amount": row.payment_amount,
-                    "recorded_date": row.payment_date.isoformat(),
+                    "amount": float(row.payment_amount),
+                    "recorded_date": row.payment_date.isoformat() if row.payment_date else None,
                     "student_wallet_ref": row.reference_number
                 })
                 wallets[key]["payment_count"] += 1
                 total_amount += float(row.payment_amount)
 
-            if row.history_id:
+            if row.history_id and row.history_amount is not None:
                 wallets[key]["matched_histories"].append({
                     "history_id": row.history_id,
-                    "amount": row.history_amount,
-                    "created_at": row.history_created_at.isoformat()
+                    "amount": float(row.history_amount),
+                    "created_at": row.history_created_at.isoformat() if row.history_created_at else None
                 })
                 wallets[key]["history_match_count"] += 1
 
