@@ -1844,7 +1844,7 @@ def reconcile_integration_vs_wallet_history():
                 "payment_date_time": payment_date_time,
                 "reason": "Amount mismatch"
             })
-
+    current_app.logger.info(f"Reconciliation completed: {total_checked} VALID logs checked, {len(missing)} missing, {len(mismatched)} mismatched.")
     return jsonify({
         "status": "success",
         "cutoff_date": cutoff_date.strftime("%Y-%m-%d"),
