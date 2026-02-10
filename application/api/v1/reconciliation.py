@@ -1674,9 +1674,7 @@ def get_outstanding_balance():
 
 from flask import Blueprint, jsonify
 from sqlalchemy import text
-from app import db
 
-reconciliation_bp = Blueprint("reconciliation_bp", __name__)
 
 @reconciliation_bp.route("/wallet-payments-summary", methods=["GET"])
 def wallet_payments_summary():
