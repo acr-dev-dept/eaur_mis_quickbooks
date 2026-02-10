@@ -1674,80 +1674,74 @@ def get_outstanding_balance():
 
 from flask import Blueprint, jsonify
 from sqlalchemy import text
+from app import db
 
+reconciliation_bp = Blueprint("reconciliation_bp", __name__)
 
-
-
-@reconciliation_bp.route("/wallet-payment-summary", methods=["GET"])
-def wallet_payment_summary_sql():
+@reconciliation_bp.route("/wallet-payments-summary", methods=["GET"])
+def wallet_payments_summary():
     """
-    Fetch payments and match them to wallet history using a single SQL query.
-    Returns totals and detailed records.
+    Fetch payments and wallet history for each student_wallet record.
+    Show totals and matched histories without duplicates.
     """
-    try:
-        query = text("""
-            SELECT
-                w.reg_no,
-                w.reference_number,
-                p.id AS payment_id,
-                p.amount AS payment_amount,
-                p.recorded_date AS payment_date,
-                h.id AS history_id,
-                h.amount AS history_amount,
-                h.created_at AS history_created_at
-            FROM tbl_student_wallet w
-            LEFT JOIN payment p
-                ON p.student_wallet_ref = w.reference_number
-            LEFT JOIN tbl_student_wallet_history h
-                ON h.reg_no = w.reg_no
-            ORDER BY w.reg_no, p.recorded_date
-        """)
+    query = text("""
+        SELECT
+            w.reg_no,
+            w.reference_number,
+            p.id AS payment_id,
+            p.amount AS payment_amount,
+            p.recorded_date AS payment_date,
+            h.id AS history_id,
+            h.amount AS history_amount,
+            h.created_at AS history_created_at
+        FROM tbl_student_wallet w
+        LEFT JOIN payment p
+            ON p.student_wallet_ref = w.reference_number
+        LEFT JOIN tbl_student_wallet_history h
+            ON h.reg_no = w.reg_no
+        ORDER BY w.reg_no, p.recorded_date
+    """)
 
-        result = db.session.execute(query).fetchall()
+    result = db.session.execute(query).fetchall()
 
-        # Aggregate results per wallet
-        wallets = {}
-        total_amount = 0.0
+    wallets = {}
 
-        for row in result:
-            key = (row.reg_no, row.reference_number)
-            if key not in wallets:
-                wallets[key] = {
-                    "reg_no": row.reg_no,
-                    "reference_number": row.reference_number,
-                    "payments": [],
-                    "matched_histories": [],
-                    "payment_count": 0,
-                    "history_match_count": 0
-                }
+    for row in result:
+        key = (row.reg_no, row.reference_number)
 
-            if row.payment_id and row.payment_amount is not None:
-                wallets[key]["payments"].append({
-                    "payment_id": row.payment_id,
-                    "amount": float(row.payment_amount),
-                    "recorded_date": row.payment_date.isoformat() if row.payment_date else None,
-                    "student_wallet_ref": row.reference_number
-                })
-                wallets[key]["payment_count"] += 1
-                total_amount += float(row.payment_amount)
+        if key not in wallets:
+            wallets[key] = {
+                "reg_no": row.reg_no,
+                "reference_number": row.reference_number,
+                "payments": [],
+                "payment_count": 0,
+                "payment_total": 0.0,
+                "matched_histories": [],
+                "history_match_count": 0,
+                "wallet_history_total": 0.0
+            }
 
-            if row.history_id and row.history_amount is not None:
-                wallets[key]["matched_histories"].append({
-                    "history_id": row.history_id,
-                    "amount": float(row.history_amount),
-                    "created_at": row.history_created_at.isoformat() if row.history_created_at else None
-                })
-                wallets[key]["history_match_count"] += 1
+        # Add unique payments
+        if row.payment_id and row.payment_id not in [p["payment_id"] for p in wallets[key]["payments"]]:
+            wallets[key]["payments"].append({
+                "payment_id": row.payment_id,
+                "amount": float(row.payment_amount),
+                "recorded_date": row.payment_date.isoformat() if row.payment_date else None
+            })
+            wallets[key]["payment_count"] += 1
+            wallets[key]["payment_total"] += float(row.payment_amount)
 
-        return jsonify({
-            "status": "success",
-            "total_wallets": len(wallets),
-            "total_amount": total_amount,
-            "results": list(wallets.values())
-        }), 200
+        # Add unique histories
+        if row.history_id and row.history_id not in [h["history_id"] for h in wallets[key]["matched_histories"]]:
+            wallets[key]["matched_histories"].append({
+                "history_id": row.history_id,
+                "amount": float(row.history_amount),
+                "created_at": row.history_created_at.isoformat() if row.history_created_at else None
+            })
+            wallets[key]["history_match_count"] += 1
+            wallets[key]["wallet_history_total"] += float(row.history_amount)
 
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+    return jsonify({
+        "status": "success",
+        "results": list(wallets.values())
+    }), 200
