@@ -1671,3 +1671,84 @@ def get_outstanding_balance():
 
     service = OpeningBalanceSyncService()
     return service.get_outstanding_balance(reg_no)
+
+from flask import Blueprint, jsonify
+from sqlalchemy import text
+from app.models import db
+
+wallet_bp = Blueprint("wallet_bp", __name__)
+
+@wallet_bp.route("/wallet-payment-summary", methods=["GET"])
+def wallet_payment_summary_sql():
+    """
+    Fetch payments and match them to wallet history using a single SQL query.
+    Returns totals and detailed records.
+    """
+    try:
+        query = text("""
+            SELECT
+                w.reg_no,
+                w.reference_number,
+                p.id AS payment_id,
+                p.amount AS payment_amount,
+                p.recorded_date AS payment_date,
+                h.id AS history_id,
+                h.amount AS history_amount,
+                h.created_at AS history_created_at
+            FROM tbl_student_wallet w
+            LEFT JOIN Payment p
+                ON p.student_wallet_ref = w.reference_number
+            LEFT JOIN tbl_student_wallet_history h
+                ON h.reg_no = w.reg_no
+                AND h.amount = p.amount
+            ORDER BY w.reg_no, p.recorded_date
+        """)
+
+        result = db.session.execute(query).fetchall()
+
+        # Aggregate results per wallet
+        wallets = {}
+        total_amount = 0.0
+
+        for row in result:
+            key = (row.reg_no, row.reference_number)
+            if key not in wallets:
+                wallets[key] = {
+                    "reg_no": row.reg_no,
+                    "reference_number": row.reference_number,
+                    "payments": [],
+                    "matched_histories": [],
+                    "payment_count": 0,
+                    "history_match_count": 0
+                }
+
+            if row.payment_id:
+                wallets[key]["payments"].append({
+                    "payment_id": row.payment_id,
+                    "amount": row.payment_amount,
+                    "recorded_date": row.payment_date.isoformat(),
+                    "student_wallet_ref": row.reference_number
+                })
+                wallets[key]["payment_count"] += 1
+                total_amount += float(row.payment_amount)
+
+            if row.history_id:
+                wallets[key]["matched_histories"].append({
+                    "history_id": row.history_id,
+                    "amount": row.history_amount,
+                    "created_at": row.history_created_at.isoformat()
+                })
+                wallets[key]["history_match_count"] += 1
+
+        return jsonify({
+            "status": "success",
+            "total_wallets": len(wallets),
+            "total_amount": total_amount,
+            "results": list(wallets.values())
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
