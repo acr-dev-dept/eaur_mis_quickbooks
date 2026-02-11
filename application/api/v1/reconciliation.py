@@ -2028,8 +2028,9 @@ def insert_missing_wallet_history():
 def wallet_payment_exceeds_history():
     """
     Return wallet records where:
-    - mismatches is True
+    - mismatches = True
     - payment_total > wallet_history_total
+    - reference_number matches YYYYMMDDHHMMSS_REGNO
     """
 
     query = text("""
@@ -2047,6 +2048,7 @@ def wallet_payment_exceeds_history():
             ON p.student_wallet_ref = w.reference_number
         LEFT JOIN tbl_student_wallet_history h
             ON h.reg_no = w.reg_no
+        WHERE w.reference_number REGEXP '^[0-9]{14}_[0-9]+$'
         ORDER BY w.reg_no, p.recorded_date
     """)
 
@@ -2070,39 +2072,39 @@ def wallet_payment_exceeds_history():
                 "mismatches": False
             }
 
-        # Payments
+        # Payments (deduplicated)
         if row.payment_id and row.payment_id not in {
             p["payment_id"] for p in wallets[key]["payments"]
         }:
-            amount = float(row.payment_amount) if row.payment_amount else 0.0
+            amt = float(row.payment_amount or 0)
             wallets[key]["payments"].append({
                 "payment_id": row.payment_id,
-                "amount": amount,
+                "amount": amt,
                 "recorded_date": (
                     row.payment_date.isoformat()
                     if row.payment_date else None
                 )
             })
-            wallets[key]["payment_total"] += amount
+            wallets[key]["payment_total"] += amt
             wallets[key]["payment_count"] += 1
 
-        # Wallet histories
+        # Wallet history (deduplicated)
         if row.history_id and row.history_id not in {
             h["history_id"] for h in wallets[key]["matched_histories"]
         }:
-            amount = float(row.history_amount) if row.history_amount else 0.0
+            amt = float(row.history_amount or 0)
             wallets[key]["matched_histories"].append({
                 "history_id": row.history_id,
-                "amount": amount,
+                "amount": amt,
                 "created_at": (
                     row.history_created_at.isoformat()
                     if row.history_created_at else None
                 )
             })
-            wallets[key]["wallet_history_total"] += amount
+            wallets[key]["wallet_history_total"] += amt
             wallets[key]["history_match_count"] += 1
 
-    # Apply required filter
+    # Final reconciliation filter
     results = []
     for record in wallets.values():
         record["mismatches"] = (
@@ -2110,7 +2112,7 @@ def wallet_payment_exceeds_history():
         )
 
         if (
-            record["mismatches"] is True
+            record["mismatches"]
             and record["payment_total"] > record["wallet_history_total"]
         ):
             record["difference"] = (
