@@ -1925,6 +1925,8 @@ def get_departments():
         }), 500
 
 @quickbooks_bp.route('/create_department', methods=['POST'])
+@require_auth('validation')
+@log_api_access('Get Departments')
 def create_department():
     """Create a new department.
     
@@ -1989,6 +1991,8 @@ def create_department():
         }), 500
     
 @quickbooks_bp.route('/chart_of_accounts', methods=['GET'])
+@require_auth('validation')
+@log_api_access('Get Departments')
 def get_chart_of_accounts():
     """Get all chart of accounts."""
     try:
@@ -2030,6 +2034,8 @@ def get_chart_of_accounts():
         }), 500
     
 @quickbooks_bp.route('/get_recent_created_accounts', methods=['GET'])
+@require_auth('validation')
+@log_api_access('Get Departments')
 def get_recent_created_accounts():
     """Get recently created accounts."""
     try:

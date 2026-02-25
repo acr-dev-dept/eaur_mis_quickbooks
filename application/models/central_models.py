@@ -642,7 +642,6 @@ class ApiAccessLog(BaseModel):
                 method=method,
                 status_code=status_code,
                 user_agent=user_agent
-                
             )
             db.session.add(log_entry)
             db.session.commit()
