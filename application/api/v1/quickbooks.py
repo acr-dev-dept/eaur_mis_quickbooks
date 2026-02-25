@@ -43,7 +43,6 @@ def get_company_info():
 
 @quickbooks_bp.route('/get_accounts', methods=['GET'])
 @require_auth('validation')
-@log_api_access
 def get_accounts():
     """Get accounts."""
     try:
