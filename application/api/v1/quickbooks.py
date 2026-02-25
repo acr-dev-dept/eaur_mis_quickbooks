@@ -60,6 +60,7 @@ def get_accounts():
 
 
 @quickbooks_bp.route('/create_account_in_chart', methods=['POST'])
+@require_auth('validation')
 def create_account_in_chart():
     """Create a new account.
         payload = {
@@ -129,6 +130,7 @@ def create_account_in_chart():
 
 
 @quickbooks_bp.route('/get_vendors', methods=['GET'])
+@require_auth('validation')
 def get_vendors():
     """Get vendors."""
     try:
@@ -146,6 +148,7 @@ def get_vendors():
         return jsonify({'error': 'Error getting vendors'}), 500
 
 @quickbooks_bp.route('/get_auth_url', methods=['GET'])
+@require_auth('validation')
 def get_auth_url():
     """Get the QuickBooks OAuth2 authorization URL."""
     try:
@@ -163,6 +166,7 @@ def get_auth_url():
         return jsonify({'error': 'Error getting authorization URL'}), 400
 
 @quickbooks_bp.route('/disconnect', methods=['GET'])
+@require_auth('validation')
 def disconnect():
     """Disconnect from QuickBooks."""
     try:
@@ -182,6 +186,7 @@ def disconnect():
         return jsonify({'success': False, 'message': message}), 500
 
 @quickbooks_bp.route('/callback', methods=['GET'])
+@require_auth('validation')
 def callback():
     """Callback route for QuickBooks OAuth2."""
     try:
@@ -234,6 +239,7 @@ def callback():
 
 # Invoice Endpoints
 @quickbooks_bp.route('/invoices', methods=['GET'])
+@require_auth('validation')
 def get_invoices():
     """Get all invoices with optional filtering."""
     try:
@@ -284,6 +290,7 @@ def get_invoices():
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>', methods=['GET'])
+@require_auth('validation')
 def get_invoice(invoice_id):
     """Get a specific invoice by ID."""
     try:
@@ -332,6 +339,7 @@ def get_invoice(invoice_id):
 
 
 @quickbooks_bp.route('/invoices', methods=['POST'])
+@require_auth('validation')
 def create_invoice():
     """Create a new invoice."""
     try:
@@ -398,6 +406,7 @@ def create_invoice():
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>', methods=['PUT'])
+@require_auth('validation')
 def update_invoice(invoice_id):
     """Update an existing invoice."""
     try:
@@ -462,6 +471,7 @@ def update_invoice(invoice_id):
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>', methods=['DELETE'])
+@require_auth('validation')
 def delete_invoice(invoice_id):
     """Delete an invoice."""
     try:
@@ -510,6 +520,7 @@ def delete_invoice(invoice_id):
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>/void', methods=['POST'])
+@require_auth('validation')
 def void_invoice(invoice_id):
     """Void an invoice."""
     try:
@@ -558,6 +569,7 @@ def void_invoice(invoice_id):
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>/pdf', methods=['GET'])
+@require_auth('validation')
 def get_invoice_pdf(invoice_id):
     """Get invoice as PDF."""
     try:
@@ -611,6 +623,7 @@ def get_invoice_pdf(invoice_id):
 
 
 @quickbooks_bp.route('/invoices/<invoice_id>/send', methods=['POST'])
+@require_auth('validation')
 def send_invoice(invoice_id):
     """Send invoice via email."""
     try:
@@ -676,6 +689,7 @@ def send_invoice(invoice_id):
 
 # Payment Endpoints
 @quickbooks_bp.route('/payments', methods=['GET'])
+@require_auth('validation')
 def get_payments():
     """Get all payments with optional filtering."""
     try:
@@ -726,6 +740,7 @@ def get_payments():
 
 
 @quickbooks_bp.route('/payments/<payment_id>', methods=['GET'])
+@require_auth('validation')
 def get_payment(payment_id):
     """Get a specific payment by ID."""
     try:
@@ -774,6 +789,7 @@ def get_payment(payment_id):
 
 
 @quickbooks_bp.route('/payments', methods=['POST'])
+@require_auth('validation')
 def create_payment():
     """Create a new payment."""
     try:
@@ -839,6 +855,7 @@ def create_payment():
         }), 500
 
 @quickbooks_bp.route('/get_payments_by_account/<account_id>', methods=['GET'])
+@require_auth('validation')
 def get_payments_by_account(account_id):
     """Get payments associated with a specific account ID."""
     try:
@@ -895,6 +912,7 @@ def get_payments_by_account(account_id):
         }), 500
 
 @quickbooks_bp.route('/payments/<payment_id>', methods=['PUT'])
+@require_auth('validation')
 def update_payment(payment_id):
     """Update an existing payment."""
     try:
@@ -953,6 +971,7 @@ def update_payment(payment_id):
 
 
 @quickbooks_bp.route('/payments/<payment_id>', methods=['DELETE'])
+@require_auth('validation')
 def delete_payment(payment_id):
     """Delete a payment."""
     try:
@@ -1001,6 +1020,7 @@ def delete_payment(payment_id):
 
 
 @quickbooks_bp.route('/payments/<payment_id>/void', methods=['POST'])
+@require_auth('validation')
 def void_payment(payment_id):
     """Void a payment."""
     try:
@@ -1049,6 +1069,7 @@ def void_payment(payment_id):
 
 
 @quickbooks_bp.route('/payments/<payment_id>/pdf', methods=['GET'])
+@require_auth('validation')
 def get_payment_pdf(payment_id):
     """Get payment as PDF."""
     try:
@@ -1102,6 +1123,7 @@ def get_payment_pdf(payment_id):
 
 
 @quickbooks_bp.route('/payments/<payment_id>/send', methods=['POST'])
+@require_auth('validation')
 def send_payment(payment_id):
     """Send payment via email."""
     try:
@@ -1164,6 +1186,7 @@ def send_payment(payment_id):
             'details': str(e)
         }), 500
 @quickbooks_bp.route('/item/get_items', methods=['GET'])
+@require_auth('validation')
 def get_item():
     """Get all items."""
     try:
@@ -1205,6 +1228,7 @@ def get_item():
         }), 500
     
 @quickbooks_bp.route('/item/get_items/<string:item_type>', methods=['GET'])
+@require_auth('validation')
 def get_items(item_type):
     """Get items by type."""
     try:
@@ -1253,6 +1277,7 @@ def get_items(item_type):
         }), 500
     
 @quickbooks_bp.route('/item/create_item', methods=['POST'])
+@require_auth('validation')
 def create_item():
     """Create a new item.
     
@@ -1349,6 +1374,7 @@ def create_item():
         }), 500
     
 @quickbooks_bp.route('/item/sync_items', methods=['POST'])
+@require_auth('validation')
 def sync_single_item():
     try:
         # Check if QuickBooks is configured
@@ -1465,6 +1491,7 @@ def sync_single_item():
 
 
 @quickbooks_bp.route('/get_customers', methods=['GET'])
+@require_auth('validation')
 def get_customers():
     """Get all customers."""
     try:
@@ -1506,6 +1533,7 @@ def get_customers():
         }), 500
 
 @quickbooks_bp.route('/get_items', methods=['GET'])
+@require_auth('validation')
 def get_all_items():
     """Get all items."""
     try:
@@ -1547,6 +1575,7 @@ def get_all_items():
         }), 500
 
 @quickbooks_bp.route('/get_customer', methods=['GET'])
+@require_auth('validation')
 def get_customer():
     """Get a specific customer by ID."""
     try:
@@ -1596,6 +1625,7 @@ def get_customer():
         }), 500
     
 @quickbooks_bp.route('/get_custom_field_definitions', methods=['GET'])
+@require_auth('validation')
 def get_custom_field_definitions():
     """Get all custom field definitions."""
     try:
@@ -1637,6 +1667,7 @@ def get_custom_field_definitions():
         }), 500
 
 @quickbooks_bp.route('/get_customer_types', methods=['GET'])
+@require_auth('validation')
 def get_customer_types():
     """Get all customer types."""
     try:
@@ -1678,6 +1709,7 @@ def get_customer_types():
         }), 500
     
 @quickbooks_bp.route('/create_customer_type', methods=['POST'])
+@require_auth('validation')
 def create_customer_type():
     """Create a new customer type.
     
@@ -1743,6 +1775,7 @@ def create_customer_type():
         }), 500
 
 @quickbooks_bp.route('/get_classes', methods=['GET'])
+@require_auth('validation')
 def get_classes():
     """Get all classes."""
     try:
@@ -1784,6 +1817,7 @@ def get_classes():
         }), 500
 
 @quickbooks_bp.route('/create_class', methods=['POST'])
+@require_auth('validation')
 def create_class():
     """Create a new class.
     
@@ -1848,6 +1882,8 @@ def create_class():
         }), 500
 
 @quickbooks_bp.route('/departments', methods=['GET'])
+@require_auth('validation')
+@log_api_access('Get Departments')
 def get_departments():
     """Get all departments."""
     try:
