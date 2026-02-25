@@ -626,3 +626,27 @@ class ApiAccessLog(BaseModel):
 
     def __repr__(self):
         return f"<ApiAccessLog {self.operation} {self.ip_address}>"
+    
+
+    @classmethod
+    def log_access(cls, operation, client_name, gateway_name, client_type, ip_address, authenticated, endpoint=None, method=None, status_code=None):
+        """Log API access details to the database."""
+        try:
+            log_entry = cls(
+                operation=operation,
+                client_name=client_name,
+                gateway_name=gateway_name,
+                client_type=client_type,
+                ip_address=ip_address,
+                authenticated=authenticated,
+                endpoint=endpoint,
+                method=method,
+                status_code=status_code
+            )
+            db.session.add(log_entry)
+            db.session.commit()
+            return log_entry
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error logging API access: {e}")
+            return None
