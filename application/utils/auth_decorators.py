@@ -265,7 +265,8 @@ def log_api_access(operation_name=None):
                         client_type=client_info.get('client_type'),
                         client_name=client_info.get('username'),
                         ip_address=request.remote_addr,
-                        user_agent=f"User: {client_info.get('username')}, Client: {client_info.get('client_name')}, Gateway: {client_info.get('gateway_name')} - {operation}-datetime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        user_agent=f"User: {client_info.get('username')}, Client: {client_info.get('client_name')}, Gateway: {client_info.get('gateway_name')} - {operation}-datetime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                        authenticated=True if hasattr(request, 'token_payload') else False
                     )
                     if access_log:
                         current_app.logger.info(f"Access log saved with ID: {access_log.id}")
