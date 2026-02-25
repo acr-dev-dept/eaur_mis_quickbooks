@@ -629,14 +629,13 @@ class ApiAccessLog(BaseModel):
     
 
     @classmethod
-    def log_access(cls, operation, client_name, gateway_name, client_type, ip_address, authenticated, endpoint=None, method=None, status_code=None, user_agent=None):
+    def log_access(cls, operation, client_name, gateway_name, ip_address, authenticated, endpoint=None, method=None, status_code=None, user_agent=None):
         """Log API access details to the database."""
         try:
             log_entry = cls(
                 operation=operation,
                 client_name=client_name,
                 gateway_name=gateway_name,
-                client_type=client_type,
                 ip_address=ip_address,
                 authenticated=authenticated,
                 endpoint=endpoint,
