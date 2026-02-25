@@ -153,7 +153,10 @@ def register_blueprints(app):
     from application.api.v1.sales_receipt_api import sales_receipt_api
     from application.api.v1.api_clients import admin_api_clients_bp
     from application.api.v1.legacy_delete import qb_admin_bp
-
+    from application.routes.website.web import web_route
+    from application.routes.error_logs import error_logs_bp
+    from application.api.v1.reconciliation import reconciliation_bp
+    from application.api.v1.auth import auth_bp
     # Register blueprints
     app.register_blueprint(api_v1_bp, url_prefix='/api/v1')   
     app.register_blueprint(health_bp, url_prefix='/health')
@@ -170,21 +173,14 @@ def register_blueprints(app):
     app.register_blueprint(payments_route, url_prefix='/payments')
     app.register_blueprint(items_route, url_prefix='/items')
     app.register_blueprint(students_route, url_prefix='/students')
-    from application.routes.error_logs import error_logs_bp
     app.register_blueprint(error_logs_bp)  # No prefix, routes define their own
-    from application.routes.website.web import web_route
     app.register_blueprint(web_route)  # No prefix, routes define their own
     app.register_blueprint(income_sync_api, url_prefix='/api/v1/sync/income')
     app.register_blueprint(sales_receipt_api, url_prefix='/api/v1/sync/sales_receipt')
-
     app.register_blueprint(qb_admin_bp)
-
     app.register_blueprint(admin_api_clients_bp)
-
-    from application.api.v1.reconciliation import reconciliation_bp
-
     app.register_blueprint(reconciliation_bp, url_prefix='/api/v1/reconciliation')
-
+    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')  # Register auth blueprint
 
 def register_error_handlers(app):
     """Register application error handlers"""
