@@ -60,12 +60,10 @@ def make_celery(app):
 
         },
         beat_schedule={
-
             "sync_students": {
             "task": "application.config_files.sync_students_task.bulk_sync_students_task",
             "schedule": crontab(hour='0-23', minute='6,42', day_of_week='mon,tue,wed,thu,fri'),
             },
-            
             "sync_sales_receipt_every_3_minutes": {
             "task": "application.config_files.sync_sales_receipt_task.scheduled_sales_receipt_sync_task",
             "schedule": crontab(minute='*/6'),
@@ -74,11 +72,6 @@ def make_celery(app):
             "task": "application.config_files.tasks.bulk_sync_applicants_task",
             "schedule": crontab(minute='6,42', hour='0-23', day_of_week='mon,tue,wed,thu,fri'),
             },
-            "update_opening_balances_every_3_minutes": {
-            "task": "application.config_files.update_opening_balances_task.scheduled_opening_balance_update_task",
-            "schedule": crontab(minute='*/3'),
-            },
-
         }
     )
 
