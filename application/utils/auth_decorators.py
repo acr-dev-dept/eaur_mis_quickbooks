@@ -255,7 +255,8 @@ def log_api_access(operation_name=None):
                         f"Client: {client_info.get('client_name')}, "
                         f"Gateway: {client_info.get('gateway_name')}, "
                         f"IP: {request.remote_addr},"
-                        f"payload: {client_info}"
+                        f"payload: {client_info},"
+                        f"request_data: {request.get_json(silent=True)}"
                     )
                     
                 else:
