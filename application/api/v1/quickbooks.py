@@ -41,9 +41,9 @@ def get_company_info():
         current_app.logger.error(f"Error getting company info: {e}")
         return jsonify({'error': 'Error getting company info'}), 500
 
-@require_auth
-@log_api_access
 @quickbooks_bp.route('/get_accounts', methods=['GET'])
+@require_auth('validation')
+@log_api_access
 def get_accounts():
     """Get accounts."""
     try:
