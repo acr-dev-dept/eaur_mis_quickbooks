@@ -11,7 +11,7 @@ admin_api_clients_bp = Blueprint(
 )
 
 
-@admin_api_clients_bp.route("/payment-gateway/setup", methods=["POST"])
+@admin_api_clients_bp.route("/api_client/setup", methods=["POST"])
 def setup_urubuto_pay_client_api():
     """
     Setup API client for Urubuto Pay
@@ -31,6 +31,8 @@ def setup_urubuto_pay_client_api():
         password = data.get("password")
         gateway_name = data.get("gateway_name")
         client_name = data.get("client_name")
+        client_type = data.get("client_type")
+
         if not username or not password:
             return jsonify({
                 "success": False,
@@ -53,7 +55,7 @@ def setup_urubuto_pay_client_api():
             client_name=client_name,
             username=username,
             password=password,
-            client_type="payment_gateway",
+            client_type=client_type or "payment_gateway",
             gateway_name=gateway_name,
             permissions=["validation", "notifications", "status_check"]
         )
