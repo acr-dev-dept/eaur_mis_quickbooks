@@ -251,10 +251,12 @@ def log_api_access(operation_name=None):
                     client_info = request.token_payload
                     current_app.logger.info(
                         f"API Access - Operation: {operation}, "
+                        f"User: {client_info.get('username')}, "
                         f"Client: {client_info.get('client_name')}, "
                         f"Gateway: {client_info.get('gateway_name')}, "
                         f"IP: {request.remote_addr}"
                     )
+                    
                 else:
                     current_app.logger.info(
                         f"API Access - Operation: {operation}, "

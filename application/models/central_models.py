@@ -590,3 +590,39 @@ class QuickBooksClasses(BaseModel):
             db.session.rollback()
             current_app.logger.error(f"Error updating QuickBooks status: {e}")
             return None
+        
+
+class ApiAccessLog(BaseModel):
+    __tablename__ = "api_access_logs"
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+
+    # Operation details
+    operation = db.Column(db.String(150), nullable=False)
+    endpoint = db.Column(db.String(255))
+    method = db.Column(db.String(10))
+
+    # Client identity
+    client_id = db.Column(db.String(100))
+    client_name = db.Column(db.String(150))
+    gateway_name = db.Column(db.String(150))
+
+    # Network info
+    ip_address = db.Column(db.String(45))  # IPv4 or IPv6
+    user_agent = db.Column(db.Text)
+
+    # Auth status
+    authenticated = db.Column(db.Boolean, default=False)
+
+    # Optional status/result
+    status_code = db.Column(db.Integer)
+
+    # Timestamp
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        index=True
+    )
+
+    def __repr__(self):
+        return f"<ApiAccessLog {self.operation} {self.ip_address}>"
