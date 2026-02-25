@@ -629,7 +629,7 @@ class ApiAccessLog(BaseModel):
     
 
     @classmethod
-    def log_access(cls, operation, client_name, gateway_name, client_type, ip_address, authenticated, endpoint=None, method=None, status_code=None):
+    def log_access(cls, operation, client_name, gateway_name, client_type, ip_address, authenticated, endpoint=None, method=None, status_code=None, user_agent=None):
         """Log API access details to the database."""
         try:
             log_entry = cls(
@@ -641,7 +641,9 @@ class ApiAccessLog(BaseModel):
                 authenticated=authenticated,
                 endpoint=endpoint,
                 method=method,
-                status_code=status_code
+                status_code=status_code,
+                user_agent=user_agent
+                
             )
             db.session.add(log_entry)
             db.session.commit()
