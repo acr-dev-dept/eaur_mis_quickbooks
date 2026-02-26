@@ -598,7 +598,7 @@ class ApiAccessLog(BaseModel):
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
 
     # Operation details
-    operation = db.Column(db.String(150), nullable=False)
+    operation = db.Column(db.String(255), nullable=False)
     endpoint = db.Column(db.String(255))
     method = db.Column(db.String(10))
 

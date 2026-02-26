@@ -12,6 +12,8 @@ from datetime import datetime
 from application.models.mis_models import TblImvoice
 from flask import render_template
 from application.models.central_models import QuickbooksAuditLog
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
+
 
 invoices_bp = Blueprint('invoices', __name__)
 
@@ -70,6 +72,8 @@ def validate_quickbooks_connection():
     return True, None
 
 @invoices_bp.route('/sync_single_invoice', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_single_invoice')
 def sync_single_invoice():
     """Sync a single invoice from MIS to QuickBooks.
     JSON Payload:
@@ -181,6 +185,8 @@ def sync_single_invoice():
         )
 
 @invoices_bp.route('/update/<int:invoice_id>', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_single_invoice')
 def update_invoice_qb(invoice_id):
     """Update an existing invoice in QuickBooks by ID from MIS."""
     try:
@@ -258,6 +264,8 @@ def update_invoice_qb(invoice_id):
         )
 
 @invoices_bp.route('/delete/<int:invoice_id>', methods=['DELETE'])
+@require_auth('validation')
+@log_api_access('sync_single_invoice')
 def delete_invoice_qb(invoice_id):
     """Delete an existing invoice in QuickBooks by ID from MIS."""
 

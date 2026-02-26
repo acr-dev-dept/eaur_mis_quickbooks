@@ -10,11 +10,14 @@ from application.models.mis_models import (
     TblSponsor, TblLevel, Modules, TblIncomeCategory, 
     TblPersonalUg, Payment, TblImvoice
 )
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 
 
 mis_data_bp = Blueprint('mis_data', __name__)
 
 @mis_data_bp.route('/campus/<int:campus_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_campus')
 def get_campus(campus_id):
     """Get campus details by ID"""
     try:
@@ -34,6 +37,8 @@ def get_campus(campus_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/intake/<int:intake_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_intake')
 def get_intake(intake_id):
     """Get intake details by ID"""
     try:
@@ -53,6 +58,8 @@ def get_intake(intake_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/specialisation/<int:specialisation_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_specialisation')
 def get_specialisation(specialisation_id):
     """Get specialisation details by ID"""
     try:
@@ -72,6 +79,8 @@ def get_specialisation(specialisation_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/program_mode/<int:mode_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_program_mode')
 def get_program_mode(mode_id):
     """Get program mode details by ID"""
     try:
@@ -91,6 +100,8 @@ def get_program_mode(mode_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/bank/<int:bank_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_bank')
 def get_bank(bank_id):
     """Get bank details by ID"""
     try:
@@ -107,6 +118,8 @@ def get_bank(bank_id):
    
 
 @mis_data_bp.route('/register_program/<int:program_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_register_program')
 def get_register_program(program_id):
     """Get program details by ID"""
     try:
@@ -126,6 +139,8 @@ def get_register_program(program_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/sponsor/<int:sponsor_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_sponsor')
 def get_sponsor(sponsor_id):
     """Get sponsor details by ID"""
     try:
@@ -145,6 +160,8 @@ def get_sponsor(sponsor_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/level/<int:level_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_level')
 def get_level(level_id):
     """Get level details by ID"""
     try:
@@ -164,6 +181,8 @@ def get_level(level_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/module/<int:module_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_module')
 def get_module(module_id):
     """Get module details by ID"""
     try:
@@ -183,6 +202,8 @@ def get_module(module_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/income_category/<int:category_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_income_category')
 def get_income_category(category_id):
     """Get income category details by ID"""
     try:
@@ -202,6 +223,8 @@ def get_income_category(category_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/student_details/<int:student_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_student')
 def get_student(student_id):
     """Get student details by ID"""
     try:
@@ -221,6 +244,8 @@ def get_student(student_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/get_student_by_regno', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_student_by_regno')
 def get_student_by_regno():
     """Get student details by registration number"""
     # get reg_no from query parameters
@@ -245,6 +270,8 @@ def get_student_by_regno():
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/payment/<int:payment_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_payment')
 def get_payment(payment_id):
     """Get payment details by ID"""
     try:
@@ -264,6 +291,8 @@ def get_payment(payment_id):
         return jsonify({'message': 'Internal server error'}), 500
 
 @mis_data_bp.route('/invoice/<int:invoice_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_invoice')
 def get_invoice(invoice_id):
     """Get invoice details by ID"""
     try:

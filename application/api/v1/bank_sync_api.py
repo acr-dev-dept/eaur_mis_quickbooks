@@ -15,6 +15,7 @@ from application.models.mis_models import TblBank
 from application.models.central_models import QuickBooksConfig
 from application.helpers.json_encoder import EnhancedJSONEncoder
 from application.helpers.SafeStringify import safe_stringify
+from application.utils.auth_decorators import require_auth,  log_api_access
 
 
 # Create blueprint
@@ -38,6 +39,8 @@ def validate_quickbooks_connection():
 
 
 @bank_sync_bp.route('/sync_bank/<int:bank_id>', methods=['POST'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def sync_single_bank(bank_id: int):
     """
     Synchronize a single bank to QuickBooks Chart of Accounts
@@ -145,6 +148,8 @@ def sync_single_bank(bank_id: int):
 
 
 @bank_sync_bp.route('/get_unsynced_banks', methods=['GET'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def get_unsynced_banks():
     """
     Get list of banks that haven't been synchronized to QuickBooks
@@ -214,6 +219,8 @@ def get_unsynced_banks():
 
 
 @bank_sync_bp.route('/get_bank_sync_status/<int:bank_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def get_bank_sync_status(bank_id: int):
     """
     Get synchronization status for a specific bank
@@ -258,6 +265,8 @@ def get_bank_sync_status(bank_id: int):
 
 
 @bank_sync_bp.route('/analyze_bank_sync_requirements', methods=['GET'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def analyze_bank_sync_requirements():
     """
     Get overall bank synchronization statistics and requirements
@@ -308,6 +317,8 @@ def analyze_bank_sync_requirements():
 
 
 @bank_sync_bp.route('/force_resync_bank/<int:bank_id>', methods=['POST'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def force_resync_bank(bank_id: int):
     """
     Force re-synchronization of a bank, bypassing duplicate checks
@@ -379,6 +390,8 @@ def force_resync_bank(bank_id: int):
 
 
 @bank_sync_bp.route('/health', methods=['GET'])
+@require_auth('validation')
+@log_api_access('bank_sync')
 def health_check():
     """
     Health check endpoint for bank sync service

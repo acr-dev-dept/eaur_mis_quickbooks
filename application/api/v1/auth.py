@@ -23,7 +23,6 @@ def authenticate():
     
     username = data['user_name']
     password = data['password']
-
     try:
         from application.models.central_models import AuthenticationService
         success, token_or_error = AuthenticationService.authenticate_and_generate_token(username, password)

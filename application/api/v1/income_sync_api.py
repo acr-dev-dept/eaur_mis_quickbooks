@@ -6,6 +6,8 @@ from datetime import datetime
 from application.models.mis_models import TblIncomeCategory
 from application.services.income_sync import IncomeSyncService
 from application.utils.database import db_manager
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
+
 
 income_sync_api = Blueprint('income_sync_api', __name__)
 
@@ -39,6 +41,8 @@ def validate_quickbooks_connection():
 
 
 @income_sync_api.route('/sync_income_category', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_income_category') 
 def sync_income_category():
     """API endpoint to trigger income category synchronization with QuickBooks.
     Expects JSON payload with income category details.

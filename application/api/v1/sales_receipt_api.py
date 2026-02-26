@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime
 from application.models.mis_models import TblStudentWallet, TblStudentWalletLedger
 from application.services.sales_receipt_sync import SalesReceiptSyncService
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 
 
 sales_receipt_api = Blueprint('sales_receipt_api', __name__)
@@ -54,6 +55,8 @@ def validate_quickbooks_connection():
 
 
 @sales_receipt_api.route('/create', methods=['POST'])
+@require_auth('validation')
+@log_api_access('create_sales_receipt')
 def create_sales_receipt():
     """
         API endpoint to create a sales receipt in QuickBooks.
@@ -119,6 +122,8 @@ def create_sales_receipt():
         }), 500
 
 @sales_receipt_api.route('/update', methods=['POST'])
+@require_auth('validation')
+@log_api_access('update_sales_receipt')
 def update_sales_receipt():
     """
     API endpoint to update an existing SalesReceipt in QuickBooks.
@@ -199,6 +204,8 @@ def update_sales_receipt():
         }), 500
     
 @sales_receipt_api.route('/get_sales_receipt/<int:wallet_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_sales_receipt')
 def get_sales_receipt(wallet_id):
     """
     API endpoint to retrieve sales receipt details from QuickBooks by wallet ID.
@@ -247,7 +254,9 @@ def get_sales_receipt(wallet_id):
             "timestamp": datetime.now().isoformat()
         }), 500
 
-@sales_receipt_api.route('/delete/<int:wallet_id>', methods=['DELETE'])   
+@sales_receipt_api.route('/delete/<int:wallet_id>', methods=['DELETE'])
+@require_auth('validation')
+@log_api_access('delete_sales_receipt')
 def delete_sales_receipt(wallet_id):
     """
     API endpoint to delete a sales receipt from QuickBooks by wallet ID.

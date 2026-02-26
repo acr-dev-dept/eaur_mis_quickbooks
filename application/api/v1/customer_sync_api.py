@@ -10,6 +10,7 @@ import traceback
 from datetime import datetime
 from application.models.mis_models import TblOnlineApplication, TblCountry, TblPersonalUg
 from application.utils.database import db_manager
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 
 customer_sync_bp = Blueprint('customer_sync', __name__)
 
@@ -43,6 +44,8 @@ def validate_quickbooks_connection():
     return True, None
 
 @customer_sync_bp.route('/analyze', methods=['GET'])
+@require_auth('validation')
+@log_api_access('analyze_customer_sync_requirements')
 def analyze_customer_sync_requirements():
     """
     Analyze current customer synchronization requirements
@@ -77,6 +80,8 @@ def analyze_customer_sync_requirements():
         )
 
 @customer_sync_bp.route('/preview/applicants', methods=['GET'])
+@require_auth('validation')
+@log_api_access('preview_unsynchronized_applicants')
 def preview_unsynchronized_applicants():
     """
     Preview applicants that will be synchronized
@@ -171,6 +176,8 @@ def preview_unsynchronized_applicants():
         )
 
 @customer_sync_bp.route('/preview/students', methods=['GET'])
+@require_auth('validation')
+@log_api_access('preview_unsynchronized_students')
 def preview_unsynchronized_students():
     """
     Preview students that will be synchronized
@@ -259,6 +266,8 @@ def preview_unsynchronized_students():
         )
 
 @customer_sync_bp.route('/applicants', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_applicants')
 def sync_applicants():
     """
     Synchronize applicants to QuickBooks customers
@@ -355,6 +364,8 @@ def sync_applicants():
         )
     
 @customer_sync_bp.route('/sync_student', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_student')
 def sync_student():
     """
     Synchronize a single student to QuickBooks customer by reg_no
@@ -452,6 +463,8 @@ def sync_student():
         )
 
 @customer_sync_bp.route('/applicant/<int:tracking_id>', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_applicant')
 def sync_single_applicant(tracking_id: int):
     """
     Synchronize a single applicant to QuickBooks customer by tracking_id
@@ -515,6 +528,8 @@ def sync_single_applicant(tracking_id: int):
         )
 
 @customer_sync_bp.route('/applicant/update/<int:tracking_id>', methods=['POST'])
+@require_auth('validation')
+@log_api_access('update_single_applicant')
 def update_single_applicant(tracking_id: int):
     """
     Update an existing QuickBooks customer for a single applicant by tracking_id.
@@ -601,6 +616,8 @@ def update_single_applicant(tracking_id: int):
 
 
 @customer_sync_bp.route('/students', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_students')
 def sync_students():
     """
     Synchronize students to QuickBooks customers
@@ -687,6 +704,8 @@ def sync_students():
         )
 
 @customer_sync_bp.route('/student/update', methods=['POST'])
+@require_auth('validation')
+@log_api_access('update_single_student')
 def update_single_student():
     """
     Update an existing QuickBooks customer for a single student by reg_no.
@@ -782,6 +801,8 @@ def update_single_student():
         )
 
 @customer_sync_bp.route('/all', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_all_customers')
 def sync_all_customers():
     """
     Synchronize all customers (applicants and students) to QuickBooks
@@ -901,6 +922,8 @@ def sync_all_customers():
         )
 
 @customer_sync_bp.route('/status', methods=['GET'])
+@require_auth('validation')
+@log_api_access('get_customer_sync_status')
 def get_customer_sync_status():
     """
     Get current customer synchronization status and statistics
@@ -950,6 +973,8 @@ def get_customer_sync_status():
         )
 
 @customer_sync_bp.route('/debug/student/<reg_no>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('debug_student_enrichment')
 def debug_student_enrichment(reg_no):
     """
     Debug endpoint to test student enrichment methods
@@ -999,6 +1024,8 @@ def debug_student_enrichment(reg_no):
         )
 
 @customer_sync_bp.route('/debug/country/<reg_no>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('debug_country_enrichment')
 def debug_country_enrichment(reg_no):
     """
     Debug endpoint specifically for country enrichment
@@ -1083,6 +1110,8 @@ def debug_country_enrichment(reg_no):
         )
 
 @customer_sync_bp.route('/debug/applicant/<int:appl_id>', methods=['GET'])
+@require_auth('validation')
+@log_api_access('debug_applicant_enrichment')
 def debug_applicant_enrichment(appl_id):
     """
     Debug endpoint to test applicant enrichment methods
@@ -1159,6 +1188,8 @@ def debug_applicant_enrichment(appl_id):
         )
 
 @customer_sync_bp.route('/sync_unsynchronized_students_batch', methods=['POST'])
+@require_auth('validation')
+@log_api_access('sync_unsynchronized_students_batch')
 def sync_unsynchronized_students_batch():
     """
     Synchronize a batch of unsynchronized students to QuickBooks customers.
@@ -1249,6 +1280,8 @@ def sync_unsynchronized_students_batch():
         )
 
 @customer_sync_bp.route('/count_all_students', methods=['GET'])
+@require_auth('validation')
+@log_api_access('count_all_students')
 def count_all_students():
     """
     Count all students in the MIS database.
@@ -1267,6 +1300,8 @@ def count_all_students():
     })
 
 @customer_sync_bp.route('/reg_nos_check', methods=['GET'])
+@require_auth('validation')
+@log_api_access('check_reg_nos_existence')
 def check_reg_nos_existence():
     try:
         students = TblPersonalUg.get_unsynced_students()
@@ -1300,6 +1335,8 @@ def check_reg_nos_existence():
         }), 500
     
 @customer_sync_bp.route('/tracking_ids_check', methods=['GET'])
+@require_auth('validation')
+@log_api_access('check_tracking_ids_existence')
 def check_tracking_ids_existence():
     try:
         applicants = TblOnlineApplication.get_unsynced_applicants()

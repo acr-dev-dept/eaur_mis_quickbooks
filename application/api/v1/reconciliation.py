@@ -13,12 +13,15 @@ from sqlalchemy.exc import IntegrityError
 from datetime import date
 from application.utils.database import db_manager
 from application.services.opening_balance import OpeningBalanceSyncService
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 
 
 
 reconciliation_bp = Blueprint("reconciliation", __name__)
 
 @reconciliation_bp.route("/valid-payments/total", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Get total valid payments')
 def get_total_valid_payments():
     """
     Returns the total amount and count of VALID payments from IntegrationLogs.
@@ -140,6 +143,8 @@ def clean_duplicate_integration_logs():
 
 """
 @reconciliation_bp.route("/duplicate-wallets", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Get duplicate wallets')
 def get_duplicate_external_transaction_ids():
     """
     Returns wallet records that have duplicate external_transaction_id
@@ -192,6 +197,8 @@ def get_duplicate_external_transaction_ids():
 
 
 @reconciliation_bp.route("/analyze-transactions", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Analyze transactions')
 def analyze_transactions_file():
     """
     Receives a file path and returns transaction statistics
@@ -314,6 +321,8 @@ def analyze_transactions_file():
 
 
 @reconciliation_bp.route("/wallet_hist_vs_cloud_pyts", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Wallet vs Cloud reconciliation')
 def wallet_hist_vs_cloud_pyts():
     """
     Wallet ↔ Cloud reconciliation with date-range filtering.
@@ -534,6 +543,8 @@ def wallet_hist_vs_cloud_pyts():
 
 
 @reconciliation_bp.route("/import_wallet_history_from_json", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Import wallet history from JSON')
 def import_wallet_history_from_json():
     """
     Imports cloud payment JSON into tbl_student_wallet_history.
@@ -683,6 +694,8 @@ def import_wallet_history_from_json():
         }), 500
 
 @reconciliation_bp.route("/sync-absent-wallet-payments", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Sync absent wallet payments')
 def sync_absent_wallet_payments():
     """
     Syncs wallet payments that are absent in the wallet system
@@ -903,6 +916,8 @@ def sync_absent_wallet_payments():
 
 
 @reconciliation_bp.route("/translate_to_json", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Translate to JSON')
 def translate_to_json():
 
     data = request.get_json()
@@ -942,6 +957,8 @@ from sqlalchemy import func
 
 
 @reconciliation_bp.route("/payments-before-cutoff", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Payments before cutoff')
 def payments_before_cutoff_report():
     CUTOFF_DATETIME = datetime(2026, 1, 13, 0, 0, 0)
 
@@ -1090,6 +1107,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import and_
 
 @reconciliation_bp.route("/integration-logs/feb-04", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Fetch integration logs')
 def get_feb_04_integration_logs():
     """
     Fetch integration logs created on 4th February.
@@ -1140,6 +1159,8 @@ from flask import request, jsonify
 from datetime import datetime
 
 @reconciliation_bp.route("/filter-before-jan-13", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Filter before Jan 13')
 def filter_before_jan_13():
     """
     Accepts JSON payload in the same structure as /integration-logs/feb-04,
@@ -1190,6 +1211,8 @@ from flask import request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 
 @reconciliation_bp.route("/delete-and-update-wallet-bulk", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Delete and update wallet bulk')
 def delete_and_update_wallet_bulk():
     """
     Optimized bulk deletion and wallet update.
@@ -1369,6 +1392,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 
 @reconciliation_bp.route("/apply-wallet-deductions", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Apply wallet deductions')
 def apply_wallet_deductions():
     """
     Deduct amounts from Payment.amount
@@ -1497,6 +1522,8 @@ from flask import request, jsonify
 from sqlalchemy.exc import SQLAlchemyError
 
 @reconciliation_bp.route("/revert-wallet-deductions", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Revert wallet deductions')
 def revert_wallet_deductions():
     """
     Revert wallet deductions by restoring payment.amount
@@ -1596,6 +1623,8 @@ from sqlalchemy import and_, not_
 
 
 @reconciliation_bp.route("/payments/trace-unexpected-zero", methods=["POST"])
+@require_auth('validation')
+@log_api_access('Trace unexpected zero payments')
 def trace_unexpected_zero_payments():
     """
     Traces payments with amount = 0 between Feb 4–6, 2026
@@ -1657,6 +1686,8 @@ def trace_unexpected_zero_payments():
     }), 200
 
 @reconciliation_bp.route("/outstanding-balance", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Fetch outstanding balance')
 def get_outstanding_balance():
     """
     API Endpoint to fetch the 2024 invoice total, payment total,
@@ -1677,6 +1708,8 @@ from sqlalchemy import text
 
 
 @reconciliation_bp.route("/wallet-payments-summary", methods=["GET"])
+@require_auth('validation')
+@log_api_access('Wallet payments summary')
 def wallet_payments_summary():
     """
     Fetch payments and wallet history for each student_wallet record.
@@ -1771,6 +1804,8 @@ from datetime import datetime
     "/reconcile-integration-vs-wallet-history",
     methods=["GET"]
 )
+@require_auth('validation')
+@log_api_access('Reconcile integration vs wallet history')
 def reconcile_integration_vs_wallet_history():
     """
     FAST reconciliation between integration_logs and tbl_student_wallet_history
@@ -1916,6 +1951,8 @@ from datetime import datetime
     "/insert-missing-wallet-history",
     methods=["POST"]
 )
+@require_auth('validation')
+@log_api_access('Insert missing wallet history')
 def insert_missing_wallet_history():
     """
     Insert missing transactions into tbl_student_wallet_history
@@ -2025,6 +2062,8 @@ def insert_missing_wallet_history():
     "/wallet-payment-exceeds-history",
     methods=["GET"]
 )
+@require_auth('validation')
+@log_api_access('Wallet payment exceeds history')
 def wallet_payment_exceeds_history():
     """
     Return wallet records where:

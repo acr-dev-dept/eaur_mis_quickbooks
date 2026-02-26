@@ -43,7 +43,7 @@ def setup_urubuto_pay_client_api():
         if existing_client:
             return jsonify({
                 "success": True,
-                "message": "Urubuto Pay client already exists",
+                "message": "client already exists",
                 "client": {
                     "id": existing_client.id,
                     "username": existing_client.username,

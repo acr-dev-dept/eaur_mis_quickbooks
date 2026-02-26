@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, current_app
+from application.utils.auth_decorators import require_auth, require_gateway, log_api_access
 
 
 
@@ -6,6 +7,8 @@ qb_admin_bp = Blueprint("qb_admin", __name__, url_prefix="/api/admin/qb")
 
 
 @qb_admin_bp.route("/delete-sales-receipts", methods=["POST"])
+@require_auth('validation')
+@log_api_access('trigger_sales_receipt_deletion')
 def trigger_sales_receipt_deletion():
     """
     Triggers async deletion of all QuickBooks Sales Receipts
