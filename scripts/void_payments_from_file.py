@@ -34,7 +34,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "UNDEPOSITED_FUNDS_2025_TEST.xlsx"
+    "UNDEPOSITED_FUNDS_2025.xlsx"
 )
 
 TARGET_DEPOSIT_ACCOUNT = "1211"
