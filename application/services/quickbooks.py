@@ -1312,36 +1312,6 @@ class QuickBooks:
                 }
             }
 
-    def void_payment(self, realm_id, payment_id):
-        """
-        Void a payment by ID from QuickBooks.
-
-        Args:
-            realm_id (str): The realm ID of the company.
-            payment_id (str): The ID of the payment to void.
-
-        Returns:
-            dict: The response from the QuickBooks API.
-        """
-        endpoint = f"{realm_id}/payment/{payment_id}/void"
-        try:
-            current_app.logger.info(f"Voiding payment with ID: {payment_id}")
-            response = self.make_request(endpoint, method="POST")
-            current_app.logger.info(f"Payment voided successfully: {response}")
-            return response
-        except Exception as e:
-            current_app.logger.error(f"Error voiding payment: {str(e)}")
-            # Return a structured error response instead of a string
-            return {
-                "Fault": {
-                    "Error": [
-                        {
-                            "Message": f"Error voiding payment: {str(e)}",
-                            "Detail": traceback.format_exc()
-                        }
-                    ]
-                }
-            }
 
     def get_payment_as_pdf(self, realm_id, payment_id):
         """
