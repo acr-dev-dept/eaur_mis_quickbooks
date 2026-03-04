@@ -34,7 +34,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "UNDEPOSITED_FUNDS_2025.xlsx"
+    "undeposited_funds_2024.xlsx"
 )
 
 TARGET_DEPOSIT_ACCOUNT = "1211"
@@ -43,8 +43,8 @@ TARGET_DEPOSIT_ACCOUNT = "1211"
 # -------------------------------------------------
 # Core Logic
 # -------------------------------------------------
-def void_payments_from_excel():
-    logger.info("Starting QuickBooks payment void batch from Excel")
+def delete_payments_from_excel():
+    logger.info("Starting QuickBooks payment delete batch from Excel")
 
     if not os.path.exists(FILE_PATH):
         logger.error("Excel file not found: %s", FILE_PATH)
@@ -89,7 +89,7 @@ def void_payments_from_excel():
 
         service = PaymentSyncService()
 
-        voided = skipped = failed = 0
+        deleted = skipped = failed = 0
 
         # -----------------------------------------
         # Process Each DocNumber
@@ -158,23 +158,23 @@ def void_payments_from_excel():
                         continue
 
                     logger.info(
-                        "Voiding Payment | DocNumber=%s | Id=%s",
+                        "deleting Payment | DocNumber=%s | Id=%s",
                         doc_number,
                         payment_id,
                     )
 
-                    void_result = service.void_payment(payment_id, sync_token)
+                    delete_result = service.delete_payment(payment_id, sync_token)
 
-                    if not void_result.get("Payment"):
+                    if not delete_result.get("Payment"):
                         logger.error(
-                            "Void failed | DocNumber=%s | %s",
+                            "delete failed | DocNumber=%s | %s",
                             doc_number,
-                            void_result.get("error_message"),
+                            delete_result.get("error_message"),
                         )
                         failed += 1
                         continue
 
-                    voided += 1
+                    deleted += 1
 
             except Exception:
                 failed += 1
@@ -184,8 +184,8 @@ def void_payments_from_excel():
                 )
 
         logger.info(
-            "Batch completed | voided=%s skipped=%s failed=%s total=%s",
-            voided,
+            "Batch completed | deleted=%s skipped=%s failed=%s total=%s",
+            deleted,
             skipped,
             failed,
             total,
@@ -196,6 +196,6 @@ def void_payments_from_excel():
 # Entrypoint
 # -------------------------------------------------
 if __name__ == "__main__":
-    logger.info("QuickBooks Payment Void Script Started")
-    void_payments_from_excel()
-    logger.info("QuickBooks Payment Void Script Finished")
+    logger.info("QuickBooks Payment delete Script Started")
+    delete_payments_from_excel()
+    logger.info("QuickBooks Payment delete Script Finished")

@@ -1219,21 +1219,22 @@ class QuickBooks:
                     ]
                 }
             }
-    def delete_payment(self, realm_id, payment_id):
+    def delete_payment(self, realm_id, payment_id, sync_token):
         """
         Delete a payment by ID from QuickBooks.
 
         Args:
             realm_id (str): The realm ID of the company.
-            payment_id (str): The ID of the payment to delete.
+            payment_id (str): The ID of the payment to void.
+            sync_token (str): The sync token of the payment.
 
         Returns:
             dict: The response from the QuickBooks API.
         """
-        endpoint = f"{realm_id}/payment/{payment_id}"
+        endpoint = f"{realm_id}/payment?operation=delete"
         try:
             current_app.logger.info(f"Deleting payment with ID: {payment_id}")
-            response = self.make_request(endpoint, method="DELETE")
+            response = self.make_request(endpoint, method="POST", data={"Id": str(payment_id), "SyncToken": str(sync_token), "sparse": True})
             current_app.logger.info(f"Payment deleted successfully: {response}")
             return response
         except Exception as e:

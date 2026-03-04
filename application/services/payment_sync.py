@@ -910,3 +910,18 @@ class PaymentSyncService:
         except Exception as e:
             self.logger.error(f"Error voiding payment for payment ID: {payment_id}: {e}")
             raise
+
+    def delete_payment(self, payment_id: int, sync_token: str):
+        """
+        Delete payment in QuickBooks by payment ID
+        """
+        self.logger.info(f"Deleting payment for payment ID: {payment_id}")
+        if not payment_id:
+            return {'error': 'payment_id is required'}
+        try:
+            qb_service = self._get_qb_service()
+            result = qb_service.delete_payment(qb_service.realm_id,payment_id,sync_token)
+            return result
+        except Exception as e:
+            self.logger.error(f"Error deleting payment for payment ID: {payment_id}: {e}")
+            raise
