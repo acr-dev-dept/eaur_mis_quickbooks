@@ -96,12 +96,19 @@ def create_payments_from_excel():
                     f"FROM Payment WHERE DocNumber = '{row['Number']}'"
                 )
                 result = service.query_payment(query)
+                # Check if payment exists
                 payments = result.get("Payment", [])
+                payment_exists = False
                 for payment in payments:
-                    if payment.get("DepositToAccountRef").get("value") == DEPOSIT_ACCOUNT_ID:
+                    if payment.get("DepositToAccountRef", {}).get("value") == DEPOSIT_ACCOUNT_ID:
                         logger.warning("Payment already exists | DocNumber=%s", row["Number"])
                         skipped += 1
-                        continue
+                        payment_exists = True
+                        break  # Stop checking further
+
+                if payment_exists:
+                    continue  # Skip the current row entirely
+
                 # Format date
                 txn_date = pd.to_datetime(row["Transaction date"], errors="coerce")
                 txn_date = txn_date.strftime("%Y-%m-%d")
