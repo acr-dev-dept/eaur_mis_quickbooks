@@ -185,6 +185,7 @@ def query_payment():
     try:
         data = request.get_json()
         query = data.get('query')
+        current_app.logger.info(f"API Querying payments for query: {query}")
         if not query:
             return jsonify({'error': 'query is required'}), 400
         payment_sync_service = PaymentSyncService()
