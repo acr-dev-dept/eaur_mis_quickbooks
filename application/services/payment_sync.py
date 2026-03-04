@@ -905,7 +905,7 @@ class PaymentSyncService:
             return {'error': 'payment_id is required'}
         try:
             qb_service = self._get_qb_service()
-            result = qb_service.void_payment(qb_service.realm_id,payment_id,sync_token)
+            result = qb_service.void_payment(payment_id,sync_token)
             return result
         except Exception as e:
             self.logger.error(f"Error voiding payment for payment ID: {payment_id}: {e}")
