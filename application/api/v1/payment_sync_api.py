@@ -213,6 +213,39 @@ def query_payment():
         return jsonify({'error': 'Internal server error'}), 500
         
 
+def query_payment_by_query(query:str):
+    """
+        Query payments in QuickBooks by query,
+        query: str
+    """
+    try:
+        current_app.logger.info(f"API Querying payments for query: {query}")
+        if not query:
+            return jsonify({'error': 'query is required'}), 400
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.query_payment(query)
+        payments_valid = []
+
+        if result.get('QueryResponse'):
+            payments = result['QueryResponse'].get('Payment', [])
+
+            for payment in payments:
+                deposit_ref = payment.get('DepositToAccountRef')
+
+                if (
+                    isinstance(deposit_ref, dict)
+                    and deposit_ref.get('value') == '1211'
+                ):
+                    payments_valid.append(payment)
+
+            result['QueryResponse']['Payment'] = payments_valid
+        else:
+            result['QueryResponse'] = {'Payment': []}
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error querying payments: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @payment_sync_bp.route('/void_payment', methods=['POST'])
 def void_payment():
     try:
@@ -224,6 +257,20 @@ def void_payment():
         payment_sync_service = PaymentSyncService()
         result = payment_sync_service.void_payment(payment_id, sync_token)
 
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error voiding payment: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+def void_payment_by_id(payment_id:str, sync_token:str):
+    """
+        Void payment in QuickBooks by payment_id and sync_token,
+        payment_id: str
+        sync_token: str
+    """
+    try:
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.void_payment(payment_id, sync_token)
         return jsonify(result), 200
     except Exception as e:
         logging.error(f"Error voiding payment: {e}")
