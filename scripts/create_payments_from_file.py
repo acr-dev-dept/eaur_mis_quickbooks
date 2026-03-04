@@ -101,7 +101,7 @@ def create_payments_from_excel():
                     skipped += 1
                     continue
                 # Format date
-                txn_date = row["Transaction date"]
+                txn_date = pd.to_datetime(row["Transaction date"], errors="coerce")
                 txn_date = txn_date.strftime("%Y-%m-%d")
 
                 payment_data = {
