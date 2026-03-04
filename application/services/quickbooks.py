@@ -1249,6 +1249,38 @@ class QuickBooks:
                     ]
                 }
             }
+    def void_payment(self, realm_id, payment_id, sync_token):
+        """
+        Void a payment by ID from QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            payment_id (str): The ID of the payment to void.
+            sync_token (str): The sync token of the payment.
+
+        Returns:
+            dict: The response from the QuickBooks API.
+        """
+        endpoint = f"{realm_id}/payment?operation=update&include=void"
+        try:
+            current_app.logger.info(f"Voiding payment with ID: {payment_id}")
+            response = self.make_request(endpoint, method="POST", data={"Id": str(payment_id), "SyncToken": str(sync_token), "sparse": True})
+            current_app.logger.info(f"Payment voided successfully: {response}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error voiding payment: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error voiding payment: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+            
     def get_payment(self, realm_id, payment_id):
         """
         Retrieve a payment by ID from QuickBooks.
