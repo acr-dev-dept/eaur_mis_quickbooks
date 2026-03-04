@@ -213,5 +213,18 @@ def query_payment():
         return jsonify({'error': 'Internal server error'}), 500
         
 
-    
+@payment_sync_bp.route('/void_payment', methods=['POST'])
+def void_payment():
+    try:
+        data = request.get_json()
+        payment_id = data.get('payment_id')
+        sync_token =    data.get('sync_token')
+        if not payment_id:
+            return jsonify({'error': 'payment_id is required'}), 400
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.void_payment(payment_id, sync_token)
 
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error voiding payment: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
