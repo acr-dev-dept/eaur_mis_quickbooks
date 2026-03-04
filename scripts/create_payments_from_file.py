@@ -38,7 +38,7 @@ FILE_PATH = os.path.join(
     "undeposited_funds_2024_test_v2.xlsx"
 )
 DEPOSIT_ACCOUNT_ID = "1211"
-PAYMENT_METHOD_ID = "1"
+PAYMENT_METHOD_ID = "2"
 
 
 # -------------------------------------------------
@@ -102,10 +102,7 @@ def create_payments_from_excel():
                     continue
                 # Format date
                 txn_date = row["Transaction date"]
-                if isinstance(txn_date, datetime):
-                    txn_date = txn_date.strftime("%Y-%m-%d")
-                else:
-                    txn_date = str(txn_date)
+                txn_date = txn_date.strftime("%Y-%m-%d")
 
                 payment_data = {
                     "id": str(idx + 1),
