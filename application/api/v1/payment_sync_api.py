@@ -176,3 +176,22 @@ def wallet_payments():
         logging.error(f"Error retrieving wallet payments: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
+@payment_sync_bp.route('/query_payment', methods=['GET'])
+def query_payment():
+    """
+        Query payments in QuickBooks by query,
+        query: str
+    """
+    try:
+        query = request.args.get('query')
+        if not query:
+            return jsonify({'error': 'query is required'}), 400
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.query_payment(query)
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error querying payments: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+        
+    
+

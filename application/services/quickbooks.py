@@ -1108,6 +1108,38 @@ class QuickBooks:
                     ]
                 }
             }
+
+    def query_payment(self, realm_id, query):
+        """
+        Query payments in QuickBooks.
+
+        Args:
+            realm_id (str): The realm ID of the company.
+            query (str): The query string to filter payments by.
+
+        Returns:
+            dict: The response from the QuickBooks API containing the matching payments.
+        """
+        endpoint = f"{realm_id}/query"
+        try:
+            current_app.logger.info(f"Fetching payments for query: {query}")
+            response = self.make_request(endpoint, method="GET", data=query)
+            current_app.logger.debug(f"QuickBooks query_payment API response: {json.dumps(response, cls=EnhancedJSONEncoder)}")
+            return response
+        except Exception as e:
+            current_app.logger.error(f"Error querying payments: {str(e)}")
+            # Return a structured error response instead of a string
+            return {
+                "Fault": {
+                    "Error": [
+                        {
+                            "Message": f"Error querying payments: {str(e)}",
+                            "Detail": traceback.format_exc()
+                        }
+                    ]
+                }
+            }
+
     def get_payments_by_account(self, realm_id, account_id):
         """
         Retrieve all payments associated with a specific DepositToAccountRef.
