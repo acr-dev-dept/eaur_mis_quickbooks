@@ -35,7 +35,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "undeposited_funds_2024_test.xlsx"
+    "undeposited_funds_2024_test_v2.xlsx"
 )
 DEPOSIT_ACCOUNT_ID = "1211"
 PAYMENT_METHOD_ID = "1"
@@ -85,11 +85,21 @@ def create_payments_from_excel():
                 if idx % 25 == 0:
                     logger.info("Processing %s / %s", idx, total)
 
-                if pd.isna(row["Name"]) or pd.isna(row["Amount"]):
+                if pd.isna(row["Name"]) or pd.isna(row["Amount"]) or pd.isna(row["Transaction date"]):
                     logger.warning("Skipping row %s (missing data)", idx)
                     skipped += 1
                     continue
-
+                #query the payment first to see if it exists and skip
+                query = (
+                    "SELECT Id, SyncToken, DocNumber, TotalAmt, "
+                    "CustomerRef, DepositToAccountRef, MetaData.CreateTime "
+                    f"FROM Payment WHERE DocNumber = '{row['Number']}'"
+                )
+                result = service.query_payment(query)
+                if result.get("Payment") and result.get("Payment").get("DepositToAccountRef").get("value") == DEPOSIT_ACCOUNT_ID:
+                    logger.warning("Payment already exists | DocNumber=%s", row["Number"])
+                    skipped += 1
+                    continue
                 # Format date
                 txn_date = row["Transaction date"]
                 if isinstance(txn_date, datetime):
