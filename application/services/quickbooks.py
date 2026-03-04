@@ -1120,10 +1120,10 @@ class QuickBooks:
         Returns:
             dict: The response from the QuickBooks API containing the matching payments.
         """
-        endpoint = f"{realm_id}/query"
+        endpoint = f"{realm_id}/query?query={query}"
         try:
             current_app.logger.info(f"Fetching payments for query: {query}")
-            response = self.make_request(endpoint, method="GET", data=query)
+            response = self.make_request(endpoint, method="GET")
             current_app.logger.debug(f"QuickBooks query_payment API response: {json.dumps(response, cls=EnhancedJSONEncoder)}")
             return response
         except Exception as e:
