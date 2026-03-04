@@ -97,7 +97,8 @@ def create_payments_from_excel():
                 )
                 result = service.query_payment(query)
                 # Check if payment exists
-                payments = result.get("Payment", [])
+                query_response = result.get("QueryResponse")
+                payments = query_response.get("Payment", [])
                 payment_exists = False
                 for payment in payments:
                     if payment.get("DepositToAccountRef", {}).get("value") == DEPOSIT_ACCOUNT_ID:
