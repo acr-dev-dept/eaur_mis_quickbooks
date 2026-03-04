@@ -951,16 +951,15 @@ class PaymentSyncService:
             return {'error': 'Customer not found'}
         mapped_payment = {
             "CustomerRef": {
-                    "value": str(customer_id), # This must be the QuickBooks Customer ID
-                },
-                "DepositToAccountRef": {
-                    "value": payment_data['deposit_account_id'] # QuickBooks Account ID
-                },
-                "PaymentMethodRef": {
-                    "value": payment_data['payment_method_id'] # Use configurable default
-                },
-                "TotalAmt": payment_data['amount'],
-                "PrivateNote": f"MIS Payment ID: {payment_data['id']}, Trans Code: {payment_data['trans_code']}",
-                "TxnDate": str(payment_data['date'])
-            }
+                "value": str(customer_id), # This must be the QuickBooks Customer ID
+            },
+            "DepositToAccountRef": {
+                "value": payment_data['deposit_account_id'] # QuickBooks Account ID
+            },
+            "PaymentMethodRef": {
+                "value": payment_data['payment_method_id'] # Use configurable default
+            },
+            "TotalAmt": payment_data['amount'],
+            "TxnDate": str(payment_data['date'])
+        }
         return mapped_payment
