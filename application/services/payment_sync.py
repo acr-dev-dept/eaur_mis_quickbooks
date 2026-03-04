@@ -890,7 +890,7 @@ class PaymentSyncService:
             return {'error': 'query is required'}
         try:
             qb_service = self._get_qb_service()
-            result = qb_service.query_payment(query)
+            result = qb_service.query_payment(qb_service.realm_id,query)
             return result
         except Exception as e:
             self.logger.error(f"Error querying payments: {e}")
