@@ -275,3 +275,14 @@ def void_payment_by_id(payment_id:str, sync_token:str):
     except Exception as e:
         logging.error(f"Error voiding payment: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@payment_sync_bp.route('/create_payment', methods=['POST'])
+def create_payment():
+    try:
+        data = request.get_json()
+        payment_sync_service = PaymentSyncService()
+        result = payment_sync_service.create_payment(data)
+        return jsonify(result), 200
+    except Exception as e:
+        logging.error(f"Error creating payment: {e}")
+        return jsonify({'error': 'Internal server error'}), 500

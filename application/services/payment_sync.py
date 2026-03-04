@@ -946,9 +946,12 @@ class PaymentSyncService:
         """
         Map payment data to QuickBooks payment format
         """
+        customer_id = TblPersonalUg.get_qb_id_by_reg_no(payment_data['customer_ref_id'])
+        if not customer_id:
+            return {'error': 'Customer not found'}
         mapped_payment = {
             "CustomerRef": {
-                    "value": str(payment_data['customer_ref_id']), # This must be the QuickBooks Customer ID
+                    "value": str(customer_id), # This must be the QuickBooks Customer ID
                 },
                 "DepositToAccountRef": {
                     "value": payment_data['deposit_account_id'] # QuickBooks Account ID
