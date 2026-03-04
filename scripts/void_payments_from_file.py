@@ -122,59 +122,59 @@ def void_payments_from_excel():
                     skipped += 1
                     continue
 
-                payment = payments[0]
 
-                deposit_ref = payment.get("DepositToAccountRef")
+                for payment in payments:
+                    deposit_ref = payment.get("DepositToAccountRef")
 
-                if not (
-                    isinstance(deposit_ref, dict)
-                    and deposit_ref.get("value") == TARGET_DEPOSIT_ACCOUNT
-                ):
+                    if not (
+                        isinstance(deposit_ref, dict)
+                        and deposit_ref.get("value") == TARGET_DEPOSIT_ACCOUNT
+                    ):
+                        logger.info(
+                            "Skipping DocNumber=%s (Deposit account mismatch)",
+                            doc_number,
+                        )
+                        skipped += 1
+                        continue
+
+                    payment_id = payment.get("Id")
+                    sync_token = payment.get("SyncToken")
+                    total_amt = payment.get("TotalAmt")
+
+                    if not payment_id or not sync_token:
+                        logger.error(
+                            "Missing Id/SyncToken | DocNumber=%s",
+                            doc_number,
+                        )
+                        failed += 1
+                        continue
+                    
+                    if total_amt == 0:
+                        logger.info(
+                            "Skipping DocNumber=%s (TotalAmt=0)",
+                            doc_number,
+                        )
+                        skipped += 1
+                        continue
+
                     logger.info(
-                        "Skipping DocNumber=%s (Deposit account mismatch)",
+                        "Voiding Payment | DocNumber=%s | Id=%s",
                         doc_number,
+                        payment_id,
                     )
-                    skipped += 1
-                    continue
 
-                payment_id = payment.get("Id")
-                sync_token = payment.get("SyncToken")
-                total_amt = payment.get("TotalAmt")
+                    void_result = service.void_payment(payment_id, sync_token)
 
-                if not payment_id or not sync_token:
-                    logger.error(
-                        "Missing Id/SyncToken | DocNumber=%s",
-                        doc_number,
-                    )
-                    failed += 1
-                    continue
-                
-                if total_amt == 0:
-                    logger.info(
-                        "Skipping DocNumber=%s (TotalAmt=0)",
-                        doc_number,
-                    )
-                    skipped += 1
-                    continue
+                    if not void_result.get("Payment"):
+                        logger.error(
+                            "Void failed | DocNumber=%s | %s",
+                            doc_number,
+                            void_result.get("error_message"),
+                        )
+                        failed += 1
+                        continue
 
-                logger.info(
-                    "Voiding Payment | DocNumber=%s | Id=%s",
-                    doc_number,
-                    payment_id,
-                )
-
-                void_result = service.void_payment(payment_id, sync_token)
-
-                if not void_result.get("Payment"):
-                    logger.error(
-                        "Void failed | DocNumber=%s | %s",
-                        doc_number,
-                        void_result.get("error_message"),
-                    )
-                    failed += 1
-                    continue
-
-                voided += 1
+                    voided += 1
 
             except Exception:
                 failed += 1
