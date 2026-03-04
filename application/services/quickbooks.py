@@ -1234,7 +1234,7 @@ class QuickBooks:
         endpoint = f"{realm_id}/payment?operation=delete"
         try:
             current_app.logger.info(f"Deleting payment with ID: {payment_id}")
-            response = self.make_request(endpoint, method="POST", data={"Id": str(payment_id), "SyncToken": str(sync_token), "sparse": True})
+            response = self.make_request(endpoint, method="POST", data={"Id": str(payment_id), "SyncToken": str(sync_token)})
             current_app.logger.info(f"Payment deleted successfully: {response}")
             return response
         except Exception as e:
