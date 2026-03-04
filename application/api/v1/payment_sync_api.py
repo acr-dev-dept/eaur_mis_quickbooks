@@ -190,20 +190,28 @@ def query_payment():
             return jsonify({'error': 'query is required'}), 400
         payment_sync_service = PaymentSyncService()
         result = payment_sync_service.query_payment(query)
-        payments_valid=[]
+        payments_valid = []
+
         if result.get('QueryResponse'):
             payments = result['QueryResponse'].get('Payment', [])
+
             for payment in payments:
-                if payment.DepositToAccountRef == '1211':
+                deposit_ref = payment.get('DepositToAccountRef')
+
+                if (
+                    isinstance(deposit_ref, dict)
+                    and deposit_ref.get('value') == '1211'
+                ):
                     payments_valid.append(payment)
+
             result['QueryResponse']['Payment'] = payments_valid
         else:
             result['QueryResponse'] = {'Payment': []}
-                    
         return jsonify(result), 200
     except Exception as e:
         logging.error(f"Error querying payments: {e}")
         return jsonify({'error': 'Internal server error'}), 500
         
+
     
 
