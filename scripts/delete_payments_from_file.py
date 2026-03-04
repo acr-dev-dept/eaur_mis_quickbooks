@@ -148,14 +148,6 @@ def delete_payments_from_excel():
                         )
                         failed += 1
                         continue
-                    
-                    if total_amt == 0:
-                        logger.info(
-                            "Skipping DocNumber=%s (TotalAmt=0)",
-                            doc_number,
-                        )
-                        skipped += 1
-                        continue
 
                     logger.info(
                         "deleting Payment | DocNumber=%s | Id=%s",
