@@ -139,6 +139,7 @@ def void_payments_from_excel():
 
                 payment_id = payment.get("Id")
                 sync_token = payment.get("SyncToken")
+                total_amt = payment.get("TotalAmt")
 
                 if not payment_id or not sync_token:
                     logger.error(
@@ -146,6 +147,14 @@ def void_payments_from_excel():
                         doc_number,
                     )
                     failed += 1
+                    continue
+                
+                if total_amt == 0:
+                    logger.info(
+                        "Skipping DocNumber=%s (TotalAmt=0)",
+                        doc_number,
+                    )
+                    skipped += 1
                     continue
 
                 logger.info(
@@ -156,7 +165,7 @@ def void_payments_from_excel():
 
                 void_result = service.void_payment(payment_id, sync_token)
 
-                if not void_result.get("success"):
+                if not void_result.get("Payment"):
                     logger.error(
                         "Void failed | DocNumber=%s | %s",
                         doc_number,
