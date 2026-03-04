@@ -886,6 +886,8 @@ class PaymentSyncService:
         Query payments in QuickBooks by query
         """
         self.logger.info(f"Querying payments for query: {query}")
+        if not query:
+            return {'error': 'query is required'}
         try:
             qb_service = self._get_qb_service()
             result = qb_service.query_payment(query)
