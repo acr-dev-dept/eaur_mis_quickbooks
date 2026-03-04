@@ -961,6 +961,6 @@ class PaymentSyncService:
                 },
                 "TotalAmt": payment_data['amount'],
                 "PrivateNote": f"MIS Payment ID: {payment_data['id']}, Trans Code: {payment_data['trans_code']}",
-                "TxnDate": payment_data['date']
+                "TxnDate": str(payment_data['date'])
             }
         return mapped_payment
