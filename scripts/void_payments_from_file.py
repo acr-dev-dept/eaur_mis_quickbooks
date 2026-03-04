@@ -30,7 +30,13 @@ from application.models.central_models import QuickBooksConfig
 # -------------------------------------------------
 # Configuration
 # -------------------------------------------------
-FILE_PATH = "files/UNDEPOSITED_FUNDS_2025_TEST.xlsx"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.join(
+    SCRIPT_DIR,
+    "files",
+    "UNDEPOSITED_FUNDS_2025_TEST.xlsx"
+)
+
 TARGET_DEPOSIT_ACCOUNT = "1211"
 
 
