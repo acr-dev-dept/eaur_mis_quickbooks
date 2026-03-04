@@ -3916,7 +3916,7 @@ class TblPersonalUg(MISBaseModel):
         try:
             with TblPersonalUg.get_session() as session:
                 student = session.query(TblPersonalUg).filter_by(reg_no=reg_no).first()
-                return student.QuickBk_id if student else None
+                return student.qk_id if student else None
         except Exception as e:
             from flask import current_app
             current_app.logger.error(f"Error getting QuickBooks ID for reg_no {reg_no}: {str(e)}")
