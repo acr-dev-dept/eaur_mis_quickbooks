@@ -881,7 +881,7 @@ class PaymentSyncService:
             if db.session:
                 db.session.rollback()
 
-    def query_payment(self, query: str) -> Dict[str, Any]:
+    def query_payment(self, query: str):
         """
         Query payments in QuickBooks by query
         """
