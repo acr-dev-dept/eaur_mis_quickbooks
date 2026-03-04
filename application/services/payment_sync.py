@@ -925,3 +925,39 @@ class PaymentSyncService:
         except Exception as e:
             self.logger.error(f"Error deleting payment for payment ID: {payment_id}: {e}")
             raise
+
+    def create_payment(self, payment_data: dict):
+        """
+        Create payment in QuickBooks by payment data
+        """
+        self.logger.info(f"Creating payment for payment data: {payment_data}")
+        if not payment_data:
+            return {'error': 'payment_data is required'}
+        try:
+            qb_service = self._get_qb_service()
+            mapped_payment = self._map_payment_data(payment_data)
+            result = qb_service.create_payment(qb_service.realm_id,mapped_payment)
+            return result
+        except Exception as e:
+            self.logger.error(f"Error creating payment for payment data: {payment_data}: {e}")
+            raise
+
+    def _map_payment_data(self, payment_data: dict):
+        """
+        Map payment data to QuickBooks payment format
+        """
+        mapped_payment = {
+            "CustomerRef": {
+                    "value": str(payment_data['customer_ref_id']), # This must be the QuickBooks Customer ID
+                },
+                "DepositToAccountRef": {
+                    "value": payment_data['deposit_account_id'] # QuickBooks Account ID
+                },
+                "PaymentMethodRef": {
+                    "value": payment_data['payment_method_id'] # Use configurable default
+                },
+                "TotalAmt": payment_data['amount'],
+                "PrivateNote": f"MIS Payment ID: {payment_data['id']}, Trans Code: {payment_data['trans_code']}",
+                "TxnDate": payment_data['date']
+            }
+        return mapped_payment
