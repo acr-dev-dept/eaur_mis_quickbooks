@@ -880,3 +880,15 @@ class PaymentSyncService:
             self.logger.error(f"Error logging payment sync audit for payment {payment_id}: {e}")
             if db.session:
                 db.session.rollback()
+
+    def query_payment(self, query: str) -> Dict[str, Any]:
+        """
+        Query payments in QuickBooks by query
+        """
+        try:
+            qb_service = self._get_qb_service()
+            result = qb_service.query_payment(query)
+            return result
+        except Exception as e:
+            self.logger.error(f"Error querying payments: {e}")
+            raise
