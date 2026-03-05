@@ -336,7 +336,7 @@ def void_payments():
 
         # Only void payments with matching deposit account
         if deposit_value != VOID_DEPOSIT_ACCOUNT_ID:
-            logger.info("Skipping payment | Id=%s | DepositAccount=%s", payment_id, deposit_value)
+            logging.info("Skipping payment | Id=%s | DepositAccount=%s", payment_id, deposit_value)
             skipped.append({"id": payment_id, "reason": f"DepositToAccountRef is {deposit_value}, not {VOID_DEPOSIT_ACCOUNT_ID}"})
             continue
 
@@ -349,14 +349,14 @@ def void_payments():
             service = PaymentSyncService()
             result = service.void_payment(payment_id, sync_token)
 
-            logger.info(
+            logging.info(
                 "Voided payment | Id=%s | Customer=%s | Amount=%s",
                 payment_id, customer_name, total_amt
             )
             voided.append({"id": payment_id, "customer": customer_name, "amount": total_amt})
 
         except Exception as e:
-            logger.error("Failed to void payment | Id=%s | Error=%s", payment_id, str(e))
+            logging.error("Failed to void payment | Id=%s | Error=%s", payment_id, str(e))
             failed.append({"id": payment_id, "error": str(e)})
 
     return jsonify({
