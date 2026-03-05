@@ -938,7 +938,7 @@ class PaymentSyncService:
             mapped_payment = self._map_payment_data(payment_data)
             result = qb_service.create_payment(qb_service.realm_id,mapped_payment)
             return result
-        except Exception as e:
+        except ValueError as e:
             self.logger.error(f"Error creating payment for payment data: {payment_data}: {e}")
             raise
 
@@ -948,7 +948,7 @@ class PaymentSyncService:
         """
         customer_id = TblPersonalUg.get_qb_id_by_reg_no(payment_data['customer_ref_id'])
         if not customer_id:
-            return {'error': 'Customer not found'}
+            raise ValueError(f"Customer not found for registration number: {payment_data['customer_ref_id']}")
         mapped_payment = {
             "CustomerRef": {
                 "value": str(customer_id), # This must be the QuickBooks Customer ID
