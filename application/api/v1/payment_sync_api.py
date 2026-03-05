@@ -301,3 +301,72 @@ def delete_payment():
     except Exception as e:
         logging.error(f"Error deleting payment: {e}")
         return jsonify({'error': 'Internal server error'}), 500
+
+
+
+
+
+
+@payment_sync_bp.route("/payments/void", methods=["POST"])
+def void_payments():
+    """
+    Void all payments from the provided QueryResponse JSON
+    where DepositToAccountRef.value == '1211'.
+    
+    Body: QuickBooks QueryResponse JSON
+    """
+    VOID_DEPOSIT_ACCOUNT_ID = "1211"
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
+    payments = data.get("QueryResponse", {}).get("Payment", [])
+    if not payments:
+        return jsonify({"error": "No payments found in payload"}), 400
+
+    voided, skipped, failed = [], [], []
+
+    for payment in payments:
+        payment_id = payment.get("Id")
+        deposit_value = payment.get("DepositToAccountRef", {}).get("value")
+        sync_token = payment.get("SyncToken")
+        customer_name = payment.get("CustomerRef", {}).get("name")
+        total_amt = payment.get("TotalAmt")
+
+        # Only void payments with matching deposit account
+        if deposit_value != VOID_DEPOSIT_ACCOUNT_ID:
+            logger.info("Skipping payment | Id=%s | DepositAccount=%s", payment_id, deposit_value)
+            skipped.append({"id": payment_id, "reason": f"DepositToAccountRef is {deposit_value}, not {VOID_DEPOSIT_ACCOUNT_ID}"})
+            continue
+
+        try:
+            void_data = {
+                "Id": payment_id,
+                "SyncToken": sync_token,
+                "sparse": True,
+            }
+
+            result = service.void_payment(payment_id, sync_token)
+
+            logger.info(
+                "Voided payment | Id=%s | Customer=%s | Amount=%s",
+                payment_id, customer_name, total_amt
+            )
+            voided.append({"id": payment_id, "customer": customer_name, "amount": total_amt})
+
+        except Exception as e:
+            logger.error("Failed to void payment | Id=%s | Error=%s", payment_id, str(e))
+            failed.append({"id": payment_id, "error": str(e)})
+
+    return jsonify({
+        "summary": {
+            "voided": len(voided),
+            "skipped": len(skipped),
+            "failed": len(failed),
+            "total": len(payments),
+        },
+        "voided": voided,
+        "skipped": skipped,
+        "failed": failed,
+    }), 200
