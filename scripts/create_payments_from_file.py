@@ -100,6 +100,7 @@ def create_payments_from_excel():
                 query_response = result.get("QueryResponse")
                 payments = query_response.get("Payment", [])
                 logger.info("Found %s payments with DocNumber=%s", len(payments), row["Number"])
+                payment_exists = False
                 for payment in payments:
                     deposit_value = payment.get("DepositToAccountRef", {}).get("value")
                     if deposit_value == DEPOSIT_ACCOUNT_ID:
@@ -108,6 +109,8 @@ def create_payments_from_excel():
                         payment_exists = True
                         break
 
+                if payment_exists:
+                    continue
 
                 # Format date
                 txn_date = pd.to_datetime(row["Transaction date"], errors="coerce")
