@@ -346,7 +346,7 @@ def void_payments():
                 "SyncToken": sync_token,
                 "sparse": True,
             }
-
+            service = PaymentSyncService()
             result = service.void_payment(payment_id, sync_token)
 
             logger.info(
