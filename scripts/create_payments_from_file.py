@@ -35,7 +35,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "undeposited_funds_2024_test_v3.xlsx"
+    "UNDEPOSITED_FUNDS_2024_CREATE.xlsx"
 )
 DEPOSIT_ACCOUNT_ID = "1211"
 PAYMENT_METHOD_ID = "2"
@@ -93,7 +93,7 @@ def create_payments_from_excel():
                 query = (
                     "SELECT Id, SyncToken, DocNumber, TotalAmt, "
                     "CustomerRef, DepositToAccountRef, MetaData.CreateTime "
-                    f"FROM Payment WHERE DocNumber = '{row['Number']}'"
+                    f"FROM Payment WHERE DocNumber = '{row['Number']}' MAXRESULTS 1000"
                 )
                 result = service.query_payment(query)
                 # Check if payment exists
