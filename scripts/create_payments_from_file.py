@@ -35,7 +35,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "create_payments_new_2024_test.xlsx"
+    "create_payments_new_2024_test_v2.xlsx"
 )
 DEPOSIT_ACCOUNT_ID = "1211"
 PAYMENT_METHOD_ID = "2"
