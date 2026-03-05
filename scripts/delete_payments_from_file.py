@@ -102,7 +102,7 @@ def delete_payments_from_excel():
                 query = (
                     "SELECT Id, SyncToken, DocNumber, TotalAmt, "
                     "CustomerRef, DepositToAccountRef, MetaData.CreateTime "
-                    f"FROM Payment WHERE DocNumber = '{doc_number}'"
+                    f"FROM Payment WHERE DocNumber = '{doc_number}' MAXRESULTS 1000"
                 )
 
                 logger.info("Querying Payment | DocNumber=%s", doc_number)

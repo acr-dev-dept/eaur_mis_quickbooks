@@ -35,7 +35,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(
     SCRIPT_DIR,
     "files",
-    "UNDEPOSITED_FUNDS_2024_CREATE.xlsx"
+    "create_payments_new_2024_test.xlsx"
 )
 DEPOSIT_ACCOUNT_ID = "1211"
 PAYMENT_METHOD_ID = "2"
@@ -89,6 +89,17 @@ def create_payments_from_excel():
                     logger.warning("Skipping row %s (missing data)", idx)
                     skipped += 1
                     continue
+
+                if row["Number"] == "":
+                    logger.warning("Skipping row %s (missing DocNumber)", idx)
+                    skipped += 1
+                    continue
+
+                if row["Amount"] == "" or row["Amount"] == 0:
+                    logger.warning("Skipping row %s (missing Amount)", idx)
+                    skipped += 1
+                    continue
+
                 #query the payment first to see if it exists and skip
                 query = (
                     "SELECT Id, SyncToken, DocNumber, TotalAmt, "
